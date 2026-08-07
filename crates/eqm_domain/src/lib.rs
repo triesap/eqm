@@ -9,6 +9,7 @@ mod path;
 mod reference;
 mod schema;
 mod time;
+mod vocabulary;
 
 pub use diagnostic::{
     Diagnostic, DiagnosticBuildError, DiagnosticCode, DiagnosticDescriptor,
@@ -27,3 +28,4 @@ pub use reference::{
 };
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
 pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
+pub use vocabulary::{LifecycleStatus, RiskClass, VocabularyParseError};
