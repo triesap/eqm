@@ -39,6 +39,7 @@ implemented.
 | --- | --- |
 | result envelope | `https://schemas.equivalencematrix.dev/v1/result` |
 | diagnostic | `https://schemas.equivalencematrix.dev/v1/diagnostic` |
+| normalized test result | `https://schemas.equivalencematrix.dev/v1/test-result` |
 | evidence result | `https://schemas.equivalencematrix.dev/v1/evidence-result` |
 | inventory | `https://schemas.equivalencematrix.dev/v1/inventory` |
 | runtime facts | `https://schemas.equivalencematrix.dev/v1/runtime-facts` |
@@ -46,8 +47,6 @@ implemented.
 | attestation | `https://schemas.equivalencematrix.dev/v1/attestation` |
 | adapter request | `https://schemas.equivalencematrix.dev/v1/adapter-request` |
 | adapter response | `https://schemas.equivalencematrix.dev/v1/adapter-response` |
-| MCP request | `https://schemas.equivalencematrix.dev/v1/mcp-request` |
-| MCP response | `https://schemas.equivalencematrix.dev/v1/mcp-response` |
 
 ## Discovery And Duplicate Authority
 
