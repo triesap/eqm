@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: in progress; Step 059 complete
+Status: in progress; Step 060 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: `step_060`
+Current checkpoint: `step_061`
 
 ## Purpose
 
@@ -84,4 +84,5 @@ never converts an unsatisfied facet into `satisfied`.
 | `step_057` | complete | Pure resolution detects every indexed authority and binding-coordinate duplicate before construction, resolves typed graph references across contracts, bindings, policies, profiles, runners, waivers, targets, imports, and transitions, and emits deterministic source-linked EQM-E0300/E0301 findings |
 | `step_058` | complete | Post-resolution validation enforces identifier ownership, bidirectional journey/surface membership, transition membership, active-surface orphan rejection, parent lifecycle compatibility, and non-lowering journey/fragment risk; typed schemas make fragment nesting and parent-type cycles unrepresentable |
 | `step_059` | complete | Domain-separated canonical fragment digests verify exact ID/revision/content pins; expansion applies the specified prefix transform, rejects missing content, mismatches, invalid IDs, and overrides, and emits a finalized graph type required by canonicalization with fixed digest and formatting-exclusion integration vectors |
-| `step_060`-`step_070` | pending | - |
+| `step_060` | complete | Total three-valued applicability evaluates constants, equality, inequality, finite membership, exclusion, conjunction, disjunction, and negation against validated profile declarations; exhaustive truth tables cover known and unknown selections while undeclared dimensions or values fail before Boolean evaluation can short-circuit |
+| `step_061`-`step_070` | pending | - |
