@@ -26,7 +26,7 @@ impl CancellationToken {
         self.0.store(true, Ordering::Release);
     }
 
-    fn is_cancelled(&self) -> bool {
+    pub(crate) fn is_cancelled(&self) -> bool {
         self.0.load(Ordering::Acquire)
     }
 }
@@ -211,15 +211,15 @@ fn confined_existing(path: &Path, root: &Path) -> Result<PathBuf, LocalExecution
 }
 
 #[cfg(unix)]
-fn configure_process_group(command: &mut Command) {
+pub(crate) fn configure_process_group(command: &mut Command) {
     use std::os::unix::process::CommandExt as _;
     command.process_group(0);
 }
 
 #[cfg(not(unix))]
-fn configure_process_group(_command: &mut Command) {}
+pub(crate) fn configure_process_group(_command: &mut Command) {}
 
-fn terminate_process_tree(child: &mut std::process::Child) {
+pub(crate) fn terminate_process_tree(child: &mut std::process::Child) {
     #[cfg(unix)]
     {
         let group = format!("-{}", child.id());
@@ -235,12 +235,28 @@ fn terminate_process_tree(child: &mut std::process::Child) {
 }
 
 #[derive(Debug)]
-struct BoundedOutput {
-    bytes: Vec<u8>,
-    truncated: bool,
+pub(crate) struct BoundedOutput {
+    pub(crate) bytes: Vec<u8>,
+    pub(crate) truncated: bool,
 }
 
-fn read_bounded(mut reader: impl Read, cap: usize) -> io::Result<BoundedOutput> {
+pub(crate) fn read_bounded(mut reader: impl Read, cap: usize) -> io::Result<BoundedOutput> {
+    read_bounded_inner(&mut reader, cap, None)
+}
+
+pub(crate) fn read_bounded_signaled(
+    mut reader: impl Read,
+    cap: usize,
+    exceeded: &AtomicBool,
+) -> io::Result<BoundedOutput> {
+    read_bounded_inner(&mut reader, cap, Some(exceeded))
+}
+
+fn read_bounded_inner(
+    reader: &mut impl Read,
+    cap: usize,
+    exceeded: Option<&AtomicBool>,
+) -> io::Result<BoundedOutput> {
     let mut retained = Vec::with_capacity(cap.min(64 * 1024));
     let mut buffer = [0_u8; 8 * 1024];
     let mut truncated = false;
@@ -253,6 +269,9 @@ fn read_bounded(mut reader: impl Read, cap: usize) -> io::Result<BoundedOutput> 
         let kept = remaining.min(count);
         retained.extend_from_slice(&buffer[..kept]);
         truncated |= kept < count;
+        if truncated && let Some(exceeded) = exceeded {
+            exceeded.store(true, Ordering::Release);
+        }
     }
     Ok(BoundedOutput {
         bytes: retained,
@@ -260,7 +279,7 @@ fn read_bounded(mut reader: impl Read, cap: usize) -> io::Result<BoundedOutput> 
     })
 }
 
-fn join_reader(
+pub(crate) fn join_reader(
     handle: thread::JoinHandle<io::Result<BoundedOutput>>,
 ) -> Result<BoundedOutput, LocalExecutionError> {
     handle

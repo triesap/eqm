@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod adapter;
 mod ci;
 mod container;
 mod execution;
@@ -10,6 +11,7 @@ mod persistence;
 mod resolution;
 mod substitution;
 
+pub use adapter::{AdapterExecutionAuthority, AdapterInvocationError, invoke_adapter};
 pub use ci::{
     CiDelegatedImport, CiImportAuthority, CiImportError, CiReplayGuard, CiSignature,
     CiSignatureVerifier, VerifiedCiSignature, import_ci_delegated_result,
