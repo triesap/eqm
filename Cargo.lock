@@ -165,6 +165,7 @@ dependencies = [
  "eqm_domain",
  "eqm_protocol",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]

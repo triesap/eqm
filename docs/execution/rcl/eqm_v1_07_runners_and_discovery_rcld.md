@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 07: Runners And Discovery
 
-Status: in progress; Step 078 complete
+Status: in progress; Step 079 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 06
-Current checkpoint: `step_079`
+Current checkpoint: `step_080`
 
 ## Purpose
 
@@ -82,4 +82,5 @@ flood, atomic-write, inventory, and framework fixture tests.
 | --- | --- | --- |
 | `step_077` | complete | Runner definitions resolve only under exact ID/revision, backend, resource, guarantee, and executable-digest authority; prepared programs retain verified repository or immutable locked identity, while a length-delimited canonical semantic projection produces stable definition digests independent of set/map insertion order and display-only extensions |
 | `step_078` | complete | Invocation bindings require absolute UTF-8 NUL-free target/result paths and a bounded compact JSON-object selector; each typed placeholder replaces exactly one argv element, shell metacharacters remain literal data, and repeated execution-sensitive placeholders fail before launch |
-| `step_079`-`step_090` | pending | - |
+| `step_079` | complete | The local backend verifies confined canonical workspace, target, result, cwd, and executable paths plus executable content digest; launches directly with cleared and explicitly rebuilt environment, null stdin, isolated process group, independent bounded stdout/stderr drains, timeout and cooperative cancellation tree termination, secret redaction, and exact success/failure/timeout/cancel/cap outcomes |
+| `step_080`-`step_090` | pending | - |

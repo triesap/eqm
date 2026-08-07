@@ -13,5 +13,8 @@ eqm_domain.workspace = true
 eqm_protocol.workspace = true
 serde_json.workspace = true
 
+[dev-dependencies]
+tempfile.workspace = true
+
 [lints]
 workspace = true
