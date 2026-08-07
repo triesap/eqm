@@ -35,6 +35,10 @@ pub struct DiscoveredSource {
 }
 
 impl DiscoveredSource {
+    pub(crate) fn new(class: SourceClass, path: RepoPath) -> Self {
+        Self { class, path }
+    }
+
     /// Returns the source class.
     #[must_use]
     pub const fn class(&self) -> SourceClass {
@@ -81,7 +85,6 @@ pub fn discover_sources(config: &WorkspaceConfig) -> Result<Vec<DiscoveredSource
     candidates.sort();
 
     let mut portable_paths = BTreeMap::<Box<str>, RepoPath>::new();
-    let mut authorities = BTreeMap::<Box<str>, RepoPath>::new();
     let mut discovered = Vec::new();
     for absolute in candidates {
         let relative_to_config = absolute
@@ -114,16 +117,7 @@ pub fn discover_sources(config: &WorkspaceConfig) -> Result<Vec<DiscoveredSource
         {
             return Err(DiscoveryError::PortableCollision);
         }
-        let authority = lexical_authority(&absolute, matching[0])?;
-        if let Some(authority) = authority
-            && authorities.insert(authority, path.clone()).is_some()
-        {
-            return Err(DiscoveryError::DuplicateAuthority);
-        }
-        discovered.push(DiscoveredSource {
-            class: matching[0],
-            path,
-        });
+        discovered.push(DiscoveredSource::new(matching[0], path));
     }
     discovered.sort_by(|left, right| left.path.cmp(&right.path));
     Ok(discovered)
@@ -209,24 +203,6 @@ fn slash_path(path: &Path) -> Result<String, DiscoveryError> {
     Ok(segments.join("/"))
 }
 
-fn lexical_authority(path: &Path, class: SourceClass) -> Result<Option<Box<str>>, DiscoveryError> {
-    let bytes = fs::read(path).map_err(|_| DiscoveryError::Filesystem)?;
-    let text = std::str::from_utf8(&bytes).map_err(|_| DiscoveryError::InvalidDocument)?;
-    let table: toml::Table = toml::from_str(text).map_err(|_| DiscoveryError::InvalidDocument)?;
-    let authority = match class {
-        SourceClass::Binding => table
-            .get("target")
-            .and_then(toml::Value::as_str)
-            .zip(table.get("unit").and_then(toml::Value::as_str))
-            .map(|(target, unit)| format!("binding:{target}\0{unit}")),
-        _ => table
-            .get("id")
-            .and_then(toml::Value::as_str)
-            .map(|id| format!("{class:?}:{id}")),
-    };
-    Ok(authority.map(String::into_boxed_str))
-}
-
 /// Deterministic source-discovery failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DiscoveryError {
@@ -248,10 +224,6 @@ pub enum DiscoveryError {
     PortableCollision,
     /// One file matched more than one source class.
     MultipleSourceClasses,
-    /// Two files declared the same source-class authority.
-    DuplicateAuthority,
-    /// An authority could not be lexically inspected.
-    InvalidDocument,
 }
 
 impl Display for DiscoveryError {
@@ -326,7 +298,7 @@ waiver_sources = ["eqm/waivers/**/*.toml"]
     }
 
     #[test]
-    fn cross_class_matches_and_duplicate_authorities_fail() -> Result<(), Box<dyn Error>> {
+    fn cross_class_matches_fail() -> Result<(), Box<dyn Error>> {
         let repository = repository()?;
         fs::write(
             repository.path().join("eqm.toml"),
@@ -343,17 +315,6 @@ waiver_sources = ["eqm/waivers/**/*.toml"]
         assert_eq!(
             discover_sources(&config),
             Err(DiscoveryError::MultipleSourceClasses)
-        );
-
-        fs::write(repository.path().join("eqm.toml"), CONFIG)?;
-        fs::write(
-            repository.path().join("eqm/contracts/b.toml"),
-            "id = 'cap_same'",
-        )?;
-        let config = select_workspace_config(repository.path(), None)?;
-        assert_eq!(
-            discover_sources(&config),
-            Err(DiscoveryError::DuplicateAuthority)
         );
         Ok(())
     }

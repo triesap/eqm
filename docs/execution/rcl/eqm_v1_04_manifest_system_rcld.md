@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 04: Manifest System
 
-Status: in progress; Step 044 complete
+Status: in progress; Step 045 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 03
-Current checkpoint: `step_045`
+Current checkpoint: `step_046`
 
 ## Purpose
 
@@ -83,5 +83,6 @@ approved order. No pre-resolution or pre-expansion digest is authoritative.
 | --- | --- | --- |
 | `step_042` | complete | Bounded UTF-8 TOML 1.1 parsing reports stable byte-derived spans for syntax and duplicate-key failures |
 | `step_043` | complete | Repository-rooted config selection enforces one config, explicit paths, required source declarations, generated-root policy, and nested VCS boundaries |
-| `step_044` | complete | Lexically validated source globs expand in repository-path order while excluding generated state, nested repositories, symlinks, collisions, cross-class matches, and duplicate authorities |
-| `step_045`-`step_056` | pending | - |
+| `step_044` | complete | Lexically validated source globs expand in repository-path order while excluding generated state, nested repositories, symlinks, portable collisions, and cross-class matches |
+| `step_045` | complete | Exact-current schema dispatch, closed DTO decoding, recursive extension validation, aggregate input limits, duplicate authorities, and source-associated failures are enforced |
+| `step_046`-`step_056` | pending | - |
