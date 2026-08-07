@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 07: Runners And Discovery
 
-Status: in progress; Step 086 complete
+Status: in progress; Step 087 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 06
-Current checkpoint: `step_087`
+Current checkpoint: `step_088`
 
 ## Purpose
 
@@ -90,4 +90,5 @@ flood, atomic-write, inventory, and framework fixture tests.
 | `step_084` | complete | Consolidated public-API adversarial tests prove shell metacharacters stay literal without side effects, the host environment is cleared, canonical cwd and symlink escapes fail before spawn, timeout and cooperative cancellation are terminal, output floods retain only the configured cap, and exact declared secret values are absent from retained output |
 | `step_085` | complete | Adapter invocation serializes and revalidates one bounded current request, matches every locked identity and resource limit, verifies executable bytes against the exact pin, confines cwd to the target, launches directly with empty environment and no secrets, writes one JSON stdin payload, caps stdout/stderr, enforces timeout/cancellation/nonzero handling, and accepts only a closed response matching the request; success, malformed, timeout, flood, pin mismatch, and nonzero cases are explicit |
 | `step_086` | complete | Inventory responses rebind request, adapter, digest, typed subject, target, current schema, generation time, and canonical payload digest; completeness cannot exceed lock authority or contradict response status, only complete observations prove absence, and entries must remain within configured count, use valid provider-neutral values and repository paths, and be strictly unique and sorted by kind/key; complete, partial, unknown/error, duplicate, ordering, and wrong-target fixtures pass |
-| `step_087`-`step_090` | pending | - |
+| `step_087` | complete | Validated inventory observations map an exact `(kind, key)` coordinate to discovered true when present, false only when complete authority proves absence, and unknown for partial or unknown absence; expected, declared, enabled, released, and conformant inputs remain independent while the pure engine performs the deterministic comparison |
+| `step_088`-`step_090` | pending | - |

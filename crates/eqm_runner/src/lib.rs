@@ -9,6 +9,7 @@ mod execution;
 mod inventory;
 mod normalized;
 mod persistence;
+mod reconciliation;
 mod resolution;
 mod substitution;
 
@@ -27,6 +28,7 @@ pub use execution::{
 pub use inventory::{InventoryObservation, InventoryValidationError, validate_inventory_response};
 pub use normalized::{NormalizedTestResult, TestResultReadError, read_test_result};
 pub use persistence::{EvidenceWriteError, EvidenceWriteOutcome, persist_evidence_result};
+pub use reconciliation::{InventoryExposureInput, reconcile_inventory_exposure};
 pub use resolution::{
     ResolvedProgram, ResolvedRunner, RunnerResolutionAuthority, RunnerResolutionError,
     resolve_runner,

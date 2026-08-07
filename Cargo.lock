@@ -163,6 +163,7 @@ name = "eqm_runner"
 version = "0.1.0"
 dependencies = [
  "eqm_domain",
+ "eqm_engine",
  "eqm_protocol",
  "serde_json",
  "serde_json_canonicalizer",

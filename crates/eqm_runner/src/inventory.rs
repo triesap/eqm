@@ -16,11 +16,31 @@ use std::fmt::{self, Display, Formatter};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InventoryObservation {
     /// Validated inventory, absent only for adapter error status.
-    pub inventory: Option<InventoryDto>,
+    inventory: Option<InventoryDto>,
     /// Effective completeness after status and authority checks.
-    pub completeness: InventoryCompleteness,
+    completeness: InventoryCompleteness,
     /// Whether absence of an entry is authoritative.
-    pub can_prove_absence: bool,
+    can_prove_absence: bool,
+}
+
+impl InventoryObservation {
+    /// Returns the validated inventory, if the adapter produced one.
+    #[must_use]
+    pub const fn inventory(&self) -> Option<&InventoryDto> {
+        self.inventory.as_ref()
+    }
+
+    /// Returns the validated effective completeness.
+    #[must_use]
+    pub const fn completeness(&self) -> InventoryCompleteness {
+        self.completeness
+    }
+
+    /// Returns whether a missing entry is an authoritative false observation.
+    #[must_use]
+    pub const fn can_prove_absence(&self) -> bool {
+        self.can_prove_absence
+    }
 }
 
 /// Validates one response inventory against its exact request and locked definition.
@@ -399,9 +419,9 @@ mod tests {
                 &request(&definition),
                 response(&definition, completeness, Vec::new())?,
             )?;
-            assert_eq!(observation.completeness, completeness);
+            assert_eq!(observation.completeness(), completeness);
             assert_eq!(
-                observation.can_prove_absence,
+                observation.can_prove_absence(),
                 completeness == InventoryCompleteness::Complete
             );
         }
@@ -416,8 +436,8 @@ mod tests {
             diagnostics: Vec::new(),
         };
         let observation = validate_inventory_response(&definition, &request(&definition), error)?;
-        assert_eq!(observation.completeness, InventoryCompleteness::Unknown);
-        assert!(!observation.can_prove_absence);
+        assert_eq!(observation.completeness(), InventoryCompleteness::Unknown);
+        assert!(!observation.can_prove_absence());
         Ok(())
     }
 
