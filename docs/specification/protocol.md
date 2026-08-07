@@ -148,6 +148,10 @@ an existing different payload at that name is a hard integrity error. Producer
 and claimed trust are assertions; evaluation computes effective trust
 independently.
 
+The nested subject, producer, profile-value, and payload shapes are closed by
+ADR 0013. Unknown fields and alternate payload shapes fail closed. Result IDs
+equal the full canonical `sha256:` result-digest wire value.
+
 ## Inventory And Runtime Facts
 
 Inventory schema: `https://schemas.equivalencematrix.dev/v1/inventory`.
