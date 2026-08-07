@@ -16,6 +16,7 @@ eqm_manifest.workspace = true
 eqm_mcp.workspace = true
 eqm_protocol.workspace = true
 eqm_runner.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
 

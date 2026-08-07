@@ -87,6 +87,14 @@ pub fn diagnostic_registry() -> Result<Vec<DiagnosticDescriptor>, DiagnosticBuil
             explanation: "A derived obligation has no prepared evidence satisfying its exact coordinate.",
             remediation: "Provide current trusted evidence for the reported obligation.",
         },
+        DiagnosticDescriptor {
+            code: code(700)?,
+            severity: Severity::Error,
+            title: "adapter discovery failed",
+            authority: "docs/specification/cli.md",
+            explanation: "The exact committed adapter pin was unavailable, failed invocation, or returned an invalid or incomplete inventory.",
+            remediation: "Install the exact pinned adapter locally and correct its protocol response.",
+        },
     ])
 }
 
@@ -111,7 +119,7 @@ mod tests {
     fn registry_is_complete_unique_live_and_explainable() -> Result<(), Box<dyn Error>> {
         let registry = diagnostic_registry()?;
         validate_diagnostic_registry(&registry)?;
-        let emitted = [1, 100, 200, 300, 301, 302, 303, 304, 305, 500]
+        let emitted = [1, 100, 200, 300, 301, 302, 303, 304, 305, 500, 700]
             .into_iter()
             .map(|number| DiagnosticCode::from_number(number).ok_or("invalid emitted code"))
             .collect::<Result<Vec<_>, _>>()?;
