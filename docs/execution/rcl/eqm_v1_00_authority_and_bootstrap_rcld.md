@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-006 and Steps 007a-007f complete
+Status: in progress; Steps 001-006 and Steps 007a-007g complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_007g`
+Current checkpoint: `step_007h`
 
 ## Purpose
 
@@ -125,8 +125,8 @@ authority.
 | `step_007c` | complete | `91ee4ff` | Exhaustive authored field, vocabulary, selector, extension, and schema contracts defined |
 | `step_007d` | complete | `ab26ce5` | Finalized projection, ordering, exclusions, JCS domain, and fixed vectors defined |
 | `step_007e` | complete | `4fee7a7` | Total applicability, policy, evidence, waiver, conformance, equivalence, exposure, release, diff, and affected tables defined |
-| `step_007f` | complete | this checkpoint | Exact public DTO, CLI, SARIF, adapter, attestation, and MCP contracts defined |
-| `step_007g` | pending | - | - |
+| `step_007f` | complete | `2bb5bce` | Exact public DTO, CLI, SARIF, adapter, attestation, and MCP contracts defined |
+| `step_007g` | complete | this checkpoint | Trust roots, subjects, replay, execution boundaries, diagnostics, privacy, and limits defined |
 | `step_007h` | pending | - | - |
 
 ## Reconciliation Rules

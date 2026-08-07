@@ -15,6 +15,7 @@ Authority is organized as follows:
 - `evaluation.md`: total policy, evidence, conformance, equivalence, and analysis tables;
 - `protocol.md`: exact JSON, SARIF, evidence, adapter, attestation, and MCP DTOs;
 - `cli.md`: command grammar, defaults, mutability, output, and exit behavior;
+- `security-and-limits.md`: trust, subjects, execution boundaries, diagnostics, and limits;
 - `acceptance.md`: implementation and verification completion criteria;
 - `naming-and-no-compat.md`: canonical identity and clean-break contract;
 - later executable contracts for manifests, vocabularies, canonicalization,
