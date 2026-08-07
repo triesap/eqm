@@ -1,0 +1,33 @@
+{
+  "schema": "https://schemas.equivalencematrix.dev/v1/inventory",
+  "adapter": "adapter.swiftui_export",
+  "adapter_digest": "sha256:236872a224c3eef93f16f14e0d9244d0116adf25a29486148aa63289a236a4f9",
+  "subject": {
+    "repository": "https://example.com/product/ios",
+    "repository_id_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "scope": { "kind": "target", "target": "ios" },
+    "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "build_id": "ios-build-42",
+    "artifact_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "target_configuration_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "target": "ios",
+  "generated_at": "2026-08-07T12:00:00Z",
+  "completeness": "complete",
+  "entries": [
+    {
+      "kind": "navigation",
+      "key": "settings",
+      "attributes": { "framework": { "type": "symbol", "value": "swiftui" } },
+      "source": "build/eqm/swiftui-navigation.json"
+    },
+    {
+      "kind": "navigation",
+      "key": "signup",
+      "attributes": { "framework": { "type": "symbol", "value": "swiftui" } },
+      "source": "build/eqm/swiftui-navigation.json"
+    }
+  ],
+  "diagnostics": [],
+  "inventory_digest": "sha256:5046621f5dc2eaee5d9b31a5e933c265f0084dc98d282b10a5980b91d8278b98"
+}

@@ -127,6 +127,74 @@ fn request(definition: &AdapterDefinition) -> AdapterRequestDto {
     }
 }
 
+fn native_definition(
+    id: &str,
+    repository: &str,
+    executable: &[u8],
+) -> Result<AdapterDefinition, Box<dyn Error>> {
+    Ok(AdapterDefinition::new(
+        AdapterId::new(id)?,
+        SelectorText::new("1.0.0")?,
+        repository.parse::<RepositoryIdentity>()?,
+        Sha256Digest::hash_content(executable),
+        Revision::new(1)?,
+        InventoryCompleteness::Complete,
+        AdapterLimits::new(
+            DurationMillis::new(1_000)?,
+            PositiveCount::new(1024)?,
+            PositiveCount::new(16 * 1024)?,
+            PositiveCount::new(20)?,
+            PositiveCount::new(8)?,
+        )?,
+    )?)
+}
+
+fn request_for_inventory(
+    definition: &AdapterDefinition,
+    inventory: &InventoryDto,
+    request_id: &str,
+) -> AdapterRequestDto {
+    AdapterRequestDto {
+        schema: ADAPTER_REQUEST_SCHEMA.to_string(),
+        request_id: request_id.to_owned(),
+        adapter: definition.id().as_str().to_owned(),
+        adapter_digest: definition.digest().to_string(),
+        operation: AdapterOperationDto::Discover,
+        subject: inventory.subject.clone(),
+        target: inventory.target.clone(),
+        target_root: format!("/fixture/{}", inventory.target),
+        limits: AdapterLimitsDto {
+            timeout_ms: 1_000,
+            max_input_bytes: 1024,
+            max_output_bytes: 16 * 1024,
+            max_entries: 20,
+            max_depth: 8,
+        },
+    }
+}
+
+fn validate_export_fixture(
+    fixture_name: &str,
+    definition: &AdapterDefinition,
+    request_id: &str,
+) -> Result<eqm_runner::InventoryObservation, Box<dyn Error>> {
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../examples/fixtures")
+        .join(fixture_name);
+    let inventory: InventoryDto = serde_json::from_slice(&fs::read(fixture)?)?;
+    let request = request_for_inventory(definition, &inventory, request_id);
+    let response = AdapterResponseDto {
+        schema: ADAPTER_RESPONSE_SCHEMA.to_string(),
+        request_id: request.request_id.clone(),
+        adapter: request.adapter.clone(),
+        adapter_digest: request.adapter_digest.clone(),
+        status: AdapterStatusDto::Ok,
+        inventory: Some(inventory),
+        diagnostics: Vec::new(),
+    };
+    Ok(validate_inventory_response(definition, &request, response)?)
+}
+
 #[test]
 fn sveltekit_filesystem_inventory_is_sorted_confined_and_reconciles() -> Result<(), Box<dyn Error>>
 {
@@ -190,6 +258,38 @@ fn sveltekit_filesystem_inventory_is_sorted_confined_and_reconciles() -> Result<
         &observation,
         &SelectorText::new("route")?,
         &SelectorText::new("/users/{id}")?,
+    );
+    assert_eq!(result.facts.discovered, ObservedExposure::True);
+    assert_eq!(result.discovered, ExposureComparison::Match);
+    Ok(())
+}
+
+#[test]
+fn swiftui_build_export_is_current_complete_and_reconciles() -> Result<(), Box<dyn Error>> {
+    let definition = native_definition(
+        "adapter.swiftui_export",
+        "https://example.com/adapters/swiftui-export",
+        b"swiftui fixture adapter",
+    )?;
+    let observation =
+        validate_export_fixture("ios_inventory.json", &definition, "swiftui-fixture")?;
+    assert_eq!(observation.completeness(), InventoryCompleteness::Complete);
+    assert_eq!(
+        observation.inventory().ok_or("missing inventory")?.target,
+        "ios"
+    );
+    let input = InventoryExposureInput {
+        expected: ExpectedExposure::Required,
+        declared: ObservedExposure::True,
+        enabled: ObservedExposure::Unknown,
+        released: ObservedExposure::Unknown,
+        conformant: ConformanceFact::Unknown,
+    };
+    let result = reconcile_inventory_exposure(
+        input,
+        &observation,
+        &SelectorText::new("navigation")?,
+        &SelectorText::new("signup")?,
     );
     assert_eq!(result.facts.discovered, ObservedExposure::True);
     assert_eq!(result.discovered, ExposureComparison::Match);

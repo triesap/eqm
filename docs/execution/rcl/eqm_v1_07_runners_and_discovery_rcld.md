@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 07: Runners And Discovery
 
-Status: in progress; Step 088 complete
+Status: in progress; Step 089 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 06
-Current checkpoint: `step_089`
+Current checkpoint: `step_090`
 
 ## Purpose
 
@@ -92,4 +92,5 @@ flood, atomic-write, inventory, and framework fixture tests.
 | `step_086` | complete | Inventory responses rebind request, adapter, digest, typed subject, target, current schema, generation time, and canonical payload digest; completeness cannot exceed lock authority or contradict response status, only complete observations prove absence, and entries must remain within configured count, use valid provider-neutral values and repository paths, and be strictly unique and sorted by kind/key; complete, partial, unknown/error, duplicate, ordering, and wrong-target fixtures pass |
 | `step_087` | complete | Validated inventory observations map an exact `(kind, key)` coordinate to discovered true when present, false only when complete authority proves absence, and unknown for partial or unknown absence; expected, declared, enabled, released, and conformant inputs remain independent while the pure engine performs the deterministic comparison |
 | `step_088` | complete | A minimal SvelteKit filesystem fixture discovers only sorted `+page.svelte` routes below `src/routes`, excludes generated, private, and server-only paths, removes route-group segments, normalizes dynamic segments to provider-neutral keys, validates the resulting complete inventory, and reconciles an exact dynamic route as discovered |
-| `step_089`-`step_090` | pending | - |
+| `step_089` | complete | A SwiftUI build-export fixture carries the current closed inventory schema, exact iOS subject and adapter pin, complete sorted provider-neutral navigation entries, and canonical digest; validation and exact signup-navigation reconciliation pass without inspecting Swift source |
+| `step_090` | pending | - |
