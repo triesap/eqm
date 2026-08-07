@@ -22,12 +22,13 @@ pub use entity::{
     Applicability, ApplicabilityKind, Capability, ComparisonOperator, Description,
     EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Fragment,
     FragmentUse, Journey, MembershipOperator, Requirement, RequirementStatement, Revision, Surface,
-    Title, Transition, TransitionTrigger,
+    Target, Title, Transition, TransitionTrigger,
 };
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
-    FullRequirementId, IdParseError, JourneyId, LocalRequirementId, PolicyId, ProfileId,
-    ProviderId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
+    FrameworkId, FullRequirementId, IdParseError, JourneyId, LocalRequirementId, PlatformId,
+    PolicyId, ProfileId, ProviderId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId,
+    WaiverId,
 };
 pub use path::{RepoPath, RepoPathError};
 pub use reference::{

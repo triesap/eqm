@@ -190,6 +190,18 @@ define_id!(
     1,
     Some(1)
 );
+define_id!(
+    /// An extensible implementation platform ID.
+    PlatformId,
+    1,
+    None
+);
+define_id!(
+    /// An extensible implementation framework ID.
+    FrameworkId,
+    1,
+    None
+);
 
 /// A fully qualified requirement identity: `<unit>#<local>`.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

@@ -1,9 +1,9 @@
 //! Shared entity values and the capability model.
 
 use crate::{
-    CapabilityId, DimensionId, Facet, FragmentId, JourneyId, LifecycleStatus, LocalRequirementId,
-    OwnerRef, ProviderId, RequirementLevel, RequirementScope, RiskClass, Sha256Digest, SurfaceId,
-    SymbolicValueId,
+    CapabilityId, DimensionId, Facet, FragmentId, FrameworkId, JourneyId, LifecycleStatus,
+    LocalRequirementId, OwnerRef, PlatformId, ProviderId, RepoPath, RequirementLevel,
+    RequirementScope, RiskClass, Sha256Digest, SurfaceId, SymbolicValueId, TargetId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -1062,6 +1062,68 @@ impl Surface {
     }
 }
 
+/// A repository implementation target authority.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Target {
+    id: TargetId,
+    root: RepoPath,
+    platform: PlatformId,
+    framework: FrameworkId,
+    owners: BTreeSet<OwnerRef>,
+    extensions: Extensions,
+}
+
+impl Target {
+    /// Creates a target with a validated repository root and nonempty owners.
+    pub fn new(
+        id: TargetId,
+        root: RepoPath,
+        platform: PlatformId,
+        framework: FrameworkId,
+        owners: Vec<OwnerRef>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        Ok(Self {
+            id,
+            root,
+            platform,
+            framework,
+            owners: owner_set(owners)?,
+            extensions,
+        })
+    }
+    /// Returns the target ID.
+    #[must_use]
+    pub const fn id(&self) -> &TargetId {
+        &self.id
+    }
+    /// Returns the repository-relative source root.
+    #[must_use]
+    pub const fn root(&self) -> &RepoPath {
+        &self.root
+    }
+    /// Returns the extensible platform ID.
+    #[must_use]
+    pub const fn platform(&self) -> &PlatformId {
+        &self.platform
+    }
+    /// Returns the extensible framework ID.
+    #[must_use]
+    pub const fn framework(&self) -> &FrameworkId {
+        &self.framework
+    }
+    /// Returns owners in deterministic order.
+    #[must_use]
+    pub const fn owners(&self) -> &BTreeSet<OwnerRef> {
+        &self.owners
+    }
+    /// Returns extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -1532,6 +1594,34 @@ mod tests {
             fragment_use.prefix().map(LocalRequirementId::as_str),
             Some("shared")
         );
+        Ok(())
+    }
+
+    #[test]
+    fn target_keeps_implementation_identity_dimensions_separate() -> Result<(), Box<dyn Error>> {
+        let target = Target::new(
+            TargetId::new("web")?,
+            RepoPath::new("apps/web")?,
+            PlatformId::new("web")?,
+            FrameworkId::new("sveltekit")?,
+            vec![owner("owner://team/web")?],
+            Extensions::default(),
+        )?;
+        assert_eq!(target.id().as_str(), "web");
+        assert_eq!(target.root().as_str(), "apps/web");
+        assert_eq!(target.platform().as_str(), "web");
+        assert_eq!(target.framework().as_str(), "sveltekit");
+        assert!(matches!(
+            Target::new(
+                TargetId::new("ios")?,
+                RepoPath::new("apps/ios")?,
+                PlatformId::new("ios")?,
+                FrameworkId::new("swiftui")?,
+                Vec::new(),
+                Extensions::default(),
+            ),
+            Err(EntityBuildError::OwnersRequired)
+        ));
         Ok(())
     }
 }

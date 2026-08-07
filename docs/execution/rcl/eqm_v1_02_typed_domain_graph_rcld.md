@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 02: Typed Domain Graph
 
-Status: in progress; Step 021 complete
+Status: in progress; Step 022 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 01
-Current checkpoint: `step_022`
+Current checkpoint: `step_023`
 
 ## Purpose
 
@@ -74,4 +74,5 @@ construction, ordering, duplicate, and doc tests in `eqm_domain`.
 | `step_019` | complete | Typed requirements enforce closed facets, scopes, providers, risk, and bounded applicability |
 | `step_020` | complete | Versioned immutable fragments own nonempty uniquely keyed requirement sets |
 | `step_021` | complete | Surfaces combine unique direct requirements with exact immutable fragment pins |
-| `step_022`-`step_032` | pending | - |
+| `step_022` | complete | Targets keep repository roots separate from extensible platform and framework identity |
+| `step_023`-`step_032` | pending | - |
