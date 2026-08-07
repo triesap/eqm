@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 06: Exposure And Analysis
 
-Status: in progress; Step 071 complete
+Status: in progress; Step 072 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 05
-Current checkpoint: `step_072`
+Current checkpoint: `step_073`
 
 ## Purpose
 
@@ -61,4 +61,5 @@ completeness checks.
 | Step range | Status | Result |
 | --- | --- | --- |
 | `step_071` | complete | Expected, declared, discovered, enabled, released, and conformant remain separate typed facts; every required/prohibited/unknown by true/false/unknown comparison follows the complete cross-product, partial or failed observation remains unknown, and conformance never overwrites exposure mismatches |
-| `step_072`-`step_076` | pending | - |
+| `step_072` | complete | Release gates bind target, version, build, source commit, artifact, channel, contract, policy, profile values, evidence set, runtime facts, trust configuration, release record, and injected clock; verified signed-CI exact inputs pass, visible wholly waived deviation is conditional, complete unwaived mismatch fails, and absent, stale, inexact, invalid, or unverifiable input is unknown |
+| `step_073`-`step_076` | pending | - |

@@ -13,6 +13,7 @@ mod invariants;
 mod monotonicity;
 mod obligations;
 mod outcomes;
+mod release;
 mod resolve;
 mod selection;
 mod structure;
@@ -50,6 +51,10 @@ pub use obligations::{
     ScopeSubject, derive_obligations,
 };
 pub use outcomes::{EvidenceOutcome, aggregate_evidence_outcomes};
+pub use release::{
+    ReleaseCheck, ReleaseContext, ReleaseGateInput, ReleaseGateStatus, ReleaseSubject,
+    evaluate_release_gate,
+};
 pub use resolve::{ResolutionError, resolution_diagnostics, resolve_graph};
 pub use selection::{
     AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,
