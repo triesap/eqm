@@ -9,6 +9,10 @@ Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 00
 Current checkpoint: `step_015`
 
+Step 015 prerequisite correction: ADR 0012 and the closed external-reference
+grammar were added before implementation because the imported source examples
+did not define every required component form.
+
 ## Purpose
 
 Implement the validated, deterministic primitives used by every later domain,

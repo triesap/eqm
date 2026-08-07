@@ -73,6 +73,25 @@ segments separated by dots, segment length at most 63, total length at most
 References are always fully qualified except fields explicitly typed as local
 IDs. There is no relative lookup, namespace search, alias, or redirect.
 
+## External Reference Grammar
+
+External references are opaque ASCII identifiers, not fetchable URLs. They
+have no query, fragment, user information, port, percent encoding, relative
+form, or trailing slash. Component limits are inclusive.
+
+| Type | Exact form | Component rules |
+| --- | --- | --- |
+| owner | `owner://team/<name>` or `owner://role/<name>` | name is a lowercase ID segment, at most 63 bytes |
+| issue | `issue://<project>-<number>` | project is 2-16 uppercase ASCII letters/digits starting with a letter; number is 1-12 digits, positive, no leading zero |
+| design | `design://<system>/<component>` | system and component are lowercase ID segments |
+| catalog | `catalog://<namespace>/<component>` | namespace and component are lowercase ID segments |
+| CI run | `ci://<provider>/<repository>/<run>` | provider/repository are lowercase ID segments; run is a 1-128 byte ASCII token using letters, digits, `.`, `_`, or `-` and starting alphanumeric |
+| release | `release://<target>/<version>/<build>` | target is a target ID; version is 1-64 ASCII alphanumeric/dot/hyphen bytes starting alphanumeric; build is 1-32 decimal digits with no leading zero except `0` |
+
+These references provide stable linkage only. They do not prove ownership,
+approval, CI trust, release existence, or freshness. Those conclusions require
+separate protected inputs.
+
 ## Selector Contract
 
 Selectors are data, never source code, regular expressions, shell fragments,
