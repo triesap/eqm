@@ -4,3 +4,6 @@
 
 /// Strict source data-transfer objects for authored manifests.
 pub mod dto;
+mod parse;
+
+pub use parse::{ParseError, ParsedToml, TomlSyntaxError, parse_toml};
