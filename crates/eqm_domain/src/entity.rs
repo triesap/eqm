@@ -2,7 +2,7 @@
 
 use crate::{
     CapabilityId, DimensionId, Facet, FragmentId, JourneyId, LifecycleStatus, LocalRequirementId,
-    OwnerRef, ProviderId, RequirementLevel, RequirementScope, RiskClass, SurfaceId,
+    OwnerRef, ProviderId, RequirementLevel, RequirementScope, RiskClass, Sha256Digest, SurfaceId,
     SymbolicValueId,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -902,6 +902,166 @@ impl Fragment {
     }
 }
 
+/// An exact immutable use of one fragment authority.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct FragmentUse {
+    fragment: FragmentId,
+    revision: Revision,
+    digest: Sha256Digest,
+    prefix: Option<LocalRequirementId>,
+}
+
+impl FragmentUse {
+    /// Creates an exact fragment pin; no override fields exist in this type.
+    #[must_use]
+    pub const fn new(
+        fragment: FragmentId,
+        revision: Revision,
+        digest: Sha256Digest,
+        prefix: Option<LocalRequirementId>,
+    ) -> Self {
+        Self {
+            fragment,
+            revision,
+            digest,
+            prefix,
+        }
+    }
+    /// Returns the pinned fragment ID.
+    #[must_use]
+    pub const fn fragment(&self) -> &FragmentId {
+        &self.fragment
+    }
+    /// Returns the exact pinned revision.
+    #[must_use]
+    pub const fn revision(&self) -> Revision {
+        self.revision
+    }
+    /// Returns the exact pinned semantic digest.
+    #[must_use]
+    pub const fn digest(&self) -> &Sha256Digest {
+        &self.digest
+    }
+    /// Returns the optional local requirement prefix.
+    #[must_use]
+    pub const fn prefix(&self) -> Option<&LocalRequirementId> {
+        self.prefix.as_ref()
+    }
+}
+
+/// A versioned surface authority containing direct and pinned requirements.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Surface {
+    id: SurfaceId,
+    revision: Revision,
+    title: Title,
+    journey: JourneyId,
+    status: LifecycleStatus,
+    owners: BTreeSet<OwnerRef>,
+    requirements: BTreeMap<LocalRequirementId, Requirement>,
+    fragments: BTreeSet<FragmentUse>,
+    description: Option<Description>,
+    extensions: Extensions,
+}
+
+impl Surface {
+    /// Creates a nonempty surface composition with unique local identities and pins.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: SurfaceId,
+        revision: Revision,
+        title: Title,
+        journey: JourneyId,
+        status: LifecycleStatus,
+        owners: Vec<OwnerRef>,
+        requirements: Vec<Requirement>,
+        fragments: Vec<FragmentUse>,
+        description: Option<Description>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        let owners = owner_set(owners)?;
+        if requirements.is_empty() && fragments.is_empty() {
+            return Err(EntityBuildError::SurfaceCompositionRequired);
+        }
+        let requirement_count = requirements.len();
+        let requirements: BTreeMap<_, _> = requirements
+            .into_iter()
+            .map(|requirement| (requirement.id().clone(), requirement))
+            .collect();
+        if requirements.len() != requirement_count {
+            return Err(EntityBuildError::DuplicateRequirement);
+        }
+        let fragment_count = fragments.len();
+        let fragments: BTreeSet<_> = fragments.into_iter().collect();
+        if fragments.len() != fragment_count {
+            return Err(EntityBuildError::DuplicateFragmentUse);
+        }
+        Ok(Self {
+            id,
+            revision,
+            title,
+            journey,
+            status,
+            owners,
+            requirements,
+            fragments,
+            description,
+            extensions,
+        })
+    }
+
+    /// Returns the surface ID.
+    #[must_use]
+    pub const fn id(&self) -> &SurfaceId {
+        &self.id
+    }
+    /// Returns the positive authored revision.
+    #[must_use]
+    pub const fn revision(&self) -> Revision {
+        self.revision
+    }
+    /// Returns the title.
+    #[must_use]
+    pub const fn title(&self) -> &Title {
+        &self.title
+    }
+    /// Returns the parent journey ID.
+    #[must_use]
+    pub const fn journey(&self) -> &JourneyId {
+        &self.journey
+    }
+    /// Returns lifecycle status.
+    #[must_use]
+    pub const fn status(&self) -> LifecycleStatus {
+        self.status
+    }
+    /// Returns owners in deterministic order.
+    #[must_use]
+    pub const fn owners(&self) -> &BTreeSet<OwnerRef> {
+        &self.owners
+    }
+    /// Returns direct requirements keyed by local identity.
+    #[must_use]
+    pub const fn requirements(&self) -> &BTreeMap<LocalRequirementId, Requirement> {
+        &self.requirements
+    }
+    /// Returns exact fragment uses in deterministic pin order.
+    #[must_use]
+    pub const fn fragments(&self) -> &BTreeSet<FragmentUse> {
+        &self.fragments
+    }
+    /// Returns the optional description.
+    #[must_use]
+    pub const fn description(&self) -> Option<&Description> {
+        self.description.as_ref()
+    }
+    /// Returns extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -939,6 +1099,10 @@ pub enum EntityBuildError {
     RequirementsRequired,
     /// A local requirement ID appeared more than once in one authority.
     DuplicateRequirement,
+    /// A surface declared neither a direct requirement nor a fragment use.
+    SurfaceCompositionRequired,
+    /// The same exact fragment pin appeared more than once.
+    DuplicateFragmentUse,
     /// An extension namespace was invalid.
     InvalidExtensionNamespace,
     /// An extension object key was invalid.
@@ -973,6 +1137,10 @@ impl Display for EntityBuildError {
             Self::ApplicabilityNodesExceeded => "applicability node count exceeds 256",
             Self::RequirementsRequired => "fragment requires at least one requirement",
             Self::DuplicateRequirement => "authority requirements contain a duplicate local ID",
+            Self::SurfaceCompositionRequired => {
+                "surface requires at least one direct requirement or fragment use"
+            }
+            Self::DuplicateFragmentUse => "surface fragments contain a duplicate exact pin",
             Self::InvalidExtensionNamespace => "invalid extension namespace",
             Self::InvalidExtensionKey => "invalid extension key",
             Self::InvalidExtensionValue => "invalid extension value",
@@ -1310,6 +1478,59 @@ mod tests {
                 .map(LocalRequirementId::as_str)
                 .collect::<Vec<_>>(),
             ["reachable", "submittable"]
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn surface_requires_unique_direct_or_exact_pinned_composition() -> Result<(), Box<dyn Error>> {
+        let id = SurfaceId::new("account.create.signup.start")?;
+        let revision = Revision::new(1)?;
+        let title = Title::new("Start signup")?;
+        let journey = JourneyId::new("account.create.signup")?;
+        let account_owner = owner("owner://team/accounts")?;
+        let digest: Sha256Digest =
+            "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855".parse()?;
+        let fragment_use = FragmentUse::new(
+            FragmentId::new("shared.account")?,
+            revision,
+            digest,
+            Some(LocalRequirementId::new("shared")?),
+        );
+        let build = |requirements, fragments| {
+            Surface::new(
+                id.clone(),
+                revision,
+                title.clone(),
+                journey.clone(),
+                LifecycleStatus::Active,
+                vec![account_owner.clone()],
+                requirements,
+                fragments,
+                None,
+                Extensions::default(),
+            )
+        };
+        assert!(matches!(
+            build(Vec::new(), Vec::new()),
+            Err(EntityBuildError::SurfaceCompositionRequired)
+        ));
+        let direct = requirement("reachable")?;
+        assert!(matches!(
+            build(vec![direct.clone(), direct], Vec::new()),
+            Err(EntityBuildError::DuplicateRequirement)
+        ));
+        assert!(matches!(
+            build(Vec::new(), vec![fragment_use.clone(), fragment_use.clone()]),
+            Err(EntityBuildError::DuplicateFragmentUse)
+        ));
+        let surface = build(vec![requirement("reachable")?], vec![fragment_use.clone()])?;
+        assert_eq!(surface.fragments().first(), Some(&fragment_use));
+        assert_eq!(surface.requirements().len(), 1);
+        assert_eq!(fragment_use.revision().get(), 1);
+        assert_eq!(
+            fragment_use.prefix().map(LocalRequirementId::as_str),
+            Some("shared")
         );
         Ok(())
     }

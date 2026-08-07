@@ -21,8 +21,8 @@ pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
 pub use entity::{
     Applicability, ApplicabilityKind, Capability, ComparisonOperator, Description,
     EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Fragment,
-    Journey, MembershipOperator, Requirement, RequirementStatement, Revision, Title, Transition,
-    TransitionTrigger,
+    FragmentUse, Journey, MembershipOperator, Requirement, RequirementStatement, Revision, Surface,
+    Title, Transition, TransitionTrigger,
 };
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
