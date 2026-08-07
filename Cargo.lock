@@ -105,6 +105,7 @@ dependencies = [
  "eqm_runner",
  "serde",
  "serde_json",
+ "serde_json_canonicalizer",
  "tempfile",
 ]
 

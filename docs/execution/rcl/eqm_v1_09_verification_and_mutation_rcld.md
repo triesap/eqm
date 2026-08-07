@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 09: Verification And Mutation
 
-Status: in progress; RCLD 08 complete
+Status: in progress; Step 104 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 08
-Current checkpoint: `step_104`
+Current checkpoint: `step_105`
 
 ## Purpose
 
@@ -78,4 +78,5 @@ workspace cleanliness assertions.
 
 | Step range | Status | Result |
 | --- | --- | --- |
-| `step_104`-`step_111` | pending | - |
+| `step_104` | complete | `verify` selects executable evidence by exact unit/target or conservatively retains the complete selection for an exact affected baseline, supports a write-free dry-run plan, resolves only declared local runners against independently read repository-program digests and finite authority, substitutes typed selector/target/result values without a shell, executes under bounded empty-environment process controls, validates normalized results and selector identity, reports immediate outcome and trust insufficiency separately, constructs exact-subject content-addressed evidence, and atomically persists immutable results below `.eqm/results/` without modifying authored files |
+| `step_105`-`step_111` | pending | - |

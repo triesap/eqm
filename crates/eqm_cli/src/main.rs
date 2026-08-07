@@ -42,6 +42,7 @@ fn main() -> ExitCode {
                     | cli::CommandName::Affected
                     | cli::CommandName::Discover
                     | cli::CommandName::Reconcile
+                    | cli::CommandName::Verify
             ) {
                 match std::env::current_dir() {
                     Ok(start) if command == cli::CommandName::Validate => {
@@ -74,7 +75,10 @@ fn main() -> ExitCode {
                     Ok(start) if command == cli::CommandName::Discover => {
                         commands::discover::execute(parsed, &start)
                     }
-                    Ok(start) => commands::reconcile::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::Reconcile => {
+                        commands::reconcile::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::verify::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {
@@ -93,7 +97,11 @@ fn main() -> ExitCode {
                 Ok(value) => value,
                 Err(error) => {
                     let _ = reporter.log(&format!("error: {error}"));
-                    return ExitCode::from(6);
+                    return ExitCode::from(if command == cli::CommandName::Verify {
+                        5
+                    } else {
+                        6
+                    });
                 }
             };
             match renderer::render(&execution.payload, format).and_then(|document| {

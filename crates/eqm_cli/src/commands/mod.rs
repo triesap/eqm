@@ -12,6 +12,7 @@ pub mod obligations;
 pub mod reconcile;
 pub mod show;
 pub mod validate;
+pub mod verify;
 
 use crate::renderer::OutputPayload;
 use eqm_domain::{DiagnosticBuildError, RepoPath, SourceLocation, SourceName, SourcePosition};
