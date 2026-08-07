@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: in progress; Step 062 complete
+Status: in progress; Step 063 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: `step_063`
+Current checkpoint: `step_064`
 
 ## Purpose
 
@@ -87,4 +87,5 @@ never converts an unsatisfied facet into `satisfied`.
 | `step_060` | complete | Total three-valued applicability evaluates constants, equality, inequality, finite membership, exclusion, conjunction, disjunction, and negation against validated profile declarations; exhaustive truth tables cover known and unknown selections while undeclared dimensions or values fail before Boolean evaluation can short-circuit |
 | `step_061` | complete | Exact policy/profile requests validate revisions, complete policy profile sets, declared finite values, and every known-or-explicitly-unknown dimension; development may use prepared repository defaults while pull-request and release modes require explicit trusted and protected authority respectively, and closed policy selectors match every populated unit, requirement, risk, facet, and scope axis |
 | `step_062` | complete | Exact protected inputs compare contract requirement level, risk, facets, and invariant identity; policy profiles, targets, rules, freshness, trust, counts, and waiver constraints; immutable runner authority; waiver approver authority; and trust controls, classifying equality or strengthening while rejecting every removal, weakening, or incomparable replacement |
-| `step_063`-`step_070` | pending | - |
+| `step_063` | complete | Finalized active requirements evaluate applicability, match every closed selector axis, compose overlapping rules on strongest level/trust/count and smallest age, derive one facet obligation per each-target, shared-provider, or complete target-set subject, and retain unmatched warnings and unknown applicability without duplicates |
+| `step_064`-`step_070` | pending | - |

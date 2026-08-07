@@ -104,7 +104,7 @@ impl PolicyProfileRequest {
 }
 
 /// One validated profile with every declared dimension known or explicitly unknown.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct SelectedProfile {
     id: ProfileId,
     revision: Revision,
