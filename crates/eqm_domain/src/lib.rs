@@ -4,6 +4,7 @@
 
 mod diagnostic;
 mod id;
+mod path;
 mod schema;
 
 pub use diagnostic::{
@@ -16,4 +17,5 @@ pub use id::{
     IdParseError, JourneyId, LocalRequirementId, PolicyId, ProfileId, ProviderId, RunnerId,
     SurfaceId, TargetId, UnitId, WaiverId,
 };
+pub use path::{RepoPath, RepoPathError};
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};

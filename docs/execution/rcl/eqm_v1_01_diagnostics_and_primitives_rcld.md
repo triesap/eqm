@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 01: Diagnostics And Primitives
 
-Status: in progress; Steps 009-011 complete
+Status: in progress; Steps 009-012 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 00
-Current checkpoint: `step_012`
+Current checkpoint: `step_013`
 
 ## Purpose
 
@@ -64,4 +64,5 @@ only representative invalid values.
 | `step_009` | complete | Stable diagnostic types, ordering, rendering, and registry validation implemented |
 | `step_010` | complete | Exact-current schema URI, schema version, and tool version primitives implemented |
 | `step_011` | complete | Typed entity and requirement IDs enforce exact ASCII grammar and qualification |
-| `step_012`-`step_016` | pending | - |
+| `step_012` | complete | Lexical normalized repository paths and portable collision keys implemented |
+| `step_013`-`step_016` | pending | - |

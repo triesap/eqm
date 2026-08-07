@@ -34,6 +34,7 @@ unimplemented = "deny"
 unwrap_used = "deny"
 
 [workspace.dependencies]
+unicode-normalization = "=0.1.24"
 eqm_domain = { path = "crates/eqm_domain", version = "=0.1.0" }
 eqm_engine = { path = "crates/eqm_engine", version = "=0.1.0" }
 eqm_manifest = { path = "crates/eqm_manifest", version = "=0.1.0" }
