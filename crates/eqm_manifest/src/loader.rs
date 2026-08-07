@@ -62,6 +62,15 @@ pub fn load_workspace(
             .map_err(|_| LoadError::WorkspaceTarget)?,
         ..WorkspaceGraphInput::default()
     };
+    let config_source = config
+        .config_path()
+        .strip_prefix(config.repository_root())
+        .ok()
+        .and_then(|path| RepoPath::new(path.to_string_lossy().replace('\\', "/")).ok())
+        .ok_or(LoadError::Config)?;
+    let lock_source = RepoPath::new(config.dto().lockfile.as_deref().unwrap_or("eqm.lock"))
+        .map_err(|_| LoadError::Lock)?;
+    let mut source_map = BTreeMap::new();
     let mut target_roots = BTreeMap::new();
     let mut portable_roots = BTreeSet::new();
     for (id, target) in &config.dto().targets {
@@ -94,10 +103,13 @@ pub fn load_workspace(
         )
         .map_err(|_| LoadError::WorkspaceTarget)?;
         target_roots.insert(id, root);
+        source_map.insert(
+            format!("target:{}", authority.id()).into(),
+            config_source.clone(),
+        );
         input.targets.push(authority);
     }
 
-    let mut source_map = BTreeMap::new();
     for document in &documents {
         match document.document() {
             DocumentDto::Capability(_)
@@ -176,6 +188,18 @@ pub fn load_workspace(
                 input.waivers.push(value);
             }
         }
+    }
+    for entry in lock.imports().values() {
+        source_map.insert(
+            format!("import:{}@{}", entry.id, entry.revision.get()).into(),
+            lock_source.clone(),
+        );
+    }
+    for entry in lock.adapters().values() {
+        source_map.insert(
+            format!("adapter_lock:{}@{}", entry.id, entry.version.as_str()).into(),
+            lock_source.clone(),
+        );
     }
     apply_lock(&mut input, lock);
     Ok(LoadedWorkspace {

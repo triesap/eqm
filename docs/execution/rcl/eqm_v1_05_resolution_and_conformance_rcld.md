@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: in progress; RCLD 04 complete
+Status: in progress; Step 057 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: `step_057`
+Current checkpoint: `step_058`
 
 ## Purpose
 
@@ -81,4 +81,5 @@ never converts an unsatisfied facet into `satisfied`.
 
 | Step range | Status | Result |
 | --- | --- | --- |
-| `step_057`-`step_070` | pending | - |
+| `step_057` | complete | Pure resolution detects every indexed authority and binding-coordinate duplicate before construction, resolves typed graph references across contracts, bindings, policies, profiles, runners, waivers, targets, imports, and transitions, and emits deterministic source-linked EQM-E0300/E0301 findings |
+| `step_058`-`step_070` | pending | - |

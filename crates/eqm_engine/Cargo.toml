@@ -11,5 +11,8 @@ rust-version.workspace = true
 [dependencies]
 eqm_domain.workspace = true
 
+[dev-dependencies]
+eqm_manifest.workspace = true
+
 [lints]
 workspace = true

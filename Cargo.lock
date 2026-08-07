@@ -118,6 +118,7 @@ name = "eqm_engine"
 version = "0.1.0"
 dependencies = [
  "eqm_domain",
+ "eqm_manifest",
 ]
 
 [[package]]
