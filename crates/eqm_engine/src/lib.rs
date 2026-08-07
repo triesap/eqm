@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod affected;
 mod applicability;
 mod conformance;
 mod coverage;
@@ -20,6 +21,7 @@ mod selection;
 mod structure;
 mod waivers;
 
+pub use affected::{AffectedIndexes, AffectedSet, ChangedFile, analyze_affected_set};
 pub use applicability::{
     ApplicabilityContext, ApplicabilityError, TruthValue, evaluate_applicability,
 };
