@@ -5,6 +5,7 @@
 mod applicability;
 mod conformance;
 mod coverage;
+mod diff;
 mod equivalence;
 mod expand;
 mod exposure;
@@ -29,6 +30,10 @@ pub use conformance::{
 pub use coverage::{
     CoverageExpectation, CoverageMismatch, CoverageReport, CoverageStatus, EvidenceCandidate,
     evaluate_evidence_coverage,
+};
+pub use diff::{
+    SemanticChange, SemanticChangeKind, SemanticCoordinate, SemanticFieldClass, SemanticProjection,
+    SemanticValue, classify_diffs,
 };
 pub use equivalence::{
     EquivalenceReport, EquivalenceStatus, TargetEvaluation, evaluate_target_set_equivalence,
