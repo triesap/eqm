@@ -14,6 +14,7 @@ mod reference;
 mod schema;
 mod time;
 mod vocabulary;
+mod waiver;
 
 pub use diagnostic::{
     Diagnostic, DiagnosticBuildError, DiagnosticCode, DiagnosticDescriptor,
@@ -56,4 +57,7 @@ pub use vocabulary::{
     ArtifactRole, AttemptOutcome, EvidenceKind, Facet, HttpMethod, IntendedExposureState,
     LifecycleStatus, ReleaseChannel, RequirementLevel, RequirementScope, RiskClass, TrustLevel,
     VocabularyParseError,
+};
+pub use waiver::{
+    Waiver, WaiverApplication, WaiverBuildError, WaiverProfileScope, WaiverReason, WaiverScope,
 };
