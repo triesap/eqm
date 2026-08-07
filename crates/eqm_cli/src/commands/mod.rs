@@ -1,6 +1,8 @@
 //! Command orchestration over one prepared session.
 
 pub mod check;
+pub mod context;
+pub mod evaluation;
 pub mod locate;
 pub mod show;
 pub mod validate;

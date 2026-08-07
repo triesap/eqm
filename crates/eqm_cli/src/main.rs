@@ -35,6 +35,7 @@ fn main() -> ExitCode {
                     | cli::CommandName::Check
                     | cli::CommandName::Show
                     | cli::CommandName::Locate
+                    | cli::CommandName::Context
             ) {
                 match std::env::current_dir() {
                     Ok(start) if command == cli::CommandName::Validate => {
@@ -46,7 +47,10 @@ fn main() -> ExitCode {
                     Ok(start) if command == cli::CommandName::Show => {
                         commands::show::execute(parsed, &start)
                     }
-                    Ok(start) => commands::locate::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::Locate => {
+                        commands::locate::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::context::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {

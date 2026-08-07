@@ -124,6 +124,22 @@ pub struct ProfileValueDto {
 }
 
 impl ProfileValueDto {
+    /// Creates one exact known selected profile dimension record.
+    #[must_use]
+    pub fn from_parts(
+        profile: &ProfileId,
+        revision: Revision,
+        dimension: &DimensionId,
+        value: &SymbolicValueId,
+    ) -> Self {
+        Self {
+            profile: profile.as_str().to_owned(),
+            revision: revision.get(),
+            dimension: dimension.as_str().to_owned(),
+            value: value.as_str().to_owned(),
+        }
+    }
+
     /// Expands a domain profile selection into sorted protocol records.
     #[must_use]
     pub fn from_selection(selection: &ProfileSelection) -> Vec<Self> {

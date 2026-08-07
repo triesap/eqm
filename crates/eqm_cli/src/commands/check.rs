@@ -1,15 +1,15 @@
 //! Non-executing structural, policy, and obligation checks.
 
 use super::CommandExecution;
+use super::evaluation;
 use crate::cli::ParsedCli;
 use crate::renderer::OutputPayload;
 use crate::session::{SessionRequest, prepare};
 use chrono::{DateTime, SecondsFormat, Utc};
 use eqm_domain::{ArtifactRole, Diagnostic, DiagnosticCode, RepoPath, Severity, UtcInstant};
 use eqm_engine::{
-    ApplicabilityContext, AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef,
-    ProfileRequest, RepositoryEntry, RepositoryEntryKind, RepositoryView, ScopeSubject,
-    derive_obligations, diagnostic_registry, evaluate_structure, select_policy_profiles,
+    RepositoryEntry, RepositoryEntryKind, RepositoryView, ScopeSubject, diagnostic_registry,
+    evaluate_structure,
 };
 use eqm_protocol::{
     CheckResultDto, CommandIdentity, DiagnosticDto, EvaluationModeDto, FacetStatusDto, FindingDto,
@@ -24,6 +24,7 @@ use std::time::SystemTime;
 /// Runs `check` without invoking any runner or adapter.
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
+    let profiles = parsed.global.profiles.clone();
     let units = option_values(&parsed, "--unit");
     let targets = option_values(&parsed, "--target");
     let request = SessionRequest::new(parsed.global, parsed.command.name);
@@ -63,46 +64,12 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         }
     }
 
-    let policy = graph.policies().values().next().ok_or("policy required")?;
-    let profile_requests = policy
-        .profiles()
-        .iter()
-        .map(|id| {
-            let ((_, revision), _) = graph
-                .profiles()
-                .iter()
-                .find(|((candidate, _), _)| candidate == id)
-                .ok_or("profile required")?;
-            Ok(ProfileRequest::new(id.clone(), *revision, Vec::new())?)
-        })
-        .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
-    let selection_request = PolicyProfileRequest::new(
-        AuthorityOrigin::CandidateLocal,
-        PolicyRef::new(policy.id().clone(), policy.revision()),
-        profile_requests,
-    )?;
-    let selection = select_policy_profiles(
-        graph,
-        EvaluationMode::Development,
-        None,
-        Some(&selection_request),
-    )?;
-    let selected = selection
-        .profiles()
-        .values()
-        .next()
-        .ok_or("selected profile required")?;
-    let profile = graph
-        .profiles()
-        .get(&(selected.id().clone(), selected.revision()))
-        .ok_or("profile required")?;
-    let applicability = ApplicabilityContext::new(profile, selected.values().clone())?;
-    let obligations = derive_obligations(session.finalized(), &selection, &applicability, None)?;
+    let (_, obligations) = evaluation::derive(&session, &profiles)?;
     for obligation in obligations.obligations.values().filter(|obligation| {
         (units.is_empty() || units.contains(obligation.key.unit.as_str()))
             && (targets.is_empty() || subject_matches(&obligation.key.subject, &targets))
     }) {
-        let id = obligation_id(obligation);
+        let id = evaluation::obligation_id(obligation);
         findings.insert(FindingDto {
             diagnostic_code: "EQM-E0500".to_owned(),
             obligation: Some(id.clone()),
@@ -214,30 +181,6 @@ fn subject_matches(subject: &ScopeSubject, targets: &BTreeSet<String>) -> bool {
             .any(|target| targets.contains(target.as_str())),
         ScopeSubject::Provider(_) => true,
     }
-}
-
-fn obligation_id(obligation: &eqm_engine::Obligation) -> String {
-    let subject = match &obligation.key.subject {
-        ScopeSubject::Target(value) => format!("target:{value}"),
-        ScopeSubject::Provider(value) => format!("provider:{value}"),
-        ScopeSubject::TargetSet(values) => format!(
-            "targets:{}",
-            values
-                .iter()
-                .map(ToString::to_string)
-                .collect::<Vec<_>>()
-                .join(",")
-        ),
-    };
-    format!(
-        "{}@{}:{}:{}:{}:{}",
-        obligation.key.policy,
-        obligation.key.policy_revision.get(),
-        obligation.key.unit,
-        obligation.key.requirement,
-        subject,
-        obligation.key.facet
-    )
 }
 
 fn context(offline: bool) -> Result<InvocationContextDto<(), ()>, Box<dyn Error>> {

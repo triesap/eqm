@@ -60,12 +60,36 @@ impl ApplicabilityContext {
         profile: &Profile,
         values: BTreeMap<DimensionId, Option<SymbolicValueId>>,
     ) -> Result<Self, ApplicabilityError> {
-        let declarations: BTreeMap<_, _> = profile
-            .dimensions()
-            .iter()
-            .map(|(id, dimension)| (id.clone(), dimension.values().clone()))
-            .collect();
-        for (dimension, value) in &values {
+        Self::from_profiles([(profile, &values)])
+    }
+
+    /// Creates one context from the complete exact selected profile set.
+    pub fn from_profiles<'a>(
+        profiles: impl IntoIterator<
+            Item = (
+                &'a Profile,
+                &'a BTreeMap<DimensionId, Option<SymbolicValueId>>,
+            ),
+        >,
+    ) -> Result<Self, ApplicabilityError> {
+        let mut declarations = BTreeMap::new();
+        let mut selected = BTreeMap::new();
+        for (profile, values) in profiles {
+            for (id, dimension) in profile.dimensions() {
+                if declarations
+                    .insert(id.clone(), dimension.values().clone())
+                    .is_some()
+                {
+                    return Err(ApplicabilityError::DuplicateDimension);
+                }
+            }
+            for (dimension, value) in values {
+                if selected.insert(dimension.clone(), value.clone()).is_some() {
+                    return Err(ApplicabilityError::DuplicateDimension);
+                }
+            }
+        }
+        for (dimension, value) in &selected {
             let allowed = declarations
                 .get(dimension)
                 .ok_or(ApplicabilityError::UndeclaredDimension)?;
@@ -75,7 +99,7 @@ impl ApplicabilityContext {
         }
         Ok(Self {
             declarations,
-            values,
+            values: selected,
         })
     }
 
@@ -189,6 +213,8 @@ pub enum ApplicabilityError {
     UndeclaredDimension,
     /// An expression or selected value named a value outside its finite declaration.
     UndeclaredValue,
+    /// Two selected profiles declared the same dimension identity.
+    DuplicateDimension,
 }
 
 impl Display for ApplicabilityError {
@@ -196,6 +222,7 @@ impl Display for ApplicabilityError {
         formatter.write_str(match self {
             Self::UndeclaredDimension => "applicability dimension is not declared",
             Self::UndeclaredValue => "applicability value is not declared",
+            Self::DuplicateDimension => "applicability dimension is declared by multiple profiles",
         })
     }
 }
