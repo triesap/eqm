@@ -6,6 +6,7 @@ mod affected;
 mod applicability;
 mod conformance;
 mod coverage;
+mod diagnostics;
 mod diff;
 mod equivalence;
 mod expand;
@@ -34,6 +35,7 @@ pub use coverage::{
     CoverageExpectation, CoverageMismatch, CoverageReport, CoverageStatus, EvidenceCandidate,
     evaluate_evidence_coverage,
 };
+pub use diagnostics::{diagnostic_registry, explain_diagnostic};
 pub use diff::{
     SemanticChange, SemanticChangeKind, SemanticCoordinate, SemanticFieldClass, SemanticProjection,
     SemanticValue, classify_diffs,

@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 06: Exposure And Analysis
 
-Status: in progress; Step 075 complete
+Status: complete; Steps 071-076 green
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 05
-Current checkpoint: `step_076`
+Current checkpoint: none; continue with RCLD 07
 
 ## Purpose
 
@@ -65,4 +65,4 @@ completeness checks.
 | `step_073` | complete | Explicit finalized baseline/candidate projections classify protected-axis additions/removals and ordered changes as strengthened/weakened, unordered entities as added/removed, and evidence, waiver, exposure, and excluded metadata in their stable classes; output sorts by the normative coordinate and reverses directional classes while swapping values |
 | `step_074` | complete | Explicit reverse indexes map artifacts, targets, semantic coordinates, dependency and fragment-consumer edges, and derived obligations; mapped files remain precise, direct impacts expand through transitive dependents, unmapped target files conservatively select every target unit, repository-global or unclassified authority changes select the full workspace, and metadata-only semantic changes may remain empty |
 | `step_075` | complete | Exposure, conformance, evidence, release, and equivalence share a closed matrix family with typed target/unit/facet axes, sorted labels, row-major cells, obligation and diagnostic attribution, explicit unknown cells for every unprepared required coordinate, and rejection of empty or out-of-axis inputs |
-| `step_076` | pending | - |
+| `step_076` | complete | One sorted registry owns every currently emitted EQM-E0300 through EQM-E0305 diagnostic exactly once, supplies title, authority, explanation, and remediation to both emission and explain lookup, rejects unregistered codes, validates descriptor completeness, and proves every registry entry is live |

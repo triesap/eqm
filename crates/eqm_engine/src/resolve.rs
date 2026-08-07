@@ -1,9 +1,10 @@
 //! Deterministic cross-reference resolution into an immutable graph.
 
+use crate::{diagnostic_registry, explain_diagnostic};
 use eqm_domain::{
     Diagnostic, DiagnosticBuildError, DiagnosticCode, DiagnosticDescriptor, EvidenceScopeSubject,
-    RepoPath, Severity, SourceLocation, SourceName, SourcePosition, WorkspaceGraph,
-    WorkspaceGraphBuildError, WorkspaceGraphInput,
+    RepoPath, SourceLocation, SourceName, SourcePosition, WorkspaceGraph, WorkspaceGraphBuildError,
+    WorkspaceGraphInput,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -11,62 +12,7 @@ use std::fmt::{self, Display, Formatter};
 
 /// Returns the stable graph-resolution diagnostic registry.
 pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 6], DiagnosticBuildError> {
-    let duplicate = DiagnosticCode::from_number(300).ok_or(DiagnosticBuildError::InvalidCode)?;
-    let dangling = DiagnosticCode::from_number(301).ok_or(DiagnosticBuildError::InvalidCode)?;
-    let invariant = DiagnosticCode::from_number(302).ok_or(DiagnosticBuildError::InvalidCode)?;
-    let risk = DiagnosticCode::from_number(303).ok_or(DiagnosticBuildError::InvalidCode)?;
-    let pin = DiagnosticCode::from_number(304).ok_or(DiagnosticBuildError::InvalidCode)?;
-    let collision = DiagnosticCode::from_number(305).ok_or(DiagnosticBuildError::InvalidCode)?;
-    Ok([
-        DiagnosticDescriptor {
-            code: duplicate,
-            severity: Severity::Error,
-            title: "duplicate graph authority",
-            authority: "docs/specification/canonicalization.md",
-            explanation: "Two inputs claim one semantic graph identity.",
-            remediation: "Retain exactly one authority for the reported identity.",
-        },
-        DiagnosticDescriptor {
-            code: dangling,
-            severity: Severity::Error,
-            title: "dangling graph reference",
-            authority: "docs/specification/canonicalization.md",
-            explanation: "An authored typed reference has no matching authority.",
-            remediation: "Add the exact authority or correct the typed reference.",
-        },
-        DiagnosticDescriptor {
-            code: invariant,
-            severity: Severity::Error,
-            title: "invalid graph relationship",
-            authority: "docs/specification/manifest-contracts.md",
-            explanation: "A resolved relationship violates hierarchy, membership, or lifecycle rules.",
-            remediation: "Align parent references, membership, identifiers, and lifecycle state.",
-        },
-        DiagnosticDescriptor {
-            code: risk,
-            severity: Severity::Error,
-            title: "invalid risk inheritance",
-            authority: "docs/specification/vocabularies.md",
-            explanation: "A requirement lowers its journey or fragment risk authority.",
-            remediation: "Retain inherited risk or raise the requirement risk class.",
-        },
-        DiagnosticDescriptor {
-            code: pin,
-            severity: Severity::Error,
-            title: "invalid fragment pin",
-            authority: "docs/specification/manifest-contracts.md",
-            explanation: "A fragment use does not match available semantic content exactly.",
-            remediation: "Pin the exact fragment ID, revision, and canonical semantic digest.",
-        },
-        DiagnosticDescriptor {
-            code: collision,
-            severity: Severity::Error,
-            title: "fragment expansion collision",
-            authority: "docs/specification/manifest-contracts.md",
-            explanation: "Expansion would replace or duplicate a surface requirement identity.",
-            remediation: "Choose a unique prefix or remove the conflicting requirement.",
-        },
-    ])
+    diagnostic_registry()
 }
 
 /// Resolves every typed cross-reference and constructs deterministic graph indexes.
@@ -500,15 +446,12 @@ pub(crate) fn diagnostic<'a>(
         .map(source_location)
         .collect::<Result<Vec<_>, _>>()
         .map_err(ResolutionError::Diagnostic)?;
-    Diagnostic::new(
-        code,
-        Severity::Error,
-        message,
-        source,
-        related,
-        Some("Correct the authority or reference and retry resolution.".into()),
-    )
-    .map_err(ResolutionError::Diagnostic)
+    let descriptor = explain_diagnostic(code)
+        .map_err(ResolutionError::Diagnostic)?
+        .ok_or(DiagnosticBuildError::InvalidCode)
+        .map_err(ResolutionError::Diagnostic)?;
+    Diagnostic::from_descriptor(&descriptor, message, source, related)
+        .map_err(ResolutionError::Diagnostic)
 }
 
 fn source_location(path: &RepoPath) -> Result<SourceLocation, DiagnosticBuildError> {
