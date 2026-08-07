@@ -428,8 +428,13 @@ impl PartialOrd for DiagnosticDto {
 
 /// Implemented by every closed command-result DTO.
 pub trait CommandResultDto {
-    /// Returns the discriminant that must equal the envelope command.
+    /// Returns the command shape owned by this result type.
     fn command(&self) -> CommandIdentity;
+
+    /// Returns the serialized discriminant, which normally equals [`Self::command`].
+    fn declared_command(&self) -> CommandIdentity {
+        self.command()
+    }
 }
 
 /// Common JSON response envelope.
@@ -454,10 +459,9 @@ impl<R: CommandResultDto, S, B> ReportEnvelope<R, S, B> {
         result: Option<R>,
         mut diagnostics: Vec<DiagnosticDto>,
     ) -> Result<Self, ReportBuildError> {
-        if result
-            .as_ref()
-            .is_some_and(|value| value.command() != command)
-        {
+        if result.as_ref().is_some_and(|value| {
+            value.command() != command || value.declared_command() != value.command()
+        }) {
             return Err(ReportBuildError::CommandMismatch);
         }
         diagnostics.sort_unstable();
