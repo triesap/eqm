@@ -6,6 +6,7 @@ mod diagnostic;
 mod digest;
 mod entity;
 mod evidence;
+mod evidence_result;
 mod id;
 mod path;
 mod reference;
@@ -29,6 +30,11 @@ pub use entity::{
 pub use evidence::{
     EvidenceSelector, EvidenceSpecBuildError, EvidenceSpecification, PositiveCount,
 };
+pub use evidence_result::{
+    AttemptAggregate, EvidenceAttachment, EvidenceAttempt, EvidenceCounts, EvidencePayload,
+    EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject,
+    ExecutionPayload, ProducerRef, ProfileSelection, RepositoryIdentity, SourceCommit,
+};
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
     FrameworkId, FullRequirementId, IdParseError, JourneyId, LocalRequirementId, PlatformId,
@@ -42,6 +48,7 @@ pub use reference::{
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
 pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
 pub use vocabulary::{
-    ArtifactRole, EvidenceKind, Facet, HttpMethod, IntendedExposureState, LifecycleStatus,
-    ReleaseChannel, RequirementLevel, RequirementScope, RiskClass, VocabularyParseError,
+    ArtifactRole, AttemptOutcome, EvidenceKind, Facet, HttpMethod, IntendedExposureState,
+    LifecycleStatus, ReleaseChannel, RequirementLevel, RequirementScope, RiskClass, TrustLevel,
+    VocabularyParseError,
 };

@@ -152,6 +152,10 @@ pub enum VocabularyParseError {
     InvalidEvidenceKind,
     /// Release channel was not in the v1 set.
     InvalidReleaseChannel,
+    /// Trust level was not in the v1 set.
+    InvalidTrustLevel,
+    /// Attempt outcome was not in the v1 set.
+    InvalidAttemptOutcome,
 }
 
 impl Display for VocabularyParseError {
@@ -167,6 +171,8 @@ impl Display for VocabularyParseError {
             Self::InvalidIntendedExposureState => "invalid intended exposure state",
             Self::InvalidEvidenceKind => "invalid evidence kind",
             Self::InvalidReleaseChannel => "invalid release channel",
+            Self::InvalidTrustLevel => "invalid trust level",
+            Self::InvalidAttemptOutcome => "invalid attempt outcome",
         })
     }
 }
@@ -269,6 +275,21 @@ closed_vocabulary!(
     ReleaseChannel,
     InvalidReleaseChannel,
     [Development => "development", Internal => "internal", Beta => "beta", Production => "production"]
+);
+closed_vocabulary!(
+    /// Claimed or effective evidence trust from weakest to strongest.
+    TrustLevel,
+    InvalidTrustLevel,
+    [UntrustedLocal => "untrusted_local", TrustedCi => "trusted_ci", SignedCi => "signed_ci"]
+);
+closed_vocabulary!(
+    /// One immutable execution attempt outcome.
+    AttemptOutcome,
+    InvalidAttemptOutcome,
+    [
+        Passed => "passed", Failed => "failed", Skipped => "skipped", Filtered => "filtered",
+        Quarantined => "quarantined", TimedOut => "timed_out", Cancelled => "cancelled", Error => "error"
+    ]
 );
 
 #[cfg(test)]
