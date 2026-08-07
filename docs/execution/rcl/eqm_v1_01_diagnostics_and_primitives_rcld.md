@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 01: Diagnostics And Primitives
 
-Status: ready; RCLD 00 complete
+Status: in progress; Step 009 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 00
-Current checkpoint: `step_009`
+Current checkpoint: `step_010`
 
 ## Purpose
 
@@ -61,4 +61,5 @@ only representative invalid values.
 
 | Step range | Status | Result |
 | --- | --- | --- |
-| `step_009`-`step_016` | pending | - |
+| `step_009` | complete | Stable diagnostic types, ordering, rendering, and registry validation implemented |
+| `step_010`-`step_016` | pending | - |
