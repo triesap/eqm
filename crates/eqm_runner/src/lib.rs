@@ -4,6 +4,7 @@
 
 mod execution;
 mod normalized;
+mod persistence;
 mod resolution;
 mod substitution;
 
@@ -12,6 +13,7 @@ pub use execution::{
     LocalExecutionError, execute_local_process,
 };
 pub use normalized::{NormalizedTestResult, TestResultReadError, read_test_result};
+pub use persistence::{EvidenceWriteError, EvidenceWriteOutcome, persist_evidence_result};
 pub use resolution::{
     ResolvedProgram, ResolvedRunner, RunnerResolutionAuthority, RunnerResolutionError,
     resolve_runner,

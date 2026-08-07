@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 07: Runners And Discovery
 
-Status: in progress; Step 080 complete
+Status: in progress; Step 081 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 06
-Current checkpoint: `step_081`
+Current checkpoint: `step_082`
 
 ## Purpose
 
@@ -84,4 +84,5 @@ flood, atomic-write, inventory, and framework fixture tests.
 | `step_078` | complete | Invocation bindings require absolute UTF-8 NUL-free target/result paths and a bounded compact JSON-object selector; each typed placeholder replaces exactly one argv element, shell metacharacters remain literal data, and repeated execution-sensitive placeholders fail before launch |
 | `step_079` | complete | The local backend verifies confined canonical workspace, target, result, cwd, and executable paths plus executable content digest; launches directly with cleared and explicitly rebuilt environment, null stdin, isolated process group, independent bounded stdout/stderr drains, timeout and cooperative cancellation tree termination, secret redaction, and exact success/failure/timeout/cancel/cap outcomes |
 | `step_080` | complete | Normalized output is rejected above 16 MiB, decoded only under the exact current closed schema, and converted into typed selector, immutable numbered attempts with preserved messages, internally consistent counts and time windows, and unique digest-valid bounded attachments; pass, failure, skipped, filtered, retry instability, schema, semantic, and size cases classify exactly |
-| `step_081`-`step_090` | pending | - |
+| `step_081` | complete | Evidence writes validate the closed envelope and recompute its canonical payload digest before any filesystem mutation, use portable hex digest filenames below private nonsymlink `.eqm/results` directories, durably flush and atomically install a private temporary file without clobbering, treat byte-identical repeats as idempotent, and reject collisions, symlink destinations, mismatches, and partial state |
+| `step_082`-`step_090` | pending | - |
