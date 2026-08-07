@@ -7,6 +7,7 @@ mod digest;
 mod id;
 mod path;
 mod schema;
+mod time;
 
 pub use diagnostic::{
     Diagnostic, DiagnosticBuildError, DiagnosticCode, DiagnosticDescriptor,
@@ -21,3 +22,4 @@ pub use id::{
 };
 pub use path::{RepoPath, RepoPathError};
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
+pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};

@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 01: Diagnostics And Primitives
 
-Status: in progress; Steps 009-013 complete
+Status: in progress; Steps 009-014 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 00
-Current checkpoint: `step_014`
+Current checkpoint: `step_015`
 
 ## Purpose
 
@@ -66,4 +66,5 @@ only representative invalid values.
 | `step_011` | complete | Typed entity and requirement IDs enforce exact ASCII grammar and qualification |
 | `step_012` | complete | Lexical normalized repository paths and portable collision keys implemented |
 | `step_013` | complete | Fixed SHA-256 parsing, bytes, display, content hashing, and semantic domain vectors implemented |
-| `step_014`-`step_016` | pending | - |
+| `step_014` | complete | Canonical UTC instants, dates, and bounded millisecond durations implemented |
+| `step_015`-`step_016` | pending | - |

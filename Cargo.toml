@@ -34,6 +34,7 @@ unimplemented = "deny"
 unwrap_used = "deny"
 
 [workspace.dependencies]
+chrono = { version = "=0.4.42", default-features = false, features = ["std"] }
 sha2 = "=0.10.9"
 unicode-normalization = "=0.1.24"
 eqm_domain = { path = "crates/eqm_domain", version = "=0.1.0" }
