@@ -2,12 +2,16 @@
 
 #![forbid(unsafe_code)]
 
+mod container;
 mod execution;
 mod normalized;
 mod persistence;
 mod resolution;
 mod substitution;
 
+pub use container::{
+    ContainerAuthority, ContainerError, ContainerPlan, prepare_container_execution,
+};
 pub use execution::{
     CancellationToken, ExecutionOutcome, ExecutionReport, LocalExecutionContext,
     LocalExecutionError, execute_local_process,
