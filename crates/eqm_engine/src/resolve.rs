@@ -12,7 +12,15 @@ use std::fmt::{self, Display, Formatter};
 
 /// Returns the stable graph-resolution diagnostic registry.
 pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 6], DiagnosticBuildError> {
-    diagnostic_registry()
+    let registry = diagnostic_registry()?;
+    Ok([
+        registry[1],
+        registry[2],
+        registry[3],
+        registry[4],
+        registry[5],
+        registry[6],
+    ])
 }
 
 /// Resolves every typed cross-reference and constructs deterministic graph indexes.

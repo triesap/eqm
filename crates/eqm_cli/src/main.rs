@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod cli;
+mod commands;
 mod renderer;
 mod session;
 
@@ -22,24 +23,41 @@ fn main() -> ExitCode {
             let no_progress = parsed.global.no_progress;
             let color = parsed.global.color;
             let output = renderer::explicit_output_path(parsed.global.output.clone());
-            let _request = session::SessionRequest::new(parsed.global, command);
             let _decorate = renderer::color_enabled(format, color, io::stdout().is_terminal());
             let mut stderr = io::stderr();
             let mut reporter = renderer::StderrReporter::new(&mut stderr, no_progress);
             if reporter.progress("rendering command result").is_err() {
                 return ExitCode::from(6);
             }
-            let payload = renderer::OutputPayload {
-                human: format!("{} is not implemented yet", command.as_str()),
-                json: json!({"command": command.as_str(), "status": "not_implemented"}),
-                sarif: Some(json!({"version":"2.1.0", "runs":[]})),
-                markdown: Some(format!("# {}\n\nNot implemented yet.", command.as_str())),
+            let execution = if command == cli::CommandName::Validate {
+                match std::env::current_dir() {
+                    Ok(start) => commands::validate::execute(parsed, &start),
+                    Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
+                }
+            } else {
+                let _request = session::SessionRequest::new(parsed.global, command);
+                Ok(commands::CommandExecution {
+                    payload: renderer::OutputPayload {
+                        human: format!("{} is not implemented yet", command.as_str()),
+                        json: json!({"command": command.as_str(), "status": "not_implemented"}),
+                        sarif: Some(json!({"version":"2.1.0", "runs":[]})),
+                        markdown: Some(format!("# {}\n\nNot implemented yet.", command.as_str())),
+                    },
+                    exit_code: 0,
+                })
             };
-            match renderer::render(&payload, format).and_then(|document| {
+            let execution = match execution {
+                Ok(value) => value,
+                Err(error) => {
+                    let _ = reporter.log(&format!("error: {error}"));
+                    return ExitCode::from(6);
+                }
+            };
+            match renderer::render(&execution.payload, format).and_then(|document| {
                 let _machine = document.is_machine();
                 renderer::deliver(&document, output.as_deref(), &mut io::stdout())
             }) {
-                Ok(()) => ExitCode::SUCCESS,
+                Ok(()) => ExitCode::from(execution.exit_code),
                 Err(error) => {
                     let _ = reporter.log(&format!("error: {error}"));
                     ExitCode::from(6)
