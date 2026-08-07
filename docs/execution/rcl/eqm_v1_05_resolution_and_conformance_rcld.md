@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: in progress; Step 060 complete
+Status: in progress; Step 061 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: `step_061`
+Current checkpoint: `step_062`
 
 ## Purpose
 
@@ -85,4 +85,5 @@ never converts an unsatisfied facet into `satisfied`.
 | `step_058` | complete | Post-resolution validation enforces identifier ownership, bidirectional journey/surface membership, transition membership, active-surface orphan rejection, parent lifecycle compatibility, and non-lowering journey/fragment risk; typed schemas make fragment nesting and parent-type cycles unrepresentable |
 | `step_059` | complete | Domain-separated canonical fragment digests verify exact ID/revision/content pins; expansion applies the specified prefix transform, rejects missing content, mismatches, invalid IDs, and overrides, and emits a finalized graph type required by canonicalization with fixed digest and formatting-exclusion integration vectors |
 | `step_060` | complete | Total three-valued applicability evaluates constants, equality, inequality, finite membership, exclusion, conjunction, disjunction, and negation against validated profile declarations; exhaustive truth tables cover known and unknown selections while undeclared dimensions or values fail before Boolean evaluation can short-circuit |
-| `step_061`-`step_070` | pending | - |
+| `step_061` | complete | Exact policy/profile requests validate revisions, complete policy profile sets, declared finite values, and every known-or-explicitly-unknown dimension; development may use prepared repository defaults while pull-request and release modes require explicit trusted and protected authority respectively, and closed policy selectors match every populated unit, requirement, risk, facet, and scope axis |
+| `step_062`-`step_070` | pending | - |
