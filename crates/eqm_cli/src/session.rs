@@ -31,6 +31,7 @@ impl SessionRequest {
 pub struct PreparedSession {
     repository_root: PathBuf,
     finalized: FinalizedWorkspaceGraph,
+    source_map: BTreeMap<Box<str>, RepoPath>,
     workspace_digest: Sha256Digest,
 }
 
@@ -45,6 +46,12 @@ impl PreparedSession {
     #[must_use]
     pub const fn finalized(&self) -> &FinalizedWorkspaceGraph {
         &self.finalized
+    }
+
+    /// Returns semantic authority keys mapped to repository-relative sources.
+    #[must_use]
+    pub const fn source_map(&self) -> &BTreeMap<Box<str>, RepoPath> {
+        &self.source_map
     }
 
     /// Returns the exact canonical semantic workspace digest.
@@ -83,6 +90,7 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
         .map_err(|_| SessionError::ConfigPath)?;
     let loaded = load_workspace(start, explicit.as_ref()).map_err(|_| SessionError::Load)?;
     let repository_root = loaded.repository_root().to_path_buf();
+    let source_map = loaded.source_map().clone();
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())
         .map_err(|_| SessionError::Resolve)?;
     let digests: FragmentDigestMap = graph
@@ -102,6 +110,7 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
     Ok(PreparedSession {
         repository_root,
         finalized,
+        source_map,
         workspace_digest,
     })
 }

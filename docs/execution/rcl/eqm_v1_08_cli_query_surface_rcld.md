@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 08: CLI Query Surface
 
-Status: in progress; Step 094 complete
+Status: in progress; Step 095 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 07
-Current checkpoint: `step_095`
+Current checkpoint: `step_096`
 
 ## Purpose
 
@@ -84,4 +84,5 @@ output goldens, no-execution assertions, and clean-worktree checks.
 | `step_092` | complete | One renderer selects deterministic human, compact JSON, SARIF 2.1.0, or bounded Markdown bytes with exactly one terminal newline; command/format compatibility fails during usage parsing, machine formats disable color, progress and escaped logs are stderr-only, `--no-progress` preserves diagnostics, and explicit output durably atomically replaces a nonsymlink destination while stdout remains empty |
 | `step_093` | complete | `validate` performs deterministic config selection, strict workspace discovery/decode/conversion/lock binding, graph resolution, invariant validation, exact fragment-digest preparation and expansion, and canonical semantic graph hashing in one immutable session; success emits a typed current result envelope with stable entity counts and digest, preparation failure emits a manifest diagnostic and exit 3, and neither path executes or writes workspace state |
 | `step_094` | complete | `check` reuses one finalized session, confines direct filesystem inspection to declared artifacts, evaluates typed structure without process execution, selects the exact development policy/profile defaults, derives applicability-aware obligations, reports missing evidence and structural failures through registered diagnostics and typed counts/findings, applies unit/target filters, returns blocking exit 1, and leaves generated state unchanged |
-| `step_095`-`step_103` | pending | - |
+| `step_095` | complete | `show` resolves every approved entity kind from one finalized graph, emits the exact canonical semantic projection plus its repository-relative authority source, rejects missing or multi-revision matches with registered `EQM-E0001` and exit 2, and returns deterministic typed envelopes without execution or writes |
+| `step_096`-`step_103` | pending | - |

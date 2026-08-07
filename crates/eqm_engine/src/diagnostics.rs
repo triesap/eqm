@@ -8,6 +8,14 @@ pub fn diagnostic_registry() -> Result<Vec<DiagnosticDescriptor>, DiagnosticBuil
         |number| DiagnosticCode::from_number(number).ok_or(DiagnosticBuildError::InvalidCode);
     Ok(vec![
         DiagnosticDescriptor {
+            code: code(1)?,
+            severity: Severity::Error,
+            title: "entity query did not resolve uniquely",
+            authority: "docs/specification/cli.md",
+            explanation: "An exact entity query found no authority or more than one revision for the requested kind and ID.",
+            remediation: "Correct the entity kind or ID, or retain exactly one matching revision.",
+        },
+        DiagnosticDescriptor {
             code: code(100)?,
             severity: Severity::Error,
             title: "workspace preparation failed",
@@ -103,7 +111,7 @@ mod tests {
     fn registry_is_complete_unique_live_and_explainable() -> Result<(), Box<dyn Error>> {
         let registry = diagnostic_registry()?;
         validate_diagnostic_registry(&registry)?;
-        let emitted = [100, 200, 300, 301, 302, 303, 304, 305, 500]
+        let emitted = [1, 100, 200, 300, 301, 302, 303, 304, 305, 500]
             .into_iter()
             .map(|number| DiagnosticCode::from_number(number).ok_or("invalid emitted code"))
             .collect::<Result<Vec<_>, _>>()?;

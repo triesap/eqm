@@ -106,7 +106,8 @@ pub fn canonicalize_fragment(value: &Fragment) -> Result<CanonicalFragment, Cano
     Ok(CanonicalFragment { bytes, digest })
 }
 
-fn capability(value: &Capability) -> Value {
+/// Projects one capability into its exact canonical semantic JSON shape.
+pub fn capability(value: &Capability) -> Value {
     optional_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -119,7 +120,8 @@ fn capability(value: &Capability) -> Value {
     )
 }
 
-fn journey(value: &Journey) -> Value {
+/// Projects one journey into its exact canonical semantic JSON shape.
+pub fn journey(value: &Journey) -> Value {
     optional_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -146,7 +148,8 @@ fn journey(value: &Journey) -> Value {
     )
 }
 
-fn surface(value: &Surface) -> Value {
+/// Projects one surface into its exact canonical semantic JSON shape.
+pub fn surface(value: &Surface) -> Value {
     optional_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -181,7 +184,8 @@ fn surface(value: &Surface) -> Value {
     )
 }
 
-fn fragment(value: &Fragment) -> Value {
+/// Projects one fragment into its exact canonical semantic JSON shape.
+pub fn fragment(value: &Fragment) -> Value {
     optional_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -245,7 +249,8 @@ fn applicability(value: &Applicability) -> Value {
     }
 }
 
-fn target(value: &Target) -> Value {
+/// Projects one target into its exact canonical semantic JSON shape.
+pub fn target(value: &Target) -> Value {
     object([
         ("id", json!(value.id().as_str())),
         ("root", json!(value.root().as_str())),
@@ -256,7 +261,8 @@ fn target(value: &Target) -> Value {
     ])
 }
 
-fn binding(value: &Binding) -> Value {
+/// Projects one binding into its exact canonical semantic JSON shape.
+pub fn binding(value: &Binding) -> Value {
     let mut exposures: Vec<_> = value.exposures().iter().collect();
     exposures.sort_by_cached_key(|item| {
         (
@@ -442,7 +448,8 @@ fn evidence_selector(value: &EvidenceSelector) -> Value {
     }
 }
 
-fn profile(value: &Profile) -> Value {
+/// Projects one profile into its exact canonical semantic JSON shape.
+pub fn profile(value: &Profile) -> Value {
     optional_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -477,7 +484,8 @@ fn profile(value: &Profile) -> Value {
     )
 }
 
-fn policy(value: &Policy) -> Value {
+/// Projects one policy into its exact canonical semantic JSON shape.
+pub fn policy(value: &Policy) -> Value {
     let mut rules: Vec<_> = value.rules().iter().map(policy_rule).collect();
     rules.sort_by_cached_key(canonical_key);
     optional_description(
@@ -534,7 +542,8 @@ fn waiver_policy(value: &WaiverPolicy) -> Value {
     )
 }
 
-fn runner(value: &RunnerDefinition) -> Value {
+/// Projects one runner into its exact canonical semantic JSON shape.
+pub fn runner(value: &RunnerDefinition) -> Value {
     let limits = value.limits();
     object([
         ("id", json!(value.id().as_str())),
@@ -610,7 +619,8 @@ fn working_directory(value: &WorkingDirectoryTemplate) -> Value {
     })
 }
 
-fn waiver(value: &Waiver) -> Value {
+/// Projects one waiver into its exact canonical semantic JSON shape.
+pub fn waiver(value: &Waiver) -> Value {
     object([
         ("id", json!(value.id().as_str())),
         ("revision", json!(value.revision().get())),

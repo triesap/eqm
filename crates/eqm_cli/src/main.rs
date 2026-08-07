@@ -31,13 +31,16 @@ fn main() -> ExitCode {
             }
             let execution = if matches!(
                 command,
-                cli::CommandName::Validate | cli::CommandName::Check
+                cli::CommandName::Validate | cli::CommandName::Check | cli::CommandName::Show
             ) {
                 match std::env::current_dir() {
                     Ok(start) if command == cli::CommandName::Validate => {
                         commands::validate::execute(parsed, &start)
                     }
-                    Ok(start) => commands::check::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::Check => {
+                        commands::check::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::show::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {
