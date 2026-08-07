@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-005 complete
+Status: in progress; Steps 001-006 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_006`
+Current checkpoint: `step_007a`
 
 ## Purpose
 
@@ -133,6 +133,6 @@ authority.
 | `step_003` | complete | this checkpoint | Explicit locked eight-crate Rust workspace established and fully verified |
 | `step_004` | complete | this checkpoint | Toolchain components, shared lints, and explicit unsafe forbids verified |
 | `step_005` | complete | this checkpoint | Compatibility scanner and positive/negative self-test installed |
-| `step_006` | pending | - | - |
+| `step_006` | complete | this checkpoint | Canonical authored metadata layout and generated-state boundary added |
 | `step_007` | pending | - | - |
 | `step_008` | pending | - | - |
