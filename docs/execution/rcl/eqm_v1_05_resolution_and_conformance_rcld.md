@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: in progress; Step 064 complete
+Status: in progress; Step 065 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: `step_065`
+Current checkpoint: `step_066`
 
 ## Purpose
 
@@ -89,4 +89,5 @@ never converts an unsatisfied facet into `satisfied`.
 | `step_062` | complete | Exact protected inputs compare contract requirement level, risk, facets, and invariant identity; policy profiles, targets, rules, freshness, trust, counts, and waiver constraints; immutable runner authority; waiver approver authority; and trust controls, classifying equality or strengthening while rejecting every removal, weakening, or incomparable replacement |
 | `step_063` | complete | Finalized active requirements evaluate applicability, match every closed selector axis, compose overlapping rules on strongest level/trust/count and smallest age, derive one facet obligation per each-target, shared-provider, or complete target-set subject, and retain unmatched warnings and unknown applicability without duplicates |
 | `step_064` | complete | A pure injected repository view evaluates artifact existence, file kind, semantic role, segment-confined target paths, portable collisions, and explicitly permitted fully resolved read-only symlinks; deterministic artifact-linked findings fail closed without engine filesystem access |
-| `step_065`-`step_070` | pending | - |
+| `step_065` | complete | Evidence coverage compares exact specification ID/digest, explicit requirement and facet membership, scope subject, target, unit, kind, contract, binding, policy, runner, adapter, profiles, and release context; partial and missing results remain rejected with per-axis reasons while duplicate immutable result IDs make coverage unknown |
+| `step_066`-`step_070` | pending | - |
