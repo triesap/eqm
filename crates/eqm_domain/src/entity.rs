@@ -1,8 +1,9 @@
 //! Shared entity values and the capability model.
 
 use crate::{
-    CapabilityId, DimensionId, Facet, JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef,
-    ProviderId, RequirementLevel, RequirementScope, RiskClass, SurfaceId, SymbolicValueId,
+    CapabilityId, DimensionId, Facet, FragmentId, JourneyId, LifecycleStatus, LocalRequirementId,
+    OwnerRef, ProviderId, RequirementLevel, RequirementScope, RiskClass, SurfaceId,
+    SymbolicValueId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -809,6 +810,98 @@ impl Requirement {
     }
 }
 
+/// A versioned immutable fragment of reusable requirements.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Fragment {
+    id: FragmentId,
+    revision: Revision,
+    title: Title,
+    risk_class: RiskClass,
+    owners: BTreeSet<OwnerRef>,
+    requirements: BTreeMap<LocalRequirementId, Requirement>,
+    description: Option<Description>,
+    extensions: Extensions,
+}
+
+impl Fragment {
+    /// Creates a fragment with nonempty uniquely identified requirements.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: FragmentId,
+        revision: Revision,
+        title: Title,
+        risk_class: RiskClass,
+        owners: Vec<OwnerRef>,
+        requirements: Vec<Requirement>,
+        description: Option<Description>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        let owners = owner_set(owners)?;
+        if requirements.is_empty() {
+            return Err(EntityBuildError::RequirementsRequired);
+        }
+        let count = requirements.len();
+        let requirements: BTreeMap<_, _> = requirements
+            .into_iter()
+            .map(|requirement| (requirement.id().clone(), requirement))
+            .collect();
+        if requirements.len() != count {
+            return Err(EntityBuildError::DuplicateRequirement);
+        }
+        Ok(Self {
+            id,
+            revision,
+            title,
+            risk_class,
+            owners,
+            requirements,
+            description,
+            extensions,
+        })
+    }
+
+    /// Returns the fragment ID.
+    #[must_use]
+    pub const fn id(&self) -> &FragmentId {
+        &self.id
+    }
+    /// Returns the positive authored revision.
+    #[must_use]
+    pub const fn revision(&self) -> Revision {
+        self.revision
+    }
+    /// Returns the title.
+    #[must_use]
+    pub const fn title(&self) -> &Title {
+        &self.title
+    }
+    /// Returns the inherited fragment risk.
+    #[must_use]
+    pub const fn risk_class(&self) -> RiskClass {
+        self.risk_class
+    }
+    /// Returns owners in deterministic order.
+    #[must_use]
+    pub const fn owners(&self) -> &BTreeSet<OwnerRef> {
+        &self.owners
+    }
+    /// Returns requirements keyed by immutable local identity.
+    #[must_use]
+    pub const fn requirements(&self) -> &BTreeMap<LocalRequirementId, Requirement> {
+        &self.requirements
+    }
+    /// Returns the optional description.
+    #[must_use]
+    pub const fn description(&self) -> Option<&Description> {
+        self.description.as_ref()
+    }
+    /// Returns extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -842,6 +935,10 @@ pub enum EntityBuildError {
     ApplicabilityDepthExceeded,
     /// Applicability data exceeded 256 nodes.
     ApplicabilityNodesExceeded,
+    /// A fragment did not declare any requirements.
+    RequirementsRequired,
+    /// A local requirement ID appeared more than once in one authority.
+    DuplicateRequirement,
     /// An extension namespace was invalid.
     InvalidExtensionNamespace,
     /// An extension object key was invalid.
@@ -874,6 +971,8 @@ impl Display for EntityBuildError {
             Self::DuplicateApplicabilityOperand => "applicability contains a duplicate operand",
             Self::ApplicabilityDepthExceeded => "applicability depth exceeds 16",
             Self::ApplicabilityNodesExceeded => "applicability node count exceeds 256",
+            Self::RequirementsRequired => "fragment requires at least one requirement",
+            Self::DuplicateRequirement => "authority requirements contain a duplicate local ID",
             Self::InvalidExtensionNamespace => "invalid extension namespace",
             Self::InvalidExtensionKey => "invalid extension key",
             Self::InvalidExtensionValue => "invalid extension value",
@@ -892,6 +991,20 @@ mod tests {
 
     fn owner(value: &str) -> Result<OwnerRef, crate::ExternalRefError> {
         value.parse()
+    }
+
+    fn requirement(value: &str) -> Result<Requirement, Box<dyn Error>> {
+        Ok(Requirement::new(
+            LocalRequirementId::new(value)?,
+            RequirementLevel::Required,
+            RequirementScope::EachTarget,
+            RequirementStatement::new("The behavior is available")?,
+            vec![Facet::Behavior],
+            Applicability::default(),
+            None,
+            None,
+            Extensions::default(),
+        )?)
     }
 
     #[test]
@@ -1161,6 +1274,42 @@ mod tests {
         assert_eq!(
             Applicability::all(many),
             Err(EntityBuildError::ApplicabilityNodesExceeded)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn fragment_requires_unique_nonempty_composition() -> Result<(), Box<dyn Error>> {
+        let build = |requirements| {
+            Fragment::new(
+                FragmentId::new("shared.account").map_err(|_| EntityBuildError::InvalidText)?,
+                Revision::new(2)?,
+                Title::new("Shared account behavior")?,
+                RiskClass::Medium,
+                vec![owner("owner://team/accounts").map_err(|_| EntityBuildError::InvalidText)?],
+                requirements,
+                None,
+                Extensions::default(),
+            )
+        };
+        assert!(matches!(
+            build(Vec::new()),
+            Err(EntityBuildError::RequirementsRequired)
+        ));
+        let item = requirement("reachable")?;
+        assert!(matches!(
+            build(vec![item.clone(), item]),
+            Err(EntityBuildError::DuplicateRequirement)
+        ));
+        let fragment = build(vec![requirement("reachable")?, requirement("submittable")?])?;
+        assert_eq!(fragment.revision().get(), 2);
+        assert_eq!(
+            fragment
+                .requirements()
+                .keys()
+                .map(LocalRequirementId::as_str)
+                .collect::<Vec<_>>(),
+            ["reachable", "submittable"]
         );
         Ok(())
     }

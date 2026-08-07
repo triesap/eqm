@@ -20,8 +20,8 @@ pub use diagnostic::{
 pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
 pub use entity::{
     Applicability, ApplicabilityKind, Capability, ComparisonOperator, Description,
-    EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Journey,
-    MembershipOperator, Requirement, RequirementStatement, Revision, Title, Transition,
+    EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Fragment,
+    Journey, MembershipOperator, Requirement, RequirementStatement, Revision, Title, Transition,
     TransitionTrigger,
 };
 pub use id::{
