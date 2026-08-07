@@ -1,0 +1,12 @@
+schema = "https://schemas.equivalencematrix.dev/v1/profile"
+id = "audience.default"
+revision = 1
+title = "Default audience"
+owners = ["owner://team/product"]
+
+[[dimensions]]
+id = "region"
+values = ["eu", "us"]
+
+[defaults]
+region = "us"

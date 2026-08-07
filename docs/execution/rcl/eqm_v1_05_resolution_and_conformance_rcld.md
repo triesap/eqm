@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: planned; blocked by RCLD 04
+Status: in progress; RCLD 04 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: none
+Current checkpoint: `step_057`
 
 ## Purpose
 

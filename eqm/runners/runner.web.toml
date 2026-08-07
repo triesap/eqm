@@ -1,0 +1,15 @@
+schema = "https://schemas.equivalencematrix.dev/v1/runner"
+id = "runner.web"
+revision = 1
+owners = ["owner://team/tooling"]
+backend = "local"
+program = "scripts/run_example"
+args = ["test", "{selector_json}", "{result_path}"]
+cwd = "{target_root}"
+timeout_ms = 60000
+max_output_bytes = 1048576
+max_concurrency = 1
+
+[[environment]]
+name = "PATH"
+source = "trusted_path"

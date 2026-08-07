@@ -1,0 +1,29 @@
+schema = "https://schemas.equivalencematrix.dev/v1/binding"
+id = "binding.web.auth_signup"
+revision = 1
+owners = ["owner://team/web"]
+target = "web"
+unit = "account.create.signup.identifier"
+
+[[artifacts]]
+id = "identifier_view"
+role = "view"
+path = "apps/web/src/signup/identifier.svelte"
+surface = "account.create.signup.identifier"
+
+[[exposures]]
+surface = "account.create.signup.identifier"
+state = "required"
+route = "/signup"
+
+[[evidence]]
+id = "identifier_behavior"
+kind = "test"
+requirements = ["account.create.signup.identifier#email_default"]
+facets = ["behavior"]
+runner = "runner.web"
+
+[evidence.selector]
+kind = "test"
+framework = "vitest"
+test_id = "signup identifier defaults to email"

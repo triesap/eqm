@@ -1,0 +1,23 @@
+schema = "https://schemas.equivalencematrix.dev/v1/policy"
+id = "consumer.critical_flow"
+revision = 1
+title = "Consumer critical flow policy"
+owners = ["owner://team/product"]
+profiles = ["audience.default"]
+required_targets = ["web"]
+
+[[rules]]
+minimum_level = "required"
+facets = ["behavior"]
+minimum_trust = "trusted_ci"
+maximum_age = 86400000
+minimum_count = 1
+
+[rules.selector]
+risk_classes = ["high", "critical"]
+
+[waivers]
+allowed = true
+maximum_days = 30
+minimum_approvers = 1
+required_controls = ["behavior"]

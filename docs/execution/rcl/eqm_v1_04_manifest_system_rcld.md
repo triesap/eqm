@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 04: Manifest System
 
-Status: in progress; Step 055 complete
+Status: complete; Steps 042-056 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 03
-Current checkpoint: `step_056`
+Current checkpoint: complete
 
 ## Purpose
 
@@ -95,4 +95,4 @@ approved order. No pre-resolution or pre-expansion digest is authoritative.
 | `step_053` | complete | One deterministic loader orchestrates config, discovery, bounded decode, domain conversion, target confinement, lock binding, unresolved graph input, and stable authority/source mapping |
 | `step_054` | complete | Comment-preserving TOML formatting is idempotent, proves decoded-value equivalence, supports non-mutating check/dry-run modes, rejects symlink paths, and atomically replaces changed files while preserving permissions |
 | `step_055` | complete | A checked-in repository-shaped corpus and production-loader integration suite cover valid discovery plus schema, field, path, portable collision, duplicate authority, input limit, Unicode, lock, generated-state, nested-repository, and symlink boundaries |
-| `step_056` | pending | - |
+| `step_056` | complete | The repository example workspace now supplies every authored source class, exact current schemas, a real content-derived fragment pin, and a production-loader test that rejects placeholder digests in positive examples |

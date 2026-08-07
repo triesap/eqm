@@ -1,0 +1,14 @@
+schema = "https://schemas.equivalencematrix.dev/v1/surface"
+id = "account.create.signup.identifier"
+revision = 1
+title = "Select signup identifier"
+journey = "account.create.signup"
+status = "active"
+owners = ["owner://team/identity_product"]
+
+[[requirements]]
+id = "email_default"
+level = "required"
+scope = "each_target"
+statement = "Email is selected when the surface is first presented."
+facets = ["behavior"]

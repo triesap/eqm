@@ -1,0 +1,5 @@
+schema = "https://schemas.equivalencematrix.dev/v1/capability"
+id = "account.create"
+title = "Create account"
+status = "active"
+owners = ["owner://team/identity_product"]
