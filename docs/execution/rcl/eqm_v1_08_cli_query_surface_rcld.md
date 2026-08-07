@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 08: CLI Query Surface
 
-Status: in progress; Step 095 complete
+Status: in progress; Step 096 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 07
-Current checkpoint: `step_096`
+Current checkpoint: `step_097`
 
 ## Purpose
 
@@ -85,4 +85,5 @@ output goldens, no-execution assertions, and clean-worktree checks.
 | `step_093` | complete | `validate` performs deterministic config selection, strict workspace discovery/decode/conversion/lock binding, graph resolution, invariant validation, exact fragment-digest preparation and expansion, and canonical semantic graph hashing in one immutable session; success emits a typed current result envelope with stable entity counts and digest, preparation failure emits a manifest diagnostic and exit 3, and neither path executes or writes workspace state |
 | `step_094` | complete | `check` reuses one finalized session, confines direct filesystem inspection to declared artifacts, evaluates typed structure without process execution, selects the exact development policy/profile defaults, derives applicability-aware obligations, reports missing evidence and structural failures through registered diagnostics and typed counts/findings, applies unit/target filters, returns blocking exit 1, and leaves generated state unchanged |
 | `step_095` | complete | `show` resolves every approved entity kind from one finalized graph, emits the exact canonical semantic projection plus its repository-relative authority source, rejects missing or multi-revision matches with registered `EQM-E0001` and exit 2, and returns deterministic typed envelopes without execution or writes |
-| `step_096`-`step_103` | pending | - |
+| `step_096` | complete | `locate` resolves an exact unit and optional target across binding authority, returns deterministically sorted source, artifact, and evidence declaration locations with repository-relative paths and manifest source spans, and reports missing coordinates through typed `EQM-E0001` query failure without execution or writes |
+| `step_097`-`step_103` | pending | - |

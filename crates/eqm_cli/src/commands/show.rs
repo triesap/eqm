@@ -1,6 +1,6 @@
 //! Exact semantic entity query.
 
-use super::CommandExecution;
+use super::{CommandExecution, source_location};
 use crate::cli::ParsedCli;
 use crate::renderer::OutputPayload;
 use crate::session::{PreparedSession, SessionRequest, prepare};
@@ -44,16 +44,15 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         );
     }
     let found = &matches[0];
-    let source = session
+    let source_path = session
         .source_map()
         .get(found.source_key.as_str())
-        .ok_or("entity source mapping")?
-        .to_string();
+        .ok_or("entity source mapping")?;
     let result = ShowResultDto {
         kind: CommandIdentity::Show,
         entity_kind: entity_kind.clone(),
         entity_id: entity_id.clone(),
-        source: source.clone(),
+        source: source_location(source_path)?,
         entity: found.entity.clone(),
     };
     let envelope = ReportEnvelope::new(
@@ -66,7 +65,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     Ok(CommandExecution {
         payload: OutputPayload {
             human: format!(
-                "{entity_kind} {entity_id}\nsource: {source}\n{}",
+                "{entity_kind} {entity_id}\nsource: {source_path}\n{}",
                 serde_json::to_string_pretty(&found.entity)?
             ),
             json: serde_json::from_slice(&envelope.to_json()?)?,
@@ -258,7 +257,11 @@ mod tests {
             assert_eq!(result.exit_code, 0, "{kind} {id}");
             assert_eq!(result.payload.json["result"]["entity_kind"], kind);
             assert_eq!(result.payload.json["result"]["entity_id"], id);
-            assert!(result.payload.json["result"]["source"].is_string());
+            assert!(
+                result.payload.json["result"]["source"]["uri"]
+                    .as_str()
+                    .is_some_and(|value| value.starts_with("file:"))
+            );
             assert_eq!(result.payload.json["result"]["entity"]["id"], id);
         }
 

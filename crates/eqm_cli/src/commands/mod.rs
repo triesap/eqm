@@ -1,10 +1,19 @@
 //! Command orchestration over one prepared session.
 
 pub mod check;
+pub mod locate;
 pub mod show;
 pub mod validate;
 
 use crate::renderer::OutputPayload;
+use eqm_domain::{DiagnosticBuildError, RepoPath, SourceLocation, SourceName, SourcePosition};
+use eqm_protocol::SourceLocationDto;
+
+fn source_location(path: &RepoPath) -> Result<SourceLocationDto, DiagnosticBuildError> {
+    let position = SourcePosition::new(1, 1)?;
+    let location = SourceLocation::new(SourceName::new(path.as_str())?, position, position)?;
+    Ok(SourceLocationDto::from_domain(&location))
+}
 
 /// Renderable command result plus stable exit category.
 pub struct CommandExecution {

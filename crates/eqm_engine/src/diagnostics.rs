@@ -10,10 +10,10 @@ pub fn diagnostic_registry() -> Result<Vec<DiagnosticDescriptor>, DiagnosticBuil
         DiagnosticDescriptor {
             code: code(1)?,
             severity: Severity::Error,
-            title: "entity query did not resolve uniquely",
+            title: "query operand did not resolve uniquely",
             authority: "docs/specification/cli.md",
-            explanation: "An exact entity query found no authority or more than one revision for the requested kind and ID.",
-            remediation: "Correct the entity kind or ID, or retain exactly one matching revision.",
+            explanation: "An exact query found no authority or more than one authority for a required operand.",
+            remediation: "Correct the query operand or narrow it to exactly one authority.",
         },
         DiagnosticDescriptor {
             code: code(100)?,

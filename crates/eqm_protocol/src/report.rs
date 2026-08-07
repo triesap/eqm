@@ -229,7 +229,9 @@ pub struct SourceLocationDto {
 }
 
 impl SourceLocationDto {
-    fn from_domain(value: &eqm_domain::SourceLocation) -> Self {
+    /// Converts one validated domain source span to its public wire shape.
+    #[must_use]
+    pub fn from_domain(value: &eqm_domain::SourceLocation) -> Self {
         let source = value.source().as_str();
         Self {
             uri: if source.starts_with("eqm://") {

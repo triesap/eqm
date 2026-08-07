@@ -197,7 +197,7 @@ pub struct ShowResultDto<E> {
     pub kind: CommandIdentity,
     pub entity_kind: String,
     pub entity_id: String,
-    pub source: String,
+    pub source: SourceLocationDto,
     pub entity: E,
 }
 
