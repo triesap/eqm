@@ -1,0 +1,6 @@
+schema = "https://schemas.equivalencematrix.dev/v1/capability"
+id = "account.create"
+title = "Unknown field"
+status = "active"
+owners = ["owner://team/accounts"]
+surprise = true

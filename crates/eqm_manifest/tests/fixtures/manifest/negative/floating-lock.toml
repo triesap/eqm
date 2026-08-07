@@ -1,0 +1,9 @@
+schema = "https://schemas.equivalencematrix.dev/v1/lock"
+version = 1
+
+[[imports]]
+id = "shared.contracts"
+revision = 1
+source = "git+https://example.com/shared.git"
+resolved = "main"
+digest = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

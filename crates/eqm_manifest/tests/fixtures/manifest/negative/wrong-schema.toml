@@ -1,0 +1,5 @@
+schema = "https://schemas.equivalencematrix.dev/v1/policy"
+id = "account.create"
+title = "Wrong source class"
+status = "active"
+owners = ["owner://team/accounts"]

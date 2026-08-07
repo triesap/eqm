@@ -1,0 +1,5 @@
+schema = "https://schemas.equivalencematrix.dev/v1/capability"
+id = "café.create"
+title = "Decomposed identifier"
+status = "active"
+owners = ["owner://team/accounts"]
