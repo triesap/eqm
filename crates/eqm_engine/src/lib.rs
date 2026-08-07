@@ -5,6 +5,7 @@
 mod applicability;
 mod coverage;
 mod expand;
+mod freshness;
 mod invariants;
 mod monotonicity;
 mod obligations;
@@ -20,6 +21,9 @@ pub use coverage::{
     evaluate_evidence_coverage,
 };
 pub use expand::{FragmentDigestMap, expand_fragments};
+pub use freshness::{
+    FreshnessKey, FreshnessMismatch, FreshnessReport, FreshnessStatus, evaluate_evidence_freshness,
+};
 pub use invariants::validate_graph_invariants;
 pub use monotonicity::{
     MonotonicChange, MonotonicityError, ProtectedPolicyInput, ProtectedRequirement,
