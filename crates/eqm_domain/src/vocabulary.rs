@@ -156,6 +156,12 @@ pub enum VocabularyParseError {
     InvalidTrustLevel,
     /// Attempt outcome was not in the v1 set.
     InvalidAttemptOutcome,
+    /// Runner backend was not in the v1 set.
+    InvalidRunnerBackend,
+    /// Runner guarantee was not in the v1 set.
+    InvalidRunnerGuarantee,
+    /// Inventory completeness was not in the v1 set.
+    InvalidInventoryCompleteness,
 }
 
 impl Display for VocabularyParseError {
@@ -173,6 +179,9 @@ impl Display for VocabularyParseError {
             Self::InvalidReleaseChannel => "invalid release channel",
             Self::InvalidTrustLevel => "invalid trust level",
             Self::InvalidAttemptOutcome => "invalid attempt outcome",
+            Self::InvalidRunnerBackend => "invalid runner backend",
+            Self::InvalidRunnerGuarantee => "invalid runner guarantee",
+            Self::InvalidInventoryCompleteness => "invalid inventory completeness",
         })
     }
 }
@@ -238,6 +247,27 @@ closed_vocabulary!(
         RuntimeExposure => "runtime_exposure",
         ReleasePresence => "release_presence"
     ]
+);
+closed_vocabulary!(
+    /// Runner execution backend.
+    RunnerBackend,
+    InvalidRunnerBackend,
+    [Local => "local", Container => "container"]
+);
+closed_vocabulary!(
+    /// A backend-enforced runner guarantee.
+    RunnerGuarantee,
+    InvalidRunnerGuarantee,
+    [
+        NetworkDenied => "network_denied", ReadOnlySource => "read_only_source",
+        IsolatedProcess => "isolated_process", ResourceLimited => "resource_limited"
+    ]
+);
+closed_vocabulary!(
+    /// Inventory completeness claim.
+    InventoryCompleteness,
+    InvalidInventoryCompleteness,
+    [Complete => "complete", Partial => "partial", Unknown => "unknown"]
 );
 closed_vocabulary!(
     /// The semantic role of a bound artifact.

@@ -11,6 +11,7 @@ mod id;
 mod path;
 mod policy;
 mod reference;
+mod runner;
 mod schema;
 mod time;
 mod vocabulary;
@@ -51,12 +52,17 @@ pub use policy::{
 pub use reference::{
     CatalogRef, CiRunRef, DesignRef, ExternalRefError, IssueRef, OwnerRef, ReleaseRef,
 };
+pub use runner::{
+    AdapterDefinition, AdapterLimits, ArgumentTemplate, DiscoveryMode, EnvironmentBinding,
+    EnvironmentName, EnvironmentSource, RunnerBuildError, RunnerDefinition, RunnerLimits,
+    RunnerProgram, SecretBinding, SecretProviderRef, WorkingDirectoryTemplate,
+};
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
 pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
 pub use vocabulary::{
     ArtifactRole, AttemptOutcome, EvidenceKind, Facet, HttpMethod, IntendedExposureState,
-    LifecycleStatus, ReleaseChannel, RequirementLevel, RequirementScope, RiskClass, TrustLevel,
-    VocabularyParseError,
+    InventoryCompleteness, LifecycleStatus, ReleaseChannel, RequirementLevel, RequirementScope,
+    RiskClass, RunnerBackend, RunnerGuarantee, TrustLevel, VocabularyParseError,
 };
 pub use waiver::{
     Waiver, WaiverApplication, WaiverBuildError, WaiverProfileScope, WaiverReason, WaiverScope,
