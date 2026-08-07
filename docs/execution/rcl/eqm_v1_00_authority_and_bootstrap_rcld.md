@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-004 complete
+Status: in progress; Steps 001-005 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_005`
+Current checkpoint: `step_006`
 
 ## Purpose
 
@@ -132,7 +132,7 @@ authority.
 | `step_002` | complete | this checkpoint | Repository-local agent authority installed |
 | `step_003` | complete | this checkpoint | Explicit locked eight-crate Rust workspace established and fully verified |
 | `step_004` | complete | this checkpoint | Toolchain components, shared lints, and explicit unsafe forbids verified |
-| `step_005` | pending | - | - |
+| `step_005` | complete | this checkpoint | Compatibility scanner and positive/negative self-test installed |
 | `step_006` | pending | - | - |
 | `step_007` | pending | - | - |
 | `step_008` | pending | - | - |
