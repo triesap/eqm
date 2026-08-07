@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-006 and Steps 007a-007g complete
+Status: in progress; Steps 001-006 and Step 007 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_007h`
+Current checkpoint: `step_008`
 
 ## Purpose
 
@@ -126,8 +126,8 @@ authority.
 | `step_007d` | complete | `ab26ce5` | Finalized projection, ordering, exclusions, JCS domain, and fixed vectors defined |
 | `step_007e` | complete | `4fee7a7` | Total applicability, policy, evidence, waiver, conformance, equivalence, exposure, release, diff, and affected tables defined |
 | `step_007f` | complete | `2bb5bce` | Exact public DTO, CLI, SARIF, adapter, attestation, and MCP contracts defined |
-| `step_007g` | complete | this checkpoint | Trust roots, subjects, replay, execution boundaries, diagnostics, privacy, and limits defined |
-| `step_007h` | pending | - | - |
+| `step_007g` | complete | `2ef6d39` | Trust roots, subjects, replay, execution boundaries, diagnostics, privacy, and limits defined |
+| `step_007h` | complete | this checkpoint | Traceability, checksums, corrected sequence, and deterministic authority validation installed |
 
 ## Reconciliation Rules
 
@@ -147,5 +147,5 @@ authority.
 | `step_004` | complete | this checkpoint | Toolchain components, shared lints, and explicit unsafe forbids verified |
 | `step_005` | complete | this checkpoint | Compatibility scanner and positive/negative self-test installed |
 | `step_006` | complete | this checkpoint | Canonical authored metadata layout and generated-state boundary added |
-| `step_007` | pending | - | - |
+| `step_007` | complete | this checkpoint | All eight authority subcheckpoints complete and deterministically validated |
 | `step_008` | pending | - | - |
