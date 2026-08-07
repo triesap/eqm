@@ -5,6 +5,7 @@
 mod applicability;
 mod conformance;
 mod coverage;
+mod equivalence;
 mod expand;
 mod freshness;
 mod invariants;
@@ -26,6 +27,9 @@ pub use conformance::{
 pub use coverage::{
     CoverageExpectation, CoverageMismatch, CoverageReport, CoverageStatus, EvidenceCandidate,
     evaluate_evidence_coverage,
+};
+pub use equivalence::{
+    EquivalenceReport, EquivalenceStatus, TargetEvaluation, evaluate_target_set_equivalence,
 };
 pub use expand::{FragmentDigestMap, expand_fragments};
 pub use freshness::{

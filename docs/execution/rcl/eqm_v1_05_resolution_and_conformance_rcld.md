@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: in progress; Step 069 complete
+Status: complete; Steps 057-070 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: `step_070`
+Current checkpoint: none
 
 ## Purpose
 
@@ -94,4 +94,4 @@ never converts an unsatisfied facet into `satisfied`.
 | `step_067` | complete | Explicit zero-match counts are valid observations that aggregate missing; immutable executable histories preserve pass/fail instability and map timeout, cancellation, and error to unknown, while skipped, filtered, quarantined, and below-minimum counts remain missing and cross-result pass/fail conflict remains unstable |
 | `step_068` | complete | Waivers match exact protected policy, scope subject, unit, requirement, facet, and profile values; enforce half-open dates, calendar-day ceilings, protected distinct approvers, and declared plus independently satisfied compensating controls; invalid or ambiguous authority never applies, and only failed, stale, or missing can become visibly waived rather than satisfied |
 | `step_069` | complete | Facet evaluation applies the normative stop-order across applicability, exact context/envelope, coverage, attempts, freshness, verified trust, structure, exposure, release, and waivers; only failed, stale, or missing may become waived, unknown and unstable remain blocking, and complete target sets classify conformant, conditionally conformant, or nonconformant with explicit incomplete-policy failure |
-| `step_070` | pending | - |
+| `step_070` | complete | Equivalence requires one exact context and one completed conformance result for every required target; all conformant is equivalent, any visible conditional target yields conditionally equivalent with the full contributing waiver set, any nonconformant target is not equivalent, and missing/mismatched/invalid context is unknown while extra targets remain separately visible |
