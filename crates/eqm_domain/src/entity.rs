@@ -1,6 +1,9 @@
 //! Shared entity values and the capability model.
 
-use crate::{CapabilityId, JourneyId, LifecycleStatus, OwnerRef, RiskClass, SurfaceId};
+use crate::{
+    CapabilityId, DimensionId, Facet, JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef,
+    ProviderId, RequirementLevel, RequirementScope, RiskClass, SurfaceId, SymbolicValueId,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -11,6 +14,8 @@ const MAX_EXTENSION_DEPTH: usize = 16;
 const MAX_EXTENSION_NODES: usize = 1_024;
 const MAX_EXTENSION_STRING_BYTES: usize = 16 * 1_024;
 const MAX_EXTENSION_BYTES: usize = 256 * 1_024;
+const MAX_APPLICABILITY_DEPTH: usize = 16;
+const MAX_APPLICABILITY_NODES: usize = 256;
 
 #[derive(Clone, Copy)]
 struct ExtensionMeasure {
@@ -67,6 +72,11 @@ text_value!(
     /// A normalized transition trigger of at most 256 UTF-8 bytes.
     TransitionTrigger,
     256
+);
+text_value!(
+    /// One normalized user-observable assertion of at most 4,096 UTF-8 bytes.
+    RequirementStatement,
+    4_096
 );
 
 /// A positive authored authority revision.
@@ -504,6 +514,301 @@ impl Journey {
     }
 }
 
+/// Single-value applicability comparison.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ComparisonOperator {
+    /// Dimension equals the value.
+    Equal,
+    /// Dimension differs from the value.
+    NotEqual,
+}
+
+/// Set-membership applicability comparison.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum MembershipOperator {
+    /// Dimension is in the value set.
+    In,
+    /// Dimension is outside the value set.
+    NotIn,
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum ApplicabilityExpression {
+    Constant(bool),
+    Comparison(DimensionId, ComparisonOperator, SymbolicValueId),
+    Membership(DimensionId, MembershipOperator, BTreeSet<SymbolicValueId>),
+    All(BTreeSet<Applicability>),
+    Any(BTreeSet<Applicability>),
+    Not(Box<Applicability>),
+}
+
+/// The discriminant of a validated applicability expression.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum ApplicabilityKind {
+    /// Boolean constant.
+    Constant,
+    /// Single-value comparison.
+    Comparison,
+    /// Set-membership comparison.
+    Membership,
+    /// Logical conjunction.
+    All,
+    /// Logical disjunction.
+    Any,
+    /// Logical negation.
+    Not,
+}
+
+/// A finite symbolic applicability expression.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct Applicability {
+    expression: ApplicabilityExpression,
+    depth: u8,
+    nodes: u16,
+}
+
+impl Applicability {
+    /// Creates a boolean constant.
+    #[must_use]
+    pub const fn always(value: bool) -> Self {
+        Self {
+            expression: ApplicabilityExpression::Constant(value),
+            depth: 1,
+            nodes: 1,
+        }
+    }
+
+    /// Creates a single-value symbolic comparison.
+    #[must_use]
+    pub const fn compare(
+        dimension: DimensionId,
+        operator: ComparisonOperator,
+        value: SymbolicValueId,
+    ) -> Self {
+        Self {
+            expression: ApplicabilityExpression::Comparison(dimension, operator, value),
+            depth: 1,
+            nodes: 1,
+        }
+    }
+
+    /// Creates a nonempty, duplicate-free membership comparison.
+    pub fn membership(
+        dimension: DimensionId,
+        operator: MembershipOperator,
+        values: Vec<SymbolicValueId>,
+    ) -> Result<Self, EntityBuildError> {
+        if values.is_empty() {
+            return Err(EntityBuildError::ApplicabilityOperandsRequired);
+        }
+        let count = values.len();
+        let values: BTreeSet<_> = values.into_iter().collect();
+        if values.len() != count {
+            return Err(EntityBuildError::DuplicateApplicabilityOperand);
+        }
+        Ok(Self {
+            expression: ApplicabilityExpression::Membership(dimension, operator, values),
+            depth: 1,
+            nodes: 1,
+        })
+    }
+
+    /// Creates a nonempty conjunction and canonicalizes child order.
+    pub fn all(values: Vec<Self>) -> Result<Self, EntityBuildError> {
+        Self::logical(values, true)
+    }
+
+    /// Creates a nonempty disjunction and canonicalizes child order.
+    pub fn any(values: Vec<Self>) -> Result<Self, EntityBuildError> {
+        Self::logical(values, false)
+    }
+
+    fn logical(values: Vec<Self>, conjunction: bool) -> Result<Self, EntityBuildError> {
+        if values.is_empty() {
+            return Err(EntityBuildError::ApplicabilityOperandsRequired);
+        }
+        let count = values.len();
+        let values: BTreeSet<_> = values.into_iter().collect();
+        if values.len() != count {
+            return Err(EntityBuildError::DuplicateApplicabilityOperand);
+        }
+        let depth = values.iter().map(|value| value.depth).max().unwrap_or(0) + 1;
+        let nodes = values.iter().try_fold(1_u16, |total, value| {
+            total
+                .checked_add(value.nodes)
+                .ok_or(EntityBuildError::ApplicabilityNodesExceeded)
+        })?;
+        let expression = if conjunction {
+            ApplicabilityExpression::All(values)
+        } else {
+            ApplicabilityExpression::Any(values)
+        };
+        Self::with_bounds(expression, depth, nodes)
+    }
+
+    /// Creates a logical negation.
+    pub fn logical_not(value: Self) -> Result<Self, EntityBuildError> {
+        let depth = value.depth + 1;
+        let nodes = value
+            .nodes
+            .checked_add(1)
+            .ok_or(EntityBuildError::ApplicabilityNodesExceeded)?;
+        Self::with_bounds(ApplicabilityExpression::Not(Box::new(value)), depth, nodes)
+    }
+
+    fn with_bounds(
+        expression: ApplicabilityExpression,
+        depth: u8,
+        nodes: u16,
+    ) -> Result<Self, EntityBuildError> {
+        if usize::from(depth) > MAX_APPLICABILITY_DEPTH {
+            return Err(EntityBuildError::ApplicabilityDepthExceeded);
+        }
+        if usize::from(nodes) > MAX_APPLICABILITY_NODES {
+            return Err(EntityBuildError::ApplicabilityNodesExceeded);
+        }
+        Ok(Self {
+            expression,
+            depth,
+            nodes,
+        })
+    }
+
+    /// Returns the expression form without exposing invalid construction.
+    #[must_use]
+    pub const fn kind(&self) -> ApplicabilityKind {
+        match &self.expression {
+            ApplicabilityExpression::Constant(_) => ApplicabilityKind::Constant,
+            ApplicabilityExpression::Comparison(..) => ApplicabilityKind::Comparison,
+            ApplicabilityExpression::Membership(..) => ApplicabilityKind::Membership,
+            ApplicabilityExpression::All(_) => ApplicabilityKind::All,
+            ApplicabilityExpression::Any(_) => ApplicabilityKind::Any,
+            ApplicabilityExpression::Not(_) => ApplicabilityKind::Not,
+        }
+    }
+
+    /// Returns the validated tree depth.
+    #[must_use]
+    pub const fn depth(&self) -> u8 {
+        self.depth
+    }
+
+    /// Returns the validated total node count.
+    #[must_use]
+    pub const fn nodes(&self) -> u16 {
+        self.nodes
+    }
+}
+
+impl Default for Applicability {
+    fn default() -> Self {
+        Self::always(true)
+    }
+}
+
+/// One validated local requirement record.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Requirement {
+    id: LocalRequirementId,
+    level: RequirementLevel,
+    scope: RequirementScope,
+    statement: RequirementStatement,
+    facets: BTreeSet<Facet>,
+    applicability: Applicability,
+    risk_class: Option<RiskClass>,
+    provider: Option<ProviderId>,
+    extensions: Extensions,
+}
+
+impl Requirement {
+    /// Creates a requirement and enforces facet and provider rules.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: LocalRequirementId,
+        level: RequirementLevel,
+        scope: RequirementScope,
+        statement: RequirementStatement,
+        facets: Vec<Facet>,
+        applicability: Applicability,
+        risk_class: Option<RiskClass>,
+        provider: Option<ProviderId>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        if facets.is_empty() {
+            return Err(EntityBuildError::FacetsRequired);
+        }
+        let count = facets.len();
+        let facets: BTreeSet<_> = facets.into_iter().collect();
+        if facets.len() != count {
+            return Err(EntityBuildError::DuplicateFacet);
+        }
+        match (scope, provider.is_some()) {
+            (RequirementScope::SharedProvider, false) => {
+                return Err(EntityBuildError::ProviderRequired);
+            }
+            (RequirementScope::SharedProvider, true) | (_, false) => {}
+            (_, true) => return Err(EntityBuildError::ProviderForbidden),
+        }
+        Ok(Self {
+            id,
+            level,
+            scope,
+            statement,
+            facets,
+            applicability,
+            risk_class,
+            provider,
+            extensions,
+        })
+    }
+
+    /// Returns the local requirement ID.
+    #[must_use]
+    pub const fn id(&self) -> &LocalRequirementId {
+        &self.id
+    }
+    /// Returns the requirement strength.
+    #[must_use]
+    pub const fn level(&self) -> RequirementLevel {
+        self.level
+    }
+    /// Returns the obligation scope.
+    #[must_use]
+    pub const fn scope(&self) -> RequirementScope {
+        self.scope
+    }
+    /// Returns the atomic normative statement.
+    #[must_use]
+    pub const fn statement(&self) -> &RequirementStatement {
+        &self.statement
+    }
+    /// Returns facets in canonical order.
+    #[must_use]
+    pub const fn facets(&self) -> &BTreeSet<Facet> {
+        &self.facets
+    }
+    /// Returns the finite symbolic applicability expression.
+    #[must_use]
+    pub const fn applicability(&self) -> &Applicability {
+        &self.applicability
+    }
+    /// Returns an optional local risk elevation.
+    #[must_use]
+    pub const fn risk_class(&self) -> Option<RiskClass> {
+        self.risk_class
+    }
+    /// Returns the shared provider when required by scope.
+    #[must_use]
+    pub const fn provider(&self) -> Option<&ProviderId> {
+        self.provider.as_ref()
+    }
+    /// Returns extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -521,6 +826,22 @@ pub enum EntityBuildError {
     DuplicateSurface,
     /// A journey declared the same transition tuple more than once.
     DuplicateTransition,
+    /// A requirement did not declare any facets.
+    FacetsRequired,
+    /// A requirement declared a facet more than once.
+    DuplicateFacet,
+    /// Shared-provider scope omitted its provider.
+    ProviderRequired,
+    /// A non-provider scope declared a provider.
+    ProviderForbidden,
+    /// A logical or membership expression omitted its operands.
+    ApplicabilityOperandsRequired,
+    /// An applicability operand appeared more than once.
+    DuplicateApplicabilityOperand,
+    /// Applicability nesting exceeded 16 levels.
+    ApplicabilityDepthExceeded,
+    /// Applicability data exceeded 256 nodes.
+    ApplicabilityNodesExceeded,
     /// An extension namespace was invalid.
     InvalidExtensionNamespace,
     /// An extension object key was invalid.
@@ -545,6 +866,14 @@ impl Display for EntityBuildError {
             Self::SurfacesRequired => "journey requires at least one surface",
             Self::DuplicateSurface => "journey surfaces contain a duplicate",
             Self::DuplicateTransition => "journey transitions contain a duplicate tuple",
+            Self::FacetsRequired => "requirement requires at least one facet",
+            Self::DuplicateFacet => "requirement facets contain a duplicate",
+            Self::ProviderRequired => "shared-provider requirement requires a provider",
+            Self::ProviderForbidden => "requirement provider is forbidden for this scope",
+            Self::ApplicabilityOperandsRequired => "applicability requires at least one operand",
+            Self::DuplicateApplicabilityOperand => "applicability contains a duplicate operand",
+            Self::ApplicabilityDepthExceeded => "applicability depth exceeds 16",
+            Self::ApplicabilityNodesExceeded => "applicability node count exceeds 256",
             Self::InvalidExtensionNamespace => "invalid extension namespace",
             Self::InvalidExtensionKey => "invalid extension key",
             Self::InvalidExtensionValue => "invalid extension value",
@@ -728,6 +1057,111 @@ mod tests {
             build(vec![start], vec![transition.clone(), transition]),
             Err(EntityBuildError::DuplicateTransition)
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn requirement_enforces_facets_and_provider_scope() -> Result<(), Box<dyn Error>> {
+        let id = LocalRequirementId::new("reachable")?;
+        let statement = RequirementStatement::new("The form is reachable")?;
+        let base = |scope, facets, provider| {
+            Requirement::new(
+                id.clone(),
+                RequirementLevel::Required,
+                scope,
+                statement.clone(),
+                facets,
+                Applicability::default(),
+                Some(RiskClass::High),
+                provider,
+                Extensions::default(),
+            )
+        };
+        let provider = ProviderId::new("identity.primary")?;
+        let requirement = base(
+            RequirementScope::SharedProvider,
+            vec![Facet::Reachability],
+            Some(provider.clone()),
+        )?;
+        assert_eq!(requirement.provider(), Some(&provider));
+        assert_eq!(
+            requirement.applicability().kind(),
+            ApplicabilityKind::Constant
+        );
+        assert!(matches!(
+            base(RequirementScope::EachTarget, Vec::new(), None),
+            Err(EntityBuildError::FacetsRequired)
+        ));
+        assert!(matches!(
+            base(
+                RequirementScope::EachTarget,
+                vec![Facet::Behavior, Facet::Behavior],
+                None,
+            ),
+            Err(EntityBuildError::DuplicateFacet)
+        ));
+        assert!(matches!(
+            base(
+                RequirementScope::SharedProvider,
+                vec![Facet::Behavior],
+                None,
+            ),
+            Err(EntityBuildError::ProviderRequired)
+        ));
+        assert!(matches!(
+            base(
+                RequirementScope::EndToEnd,
+                vec![Facet::Behavior],
+                Some(provider),
+            ),
+            Err(EntityBuildError::ProviderForbidden)
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn applicability_is_bounded_and_duplicate_free() -> Result<(), Box<dyn Error>> {
+        let dimension = DimensionId::new("region")?;
+        let eu = SymbolicValueId::new("eu")?;
+        assert!(matches!(
+            Applicability::membership(dimension.clone(), MembershipOperator::In, Vec::new()),
+            Err(EntityBuildError::ApplicabilityOperandsRequired)
+        ));
+        assert!(matches!(
+            Applicability::membership(
+                dimension.clone(),
+                MembershipOperator::In,
+                vec![eu.clone(), eu.clone()],
+            ),
+            Err(EntityBuildError::DuplicateApplicabilityOperand)
+        ));
+        let comparison = Applicability::compare(dimension, ComparisonOperator::Equal, eu);
+        assert!(matches!(
+            Applicability::all(vec![comparison.clone(), comparison]),
+            Err(EntityBuildError::DuplicateApplicabilityOperand)
+        ));
+        let mut nested = Applicability::always(true);
+        for _ in 1..MAX_APPLICABILITY_DEPTH {
+            nested = Applicability::logical_not(nested)?;
+        }
+        assert_eq!(nested.depth(), MAX_APPLICABILITY_DEPTH as u8);
+        assert_eq!(
+            Applicability::logical_not(nested),
+            Err(EntityBuildError::ApplicabilityDepthExceeded)
+        );
+        let many: Vec<_> = (0..MAX_APPLICABILITY_NODES)
+            .map(|index| {
+                Ok(Applicability::compare(
+                    DimensionId::new(format!("d{index}"))?,
+                    ComparisonOperator::Equal,
+                    SymbolicValueId::new("on")?,
+                ))
+            })
+            .collect::<Result<_, crate::IdParseError>>()?;
+        assert_eq!(
+            Applicability::all(many),
+            Err(EntityBuildError::ApplicabilityNodesExceeded)
+        );
         Ok(())
     }
 }

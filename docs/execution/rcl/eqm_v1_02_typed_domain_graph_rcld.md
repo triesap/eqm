@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 02: Typed Domain Graph
 
-Status: in progress; Step 018 complete
+Status: in progress; Step 019 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 01
-Current checkpoint: `step_019`
+Current checkpoint: `step_020`
 
 ## Purpose
 
@@ -71,4 +71,5 @@ construction, ordering, duplicate, and doc tests in `eqm_domain`.
 | --- | --- | --- |
 | `step_017` | complete | Capability authority and shared normalized extension values implemented |
 | `step_018` | complete | Versioned journeys preserve surface order and canonicalize validated transitions |
-| `step_019`-`step_032` | pending | - |
+| `step_019` | complete | Typed requirements enforce closed facets, scopes, providers, risk, and bounded applicability |
+| `step_020`-`step_032` | pending | - |

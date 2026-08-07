@@ -178,6 +178,18 @@ define_id!(
     1,
     Some(1)
 );
+define_id!(
+    /// A local dimension ID within one profile family.
+    DimensionId,
+    1,
+    Some(1)
+);
+define_id!(
+    /// A symbolic value ID within one dimension.
+    SymbolicValueId,
+    1,
+    Some(1)
+);
 
 /// A fully qualified requirement identity: `<unit>#<local>`.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

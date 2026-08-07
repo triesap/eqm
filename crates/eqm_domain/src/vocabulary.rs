@@ -136,6 +136,12 @@ pub enum VocabularyParseError {
     InvalidLifecycleStatus,
     /// A risk class was not in the v1 set.
     InvalidRiskClass,
+    /// Requirement level was not in the v1 set.
+    InvalidRequirementLevel,
+    /// Requirement scope was not in the v1 set.
+    InvalidRequirementScope,
+    /// Facet was not in the v1 set.
+    InvalidFacet,
 }
 
 impl Display for VocabularyParseError {
@@ -143,11 +149,75 @@ impl Display for VocabularyParseError {
         formatter.write_str(match self {
             Self::InvalidLifecycleStatus => "invalid lifecycle status",
             Self::InvalidRiskClass => "invalid risk class",
+            Self::InvalidRequirementLevel => "invalid requirement level",
+            Self::InvalidRequirementScope => "invalid requirement scope",
+            Self::InvalidFacet => "invalid facet",
         })
     }
 }
 
 impl Error for VocabularyParseError {}
+
+macro_rules! closed_vocabulary {
+    ($(#[$meta:meta])* $name:ident, $error:ident, [$($variant:ident => $wire:literal),+ $(,)?]) => {
+        $(#[$meta])*
+        #[allow(missing_docs)]
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        pub enum $name { $($variant),+ }
+
+        impl $name {
+            /// Every value in stable wire order.
+            pub const ALL: &'static [Self] = &[$(Self::$variant),+];
+            /// Returns the exact wire value.
+            #[must_use]
+            pub const fn as_str(self) -> &'static str {
+                match self { $(Self::$variant => $wire),+ }
+            }
+        }
+
+        impl Display for $name {
+            fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+                formatter.write_str(self.as_str())
+            }
+        }
+
+        impl FromStr for $name {
+            type Err = VocabularyParseError;
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                Self::ALL.iter().copied().find(|item| item.as_str() == value)
+                    .ok_or(VocabularyParseError::$error)
+            }
+        }
+    };
+}
+
+closed_vocabulary!(
+    /// Requirement strength from weakest to strongest.
+    RequirementLevel,
+    InvalidRequirementLevel,
+    [Optional => "optional", Recommended => "recommended", Required => "required"]
+);
+closed_vocabulary!(
+    /// Obligation fan-out scope.
+    RequirementScope,
+    InvalidRequirementScope,
+    [EachTarget => "each_target", SharedProvider => "shared_provider", EndToEnd => "end_to_end"]
+);
+closed_vocabulary!(
+    /// Independently evaluated requirement facet.
+    Facet,
+    InvalidFacet,
+    [
+        Structure => "structure",
+        Reachability => "reachability",
+        Behavior => "behavior",
+        Accessibility => "accessibility",
+        Visual => "visual",
+        Analytics => "analytics",
+        RuntimeExposure => "runtime_exposure",
+        ReleasePresence => "release_presence"
+    ]
+);
 
 #[cfg(test)]
 mod tests {
@@ -200,5 +270,31 @@ mod tests {
                 Err(VocabularyParseError::InvalidRiskClass)
             );
         }
+    }
+
+    #[test]
+    fn requirement_vocabularies_are_closed_and_ordered() {
+        assert!(RequirementLevel::Optional < RequirementLevel::Required);
+        for value in RequirementLevel::ALL {
+            assert_eq!(value.as_str().parse(), Ok(*value));
+        }
+        for value in RequirementScope::ALL {
+            assert_eq!(value.as_str().parse(), Ok(*value));
+        }
+        for value in Facet::ALL {
+            assert_eq!(value.as_str().parse(), Ok(*value));
+        }
+        assert_eq!(
+            "mandatory".parse::<RequirementLevel>(),
+            Err(VocabularyParseError::InvalidRequirementLevel)
+        );
+        assert_eq!(
+            "per_target".parse::<RequirementScope>(),
+            Err(VocabularyParseError::InvalidRequirementScope)
+        );
+        assert_eq!(
+            "security".parse::<Facet>(),
+            Err(VocabularyParseError::InvalidFacet)
+        );
     }
 }

@@ -19,13 +19,15 @@ pub use diagnostic::{
 };
 pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
 pub use entity::{
-    Capability, Description, EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue,
-    Extensions, Journey, Revision, Title, Transition, TransitionTrigger,
+    Applicability, ApplicabilityKind, Capability, ComparisonOperator, Description,
+    EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Journey,
+    MembershipOperator, Requirement, RequirementStatement, Revision, Title, Transition,
+    TransitionTrigger,
 };
 pub use id::{
-    AdapterId, ArtifactId, BindingId, CapabilityId, EvidenceSpecId, FragmentId, FullRequirementId,
-    IdParseError, JourneyId, LocalRequirementId, PolicyId, ProfileId, ProviderId, RunnerId,
-    SurfaceId, TargetId, UnitId, WaiverId,
+    AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
+    FullRequirementId, IdParseError, JourneyId, LocalRequirementId, PolicyId, ProfileId,
+    ProviderId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
 };
 pub use path::{RepoPath, RepoPathError};
 pub use reference::{
@@ -33,4 +35,6 @@ pub use reference::{
 };
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
 pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
-pub use vocabulary::{LifecycleStatus, RiskClass, VocabularyParseError};
+pub use vocabulary::{
+    Facet, LifecycleStatus, RequirementLevel, RequirementScope, RiskClass, VocabularyParseError,
+};
