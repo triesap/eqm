@@ -69,6 +69,10 @@ pub struct ValidatedDocument {
 }
 
 impl ValidatedDocument {
+    pub(crate) fn new(source: RepoPath, document: DocumentDto) -> Self {
+        Self { source, document }
+    }
+
     /// Returns the repository-relative source path.
     #[must_use]
     pub const fn source(&self) -> &RepoPath {
@@ -128,10 +132,7 @@ pub fn decode_sources(
                 source.path(),
             ));
         }
-        documents.push(ValidatedDocument {
-            source: source.path().clone(),
-            document,
-        });
+        documents.push(ValidatedDocument::new(source.path().clone(), document));
     }
     Ok(documents)
 }
