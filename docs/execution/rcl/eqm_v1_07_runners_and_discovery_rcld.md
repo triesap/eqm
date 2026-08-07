@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 07: Runners And Discovery
 
-Status: in progress
+Status: in progress; Step 077 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 06
-Current checkpoint: `step_077`
+Current checkpoint: `step_078`
 
 ## Purpose
 
@@ -80,4 +80,5 @@ flood, atomic-write, inventory, and framework fixture tests.
 
 | Step range | Status | Result |
 | --- | --- | --- |
-| `step_077`-`step_090` | pending | - |
+| `step_077` | complete | Runner definitions resolve only under exact ID/revision, backend, resource, guarantee, and executable-digest authority; prepared programs retain verified repository or immutable locked identity, while a length-delimited canonical semantic projection produces stable definition digests independent of set/map insertion order and display-only extensions |
+| `step_078`-`step_090` | pending | - |
