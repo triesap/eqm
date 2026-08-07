@@ -2,10 +2,15 @@
 
 #![forbid(unsafe_code)]
 
+mod evidence;
 mod report;
 mod results;
 mod schema;
 
+pub use evidence::{
+    AttachmentDto, AttemptDto, CountsDto, EvidenceDtoError, EvidencePayloadDto, EvidenceResultDto,
+    EvidenceSelectorDto, EvidenceSubjectDto, ExecutionPayloadDto, ScopeSubjectDto, TestResultDto,
+};
 pub use report::{
     CommandIdentity, CommandResultDto, DiagnosticDto, EvaluationModeDto, InvocationContextDto,
     ProfileValueDto, ReportBuildError, ReportEnvelope, ResultSchema, SeverityDto,
