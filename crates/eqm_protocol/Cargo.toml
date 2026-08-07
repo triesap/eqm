@@ -1,0 +1,15 @@
+[package]
+name = "eqm_protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+readme.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+eqm_domain.workspace = true
+
+[lints]
+workspace = true

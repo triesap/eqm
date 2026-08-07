@@ -2,9 +2,6 @@
 /target/
 **/target/
 
-# Cargo
-Cargo.lock
-
 # Rust tooling
 **/*.rs.bk
 **/*.rlib
@@ -12,13 +9,8 @@ Cargo.lock
 **/*.o
 **/*.d
 
-# WASM & web build outputs
-/dist/
-/pkg/
-/wasm/
-/site/
-/target/site/
-/target/wasm32-unknown-unknown/
+# Generated EquivalenceMatrix state
+/.eqm/
 
 # Coverage profiling
 /coverage/

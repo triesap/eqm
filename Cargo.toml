@@ -1,7 +1,14 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
-    "crates/*"
+    "crates/eqm_cli",
+    "crates/eqm_domain",
+    "crates/eqm_engine",
+    "crates/eqm_manifest",
+    "crates/eqm_mcp",
+    "crates/eqm_protocol",
+    "crates/eqm_runner",
+    "crates/eqm_test_support",
 ]
 
 [workspace.package]
@@ -11,22 +18,15 @@ license = "MIT OR Apache-2.0"
 authors = ["Tyson Lupul <tyson@radroots.org>"]
 readme = "README.md"
 repository = "https://github.com/triesap/eqm"
-rust-version = "1.92.0"
+rust-version = "1.97.1"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
 
 [workspace.dependencies]
-
-[profile.release]
-codegen-units = 1
-lto = true
-opt-level = "z"
-strip = true
-
-[profile.wasm-release]
-inherits = "release"
-codegen-units = 1
-lto = true
-opt-level = "z"
-panic = "abort"
+eqm_domain = { path = "crates/eqm_domain", version = "=0.1.0" }
+eqm_engine = { path = "crates/eqm_engine", version = "=0.1.0" }
+eqm_manifest = { path = "crates/eqm_manifest", version = "=0.1.0" }
+eqm_mcp = { path = "crates/eqm_mcp", version = "=0.1.0" }
+eqm_protocol = { path = "crates/eqm_protocol", version = "=0.1.0" }
+eqm_runner = { path = "crates/eqm_runner", version = "=0.1.0" }
