@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 01: Diagnostics And Primitives
 
-Status: planned; blocked by RCLD 00
+Status: ready; RCLD 00 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 00
-Current checkpoint: none
+Current checkpoint: `step_009`
 
 ## Purpose
 

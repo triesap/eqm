@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-006 and Step 007 complete
+Status: complete; Steps 001-008 green
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_008`
+Current checkpoint: none
 
 ## Purpose
 
@@ -127,7 +127,7 @@ authority.
 | `step_007e` | complete | `4fee7a7` | Total applicability, policy, evidence, waiver, conformance, equivalence, exposure, release, diff, and affected tables defined |
 | `step_007f` | complete | `2bb5bce` | Exact public DTO, CLI, SARIF, adapter, attestation, and MCP contracts defined |
 | `step_007g` | complete | `2ef6d39` | Trust roots, subjects, replay, execution boundaries, diagnostics, privacy, and limits defined |
-| `step_007h` | complete | this checkpoint | Traceability, checksums, corrected sequence, and deterministic authority validation installed |
+| `step_007h` | complete | `b001fb7` | Traceability, checksums, corrected sequence, and deterministic authority validation installed |
 
 ## Reconciliation Rules
 
@@ -141,11 +141,11 @@ authority.
 
 | Step | Status | Commit | Result |
 | --- | --- | --- | --- |
-| `step_001` | complete | this checkpoint | Repository baseline and supported pre-workspace gate recorded |
-| `step_002` | complete | this checkpoint | Repository-local agent authority installed |
-| `step_003` | complete | this checkpoint | Explicit locked eight-crate Rust workspace established and fully verified |
-| `step_004` | complete | this checkpoint | Toolchain components, shared lints, and explicit unsafe forbids verified |
-| `step_005` | complete | this checkpoint | Compatibility scanner and positive/negative self-test installed |
-| `step_006` | complete | this checkpoint | Canonical authored metadata layout and generated-state boundary added |
-| `step_007` | complete | this checkpoint | All eight authority subcheckpoints complete and deterministically validated |
-| `step_008` | pending | - | - |
+| `step_001` | complete | `cb786ab` | Repository baseline and supported pre-workspace gate recorded |
+| `step_002` | complete | `d34316d` | Repository-local agent authority installed |
+| `step_003` | complete | `8beaec1` | Explicit locked eight-crate Rust workspace established and fully verified |
+| `step_004` | complete | `623bb92` | Toolchain components, shared lints, and explicit unsafe forbids verified |
+| `step_005` | complete | `e9d2354` | Compatibility scanner and positive/negative self-test installed |
+| `step_006` | complete | `7fd672f` | Canonical authored metadata layout and generated-state boundary added |
+| `step_007` | complete | `c150c76..b001fb7` | All eight authority subcheckpoints complete and deterministically validated |
+| `step_008` | complete | this checkpoint | Repository-owned aggregate verification and baseline CI installed |
