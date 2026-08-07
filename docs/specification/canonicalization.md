@@ -40,6 +40,19 @@ SHA-256 is the only v1 algorithm. The wire value is `sha256:` followed by 64
 lowercase hexadecimal digits. Algorithm labels, uppercase hex, base64, a
 missing domain label, or a missing zero delimiter are not equivalent inputs.
 
+### Fragment digest domain
+
+An exact fragment pin uses this byte concatenation with no newline:
+
+```text
+UTF8("eqm:v1:fragment") || 0x00 || FRAGMENT_JCS_BYTES
+```
+
+`FRAGMENT_JCS_BYTES` is the RFC 8785 serialization of the fragment entity
+projection defined below, after parsing, normalization, defaults, and domain
+validation. It is not a source-file hash. Comments, key order, quoting, source
+paths, and line endings therefore cannot invalidate a semantic fragment pin.
+
 ## Root Projection
 
 The projection is one JSON object with these exact keys. Every array and the
@@ -91,6 +104,8 @@ with a default is always present in the projection. JSON `null` is never used.
 optional `prefix` for each expanded use. The surface `requirements` array
 contains both direct and expanded requirements under their final IDs. This
 retains import identity while ensuring the digest covers effective meaning.
+When a fragment use has a prefix, its final local requirement IDs are
+`<prefix>_<local-id>`; invalid or colliding results fail before finalization.
 
 ## Nested Projection
 

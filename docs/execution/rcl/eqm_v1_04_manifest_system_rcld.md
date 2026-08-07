@@ -69,6 +69,10 @@ RCLD 05 Step 059 must add the integration proof that parsing, resolution,
 fragment expansion, invariant validation, and canonicalization execute in the
 approved order. No pre-resolution or pre-expansion digest is authoritative.
 
+RCLD 05 Step 059 completed this gate with a finalized graph wrapper, exact
+semantic fragment pins, expansion-before-canonicalization integration tests,
+and fixed digest vectors.
+
 ## Reconciliation Rules
 
 - A source span is diagnostic metadata and never enters a normative digest.

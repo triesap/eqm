@@ -10,11 +10,13 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 /// Returns the stable graph-resolution diagnostic registry.
-pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 4], DiagnosticBuildError> {
+pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 6], DiagnosticBuildError> {
     let duplicate = DiagnosticCode::from_number(300).ok_or(DiagnosticBuildError::InvalidCode)?;
     let dangling = DiagnosticCode::from_number(301).ok_or(DiagnosticBuildError::InvalidCode)?;
     let invariant = DiagnosticCode::from_number(302).ok_or(DiagnosticBuildError::InvalidCode)?;
     let risk = DiagnosticCode::from_number(303).ok_or(DiagnosticBuildError::InvalidCode)?;
+    let pin = DiagnosticCode::from_number(304).ok_or(DiagnosticBuildError::InvalidCode)?;
+    let collision = DiagnosticCode::from_number(305).ok_or(DiagnosticBuildError::InvalidCode)?;
     Ok([
         DiagnosticDescriptor {
             code: duplicate,
@@ -47,6 +49,22 @@ pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 4], DiagnosticB
             authority: "docs/specification/vocabularies.md",
             explanation: "A requirement lowers its journey or fragment risk authority.",
             remediation: "Retain inherited risk or raise the requirement risk class.",
+        },
+        DiagnosticDescriptor {
+            code: pin,
+            severity: Severity::Error,
+            title: "invalid fragment pin",
+            authority: "docs/specification/manifest-contracts.md",
+            explanation: "A fragment use does not match available semantic content exactly.",
+            remediation: "Pin the exact fragment ID, revision, and canonical semantic digest.",
+        },
+        DiagnosticDescriptor {
+            code: collision,
+            severity: Severity::Error,
+            title: "fragment expansion collision",
+            authority: "docs/specification/manifest-contracts.md",
+            explanation: "Expansion would replace or duplicate a surface requirement identity.",
+            remediation: "Choose a unique prefix or remove the conflicting requirement.",
         },
     ])
 }
@@ -510,6 +528,8 @@ pub enum ResolutionError {
     Diagnostic(DiagnosticBuildError),
     /// Deterministic graph index construction found an unanticipated conflict.
     Graph(WorkspaceGraphBuildError),
+    /// Rebuilding validated entities during expansion violated an internal contract.
+    Expansion,
 }
 
 impl ResolutionError {
@@ -533,6 +553,7 @@ impl Display for ResolutionError {
             ),
             Self::Diagnostic(error) => write!(formatter, "invalid resolution diagnostic: {error}"),
             Self::Graph(error) => write!(formatter, "graph index construction failed: {error}"),
+            Self::Expansion => formatter.write_str("fragment expansion reconstruction failed"),
         }
     }
 }
@@ -543,6 +564,7 @@ impl Error for ResolutionError {
             Self::Diagnostic(error) => Some(error),
             Self::Graph(error) => Some(error),
             Self::Findings(_) => None,
+            Self::Expansion => None,
         }
     }
 }

@@ -14,7 +14,10 @@ mod lockfile;
 mod parse;
 mod validation;
 
-pub use canonical::{CanonicalGraph, CanonicalizationError, canonicalize_graph};
+pub use canonical::{
+    CanonicalFragment, CanonicalGraph, CanonicalizationError, canonicalize_fragment,
+    canonicalize_graph,
+};
 pub use config::{ConfigError, WorkspaceConfig, select_workspace_config};
 pub use conversion::{
     ContractEntity, ConversionError, convert_binding, convert_contract, convert_policy,

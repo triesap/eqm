@@ -11,6 +11,8 @@ const HEX_LENGTH: usize = 64;
 /// An approved domain-separation label.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum DigestDomain {
+    /// One canonical EQM v1 fragment authority.
+    Fragment,
     /// Finalized EQM v1 semantic graph identity.
     SemanticGraph,
 }
@@ -20,6 +22,7 @@ impl DigestDomain {
     #[must_use]
     pub const fn as_bytes(self) -> &'static [u8] {
         match self {
+            Self::Fragment => b"eqm:v1:fragment",
             Self::SemanticGraph => b"eqm:v1:semantic-graph",
         }
     }

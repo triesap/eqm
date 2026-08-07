@@ -70,7 +70,7 @@ unknown, never false-by-default.
 | `fragment` | fragment ID | required | Imported fragment authority. |
 | `revision` | positive integer | required | Exact fragment revision. |
 | `digest` | SHA-256 digest | required | Exact normative fragment digest. |
-| `prefix` | local ID segment | optional | Prefix applied to imported local requirement IDs. |
+| `prefix` | local ID segment | optional | Forms each imported local requirement ID as `<prefix>_<local-id>`. |
 
 ## Workspace Config
 

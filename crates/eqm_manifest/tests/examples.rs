@@ -1,7 +1,6 @@
 //! Validation of the repository's complete authored example workspace.
 
-use eqm_domain::Sha256Digest;
-use eqm_manifest::load_workspace;
+use eqm_manifest::{canonicalize_fragment, load_workspace};
 use std::error::Error;
 use std::fs;
 use std::path::Path;
@@ -27,14 +26,19 @@ fn repository_examples_load_through_the_real_loader() -> Result<(), Box<dyn Erro
 }
 
 #[test]
-fn example_fragment_pin_is_the_exact_source_content_digest() -> Result<(), Box<dyn Error>> {
+fn example_fragment_pin_is_the_exact_semantic_digest() -> Result<(), Box<dyn Error>> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(Path::parent)
         .ok_or("workspace root unavailable")?;
-    let fragment = fs::read(root.join("eqm/contracts/auth.otp_entry.toml"))?;
+    let loaded = load_workspace(root, None)?;
+    let fragment = loaded
+        .graph_input()
+        .fragments
+        .first()
+        .ok_or("fragment unavailable")?;
     let surface = fs::read_to_string(root.join("eqm/contracts/auth.signup.otp.toml"))?;
-    let digest = Sha256Digest::hash_content(&fragment).to_string();
+    let digest = canonicalize_fragment(fragment)?.digest().to_string();
     assert!(surface.contains(&format!("digest = \"{digest}\"")));
     assert!(!surface.to_ascii_lowercase().contains("placeholder"));
     Ok(())

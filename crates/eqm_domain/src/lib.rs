@@ -79,8 +79,8 @@ pub use evidence_result::{
     ExecutionPayload, ProducerRef, ProfileSelection, RepositoryIdentity, SourceCommit,
 };
 pub use graph::{
-    AdapterLockIdentity, ImportLockIdentity, WorkspaceGraph, WorkspaceGraphBuildError,
-    WorkspaceGraphInput,
+    AdapterLockIdentity, FinalizedWorkspaceGraph, ImportLockIdentity, WorkspaceGraph,
+    WorkspaceGraphBuildError, WorkspaceGraphInput,
 };
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,

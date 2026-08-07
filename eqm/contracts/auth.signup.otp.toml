@@ -16,4 +16,4 @@ facets = ["behavior"]
 [[fragments]]
 fragment = "auth.otp_entry"
 revision = 1
-digest = "sha256:e369cd95df56cd57358c391d33ab981d6fb9ee2eac5acf52602a6a44e1c6f8fc"
+digest = "sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378"

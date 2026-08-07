@@ -265,6 +265,49 @@ impl WorkspaceGraph {
     pub const fn extensions(&self) -> &Extensions {
         &self.extensions
     }
+
+    /// Consumes the indexes back into deterministic graph input.
+    #[must_use]
+    pub fn into_input(self) -> WorkspaceGraphInput {
+        WorkspaceGraphInput {
+            capabilities: self.capabilities.into_values().collect(),
+            journeys: self.journeys.into_values().collect(),
+            surfaces: self.surfaces.into_values().collect(),
+            fragments: self.fragments.into_values().collect(),
+            targets: self.targets.into_values().collect(),
+            bindings: self.bindings.into_values().collect(),
+            policies: self.policies.into_values().collect(),
+            profiles: self.profiles.into_values().collect(),
+            runners: self.runners.into_values().collect(),
+            waivers: self.waivers.into_values().collect(),
+            adapters: self.adapters.into_values().collect(),
+            imports: self.imports.into_values().collect(),
+            adapter_locks: self.adapter_locks.into_values().collect(),
+            extensions: self.extensions,
+        }
+    }
+}
+
+/// Immutable graph proven to have completed resolution, expansion, and invariants.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FinalizedWorkspaceGraph(WorkspaceGraph);
+
+impl FinalizedWorkspaceGraph {
+    /// Wraps a graph after the pure engine has completed all finalization stages.
+    ///
+    /// This constructor is deliberately hidden from public callers; the engine
+    /// owns creation while consumers receive only the read-only graph view.
+    #[doc(hidden)]
+    #[must_use]
+    pub fn from_engine(graph: WorkspaceGraph) -> Self {
+        Self(graph)
+    }
+
+    /// Returns the finalized immutable graph.
+    #[must_use]
+    pub const fn graph(&self) -> &WorkspaceGraph {
+        &self.0
+    }
 }
 
 fn unique_index<T, K: Ord>(

@@ -3,10 +3,10 @@
 use eqm_domain::{
     AdapterLockIdentity, Applicability, ApplicabilityView, ArgumentTemplate, Artifact,
     ArtifactSelector, Binding, Capability, DigestDomain, EnvironmentSource, EvidenceScopeSubject,
-    EvidenceSelector, EvidenceSpecification, ExtensionValue, Extensions, Fragment,
-    ImportLockIdentity, Journey, Policy, PolicyRule, PolicySelector, Profile, Requirement,
-    RunnerDefinition, RunnerProgram, Sha256Digest, Surface, Target, Waiver, WaiverPolicy,
-    WorkingDirectoryTemplate, WorkspaceGraph,
+    EvidenceSelector, EvidenceSpecification, ExtensionValue, Extensions, FinalizedWorkspaceGraph,
+    Fragment, ImportLockIdentity, Journey, Policy, PolicyRule, PolicySelector, Profile,
+    Requirement, RunnerDefinition, RunnerProgram, Sha256Digest, Surface, Target, Waiver,
+    WaiverPolicy, WorkingDirectoryTemplate,
 };
 use serde_json::{Map, Value, json};
 use std::error::Error;
@@ -19,6 +19,26 @@ const MAX_PROJECTION_BYTES: usize = 256 * 1024 * 1024;
 pub struct CanonicalGraph {
     bytes: Vec<u8>,
     digest: Sha256Digest,
+}
+
+/// Exact canonical fragment bytes and domain-separated semantic digest.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CanonicalFragment {
+    bytes: Vec<u8>,
+    digest: Sha256Digest,
+}
+
+impl CanonicalFragment {
+    /// Returns exact JCS fragment bytes without a trailing newline.
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+    /// Returns the domain-separated semantic fragment digest.
+    #[must_use]
+    pub const fn digest(&self) -> Sha256Digest {
+        self.digest
+    }
 }
 
 impl CanonicalGraph {
@@ -35,7 +55,10 @@ impl CanonicalGraph {
 }
 
 /// Projects only a finalized graph, serializes it with JCS, and hashes it.
-pub fn canonicalize_graph(graph: &WorkspaceGraph) -> Result<CanonicalGraph, CanonicalizationError> {
+pub fn canonicalize_graph(
+    finalized: &FinalizedWorkspaceGraph,
+) -> Result<CanonicalGraph, CanonicalizationError> {
+    let graph = finalized.graph();
     let mut bindings: Vec<_> = graph.bindings().values().collect();
     bindings.sort_by_key(|value| (value.target(), value.unit(), value.id()));
     let root = object([
@@ -70,6 +93,17 @@ pub fn canonicalize_graph(graph: &WorkspaceGraph) -> Result<CanonicalGraph, Cano
     }
     let digest = Sha256Digest::hash_domain(DigestDomain::SemanticGraph, &bytes);
     Ok(CanonicalGraph { bytes, digest })
+}
+
+/// Canonicalizes one normalized fragment authority for exact use-site pinning.
+pub fn canonicalize_fragment(value: &Fragment) -> Result<CanonicalFragment, CanonicalizationError> {
+    let bytes = serde_json_canonicalizer::to_vec(&fragment(value))
+        .map_err(|_| CanonicalizationError::Serialization)?;
+    if bytes.len() > MAX_PROJECTION_BYTES {
+        return Err(CanonicalizationError::ProjectionTooLarge);
+    }
+    let digest = Sha256Digest::hash_domain(DigestDomain::Fragment, &bytes);
+    Ok(CanonicalFragment { bytes, digest })
 }
 
 fn capability(value: &Capability) -> Value {
@@ -788,7 +822,9 @@ mod tests {
     #[test]
     fn independent_empty_graph_vector_matches_exact_bytes_and_digest() -> Result<(), Box<dyn Error>>
     {
-        let graph = WorkspaceGraph::new(WorkspaceGraphInput::default())?;
+        let graph = FinalizedWorkspaceGraph::from_engine(eqm_domain::WorkspaceGraph::new(
+            WorkspaceGraphInput::default(),
+        )?);
         let canonical = canonicalize_graph(&graph)?;
         assert_eq!(canonical.bytes(), EMPTY.as_bytes());
         assert_eq!(
@@ -801,16 +837,20 @@ mod tests {
     #[test]
     fn independent_capability_target_vector_matches_and_order_is_stable()
     -> Result<(), Box<dyn Error>> {
-        let first = WorkspaceGraph::new(WorkspaceGraphInput {
-            capabilities: vec![capability()?],
-            targets: vec![target_value()?],
-            ..WorkspaceGraphInput::default()
-        })?;
-        let second = WorkspaceGraph::new(WorkspaceGraphInput {
-            targets: vec![target_value()?],
-            capabilities: vec![capability()?],
-            ..WorkspaceGraphInput::default()
-        })?;
+        let first = FinalizedWorkspaceGraph::from_engine(eqm_domain::WorkspaceGraph::new(
+            WorkspaceGraphInput {
+                capabilities: vec![capability()?],
+                targets: vec![target_value()?],
+                ..WorkspaceGraphInput::default()
+            },
+        )?);
+        let second = FinalizedWorkspaceGraph::from_engine(eqm_domain::WorkspaceGraph::new(
+            WorkspaceGraphInput {
+                targets: vec![target_value()?],
+                capabilities: vec![capability()?],
+                ..WorkspaceGraphInput::default()
+            },
+        )?);
         let canonical = canonicalize_graph(&first)?;
         assert_eq!(canonical.bytes(), CAPABILITY_TARGET.as_bytes());
         assert_eq!(
