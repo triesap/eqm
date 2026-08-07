@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod applicability;
+mod conformance;
 mod coverage;
 mod expand;
 mod freshness;
@@ -17,6 +18,10 @@ mod waivers;
 
 pub use applicability::{
     ApplicabilityContext, ApplicabilityError, TruthValue, evaluate_applicability,
+};
+pub use conformance::{
+    ConformanceError, FacetEvaluationInput, FacetStatus, SupportingCheck, TargetConformance,
+    TrustEvaluation, evaluate_facet_status, evaluate_target_conformance,
 };
 pub use coverage::{
     CoverageExpectation, CoverageMismatch, CoverageReport, CoverageStatus, EvidenceCandidate,
