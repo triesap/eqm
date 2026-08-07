@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 07: Runners And Discovery
 
-Status: in progress; Step 083 complete
+Status: in progress; Step 084 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 06
-Current checkpoint: `step_084`
+Current checkpoint: `step_085`
 
 ## Purpose
 
@@ -87,4 +87,5 @@ flood, atomic-write, inventory, and framework fixture tests.
 | `step_081` | complete | Evidence writes validate the closed envelope and recompute its canonical payload digest before any filesystem mutation, use portable hex digest filenames below private nonsymlink `.eqm/results` directories, durably flush and atomically install a private temporary file without clobbering, treat byte-identical repeats as idempotent, and reject collisions, symlink destinations, mismatches, and partial state |
 | `step_082` | complete | Container planning requires the container backend, an immutable locked image identity plus exact authorized digest, an available tested runtime configuration digest, an enforceable superset of every claimed network/filesystem/process/resource guarantee, and typed argv; unavailable, unpinned, mismatched, and unsupported configurations fail explicitly without local fallback |
 | `step_083` | complete | CI delegation validates the canonical evidence envelope without local execution, requires an exact immutable CI run, subject, producer, trusted signer, algorithm/signature metadata, verifier-bound payload digest, and minimum independently established trust, and records the run only after all checks so duplicate imports are rejected as replay |
-| `step_084`-`step_090` | pending | - |
+| `step_084` | complete | Consolidated public-API adversarial tests prove shell metacharacters stay literal without side effects, the host environment is cleared, canonical cwd and symlink escapes fail before spawn, timeout and cooperative cancellation are terminal, output floods retain only the configured cap, and exact declared secret values are absent from retained output |
+| `step_085`-`step_090` | pending | - |
