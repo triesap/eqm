@@ -7,6 +7,7 @@ mod conformance;
 mod coverage;
 mod equivalence;
 mod expand;
+mod exposure;
 mod freshness;
 mod invariants;
 mod monotonicity;
@@ -32,6 +33,10 @@ pub use equivalence::{
     EquivalenceReport, EquivalenceStatus, TargetEvaluation, evaluate_target_set_equivalence,
 };
 pub use expand::{FragmentDigestMap, expand_fragments};
+pub use exposure::{
+    ConformanceFact, ExpectedExposure, ExposureComparison, ExposureFacts, ExposureReconciliation,
+    ObservedExposure, reconcile_exposure,
+};
 pub use freshness::{
     FreshnessKey, FreshnessMismatch, FreshnessReport, FreshnessStatus, evaluate_evidence_freshness,
 };
