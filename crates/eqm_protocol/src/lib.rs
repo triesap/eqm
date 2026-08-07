@@ -7,6 +7,7 @@ mod attestation;
 mod evidence;
 mod report;
 mod results;
+mod sarif;
 mod schema;
 
 pub use adapter::{
@@ -27,6 +28,11 @@ pub use report::{
     SourceLocationDto, SourcePositionDto, ToolVersionDto,
 };
 pub use results::*;
+pub use sarif::{
+    SARIF_SCHEMA, SarifArtifactLocationDto, SarifDriverDto, SarifLocationDto, SarifLogDto,
+    SarifMessageDto, SarifPhysicalLocationDto, SarifRegionDto, SarifResultDto, SarifRuleDto,
+    SarifRunDto, SarifToolDto,
+};
 pub use schema::{
     ADAPTER_REQUEST_SCHEMA, ADAPTER_RESPONSE_SCHEMA, ATTESTATION_SCHEMA, DIAGNOSTIC_SCHEMA,
     EVIDENCE_RESULT_SCHEMA, INVENTORY_SCHEMA, PROTOCOL_SCHEMAS, RELEASE_RECORD_SCHEMA,
