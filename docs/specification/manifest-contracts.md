@@ -8,10 +8,10 @@ are UTF-8 TOML 1.1, contain exactly one top-level document, and carry the exact
 schema URI listed in the schema inventory.
 
 In the tables below, `required` means the key must be authored. A default is
-applied before graph finalization and canonicalization. `normative` means the
-final value participates in semantic identity. All listed fields are normative
-unless marked otherwise. Empty strings, empty identifiers, duplicate array
-members, and duplicate semantic authorities are invalid.
+applied before graph finalization and canonicalization. All listed fields are
+normative unless the canonicalization contract classifies them as dispatch or
+discovery metadata. Empty strings, empty identifiers, duplicate array members,
+and duplicate semantic authorities are invalid.
 
 ## Shared Values
 
