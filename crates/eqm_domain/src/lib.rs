@@ -20,10 +20,10 @@ pub use diagnostic::{
 pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
 pub use entity::{
     Applicability, ApplicabilityKind, Artifact, ArtifactSelector, Artifacts, Capability,
-    ComparisonOperator, Description, EntityBuildError, ExtensionKey, ExtensionNamespace,
+    ComparisonOperator, Description, EntityBuildError, Exposure, ExtensionKey, ExtensionNamespace,
     ExtensionValue, Extensions, Fragment, FragmentUse, Journey, MembershipOperator, Requirement,
-    RequirementStatement, Revision, SelectorText, Surface, Target, Title, Transition,
-    TransitionTrigger,
+    RequirementStatement, Revision, RouteSelector, SelectorText, Surface, Target, Title,
+    Transition, TransitionTrigger,
 };
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
@@ -38,6 +38,6 @@ pub use reference::{
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
 pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
 pub use vocabulary::{
-    ArtifactRole, Facet, HttpMethod, LifecycleStatus, RequirementLevel, RequirementScope,
-    RiskClass, VocabularyParseError,
+    ArtifactRole, Facet, HttpMethod, IntendedExposureState, LifecycleStatus, RequirementLevel,
+    RequirementScope, RiskClass, VocabularyParseError,
 };

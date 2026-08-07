@@ -2,9 +2,9 @@
 
 use crate::{
     ArtifactId, ArtifactRole, CapabilityId, DimensionId, Facet, FragmentId, FrameworkId,
-    HttpMethod, JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef, PlatformId, ProviderId,
-    RepoPath, RequirementLevel, RequirementScope, RiskClass, Sha256Digest, SurfaceId,
-    SymbolicValueId, TargetId,
+    HttpMethod, IntendedExposureState, JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef,
+    PlatformId, ProviderId, RepoPath, RequirementLevel, RequirementScope, RiskClass, Sha256Digest,
+    SurfaceId, SymbolicValueId, TargetId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -73,6 +73,11 @@ text_value!(
 text_value!(
     /// Normalized artifact selector text of at most 512 UTF-8 bytes.
     SelectorText,
+    512
+);
+text_value!(
+    /// A normalized provider-neutral route selector of at most 512 UTF-8 bytes.
+    RouteSelector,
     512
 );
 text_value!(
@@ -1274,6 +1279,61 @@ impl Artifacts {
     }
 }
 
+/// A profile-relative intended exposure declaration.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Exposure {
+    surface: SurfaceId,
+    state: IntendedExposureState,
+    applicability: Applicability,
+    route: Option<RouteSelector>,
+    extensions: Extensions,
+}
+
+impl Exposure {
+    /// Creates an intended exposure without conflating runtime observation.
+    #[must_use]
+    pub const fn new(
+        surface: SurfaceId,
+        state: IntendedExposureState,
+        applicability: Applicability,
+        route: Option<RouteSelector>,
+        extensions: Extensions,
+    ) -> Self {
+        Self {
+            surface,
+            state,
+            applicability,
+            route,
+            extensions,
+        }
+    }
+    /// Returns the intended surface.
+    #[must_use]
+    pub const fn surface(&self) -> &SurfaceId {
+        &self.surface
+    }
+    /// Returns required or prohibited intent.
+    #[must_use]
+    pub const fn state(&self) -> IntendedExposureState {
+        self.state
+    }
+    /// Returns the finite symbolic applicability selector.
+    #[must_use]
+    pub const fn applicability(&self) -> &Applicability {
+        &self.applicability
+    }
+    /// Returns an optional route selector.
+    #[must_use]
+    pub const fn route(&self) -> Option<&RouteSelector> {
+        self.route.as_ref()
+    }
+    /// Returns extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -1817,6 +1877,29 @@ mod tests {
             Artifacts::new(vec![artifact.clone(), artifact]),
             Err(EntityBuildError::DuplicateArtifact)
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn exposure_is_symbolic_intent_not_observed_state() -> Result<(), Box<dyn Error>> {
+        let applicability = Applicability::compare(
+            DimensionId::new("region")?,
+            ComparisonOperator::Equal,
+            SymbolicValueId::new("eu")?,
+        );
+        let exposure = Exposure::new(
+            SurfaceId::new("account.create.signup.start")?,
+            IntendedExposureState::Required,
+            applicability,
+            Some(RouteSelector::new("/signup")?),
+            Extensions::default(),
+        );
+        assert_eq!(exposure.state(), IntendedExposureState::Required);
+        assert_eq!(
+            exposure.applicability().kind(),
+            ApplicabilityKind::Comparison
+        );
+        assert_eq!(exposure.route().map(RouteSelector::as_str), Some("/signup"));
         Ok(())
     }
 }

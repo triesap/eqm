@@ -146,6 +146,8 @@ pub enum VocabularyParseError {
     InvalidArtifactRole,
     /// HTTP route method was not in the v1 set.
     InvalidHttpMethod,
+    /// Intended exposure state was not in the v1 set.
+    InvalidIntendedExposureState,
 }
 
 impl Display for VocabularyParseError {
@@ -158,6 +160,7 @@ impl Display for VocabularyParseError {
             Self::InvalidFacet => "invalid facet",
             Self::InvalidArtifactRole => "invalid artifact role",
             Self::InvalidHttpMethod => "invalid HTTP method",
+            Self::InvalidIntendedExposureState => "invalid intended exposure state",
         })
     }
 }
@@ -238,6 +241,12 @@ closed_vocabulary!(
     HttpMethod,
     InvalidHttpMethod,
     [Get => "get", Post => "post", Put => "put", Patch => "patch", Delete => "delete", Options => "options"]
+);
+closed_vocabulary!(
+    /// Profile-relative intended exposure state.
+    IntendedExposureState,
+    InvalidIntendedExposureState,
+    [Required => "required", Prohibited => "prohibited"]
 );
 
 #[cfg(test)]
@@ -334,6 +343,13 @@ mod tests {
         assert_eq!(
             "head".parse::<HttpMethod>(),
             Err(VocabularyParseError::InvalidHttpMethod)
+        );
+        for value in IntendedExposureState::ALL {
+            assert_eq!(value.as_str().parse(), Ok(*value));
+        }
+        assert_eq!(
+            "optional".parse::<IntendedExposureState>(),
+            Err(VocabularyParseError::InvalidIntendedExposureState)
         );
     }
 }
