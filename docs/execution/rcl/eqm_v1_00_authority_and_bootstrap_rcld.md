@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-006 complete
+Status: in progress; Steps 001-006 and Step 007a complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_007a`
+Current checkpoint: `step_007b`
 
 ## Purpose
 
@@ -115,6 +115,19 @@ authority.
 | `step_007f` | Define every public JSON/SARIF/adapter/evidence/attestation/MCP shape and every CLI argument, default, mutability, offline, output, dry-run, and exit-precedence rule. | All commands and DTOs have closed field tables and current schema identities with no compatibility surface. | `docs(spec): close protocol and cli contracts` |
 | `step_007g` | Define diagnostic allocation, trust roots, algorithms, signed subjects, replay binding, redaction, path/symlink behavior, resource limits, adapter/runner guarantees, and privacy rules. | Security behavior is testable; unsupported guarantees and unconfigured organizational values are explicit. | `docs(spec): close security and limits contracts` |
 | `step_007h` | Add machine-readable requirement traceability and deterministic authority validator; publish corrected repository-owned commit sequence incorporating all approved changes. | Every requirement maps to authority and planned tests; validator rejects missing/stale/duplicate references and emits byte-identical output twice. | `test(spec): validate executable authority` |
+
+## Step 007 Subcheckpoint Ledger
+
+| Substep | Status | Commit | Result |
+| --- | --- | --- | --- |
+| `step_007a` | complete | this checkpoint | Product, architecture, acceptance, naming, source ADR, and provenance authority imported |
+| `step_007b` | pending | - | - |
+| `step_007c` | pending | - | - |
+| `step_007d` | pending | - | - |
+| `step_007e` | pending | - | - |
+| `step_007f` | pending | - | - |
+| `step_007g` | pending | - | - |
+| `step_007h` | pending | - | - |
 
 ## Reconciliation Rules
 
