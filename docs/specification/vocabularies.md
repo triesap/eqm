@@ -24,7 +24,7 @@ explicitly says so.
 | runner backend | `local`, `container` | no implicit backend |
 | runner guarantee | `network_denied`, `read_only_source`, `isolated_process`, `resource_limited` | may be claimed only when enforced |
 | artifact role | `entrypoint`, `view`, `route`, `component`, `service`, `test`, `configuration`, `asset` | unordered |
-| trust level | `untrusted`, `local`, `verified`, `attested` | listed weakest to strongest |
+| trust level | `untrusted_local`, `trusted_ci`, `signed_ci` | listed weakest to strongest |
 | release channel | `development`, `internal`, `beta`, `production` | unordered identity, not maturity ordering |
 | output format | `human`, `json`, `sarif` | command contract restricts availability |
 | diagnostic severity | `error`, `warning`, `note` | listed highest to lowest |

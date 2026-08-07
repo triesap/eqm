@@ -12,6 +12,7 @@ Authority is organized as follows:
 - `vocabularies.md`: closed values, selectors, IDs, and extension behavior;
 - `schema-inventory.md`: exact schema identities and deterministic dispatch;
 - `canonicalization.md`: finalized graph projection, ordering, JCS, and digest;
+- `evaluation.md`: total policy, evidence, conformance, equivalence, and analysis tables;
 - `acceptance.md`: implementation and verification completion criteria;
 - `naming-and-no-compat.md`: canonical identity and clean-break contract;
 - later executable contracts for manifests, vocabularies, canonicalization,

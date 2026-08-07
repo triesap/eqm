@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-006 and Steps 007a-007d complete
+Status: in progress; Steps 001-006 and Steps 007a-007e complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_007e`
+Current checkpoint: `step_007f`
 
 ## Purpose
 
@@ -123,8 +123,8 @@ authority.
 | `step_007a` | complete | `c150c76` | Product, architecture, acceptance, naming, source ADR, and provenance authority imported |
 | `step_007b` | complete | `a77f8ee` | Corrective implementation ordering and verification decisions recorded |
 | `step_007c` | complete | `91ee4ff` | Exhaustive authored field, vocabulary, selector, extension, and schema contracts defined |
-| `step_007d` | complete | this checkpoint | Finalized projection, ordering, exclusions, JCS domain, and fixed vectors defined |
-| `step_007e` | pending | - | - |
+| `step_007d` | complete | `ab26ce5` | Finalized projection, ordering, exclusions, JCS domain, and fixed vectors defined |
+| `step_007e` | complete | this checkpoint | Total applicability, policy, evidence, waiver, conformance, equivalence, exposure, release, diff, and affected tables defined |
 | `step_007f` | pending | - | - |
 | `step_007g` | pending | - | - |
 | `step_007h` | pending | - | - |
