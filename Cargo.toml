@@ -43,6 +43,7 @@ schemars = "=1.2.2"
 globset = "=0.4.19"
 toml = "=1.1.4"
 tempfile = "=3.27.0"
+toml_edit = "=0.25.13"
 unicode-normalization = "=0.1.24"
 eqm_domain = { path = "crates/eqm_domain", version = "=0.1.0" }
 eqm_engine = { path = "crates/eqm_engine", version = "=0.1.0" }

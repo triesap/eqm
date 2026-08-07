@@ -8,6 +8,7 @@ mod conversion;
 mod discovery;
 /// Strict source data-transfer objects for authored manifests.
 pub mod dto;
+mod formatter;
 mod loader;
 mod lockfile;
 mod parse;
@@ -21,6 +22,9 @@ pub use conversion::{
 };
 pub use conversion::{WaiverTemporalStatus, classify_waiver};
 pub use discovery::{DiscoveredSource, DiscoveryError, SourceClass, discover_sources};
+pub use formatter::{
+    FormatError, FormatMode, FormatOutcome, format_manifest, format_manifest_file,
+};
 pub use loader::{LoadError, LoadedWorkspace, load_workspace};
 pub use lockfile::{AdapterLock, ImportLock, LockError, WorkspaceLock, load_lockfile};
 pub use parse::{ParseError, ParsedToml, TomlSyntaxError, parse_toml};

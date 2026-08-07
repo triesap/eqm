@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 04: Manifest System
 
-Status: in progress; Step 053 complete
+Status: in progress; Step 054 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 03
-Current checkpoint: `step_054`
+Current checkpoint: `step_055`
 
 ## Purpose
 
@@ -93,4 +93,5 @@ approved order. No pre-resolution or pre-expansion digest is authoritative.
 | `step_051` | complete | Offline lock loading enforces singleton v1 schema, confined non-symlink path, exact import and adapter identities, immutable commits and versions, SHA-256 digests, protocol, trust, and unique IDs |
 | `step_052` | complete | Finalized graphs project every normative entity, nested field, exact lock identity, default, and extension through semantic ordering into RFC 8785 JCS with the approved domain-separated SHA-256 digest |
 | `step_053` | complete | One deterministic loader orchestrates config, discovery, bounded decode, domain conversion, target confinement, lock binding, unresolved graph input, and stable authority/source mapping |
-| `step_054`-`step_056` | pending | - |
+| `step_054` | complete | Comment-preserving TOML formatting is idempotent, proves decoded-value equivalence, supports non-mutating check/dry-run modes, rejects symlink paths, and atomically replaces changed files while preserving permissions |
+| `step_055`-`step_056` | pending | - |
