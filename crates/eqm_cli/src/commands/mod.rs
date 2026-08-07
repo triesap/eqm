@@ -5,6 +5,7 @@ pub mod context;
 pub mod evaluation;
 pub mod locate;
 pub mod matrix;
+pub mod obligations;
 pub mod show;
 pub mod validate;
 
