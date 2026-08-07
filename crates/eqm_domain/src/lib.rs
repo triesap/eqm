@@ -64,11 +64,11 @@ pub use diagnostic::{
 };
 pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
 pub use entity::{
-    Applicability, ApplicabilityKind, Artifact, ArtifactSelector, Artifacts, Binding, Capability,
-    ComparisonOperator, Description, EntityBuildError, Exposure, ExtensionKey, ExtensionNamespace,
-    ExtensionValue, Extensions, Fragment, FragmentUse, Journey, MembershipOperator, Requirement,
-    RequirementStatement, Revision, RouteSelector, SelectorText, Surface, Target, Title,
-    Transition, TransitionTrigger,
+    Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
+    Binding, Capability, ComparisonOperator, Description, EntityBuildError, Exposure, ExtensionKey,
+    ExtensionNamespace, ExtensionValue, Extensions, Fragment, FragmentUse, Journey,
+    MembershipOperator, Requirement, RequirementStatement, Revision, RouteSelector, SelectorText,
+    Surface, Target, Title, Transition, TransitionTrigger,
 };
 pub use evidence::{
     EvidenceSelector, EvidenceSpecBuildError, EvidenceSpecification, PositiveCount,
@@ -78,7 +78,10 @@ pub use evidence_result::{
     EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject,
     ExecutionPayload, ProducerRef, ProfileSelection, RepositoryIdentity, SourceCommit,
 };
-pub use graph::{WorkspaceGraph, WorkspaceGraphBuildError, WorkspaceGraphInput};
+pub use graph::{
+    AdapterLockIdentity, ImportLockIdentity, WorkspaceGraph, WorkspaceGraphBuildError,
+    WorkspaceGraphInput,
+};
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
     FrameworkId, FullRequirementId, IdParseError, JourneyId, LocalRequirementId, PlatformId,

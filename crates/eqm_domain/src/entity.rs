@@ -536,6 +536,17 @@ pub enum ComparisonOperator {
     NotEqual,
 }
 
+impl ComparisonOperator {
+    /// Returns the exact wire value.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Equal => "eq",
+            Self::NotEqual => "ne",
+        }
+    }
+}
+
 /// Set-membership applicability comparison.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum MembershipOperator {
@@ -543,6 +554,17 @@ pub enum MembershipOperator {
     In,
     /// Dimension is outside the value set.
     NotIn,
+}
+
+impl MembershipOperator {
+    /// Returns the exact wire value.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::In => "in",
+            Self::NotIn => "not_in",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -572,6 +594,27 @@ pub enum ApplicabilityKind {
     Not,
 }
 
+/// Read-only view of a validated applicability expression.
+#[derive(Clone, Copy, Debug)]
+pub enum ApplicabilityView<'a> {
+    /// Boolean constant.
+    Constant(bool),
+    /// Single-value comparison.
+    Comparison(&'a DimensionId, ComparisonOperator, &'a SymbolicValueId),
+    /// Set membership comparison.
+    Membership(
+        &'a DimensionId,
+        MembershipOperator,
+        &'a BTreeSet<SymbolicValueId>,
+    ),
+    /// Canonically ordered conjunction.
+    All(&'a BTreeSet<Applicability>),
+    /// Canonically ordered disjunction.
+    Any(&'a BTreeSet<Applicability>),
+    /// Logical negation.
+    Not(&'a Applicability),
+}
+
 /// A finite symbolic applicability expression.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Applicability {
@@ -581,6 +624,23 @@ pub struct Applicability {
 }
 
 impl Applicability {
+    /// Returns a read-only structured view for evaluation and projection.
+    #[must_use]
+    pub const fn view(&self) -> ApplicabilityView<'_> {
+        match &self.expression {
+            ApplicabilityExpression::Constant(value) => ApplicabilityView::Constant(*value),
+            ApplicabilityExpression::Comparison(dimension, operator, value) => {
+                ApplicabilityView::Comparison(dimension, *operator, value)
+            }
+            ApplicabilityExpression::Membership(dimension, operator, values) => {
+                ApplicabilityView::Membership(dimension, *operator, values)
+            }
+            ApplicabilityExpression::All(values) => ApplicabilityView::All(values),
+            ApplicabilityExpression::Any(values) => ApplicabilityView::Any(values),
+            ApplicabilityExpression::Not(value) => ApplicabilityView::Not(value),
+        }
+    }
+
     /// Creates a boolean constant.
     #[must_use]
     pub const fn always(value: bool) -> Self {

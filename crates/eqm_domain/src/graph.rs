@@ -2,13 +2,53 @@
 
 use crate::{
     AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Extensions,
-    Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId, Revision,
-    RunnerDefinition, RunnerId, SelectorText, Sha256Digest, Surface, SurfaceId, Target, TargetId,
-    Waiver, WaiverId,
+    Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId,
+    RepositoryIdentity, Revision, RunnerDefinition, RunnerId, SelectorText, Sha256Digest,
+    SourceCommit, Surface, SurfaceId, Target, TargetId, TrustLevel, Waiver, WaiverId,
 };
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+
+/// Exact resolved import identity retained in the semantic graph.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ImportLockIdentity {
+    /// Imported fragment ID.
+    pub id: FragmentId,
+    /// Exact imported revision.
+    pub revision: Revision,
+    /// Canonical source repository.
+    pub source: RepositoryIdentity,
+    /// Immutable source commit.
+    pub resolved: SourceCommit,
+    /// Exact semantic digest.
+    pub digest: Sha256Digest,
+    /// Declared trust, defaulting to untrusted local.
+    pub trust: TrustLevel,
+    /// Optional detached signature metadata.
+    pub signature: Option<SelectorText>,
+}
+
+/// Exact resolved adapter lock identity retained in the semantic graph.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AdapterLockIdentity {
+    /// Adapter ID.
+    pub id: AdapterId,
+    /// Exact immutable version.
+    pub version: SelectorText,
+    /// Canonical source repository.
+    pub source: RepositoryIdentity,
+    /// Immutable source commit.
+    pub resolved: SourceCommit,
+    /// Exact executable digest.
+    pub digest: Sha256Digest,
+    /// Exact protocol revision.
+    pub protocol: Revision,
+    /// Declared trust, defaulting to untrusted local.
+    pub trust: TrustLevel,
+    /// Optional detached signature metadata.
+    pub signature: Option<SelectorText>,
+}
 
 /// Validated authority awaiting engine-level cross-reference resolution.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -35,6 +75,10 @@ pub struct WorkspaceGraphInput {
     pub waivers: Vec<Waiver>,
     /// Digest-pinned adapter definitions.
     pub adapters: Vec<AdapterDefinition>,
+    /// Resolved imports retained in semantic identity.
+    pub imports: Vec<ImportLockIdentity>,
+    /// Resolved adapter locks retained in semantic identity.
+    pub adapter_locks: Vec<AdapterLockIdentity>,
     /// Normative workspace extensions.
     pub extensions: Extensions,
 }
@@ -57,6 +101,8 @@ pub struct WorkspaceGraph {
     runners: BTreeMap<(RunnerId, Revision), RunnerDefinition>,
     waivers: BTreeMap<(WaiverId, Revision), Waiver>,
     adapters: BTreeMap<(AdapterId, SelectorText, Sha256Digest), AdapterDefinition>,
+    imports: BTreeMap<(FragmentId, Revision, Sha256Digest), ImportLockIdentity>,
+    adapter_locks: BTreeMap<(AdapterId, SelectorText, Sha256Digest), AdapterLockIdentity>,
     extensions: Extensions,
 }
 
@@ -109,6 +155,14 @@ impl WorkspaceGraph {
             (value.id().clone(), value.version().clone(), value.digest())
         })
         .map_err(|()| WorkspaceGraphBuildError::DuplicateAdapter)?;
+        let imports = unique_index(input.imports, |value| {
+            (value.id.clone(), value.revision, value.digest)
+        })
+        .map_err(|()| WorkspaceGraphBuildError::DuplicateImportLock)?;
+        let adapter_locks = unique_index(input.adapter_locks, |value| {
+            (value.id.clone(), value.version.clone(), value.digest)
+        })
+        .map_err(|()| WorkspaceGraphBuildError::DuplicateAdapterLock)?;
         Ok(Self {
             capabilities,
             journeys,
@@ -122,6 +176,8 @@ impl WorkspaceGraph {
             runners,
             waivers,
             adapters,
+            imports,
+            adapter_locks,
             extensions: input.extensions,
         })
     }
@@ -190,6 +246,20 @@ impl WorkspaceGraph {
     ) -> &BTreeMap<(AdapterId, SelectorText, Sha256Digest), AdapterDefinition> {
         &self.adapters
     }
+    /// Returns resolved imports in `(id, revision, digest)` order.
+    #[must_use]
+    pub const fn imports(
+        &self,
+    ) -> &BTreeMap<(FragmentId, Revision, Sha256Digest), ImportLockIdentity> {
+        &self.imports
+    }
+    /// Returns resolved adapter locks in `(id, version, digest)` order.
+    #[must_use]
+    pub const fn adapter_locks(
+        &self,
+    ) -> &BTreeMap<(AdapterId, SelectorText, Sha256Digest), AdapterLockIdentity> {
+        &self.adapter_locks
+    }
     /// Returns normative workspace extensions.
     #[must_use]
     pub const fn extensions(&self) -> &Extensions {
@@ -236,6 +306,10 @@ pub enum WorkspaceGraphBuildError {
     DuplicateWaiver,
     /// Exact adapter identity repeated.
     DuplicateAdapter,
+    /// Exact import lock identity repeated.
+    DuplicateImportLock,
+    /// Exact adapter lock identity repeated.
+    DuplicateAdapterLock,
 }
 
 impl Display for WorkspaceGraphBuildError {

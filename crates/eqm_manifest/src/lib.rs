@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod canonical;
 mod config;
 mod conversion;
 mod discovery;
@@ -11,6 +12,7 @@ mod lockfile;
 mod parse;
 mod validation;
 
+pub use canonical::{CanonicalGraph, CanonicalizationError, canonicalize_graph};
 pub use config::{ConfigError, WorkspaceConfig, select_workspace_config};
 pub use conversion::{
     ContractEntity, ConversionError, convert_binding, convert_contract, convert_policy,

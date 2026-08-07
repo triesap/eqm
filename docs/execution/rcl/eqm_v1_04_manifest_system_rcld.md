@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 04: Manifest System
 
-Status: in progress; Step 051 complete
+Status: in progress; Step 052 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 03
-Current checkpoint: `step_052`
+Current checkpoint: `step_053`
 
 ## Purpose
 
@@ -91,4 +91,5 @@ approved order. No pre-resolution or pre-expansion digest is authoritative.
 | `step_049` | complete | Runner conversion rejects shell-shaped programs and interpolated placeholders, constructs typed argv, cwd, environment and secret bindings, and enforces v1 resource and backend guarantees |
 | `step_050` | complete | Waivers convert with exact target, unit, requirement, facet and profile coordinates, complete approval authority, bounded reasons, ordered dates, controls, and injected-date temporal classification |
 | `step_051` | complete | Offline lock loading enforces singleton v1 schema, confined non-symlink path, exact import and adapter identities, immutable commits and versions, SHA-256 digests, protocol, trust, and unique IDs |
-| `step_052`-`step_056` | pending | - |
+| `step_052` | complete | Finalized graphs project every normative entity, nested field, exact lock identity, default, and extension through semantic ordering into RFC 8785 JCS with the approved domain-separated SHA-256 digest |
+| `step_053`-`step_056` | pending | - |
