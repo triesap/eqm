@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 08: CLI Query Surface
 
-Status: in progress; Step 099 complete
+Status: in progress; Step 100 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 07
-Current checkpoint: `step_100`
+Current checkpoint: `step_101`
 
 ## Purpose
 
@@ -89,4 +89,5 @@ output goldens, no-execution assertions, and clean-worktree checks.
 | `step_097` | complete | `context` combines exact graph authority, complete profile-aware obligations, binding product paths, evidence declarations, findings, and relevant waivers under explicit provenance/trust labels; depth and byte bounds truncate only complete records with visible omission accounting, Markdown remains bounded, and no runner or adapter executes |
 | `step_098` | complete | All five matrix modes use complete stable typed axes and Cartesian cells; conformance and evidence views expose current missing obligations and diagnostics while exposure, release, and equivalence preserve explicit unknown state until trusted observations exist, and exact unit/target/profile filters apply without execution |
 | `step_099` | complete | `obligations` reports the current complete missing-evidence set as stable typed coordinates with exact strength, policy, profile, unit, requirement, scope subject, and facet fields; unit, target, and every closed status filter are deterministic, with statuses absent from current prepared evidence returning an explicit empty result |
-| `step_100`-`step_103` | pending | - |
+| `step_100` | complete | `diff` prepares exact repository paths, available semantic digests, or full immutable local commit objects, rejects floating or unavailable identities, projects every finalized semantic authority into classified fields, and returns stable directional changes or an exact unchanged result without evaluation or execution |
+| `step_101`-`step_103` | pending | - |

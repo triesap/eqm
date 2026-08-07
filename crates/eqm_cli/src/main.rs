@@ -38,6 +38,7 @@ fn main() -> ExitCode {
                     | cli::CommandName::Context
                     | cli::CommandName::Matrix
                     | cli::CommandName::Obligations
+                    | cli::CommandName::Diff
             ) {
                 match std::env::current_dir() {
                     Ok(start) if command == cli::CommandName::Validate => {
@@ -58,7 +59,10 @@ fn main() -> ExitCode {
                     Ok(start) if command == cli::CommandName::Matrix => {
                         commands::matrix::execute(parsed, &start)
                     }
-                    Ok(start) => commands::obligations::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::Obligations => {
+                        commands::obligations::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::diff::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {

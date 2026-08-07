@@ -2,6 +2,7 @@
 
 pub mod check;
 pub mod context;
+pub mod diff;
 pub mod evaluation;
 pub mod locate;
 pub mod matrix;
