@@ -1,9 +1,10 @@
 //! Shared entity values and the capability model.
 
 use crate::{
-    CapabilityId, DimensionId, Facet, FragmentId, FrameworkId, JourneyId, LifecycleStatus,
-    LocalRequirementId, OwnerRef, PlatformId, ProviderId, RepoPath, RequirementLevel,
-    RequirementScope, RiskClass, Sha256Digest, SurfaceId, SymbolicValueId, TargetId,
+    ArtifactId, ArtifactRole, CapabilityId, DimensionId, Facet, FragmentId, FrameworkId,
+    HttpMethod, JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef, PlatformId, ProviderId,
+    RepoPath, RequirementLevel, RequirementScope, RiskClass, Sha256Digest, SurfaceId,
+    SymbolicValueId, TargetId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -68,6 +69,11 @@ text_value!(
     /// A required entity title of at most 160 UTF-8 bytes.
     Title,
     160
+);
+text_value!(
+    /// Normalized artifact selector text of at most 512 UTF-8 bytes.
+    SelectorText,
+    512
 );
 text_value!(
     /// A normalized transition trigger of at most 256 UTF-8 bytes.
@@ -1124,6 +1130,150 @@ impl Target {
     }
 }
 
+/// A typed provider-neutral artifact selector.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ArtifactSelector {
+    /// A source symbol with optional language.
+    Symbol {
+        /// Exact symbol name.
+        name: SelectorText,
+        /// Optional source language.
+        language: Option<SelectorText>,
+    },
+    /// A route path with optional closed HTTP method.
+    Route {
+        /// Provider-neutral route path.
+        path: SelectorText,
+        /// Optional closed HTTP method.
+        method: Option<HttpMethod>,
+    },
+    /// A test identity with optional suite.
+    Test {
+        /// Test framework identity.
+        framework: SelectorText,
+        /// Exact framework test identity.
+        test_id: SelectorText,
+        /// Optional test suite identity.
+        suite: Option<SelectorText>,
+    },
+    /// A provider-neutral inventory coordinate.
+    Inventory {
+        /// Provider-neutral record type.
+        record_type: SelectorText,
+        /// Exact record key.
+        key: SelectorText,
+        /// Optional expected record value.
+        value: Option<SelectorText>,
+    },
+}
+
+/// One artifact declared by a target binding.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Artifact {
+    id: ArtifactId,
+    role: ArtifactRole,
+    path: RepoPath,
+    surface: Option<SurfaceId>,
+    symbol: Option<SelectorText>,
+    selector: Option<ArtifactSelector>,
+    extensions: Extensions,
+}
+
+impl Artifact {
+    /// Creates an artifact and enforces user-visible coverage locators.
+    pub fn new(
+        id: ArtifactId,
+        role: ArtifactRole,
+        path: RepoPath,
+        surface: Option<SurfaceId>,
+        symbol: Option<SelectorText>,
+        selector: Option<ArtifactSelector>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        let user_visible = matches!(
+            role,
+            ArtifactRole::Entrypoint
+                | ArtifactRole::View
+                | ArtifactRole::Route
+                | ArtifactRole::Component
+        );
+        if user_visible && surface.is_none() && symbol.is_none() && selector.is_none() {
+            return Err(EntityBuildError::ArtifactLocatorRequired);
+        }
+        Ok(Self {
+            id,
+            role,
+            path,
+            surface,
+            symbol,
+            selector,
+            extensions,
+        })
+    }
+    /// Returns the local artifact ID.
+    #[must_use]
+    pub const fn id(&self) -> &ArtifactId {
+        &self.id
+    }
+    /// Returns the semantic artifact role.
+    #[must_use]
+    pub const fn role(&self) -> ArtifactRole {
+        self.role
+    }
+    /// Returns the repository path.
+    #[must_use]
+    pub const fn path(&self) -> &RepoPath {
+        &self.path
+    }
+    /// Returns an optional covered surface.
+    #[must_use]
+    pub const fn surface(&self) -> Option<&SurfaceId> {
+        self.surface.as_ref()
+    }
+    /// Returns optional normalized symbol metadata.
+    #[must_use]
+    pub const fn symbol(&self) -> Option<&SelectorText> {
+        self.symbol.as_ref()
+    }
+    /// Returns an optional typed selector.
+    #[must_use]
+    pub const fn selector(&self) -> Option<&ArtifactSelector> {
+        self.selector.as_ref()
+    }
+    /// Returns extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
+/// A nonempty set of artifacts uniquely keyed within one binding.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Artifacts(BTreeMap<ArtifactId, Artifact>);
+
+impl Artifacts {
+    /// Validates nonempty unique artifact IDs.
+    pub fn new(values: Vec<Artifact>) -> Result<Self, EntityBuildError> {
+        if values.is_empty() {
+            return Err(EntityBuildError::ArtifactsRequired);
+        }
+        let count = values.len();
+        let values: BTreeMap<_, _> = values
+            .into_iter()
+            .map(|value| (value.id().clone(), value))
+            .collect();
+        if values.len() != count {
+            return Err(EntityBuildError::DuplicateArtifact);
+        }
+        Ok(Self(values))
+    }
+    /// Returns artifacts in local ID order.
+    #[must_use]
+    pub const fn values(&self) -> &BTreeMap<ArtifactId, Artifact> {
+        &self.0
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -1165,6 +1315,12 @@ pub enum EntityBuildError {
     SurfaceCompositionRequired,
     /// The same exact fragment pin appeared more than once.
     DuplicateFragmentUse,
+    /// A user-visible artifact omitted every coverage locator.
+    ArtifactLocatorRequired,
+    /// A binding did not declare any artifacts.
+    ArtifactsRequired,
+    /// A local artifact ID appeared more than once.
+    DuplicateArtifact,
     /// An extension namespace was invalid.
     InvalidExtensionNamespace,
     /// An extension object key was invalid.
@@ -1203,6 +1359,9 @@ impl Display for EntityBuildError {
                 "surface requires at least one direct requirement or fragment use"
             }
             Self::DuplicateFragmentUse => "surface fragments contain a duplicate exact pin",
+            Self::ArtifactLocatorRequired => "user-visible artifact requires a coverage locator",
+            Self::ArtifactsRequired => "binding requires at least one artifact",
+            Self::DuplicateArtifact => "binding artifacts contain a duplicate local ID",
             Self::InvalidExtensionNamespace => "invalid extension namespace",
             Self::InvalidExtensionKey => "invalid extension key",
             Self::InvalidExtensionValue => "invalid extension value",
@@ -1621,6 +1780,42 @@ mod tests {
                 Extensions::default(),
             ),
             Err(EntityBuildError::OwnersRequired)
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn artifacts_enforce_role_locators_and_unique_ids() -> Result<(), Box<dyn Error>> {
+        let missing = Artifact::new(
+            ArtifactId::new("signup")?,
+            ArtifactRole::View,
+            RepoPath::new("src/signup.rs")?,
+            None,
+            None,
+            None,
+            Extensions::default(),
+        );
+        assert_eq!(missing, Err(EntityBuildError::ArtifactLocatorRequired));
+        let artifact = Artifact::new(
+            ArtifactId::new("signup")?,
+            ArtifactRole::Route,
+            RepoPath::new("src/signup.rs")?,
+            Some(SurfaceId::new("account.create.signup.start")?),
+            Some(SelectorText::new("signup_handler")?),
+            Some(ArtifactSelector::Route {
+                path: SelectorText::new("/signup")?,
+                method: Some(HttpMethod::Get),
+            }),
+            Extensions::default(),
+        )?;
+        assert_eq!(artifact.role(), ArtifactRole::Route);
+        assert!(matches!(
+            Artifacts::new(Vec::new()),
+            Err(EntityBuildError::ArtifactsRequired)
+        ));
+        assert!(matches!(
+            Artifacts::new(vec![artifact.clone(), artifact]),
+            Err(EntityBuildError::DuplicateArtifact)
         ));
         Ok(())
     }

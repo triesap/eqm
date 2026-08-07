@@ -142,6 +142,10 @@ pub enum VocabularyParseError {
     InvalidRequirementScope,
     /// Facet was not in the v1 set.
     InvalidFacet,
+    /// Artifact role was not in the v1 set.
+    InvalidArtifactRole,
+    /// HTTP route method was not in the v1 set.
+    InvalidHttpMethod,
 }
 
 impl Display for VocabularyParseError {
@@ -152,6 +156,8 @@ impl Display for VocabularyParseError {
             Self::InvalidRequirementLevel => "invalid requirement level",
             Self::InvalidRequirementScope => "invalid requirement scope",
             Self::InvalidFacet => "invalid facet",
+            Self::InvalidArtifactRole => "invalid artifact role",
+            Self::InvalidHttpMethod => "invalid HTTP method",
         })
     }
 }
@@ -217,6 +223,21 @@ closed_vocabulary!(
         RuntimeExposure => "runtime_exposure",
         ReleasePresence => "release_presence"
     ]
+);
+closed_vocabulary!(
+    /// The semantic role of a bound artifact.
+    ArtifactRole,
+    InvalidArtifactRole,
+    [
+        Entrypoint => "entrypoint", View => "view", Route => "route", Component => "component",
+        Service => "service", Test => "test", Configuration => "configuration", Asset => "asset"
+    ]
+);
+closed_vocabulary!(
+    /// A provider-neutral HTTP route method.
+    HttpMethod,
+    InvalidHttpMethod,
+    [Get => "get", Post => "post", Put => "put", Patch => "patch", Delete => "delete", Options => "options"]
 );
 
 #[cfg(test)]
@@ -295,6 +316,24 @@ mod tests {
         assert_eq!(
             "security".parse::<Facet>(),
             Err(VocabularyParseError::InvalidFacet)
+        );
+    }
+
+    #[test]
+    fn artifact_vocabularies_are_closed() {
+        for value in ArtifactRole::ALL {
+            assert_eq!(value.as_str().parse(), Ok(*value));
+        }
+        for value in HttpMethod::ALL {
+            assert_eq!(value.as_str().parse(), Ok(*value));
+        }
+        assert_eq!(
+            "page".parse::<ArtifactRole>(),
+            Err(VocabularyParseError::InvalidArtifactRole)
+        );
+        assert_eq!(
+            "head".parse::<HttpMethod>(),
+            Err(VocabularyParseError::InvalidHttpMethod)
         );
     }
 }
