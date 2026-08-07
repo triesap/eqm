@@ -8,6 +8,9 @@ Authority is organized as follows:
 - `product.md`: product outcomes, use case, and exclusions;
 - `architecture.md`: crate boundaries and evaluation flow;
 - `decision-register.md`: the approved v1 decision set;
+- `manifest-contracts.md`: exhaustive authored field and default contracts;
+- `vocabularies.md`: closed values, selectors, IDs, and extension behavior;
+- `schema-inventory.md`: exact schema identities and deterministic dispatch;
 - `acceptance.md`: implementation and verification completion criteria;
 - `naming-and-no-compat.md`: canonical identity and clean-break contract;
 - later executable contracts for manifests, vocabularies, canonicalization,

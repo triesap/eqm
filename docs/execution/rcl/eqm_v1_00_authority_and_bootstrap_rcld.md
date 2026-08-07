@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 00: Authority And Bootstrap
 
-Status: in progress; Steps 001-006 and Steps 007a-007b complete
+Status: in progress; Steps 001-006 and Steps 007a-007c complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Base commit: `859205c`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
-Current checkpoint: `step_007c`
+Current checkpoint: `step_007d`
 
 ## Purpose
 
@@ -121,8 +121,8 @@ authority.
 | Substep | Status | Commit | Result |
 | --- | --- | --- | --- |
 | `step_007a` | complete | `c150c76` | Product, architecture, acceptance, naming, source ADR, and provenance authority imported |
-| `step_007b` | complete | this checkpoint | Corrective implementation ordering and verification decisions recorded |
-| `step_007c` | pending | - | - |
+| `step_007b` | complete | `a77f8ee` | Corrective implementation ordering and verification decisions recorded |
+| `step_007c` | complete | this checkpoint | Exhaustive authored field, vocabulary, selector, extension, and schema contracts defined |
 | `step_007d` | pending | - | - |
 | `step_007e` | pending | - | - |
 | `step_007f` | pending | - | - |
