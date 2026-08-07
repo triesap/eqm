@@ -9,6 +9,7 @@ mod evidence;
 mod evidence_result;
 mod id;
 mod path;
+mod policy;
 mod reference;
 mod schema;
 mod time;
@@ -42,6 +43,10 @@ pub use id::{
     WaiverId,
 };
 pub use path::{RepoPath, RepoPathError};
+pub use policy::{
+    Policy, PolicyBuildError, PolicyRule, PolicySelector, PositiveDays, Profile, ProfileDimension,
+    WaiverPolicy,
+};
 pub use reference::{
     CatalogRef, CiRunRef, DesignRef, ExternalRefError, IssueRef, OwnerRef, ReleaseRef,
 };

@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 02: Typed Domain Graph
 
-Status: in progress; Step 026 complete
+Status: in progress; Step 027 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 01
-Current checkpoint: `step_027`
+Current checkpoint: `step_028`
 
 ## Purpose
 
@@ -79,4 +79,5 @@ construction, ordering, duplicate, and doc tests in `eqm_domain`.
 | `step_024` | complete | Intended exposure uses symbolic applicability and remains distinct from runtime facts |
 | `step_025` | complete | Evidence specifications enforce coverage sets and kind-compatible runners, selectors, and counts |
 | `step_026` | complete | Immutable evidence results bind exact subjects, provenance, payload kinds, retry history, and digests |
-| `step_027`-`step_032` | pending | - |
+| `step_027` | complete | Fixed profiles and policy rules enforce finite selections and monotonic strength axes |
+| `step_028`-`step_032` | pending | - |
