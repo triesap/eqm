@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 03: Protocol And Schemas
 
-Status: in progress; Step 033 complete
+Status: in progress; Step 034 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 02
-Current checkpoint: `step_034`
+Current checkpoint: `step_035`
 
 ## Purpose
 
@@ -74,4 +74,5 @@ manifest DTO checkpoint.
 | Step range | Status | Result |
 | --- | --- | --- |
 | `step_033` | complete | Exact-current generic report envelopes validate command discriminants, contexts, diagnostics, and deterministic JSON |
-| `step_034`-`step_041` | pending | - |
+| `step_034` | complete | Public protocol schema constants derive from the shared exact-current domain schema inventory |
+| `step_035`-`step_041` | pending | - |

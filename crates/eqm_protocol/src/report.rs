@@ -10,22 +10,20 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-const RESULT_SCHEMA: &str = "https://schemas.equivalencematrix.dev/v1/result";
-
 /// Exact v1 result schema marker.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ResultSchema;
 
 impl Serialize for ResultSchema {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(RESULT_SCHEMA)
+        serializer.serialize_str(&crate::RESULT_SCHEMA.to_string())
     }
 }
 
 impl<'de> Deserialize<'de> for ResultSchema {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let value = String::deserialize(deserializer)?;
-        if value == RESULT_SCHEMA {
+        if value == crate::RESULT_SCHEMA.to_string() {
             Ok(Self)
         } else {
             Err(serde::de::Error::custom("unsupported result schema"))
