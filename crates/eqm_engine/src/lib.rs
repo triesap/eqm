@@ -9,6 +9,7 @@ mod monotonicity;
 mod obligations;
 mod resolve;
 mod selection;
+mod structure;
 
 pub use applicability::{
     ApplicabilityContext, ApplicabilityError, TruthValue, evaluate_applicability,
@@ -28,4 +29,8 @@ pub use selection::{
     AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,
     SelectedPolicyProfiles, SelectedProfile, SelectionError, matching_policy_rules,
     select_policy_profiles,
+};
+pub use structure::{
+    RepositoryEntry, RepositoryEntryKind, RepositoryView, StructureFinding, StructureFindingKind,
+    StructureReport, evaluate_structure,
 };
