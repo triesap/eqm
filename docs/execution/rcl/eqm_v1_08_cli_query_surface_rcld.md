@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 08: CLI Query Surface
 
-Status: in progress; RCLD 07 complete
+Status: in progress; Step 091 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 07
-Current checkpoint: `step_091`
+Current checkpoint: `step_092`
 
 ## Purpose
 
@@ -80,4 +80,5 @@ output goldens, no-execution assertions, and clean-worktree checks.
 
 | Step range | Status | Result |
 | --- | --- | --- |
-| `step_091`-`step_103` | pending | - |
+| `step_091` | complete | The executable has a closed table-driven parser for every approved global option, command, nested command, operand count, command option, required option, enum, profile selection, and context bound; usage is validated before session preparation, deterministic help covers the exact surface, invalid use exits 2, and one immutable session request boundary captures later workspace orchestration inputs |
+| `step_092`-`step_103` | pending | - |
