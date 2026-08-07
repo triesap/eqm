@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 02: Typed Domain Graph
 
-Status: in progress; Step 024 complete
+Status: in progress; Step 025 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 01
-Current checkpoint: `step_025`
+Current checkpoint: `step_026`
 
 ## Purpose
 
@@ -77,4 +77,5 @@ construction, ordering, duplicate, and doc tests in `eqm_domain`.
 | `step_022` | complete | Targets keep repository roots separate from extensible platform and framework identity |
 | `step_023` | complete | Artifacts use closed roles, typed selectors, bounded metadata, and unique local IDs |
 | `step_024` | complete | Intended exposure uses symbolic applicability and remains distinct from runtime facts |
-| `step_025`-`step_032` | pending | - |
+| `step_025` | complete | Evidence specifications enforce coverage sets and kind-compatible runners, selectors, and counts |
+| `step_026`-`step_032` | pending | - |

@@ -148,6 +148,10 @@ pub enum VocabularyParseError {
     InvalidHttpMethod,
     /// Intended exposure state was not in the v1 set.
     InvalidIntendedExposureState,
+    /// Evidence kind was not in the v1 set.
+    InvalidEvidenceKind,
+    /// Release channel was not in the v1 set.
+    InvalidReleaseChannel,
 }
 
 impl Display for VocabularyParseError {
@@ -161,6 +165,8 @@ impl Display for VocabularyParseError {
             Self::InvalidArtifactRole => "invalid artifact role",
             Self::InvalidHttpMethod => "invalid HTTP method",
             Self::InvalidIntendedExposureState => "invalid intended exposure state",
+            Self::InvalidEvidenceKind => "invalid evidence kind",
+            Self::InvalidReleaseChannel => "invalid release channel",
         })
     }
 }
@@ -247,6 +253,22 @@ closed_vocabulary!(
     IntendedExposureState,
     InvalidIntendedExposureState,
     [Required => "required", Prohibited => "prohibited"]
+);
+closed_vocabulary!(
+    /// Kind of expected or observed evidence.
+    EvidenceKind,
+    InvalidEvidenceKind,
+    [
+        StructuralCheck => "structural_check", StaticInventory => "static_inventory",
+        Test => "test", Snapshot => "snapshot", ManualReview => "manual_review",
+        RuntimeSnapshot => "runtime_snapshot", ReleaseRecord => "release_record"
+    ]
+);
+closed_vocabulary!(
+    /// Release channel identity without maturity ordering.
+    ReleaseChannel,
+    InvalidReleaseChannel,
+    [Development => "development", Internal => "internal", Beta => "beta", Production => "production"]
 );
 
 #[cfg(test)]
