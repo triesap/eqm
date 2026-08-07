@@ -20,7 +20,7 @@ pub use diagnostic::{
 pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
 pub use entity::{
     Capability, Description, EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue,
-    Extensions, Title,
+    Extensions, Journey, Revision, Title, Transition, TransitionTrigger,
 };
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, EvidenceSpecId, FragmentId, FullRequirementId,

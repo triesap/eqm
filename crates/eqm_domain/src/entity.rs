@@ -1,9 +1,10 @@
 //! Shared entity values and the capability model.
 
-use crate::{CapabilityId, LifecycleStatus, OwnerRef};
+use crate::{CapabilityId, JourneyId, LifecycleStatus, OwnerRef, RiskClass, SurfaceId};
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+use std::num::NonZeroU64;
 use unicode_normalization::UnicodeNormalization;
 
 const MAX_EXTENSION_DEPTH: usize = 16;
@@ -62,6 +63,36 @@ text_value!(
     Title,
     160
 );
+text_value!(
+    /// A normalized transition trigger of at most 256 UTF-8 bytes.
+    TransitionTrigger,
+    256
+);
+
+/// A positive authored authority revision.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Revision(NonZeroU64);
+
+impl Revision {
+    /// Creates a positive revision.
+    pub fn new(value: u64) -> Result<Self, EntityBuildError> {
+        NonZeroU64::new(value)
+            .map(Self)
+            .ok_or(EntityBuildError::RevisionRequired)
+    }
+
+    /// Returns the positive integer value.
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0.get()
+    }
+}
+
+impl Display for Revision {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        self.get().fmt(formatter)
+    }
+}
 text_value!(
     /// Optional normative description text of at most 4,096 UTF-8 bytes.
     Description,
@@ -267,14 +298,7 @@ impl Capability {
         description: Option<Description>,
         extensions: Extensions,
     ) -> Result<Self, EntityBuildError> {
-        if owners.is_empty() {
-            return Err(EntityBuildError::OwnersRequired);
-        }
-        let owner_count = owners.len();
-        let owners: BTreeSet<_> = owners.into_iter().collect();
-        if owners.len() != owner_count {
-            return Err(EntityBuildError::DuplicateOwner);
-        }
+        let owners = owner_set(owners)?;
         Ok(Self {
             id,
             title,
@@ -317,6 +341,169 @@ impl Capability {
     }
 }
 
+fn owner_set(owners: Vec<OwnerRef>) -> Result<BTreeSet<OwnerRef>, EntityBuildError> {
+    if owners.is_empty() {
+        return Err(EntityBuildError::OwnersRequired);
+    }
+    let owner_count = owners.len();
+    let owners: BTreeSet<_> = owners.into_iter().collect();
+    if owners.len() != owner_count {
+        return Err(EntityBuildError::DuplicateOwner);
+    }
+    Ok(owners)
+}
+
+/// A directed journey transition between declared surfaces.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct Transition {
+    from: SurfaceId,
+    to: SurfaceId,
+    trigger: TransitionTrigger,
+}
+
+impl Transition {
+    /// Creates a transition with validated endpoint and trigger types.
+    #[must_use]
+    pub const fn new(from: SurfaceId, to: SurfaceId, trigger: TransitionTrigger) -> Self {
+        Self { from, to, trigger }
+    }
+
+    /// Returns the origin surface.
+    #[must_use]
+    pub const fn from(&self) -> &SurfaceId {
+        &self.from
+    }
+
+    /// Returns the destination surface.
+    #[must_use]
+    pub const fn to(&self) -> &SurfaceId {
+        &self.to
+    }
+
+    /// Returns the normalized transition trigger.
+    #[must_use]
+    pub const fn trigger(&self) -> &TransitionTrigger {
+        &self.trigger
+    }
+}
+
+/// A versioned journey authority with normative surface order.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Journey {
+    id: JourneyId,
+    revision: Revision,
+    title: Title,
+    capability: CapabilityId,
+    status: LifecycleStatus,
+    risk_class: RiskClass,
+    owners: BTreeSet<OwnerRef>,
+    surfaces: Vec<SurfaceId>,
+    transitions: BTreeSet<Transition>,
+    description: Option<Description>,
+    extensions: Extensions,
+}
+
+impl Journey {
+    /// Creates a journey and validates local collection invariants.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: JourneyId,
+        revision: Revision,
+        title: Title,
+        capability: CapabilityId,
+        status: LifecycleStatus,
+        risk_class: RiskClass,
+        owners: Vec<OwnerRef>,
+        surfaces: Vec<SurfaceId>,
+        transitions: Vec<Transition>,
+        description: Option<Description>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        let owners = owner_set(owners)?;
+        if surfaces.is_empty() {
+            return Err(EntityBuildError::SurfacesRequired);
+        }
+        let unique_surfaces: BTreeSet<_> = surfaces.iter().collect();
+        if unique_surfaces.len() != surfaces.len() {
+            return Err(EntityBuildError::DuplicateSurface);
+        }
+        let transition_count = transitions.len();
+        let transitions: BTreeSet<_> = transitions.into_iter().collect();
+        if transitions.len() != transition_count {
+            return Err(EntityBuildError::DuplicateTransition);
+        }
+        Ok(Self {
+            id,
+            revision,
+            title,
+            capability,
+            status,
+            risk_class,
+            owners,
+            surfaces,
+            transitions,
+            description,
+            extensions,
+        })
+    }
+
+    /// Returns the journey ID.
+    #[must_use]
+    pub const fn id(&self) -> &JourneyId {
+        &self.id
+    }
+    /// Returns the authored revision.
+    #[must_use]
+    pub const fn revision(&self) -> Revision {
+        self.revision
+    }
+    /// Returns the title.
+    #[must_use]
+    pub const fn title(&self) -> &Title {
+        &self.title
+    }
+    /// Returns the parent capability ID.
+    #[must_use]
+    pub const fn capability(&self) -> &CapabilityId {
+        &self.capability
+    }
+    /// Returns lifecycle status.
+    #[must_use]
+    pub const fn status(&self) -> LifecycleStatus {
+        self.status
+    }
+    /// Returns the required risk class.
+    #[must_use]
+    pub const fn risk_class(&self) -> RiskClass {
+        self.risk_class
+    }
+    /// Returns owners in deterministic order.
+    #[must_use]
+    pub const fn owners(&self) -> &BTreeSet<OwnerRef> {
+        &self.owners
+    }
+    /// Returns surfaces in normative authored order.
+    #[must_use]
+    pub fn surfaces(&self) -> &[SurfaceId] {
+        &self.surfaces
+    }
+    /// Returns transitions in canonical tuple order.
+    #[must_use]
+    pub const fn transitions(&self) -> &BTreeSet<Transition> {
+        &self.transitions
+    }
+    /// Returns the optional description.
+    #[must_use]
+    pub const fn description(&self) -> Option<&Description> {
+        self.description.as_ref()
+    }
+    /// Returns extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -326,6 +513,14 @@ pub enum EntityBuildError {
     OwnersRequired,
     /// An owner appeared more than once.
     DuplicateOwner,
+    /// A versioned authority used revision zero.
+    RevisionRequired,
+    /// A journey did not declare any surfaces.
+    SurfacesRequired,
+    /// A journey declared a surface more than once.
+    DuplicateSurface,
+    /// A journey declared the same transition tuple more than once.
+    DuplicateTransition,
     /// An extension namespace was invalid.
     InvalidExtensionNamespace,
     /// An extension object key was invalid.
@@ -346,6 +541,10 @@ impl Display for EntityBuildError {
             Self::InvalidText => "invalid normalized entity text",
             Self::OwnersRequired => "entity requires at least one owner",
             Self::DuplicateOwner => "entity owners contain a duplicate",
+            Self::RevisionRequired => "entity revision must be positive",
+            Self::SurfacesRequired => "journey requires at least one surface",
+            Self::DuplicateSurface => "journey surfaces contain a duplicate",
+            Self::DuplicateTransition => "journey transitions contain a duplicate tuple",
             Self::InvalidExtensionNamespace => "invalid extension namespace",
             Self::InvalidExtensionKey => "invalid extension key",
             Self::InvalidExtensionValue => "invalid extension value",
@@ -457,6 +656,78 @@ mod tests {
             Extensions::new(too_large),
             Err(EntityBuildError::ExtensionBytesExceeded)
         );
+        Ok(())
+    }
+
+    #[test]
+    fn journey_preserves_surface_order_and_sorts_transitions() -> Result<(), Box<dyn Error>> {
+        let start = SurfaceId::new("account.create.signup.start")?;
+        let done = SurfaceId::new("account.create.signup.done")?;
+        let forward = Transition::new(
+            start.clone(),
+            done.clone(),
+            TransitionTrigger::new("submit")?,
+        );
+        let journey = Journey::new(
+            JourneyId::new("account.create.signup")?,
+            Revision::new(1)?,
+            Title::new("Sign up")?,
+            CapabilityId::new("account.create")?,
+            LifecycleStatus::Active,
+            RiskClass::High,
+            vec![owner("owner://team/accounts")?],
+            vec![start.clone(), done.clone()],
+            vec![forward.clone()],
+            Some(Description::new("Create an account interactively")?),
+            Extensions::default(),
+        )?;
+        assert_eq!(journey.revision().get(), 1);
+        assert_eq!(journey.surfaces(), [start, done]);
+        assert_eq!(journey.transitions().first(), Some(&forward));
+        Ok(())
+    }
+
+    #[test]
+    fn journey_rejects_invalid_local_collections() -> Result<(), Box<dyn Error>> {
+        let start = SurfaceId::new("account.create.signup.start")?;
+        let id = JourneyId::new("account.create.signup")?;
+        let revision = Revision::new(1)?;
+        let title = Title::new("Sign up")?;
+        let capability = CapabilityId::new("account.create")?;
+        let account_owner = owner("owner://team/accounts")?;
+        let transition = Transition::new(
+            start.clone(),
+            start.clone(),
+            TransitionTrigger::new("retry")?,
+        );
+        let build = |surfaces, transitions| {
+            Journey::new(
+                id.clone(),
+                revision,
+                title.clone(),
+                capability.clone(),
+                LifecycleStatus::Active,
+                RiskClass::Medium,
+                vec![account_owner.clone()],
+                surfaces,
+                transitions,
+                None,
+                Extensions::default(),
+            )
+        };
+        assert_eq!(Revision::new(0), Err(EntityBuildError::RevisionRequired));
+        assert!(matches!(
+            build(Vec::new(), Vec::new()),
+            Err(EntityBuildError::SurfacesRequired)
+        ));
+        assert!(matches!(
+            build(vec![start.clone(), start.clone()], Vec::new()),
+            Err(EntityBuildError::DuplicateSurface)
+        ));
+        assert!(matches!(
+            build(vec![start], vec![transition.clone(), transition]),
+            Err(EntityBuildError::DuplicateTransition)
+        ));
         Ok(())
     }
 }
