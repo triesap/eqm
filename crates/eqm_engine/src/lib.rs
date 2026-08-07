@@ -13,6 +13,7 @@ mod outcomes;
 mod resolve;
 mod selection;
 mod structure;
+mod waivers;
 
 pub use applicability::{
     ApplicabilityContext, ApplicabilityError, TruthValue, evaluate_applicability,
@@ -45,3 +46,4 @@ pub use structure::{
     RepositoryEntry, RepositoryEntryKind, RepositoryView, StructureFinding, StructureFindingKind,
     StructureReport, evaluate_structure,
 };
+pub use waivers::{WaivableStatus, WaiverEvaluation, WaiverInvalidReason, evaluate_waivers};

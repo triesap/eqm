@@ -57,6 +57,14 @@ impl Display for CalendarDate {
     }
 }
 
+impl CalendarDate {
+    /// Returns the nonnegative whole-day distance to a later or equal date.
+    #[must_use]
+    pub fn days_until(self, later: Self) -> Option<u64> {
+        u64::try_from((later.0 - self.0).num_days()).ok()
+    }
+}
+
 impl FromStr for CalendarDate {
     type Err = TimeParseError;
 
