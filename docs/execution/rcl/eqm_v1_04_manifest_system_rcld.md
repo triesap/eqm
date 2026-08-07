@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 04: Manifest System
 
-Status: in progress; Step 048 complete
+Status: in progress; Step 049 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 03
-Current checkpoint: `step_049`
+Current checkpoint: `step_050`
 
 ## Purpose
 
@@ -88,4 +88,5 @@ approved order. No pre-resolution or pre-expansion digest is authoritative.
 | `step_046` | complete | Capability, journey, surface, fragment, requirement, applicability, transition, and exact fragment-pin DTOs convert through domain invariants with source and field attribution |
 | `step_047` | complete | Binding artifacts, typed selectors, exposures, and evidence specifications convert with target-root confinement and role, coverage, count, and selector invariants |
 | `step_048` | complete | Profiles and policies convert with finite cohort bounds, declared defaults, closed selectors, ordered trust and requirement thresholds, and coherent waiver strengthening rules |
-| `step_049`-`step_056` | pending | - |
+| `step_049` | complete | Runner conversion rejects shell-shaped programs and interpolated placeholders, constructs typed argv, cwd, environment and secret bindings, and enforces v1 resource and backend guarantees |
+| `step_050`-`step_056` | pending | - |

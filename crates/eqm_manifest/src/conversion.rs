@@ -6,13 +6,15 @@ use crate::dto::{
 };
 use crate::{DocumentDto, ValidatedDocument};
 use eqm_domain::{
-    Applicability, Artifact, ArtifactSelector, Artifacts, Binding, Capability, ComparisonOperator,
-    Description, DurationMillis, EvidenceSelector, EvidenceSpecification, ExtensionKey,
-    ExtensionNamespace, ExtensionValue, Extensions, Facet, Fragment, FragmentUse, HttpMethod,
-    Journey, MembershipOperator, OwnerRef, Policy, PolicyRule, PolicySelector, PositiveCount,
-    PositiveDays, Profile, ProfileDimension, RepoPath, Requirement, RequirementStatement, Revision,
-    RouteSelector, SelectorText, Surface, SymbolicValueId, TargetId, Title, Transition,
-    TransitionTrigger, WaiverPolicy,
+    Applicability, ArgumentTemplate, Artifact, ArtifactSelector, Artifacts, Binding, Capability,
+    ComparisonOperator, Description, DurationMillis, EnvironmentBinding, EnvironmentName,
+    EnvironmentSource, EvidenceSelector, EvidenceSpecification, ExtensionKey, ExtensionNamespace,
+    ExtensionValue, Extensions, Facet, Fragment, FragmentUse, HttpMethod, Journey,
+    MembershipOperator, OwnerRef, Policy, PolicyRule, PolicySelector, PositiveCount, PositiveDays,
+    Profile, ProfileDimension, RepoPath, Requirement, RequirementStatement, Revision,
+    RouteSelector, RunnerDefinition, RunnerLimits, RunnerProgram, SecretBinding, SecretProviderRef,
+    SelectorText, Surface, SymbolicValueId, TargetId, Title, Transition, TransitionTrigger,
+    WaiverPolicy, WorkingDirectoryTemplate,
 };
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -335,6 +337,138 @@ pub fn convert_policy(document: &ValidatedDocument) -> Result<Policy, Conversion
         extensions(&dto.extensions, source)?,
     )
     .map_err(|_| ConversionError::at(source, "policy"))
+}
+
+/// Converts one strict runner DTO into a shell-free bounded runner definition.
+pub fn convert_runner(document: &ValidatedDocument) -> Result<RunnerDefinition, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Runner(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    if !(1_000..=3_600_000).contains(&dto.timeout_ms) {
+        return Err(ConversionError::at(source, "timeout_ms"));
+    }
+    if dto.max_output_bytes == 0 || dto.max_output_bytes > 16 * 1024 * 1024 {
+        return Err(ConversionError::at(source, "max_output_bytes"));
+    }
+    if dto
+        .max_concurrency
+        .is_some_and(|value| !(1..=64).contains(&value))
+    {
+        return Err(ConversionError::at(source, "max_concurrency"));
+    }
+    if dto.program.chars().any(char::is_whitespace)
+        || dto.program.contains([';', '&', '|', '$', '`'])
+    {
+        return Err(ConversionError::at(source, "program"));
+    }
+    RunnerDefinition::new(
+        parse(&dto.id, "id", source)?,
+        build(Revision::new(dto.revision), "revision", source)?,
+        owners(&dto.owners, source)?,
+        parse(&dto.backend, "backend", source)?,
+        RunnerProgram::Repository(parse(&dto.program, "program", source)?),
+        dto.args
+            .iter()
+            .map(|value| argument(value, source))
+            .collect::<Result<_, _>>()?,
+        dto.cwd
+            .as_deref()
+            .map(|value| working_directory(value, source))
+            .transpose()?,
+        dto.environment
+            .iter()
+            .map(|binding| {
+                let source_value = match binding.source.as_str() {
+                    "literal" => EnvironmentSource::Literal(text(
+                        binding
+                            .value
+                            .as_deref()
+                            .ok_or_else(|| ConversionError::at(source, "environment.value"))?,
+                        "environment.value",
+                        source,
+                    )?),
+                    "trusted_path" if binding.value.is_none() => EnvironmentSource::TrustedPath,
+                    "canonical_locale" if binding.value.is_none() => {
+                        EnvironmentSource::CanonicalLocale
+                    }
+                    "utc_timezone" if binding.value.is_none() => EnvironmentSource::UtcTimezone,
+                    _ => return Err(ConversionError::at(source, "environment.source")),
+                };
+                EnvironmentBinding::new(
+                    build(
+                        EnvironmentName::new(binding.name.as_str()),
+                        "environment.name",
+                        source,
+                    )?,
+                    source_value,
+                )
+                .map_err(|_| ConversionError::at(source, "environment"))
+            })
+            .collect::<Result<_, _>>()?,
+        dto.secrets
+            .iter()
+            .map(|binding| {
+                Ok(SecretBinding::new(
+                    build(
+                        EnvironmentName::new(binding.name.as_str()),
+                        "secrets.name",
+                        source,
+                    )?,
+                    build(
+                        SecretProviderRef::new(binding.provider.as_str()),
+                        "secrets.provider",
+                        source,
+                    )?,
+                ))
+            })
+            .collect::<Result<_, ConversionError>>()?,
+        build(
+            RunnerLimits::new(
+                build(DurationMillis::new(dto.timeout_ms), "timeout_ms", source)?,
+                build(
+                    PositiveCount::new(dto.max_output_bytes),
+                    "max_output_bytes",
+                    source,
+                )?,
+                dto.max_concurrency
+                    .map(|value| build(PositiveCount::new(value), "max_concurrency", source))
+                    .transpose()?,
+            ),
+            "limits",
+            source,
+        )?,
+        dto.guarantees
+            .iter()
+            .map(|value| parse(value, "guarantees", source))
+            .collect::<Result<_, _>>()?,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "runner"))
+}
+
+fn argument(value: &str, source: &str) -> Result<ArgumentTemplate, ConversionError> {
+    match value {
+        "{target_root}" => Ok(ArgumentTemplate::TargetRoot),
+        "{selector_json}" => Ok(ArgumentTemplate::SelectorJson),
+        "{result_path}" => Ok(ArgumentTemplate::ResultPath),
+        _ if value.contains(['{', '}']) => Err(ConversionError::at(source, "args")),
+        _ => Ok(ArgumentTemplate::Literal(text(value, "args", source)?)),
+    }
+}
+
+fn working_directory(
+    value: &str,
+    source: &str,
+) -> Result<WorkingDirectoryTemplate, ConversionError> {
+    match value {
+        "{target_root}" => Ok(WorkingDirectoryTemplate::TargetRoot),
+        "{result_path}" => Ok(WorkingDirectoryTemplate::ResultPath),
+        _ if value.contains(['{', '}']) => Err(ConversionError::at(source, "cwd")),
+        _ => Ok(WorkingDirectoryTemplate::Repository(parse(
+            value, "cwd", source,
+        )?)),
+    }
 }
 
 fn optional_parse<T>(
@@ -718,7 +852,7 @@ mod tests {
     use super::*;
     use crate::dto::{
         BindingDto, CapabilityDto, FragmentDto, JourneyDto, PolicyDto, ProfileDimensionDto,
-        ProfileDto, SurfaceDto,
+        ProfileDto, RunnerDto, SurfaceDto,
     };
     use eqm_domain::RepoPath;
 
@@ -1003,6 +1137,90 @@ region = "missing"
             .err()
             .ok_or("unbounded cohort accepted")?;
         assert_eq!(error.field(), "dimensions.values");
+        Ok(())
+    }
+
+    fn runner() -> Result<RunnerDto, toml::de::Error> {
+        toml::from_str(
+            r#"schema = "https://schemas.equivalencematrix.dev/v1/runner"
+id = "runner.web"
+revision = 1
+owners = ["owner://team/tooling"]
+backend = "local"
+program = "bin/test-runner"
+args = ["test", "{selector_json}", "{result_path}"]
+cwd = "{target_root}"
+timeout_ms = 60000
+max_output_bytes = 1048576
+max_concurrency = 2
+
+[[environment]]
+name = "PATH"
+source = "trusted_path"
+
+[[environment]]
+name = "MODE"
+source = "literal"
+value = "test"
+
+[[secrets]]
+name = "TOKEN"
+provider = "secret://vault/token"
+"#,
+        )
+    }
+
+    #[test]
+    fn runner_conversion_is_shell_free_and_bounded() -> Result<(), Box<dyn Error>> {
+        let converted = convert_runner(&document(DocumentDto::Runner(runner()?))?)?;
+        assert_eq!(converted.args().len(), 3);
+        assert_eq!(converted.environment().len(), 2);
+        assert_eq!(converted.secrets().len(), 1);
+        assert_eq!(converted.limits().max_concurrency().get(), 2);
+        Ok(())
+    }
+
+    #[test]
+    fn command_strings_placeholders_limits_and_guarantees_fail() -> Result<(), Box<dyn Error>> {
+        for (mut runner, field) in [
+            (
+                {
+                    let mut value = runner()?;
+                    value.program = "cargo test".to_owned();
+                    value
+                },
+                "program",
+            ),
+            (
+                {
+                    let mut value = runner()?;
+                    value.args = vec!["--out={result_path}".to_owned()];
+                    value
+                },
+                "args",
+            ),
+            (
+                {
+                    let mut value = runner()?;
+                    value.timeout_ms = 0;
+                    value
+                },
+                "timeout_ms",
+            ),
+        ] {
+            let error = convert_runner(&document(DocumentDto::Runner(runner.clone()))?)
+                .err()
+                .ok_or("invalid runner accepted")?;
+            assert_eq!(error.field(), field);
+            runner.args.clear();
+        }
+
+        let mut unsupported = runner()?;
+        unsupported.guarantees = vec!["network_denied".to_owned()];
+        let error = convert_runner(&document(DocumentDto::Runner(unsupported))?)
+            .err()
+            .ok_or("unsupported local guarantee accepted")?;
+        assert_eq!(error.field(), "runner");
         Ok(())
     }
 }
