@@ -6,6 +6,7 @@ mod diagnostic;
 mod digest;
 mod id;
 mod path;
+mod reference;
 mod schema;
 mod time;
 
@@ -21,5 +22,8 @@ pub use id::{
     SurfaceId, TargetId, UnitId, WaiverId,
 };
 pub use path::{RepoPath, RepoPathError};
+pub use reference::{
+    CatalogRef, CiRunRef, DesignRef, ExternalRefError, IssueRef, OwnerRef, ReleaseRef,
+};
 pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
 pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
