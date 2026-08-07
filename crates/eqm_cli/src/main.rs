@@ -29,9 +29,15 @@ fn main() -> ExitCode {
             if reporter.progress("rendering command result").is_err() {
                 return ExitCode::from(6);
             }
-            let execution = if command == cli::CommandName::Validate {
+            let execution = if matches!(
+                command,
+                cli::CommandName::Validate | cli::CommandName::Check
+            ) {
                 match std::env::current_dir() {
-                    Ok(start) => commands::validate::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::Validate => {
+                        commands::validate::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::check::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {

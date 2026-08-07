@@ -1,5 +1,6 @@
 //! Command orchestration over one prepared session.
 
+pub mod check;
 pub mod validate;
 
 use crate::renderer::OutputPayload;

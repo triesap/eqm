@@ -7,7 +7,7 @@ use eqm_manifest::{canonicalize_fragment, canonicalize_graph, load_workspace};
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Immutable inputs used to prepare one workspace session for a command.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -29,11 +29,18 @@ impl SessionRequest {
 /// One fully loaded, resolved, invariant-checked, expanded, canonical session.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PreparedSession {
+    repository_root: PathBuf,
     finalized: FinalizedWorkspaceGraph,
     workspace_digest: Sha256Digest,
 }
 
 impl PreparedSession {
+    /// Returns the canonical repository root used for confined inspection.
+    #[must_use]
+    pub fn repository_root(&self) -> &Path {
+        &self.repository_root
+    }
+
     /// Returns the finalized graph used by every query in the session.
     #[must_use]
     pub const fn finalized(&self) -> &FinalizedWorkspaceGraph {
@@ -75,6 +82,7 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
         .transpose()
         .map_err(|_| SessionError::ConfigPath)?;
     let loaded = load_workspace(start, explicit.as_ref()).map_err(|_| SessionError::Load)?;
+    let repository_root = loaded.repository_root().to_path_buf();
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())
         .map_err(|_| SessionError::Resolve)?;
     let digests: FragmentDigestMap = graph
@@ -92,6 +100,7 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
         .map_err(|_| SessionError::Canonicalize)?
         .digest();
     Ok(PreparedSession {
+        repository_root,
         finalized,
         workspace_digest,
     })

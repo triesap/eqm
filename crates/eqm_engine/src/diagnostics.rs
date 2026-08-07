@@ -3,10 +3,10 @@
 use eqm_domain::{DiagnosticBuildError, DiagnosticCode, DiagnosticDescriptor, Severity};
 
 /// Returns every emitted v1 diagnostic descriptor exactly once in code order.
-pub fn diagnostic_registry() -> Result<[DiagnosticDescriptor; 7], DiagnosticBuildError> {
+pub fn diagnostic_registry() -> Result<Vec<DiagnosticDescriptor>, DiagnosticBuildError> {
     let code =
         |number| DiagnosticCode::from_number(number).ok_or(DiagnosticBuildError::InvalidCode);
-    Ok([
+    Ok(vec![
         DiagnosticDescriptor {
             code: code(100)?,
             severity: Severity::Error,
@@ -14,6 +14,14 @@ pub fn diagnostic_registry() -> Result<[DiagnosticDescriptor; 7], DiagnosticBuil
             authority: "docs/specification/cli.md",
             explanation: "The workspace could not complete manifest loading, graph resolution, invariant validation, expansion, or canonicalization.",
             remediation: "Correct the reported workspace authority and run validation again.",
+        },
+        DiagnosticDescriptor {
+            code: code(200)?,
+            severity: Severity::Error,
+            title: "declared artifact structure failed",
+            authority: "docs/specification/evaluation.md",
+            explanation: "A declared artifact is missing, has the wrong path type or role, escapes its target root, uses an invalid symlink, or collides portably.",
+            remediation: "Correct the artifact path and role within its declared target root.",
         },
         DiagnosticDescriptor {
             code: code(300)?,
@@ -63,6 +71,14 @@ pub fn diagnostic_registry() -> Result<[DiagnosticDescriptor; 7], DiagnosticBuil
             explanation: "Expansion would replace or duplicate a surface requirement identity.",
             remediation: "Choose a unique prefix or remove the conflicting requirement.",
         },
+        DiagnosticDescriptor {
+            code: code(500)?,
+            severity: Severity::Error,
+            title: "required evidence is missing",
+            authority: "docs/specification/evaluation.md",
+            explanation: "A derived obligation has no prepared evidence satisfying its exact coordinate.",
+            remediation: "Provide current trusted evidence for the reported obligation.",
+        },
     ])
 }
 
@@ -87,7 +103,7 @@ mod tests {
     fn registry_is_complete_unique_live_and_explainable() -> Result<(), Box<dyn Error>> {
         let registry = diagnostic_registry()?;
         validate_diagnostic_registry(&registry)?;
-        let emitted = [100, 300, 301, 302, 303, 304, 305]
+        let emitted = [100, 200, 300, 301, 302, 303, 304, 305, 500]
             .into_iter()
             .map(|number| DiagnosticCode::from_number(number).ok_or("invalid emitted code"))
             .collect::<Result<Vec<_>, _>>()?;

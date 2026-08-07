@@ -13,14 +13,16 @@ use std::fmt::{self, Display, Formatter};
 /// Returns the stable graph-resolution diagnostic registry.
 pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 6], DiagnosticBuildError> {
     let registry = diagnostic_registry()?;
-    Ok([
-        registry[1],
-        registry[2],
-        registry[3],
-        registry[4],
-        registry[5],
-        registry[6],
-    ])
+    let graph = registry
+        .into_iter()
+        .filter(|descriptor| (300..=399).contains(&descriptor.code.number()))
+        .collect::<Vec<_>>();
+    match graph.as_slice() {
+        [first, second, third, fourth, fifth, sixth] => {
+            Ok([*first, *second, *third, *fourth, *fifth, *sixth])
+        }
+        _ => Err(DiagnosticBuildError::InvalidCode),
+    }
 }
 
 /// Resolves every typed cross-reference and constructs deterministic graph indexes.
