@@ -1,6 +1,6 @@
 # EquivalenceMatrix V1 Full Implementation Multi-RCLD
 
-Status: in progress; RCLDs 00-06 complete; RCLD 07 active
+Status: in progress; RCLDs 00-07 complete; RCLD 08 active
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable

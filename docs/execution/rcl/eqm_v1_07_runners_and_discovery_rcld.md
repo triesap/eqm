@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 07: Runners And Discovery
 
-Status: in progress; Step 089 complete
+Status: complete; Steps 077-090 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 06
-Current checkpoint: `step_090`
+Current checkpoint: none
 
 ## Purpose
 
@@ -93,4 +93,4 @@ flood, atomic-write, inventory, and framework fixture tests.
 | `step_087` | complete | Validated inventory observations map an exact `(kind, key)` coordinate to discovered true when present, false only when complete authority proves absence, and unknown for partial or unknown absence; expected, declared, enabled, released, and conformant inputs remain independent while the pure engine performs the deterministic comparison |
 | `step_088` | complete | A minimal SvelteKit filesystem fixture discovers only sorted `+page.svelte` routes below `src/routes`, excludes generated, private, and server-only paths, removes route-group segments, normalizes dynamic segments to provider-neutral keys, validates the resulting complete inventory, and reconciles an exact dynamic route as discovered |
 | `step_089` | complete | A SwiftUI build-export fixture carries the current closed inventory schema, exact iOS subject and adapter pin, complete sorted provider-neutral navigation entries, and canonical digest; validation and exact signup-navigation reconciliation pass without inspecting Swift source |
-| `step_090` | pending | - |
+| `step_090` | complete | A Jetpack Compose build-export fixture carries the current closed inventory schema, exact Android subject and adapter pin, complete sorted provider-neutral navigation entries, and canonical digest; validation and exact signup-navigation reconciliation pass without inspecting Kotlin source |

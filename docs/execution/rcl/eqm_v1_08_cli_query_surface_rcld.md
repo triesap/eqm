@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 08: CLI Query Surface
 
-Status: planned; blocked by RCLD 07
+Status: in progress; RCLD 07 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 07
-Current checkpoint: none
+Current checkpoint: `step_091`
 
 ## Purpose
 

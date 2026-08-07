@@ -1,0 +1,33 @@
+{
+  "schema": "https://schemas.equivalencematrix.dev/v1/inventory",
+  "adapter": "adapter.compose_export",
+  "adapter_digest": "sha256:f8e43b91481e5ab0d78cfd6aba6709bf3edbd193d81423ea1f4f0e987bcc87e1",
+  "subject": {
+    "repository": "https://example.com/product/android",
+    "repository_id_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "scope": { "kind": "target", "target": "android" },
+    "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "build_id": "android-build-42",
+    "artifact_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "target_configuration_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "target": "android",
+  "generated_at": "2026-08-07T12:00:00Z",
+  "completeness": "complete",
+  "entries": [
+    {
+      "kind": "navigation",
+      "key": "home",
+      "attributes": { "framework": { "type": "symbol", "value": "compose" } },
+      "source": "build/eqm/compose-navigation.json"
+    },
+    {
+      "kind": "navigation",
+      "key": "signup",
+      "attributes": { "framework": { "type": "symbol", "value": "compose" } },
+      "source": "build/eqm/compose-navigation.json"
+    }
+  ],
+  "diagnostics": [],
+  "inventory_digest": "sha256:d77eb4ab90c355d9fcd29a7e9fe2b4c0ac7b9911a0bf4b90c1f0cbf464a74f0a"
+}

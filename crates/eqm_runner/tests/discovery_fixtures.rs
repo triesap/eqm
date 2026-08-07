@@ -295,3 +295,35 @@ fn swiftui_build_export_is_current_complete_and_reconciles() -> Result<(), Box<d
     assert_eq!(result.discovered, ExposureComparison::Match);
     Ok(())
 }
+
+#[test]
+fn compose_build_export_is_current_complete_and_reconciles() -> Result<(), Box<dyn Error>> {
+    let definition = native_definition(
+        "adapter.compose_export",
+        "https://example.com/adapters/compose-export",
+        b"compose fixture adapter",
+    )?;
+    let observation =
+        validate_export_fixture("android_inventory.json", &definition, "compose-fixture")?;
+    assert_eq!(observation.completeness(), InventoryCompleteness::Complete);
+    assert_eq!(
+        observation.inventory().ok_or("missing inventory")?.target,
+        "android"
+    );
+    let input = InventoryExposureInput {
+        expected: ExpectedExposure::Required,
+        declared: ObservedExposure::True,
+        enabled: ObservedExposure::Unknown,
+        released: ObservedExposure::Unknown,
+        conformant: ConformanceFact::Unknown,
+    };
+    let result = reconcile_inventory_exposure(
+        input,
+        &observation,
+        &SelectorText::new("navigation")?,
+        &SelectorText::new("signup")?,
+    );
+    assert_eq!(result.facts.discovered, ObservedExposure::True);
+    assert_eq!(result.discovered, ExposureComparison::Match);
+    Ok(())
+}
