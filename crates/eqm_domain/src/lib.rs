@@ -1,4 +1,42 @@
 //! Pure validated domain types for EquivalenceMatrix.
+//!
+//! This crate owns semantic values and local construction invariants. It does
+//! not parse manifests, resolve references, access the filesystem, execute
+//! runners, evaluate policy, or serialize the public protocol. Those layers
+//! must cross this validation boundary explicitly.
+//!
+//! [`WorkspaceGraphInput`] collects already validated authority and
+//! [`WorkspaceGraph`] freezes it into deterministic indexes. Graph construction
+//! rejects duplicate semantic keys but deliberately leaves dangling-reference,
+//! lifecycle, fragment-expansion, and policy checks to the engine.
+//!
+//! # I/O-free construction
+//!
+//! ```
+//! use eqm_domain::{
+//!     Capability, CapabilityId, Extensions, LifecycleStatus, OwnerRef, Title,
+//!     WorkspaceGraph, WorkspaceGraphInput,
+//! };
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let capability = Capability::new(
+//!     CapabilityId::new("account.create")?,
+//!     Title::new("Account creation")?,
+//!     LifecycleStatus::Active,
+//!     vec!["owner://team/accounts".parse::<OwnerRef>()?],
+//!     None,
+//!     Extensions::default(),
+//! )?;
+//! let graph = WorkspaceGraph::new(WorkspaceGraphInput {
+//!     capabilities: vec![capability],
+//!     ..WorkspaceGraphInput::default()
+//! })?;
+//!
+//! assert!(graph.capabilities().contains_key(&CapabilityId::new("account.create")?));
+//! assert!(graph.targets().is_empty());
+//! # Ok(())
+//! # }
+//! ```
 
 #![forbid(unsafe_code)]
 

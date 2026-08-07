@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 03: Protocol And Schemas
 
-Status: planned; blocked by RCLD 02
+Status: in progress; RCLD 02 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 02
-Current checkpoint: none
+Current checkpoint: `step_033`
 
 ## Purpose
 
