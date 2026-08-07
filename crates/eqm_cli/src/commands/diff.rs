@@ -78,7 +78,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     })
 }
 
-fn prepare_identity(
+pub(super) fn prepare_identity(
     identity: &str,
     current: &PreparedSession,
     repository: &Path,
@@ -145,11 +145,11 @@ fn prepare_commit(identity: &str, repository: &Path) -> Result<PreparedSession, 
     )?)
 }
 
-fn is_full_object_id(value: &str) -> bool {
+pub(super) fn is_full_object_id(value: &str) -> bool {
     matches!(value.len(), 40 | 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-fn projection(session: &PreparedSession) -> SemanticProjection {
+pub(super) fn projection(session: &PreparedSession) -> SemanticProjection {
     let graph = session.finalized().graph();
     let mut result = SemanticProjection::new();
     for value in graph.capabilities().values() {
