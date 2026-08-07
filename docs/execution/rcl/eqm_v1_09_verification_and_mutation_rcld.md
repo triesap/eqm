@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 09: Verification And Mutation
 
-Status: planned; blocked by RCLD 08
+Status: in progress; RCLD 08 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 08
-Current checkpoint: none
+Current checkpoint: `step_104`
 
 ## Purpose
 

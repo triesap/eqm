@@ -41,6 +41,7 @@ fn main() -> ExitCode {
                     | cli::CommandName::Diff
                     | cli::CommandName::Affected
                     | cli::CommandName::Discover
+                    | cli::CommandName::Reconcile
             ) {
                 match std::env::current_dir() {
                     Ok(start) if command == cli::CommandName::Validate => {
@@ -70,7 +71,10 @@ fn main() -> ExitCode {
                     Ok(start) if command == cli::CommandName::Affected => {
                         commands::affected::execute(parsed, &start)
                     }
-                    Ok(start) => commands::discover::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::Discover => {
+                        commands::discover::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::reconcile::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {

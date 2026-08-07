@@ -135,7 +135,9 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     )
 }
 
-fn definition(lock: &eqm_domain::AdapterLockIdentity) -> Result<AdapterDefinition, Box<dyn Error>> {
+pub(super) fn definition(
+    lock: &eqm_domain::AdapterLockIdentity,
+) -> Result<AdapterDefinition, Box<dyn Error>> {
     Ok(AdapterDefinition::new(
         lock.id.clone(),
         lock.version.clone(),

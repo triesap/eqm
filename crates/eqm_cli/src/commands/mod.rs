@@ -9,6 +9,7 @@ pub mod evaluation;
 pub mod locate;
 pub mod matrix;
 pub mod obligations;
+pub mod reconcile;
 pub mod show;
 pub mod validate;
 

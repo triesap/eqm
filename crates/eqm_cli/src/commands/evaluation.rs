@@ -59,7 +59,18 @@ pub fn derive<'a>(
     )?;
     let selection =
         select_policy_profiles(graph, EvaluationMode::Development, Some(&request), None)?;
-    let applicability = ApplicabilityContext::from_profiles(
+    let applicability = applicability_context(session, &selection)?;
+    let obligations = derive_obligations(session.finalized(), &selection, &applicability, None)?;
+    Ok((selection, obligations))
+}
+
+/// Builds the complete applicability context for one exact selection.
+pub fn applicability_context(
+    session: &PreparedSession,
+    selection: &SelectedPolicyProfiles<'_>,
+) -> Result<ApplicabilityContext, Box<dyn Error>> {
+    let graph = session.finalized().graph();
+    Ok(ApplicabilityContext::from_profiles(
         selection
             .profiles()
             .values()
@@ -71,9 +82,7 @@ pub fn derive<'a>(
                     .ok_or("selected profile authority")
             })
             .collect::<Result<Vec<_>, _>>()?,
-    )?;
-    let obligations = derive_obligations(session.finalized(), &selection, &applicability, None)?;
-    Ok((selection, obligations))
+    )?)
 }
 
 fn parse_profile(value: &str) -> Result<(ProfileId, ProfileValues), Box<dyn Error>> {
