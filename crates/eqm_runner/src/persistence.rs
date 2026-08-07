@@ -30,14 +30,7 @@ pub fn persist_evidence_result(
     if bytes.len() > MAX_RESULT_BYTES {
         return Err(EvidenceWriteError::TooLarge);
     }
-    let dto = EvidenceResultDto::from_json(bytes).map_err(EvidenceWriteError::Protocol)?;
-    let digest = dto
-        .result_digest
-        .parse::<Sha256Digest>()
-        .map_err(|_| EvidenceWriteError::InvalidDigest)?;
-    if evidence_payload_digest(bytes)? != digest {
-        return Err(EvidenceWriteError::DigestMismatch);
-    }
+    let (dto, digest) = validate_evidence_result_bytes(bytes)?;
     let root = fs::canonicalize(repository_root).map_err(|_| EvidenceWriteError::InvalidRoot)?;
     let generated = create_confined_directory(&root, ".eqm")?;
     let results = create_confined_directory(&generated, "results")?;
@@ -70,6 +63,23 @@ pub fn persist_evidence_result(
         Err(_) if destination.exists() => existing_outcome(destination, bytes, digest),
         Err(_) => Err(EvidenceWriteError::AtomicInstall),
     }
+}
+
+pub(crate) fn validate_evidence_result_bytes(
+    bytes: &[u8],
+) -> Result<(EvidenceResultDto, Sha256Digest), EvidenceWriteError> {
+    if bytes.len() > MAX_RESULT_BYTES {
+        return Err(EvidenceWriteError::TooLarge);
+    }
+    let dto = EvidenceResultDto::from_json(bytes).map_err(EvidenceWriteError::Protocol)?;
+    let digest = dto
+        .result_digest
+        .parse::<Sha256Digest>()
+        .map_err(|_| EvidenceWriteError::InvalidDigest)?;
+    if evidence_payload_digest(bytes)? != digest {
+        return Err(EvidenceWriteError::DigestMismatch);
+    }
+    Ok((dto, digest))
 }
 
 fn evidence_payload_digest(bytes: &[u8]) -> Result<Sha256Digest, EvidenceWriteError> {

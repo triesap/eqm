@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod ci;
 mod container;
 mod execution;
 mod normalized;
@@ -9,6 +10,10 @@ mod persistence;
 mod resolution;
 mod substitution;
 
+pub use ci::{
+    CiDelegatedImport, CiImportAuthority, CiImportError, CiReplayGuard, CiSignature,
+    CiSignatureVerifier, VerifiedCiSignature, import_ci_delegated_result,
+};
 pub use container::{
     ContainerAuthority, ContainerError, ContainerPlan, prepare_container_execution,
 };
