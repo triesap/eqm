@@ -9,6 +9,7 @@ mod freshness;
 mod invariants;
 mod monotonicity;
 mod obligations;
+mod outcomes;
 mod resolve;
 mod selection;
 mod structure;
@@ -33,6 +34,7 @@ pub use obligations::{
     Obligation, ObligationDerivation, ObligationError, ObligationKey, ObligationStrength,
     ScopeSubject, derive_obligations,
 };
+pub use outcomes::{EvidenceOutcome, aggregate_evidence_outcomes};
 pub use resolve::{ResolutionError, resolution_diagnostics, resolve_graph};
 pub use selection::{
     AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,

@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 05: Resolution And Conformance
 
-Status: in progress; Step 066 complete
+Status: in progress; Step 067 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 04
-Current checkpoint: `step_067`
+Current checkpoint: `step_068`
 
 ## Purpose
 
@@ -91,4 +91,5 @@ never converts an unsatisfied facet into `satisfied`.
 | `step_064` | complete | A pure injected repository view evaluates artifact existence, file kind, semantic role, segment-confined target paths, portable collisions, and explicitly permitted fully resolved read-only symlinks; deterministic artifact-linked findings fail closed without engine filesystem access |
 | `step_065` | complete | Evidence coverage compares exact specification ID/digest, explicit requirement and facet membership, scope subject, target, unit, kind, contract, binding, policy, runner, adapter, profiles, and release context; partial and missing results remain rejected with per-axis reasons while duplicate immutable result IDs make coverage unknown |
 | `step_066` | complete | The full typed cache tuple compares subject, contract, binding, evidence specification, runner, adapter, policy, profiles, target configuration, runtime facts, release record, trust configuration, producer, and tool version; injected timestamp evaluation treats boundary equality as fresh, expiry as stale, missing temporal inputs as unknown, and dates beyond the five-minute future tolerance as unknown |
-| `step_067`-`step_070` | pending | - |
+| `step_067` | complete | Explicit zero-match counts are valid observations that aggregate missing; immutable executable histories preserve pass/fail instability and map timeout, cancellation, and error to unknown, while skipped, filtered, quarantined, and below-minimum counts remain missing and cross-result pass/fail conflict remains unstable |
+| `step_068`-`step_070` | pending | - |

@@ -290,7 +290,7 @@ pub struct EvidenceCounts {
 }
 
 impl EvidenceCounts {
-    /// Validates exact internal totals and a nonzero selected count.
+    /// Validates exact internal totals, including an explicit zero-match result.
     pub fn new(
         selected: u64,
         passed: u64,
@@ -305,7 +305,7 @@ impl EvidenceCounts {
             .and_then(|value| value.checked_add(filtered))
             .and_then(|value| value.checked_add(quarantined))
             .ok_or(EvidenceResultBuildError::InconsistentCounts)?;
-        if selected == 0 || selected != total {
+        if selected != total {
             return Err(EvidenceResultBuildError::InconsistentCounts);
         }
         Ok(Self {
@@ -858,7 +858,7 @@ pub enum EvidenceResultBuildError {
     ProfileValuesRequired,
     /// Profile selection repeated a dimension.
     DuplicateDimension,
-    /// Count totals were zero, inconsistent, or overflowed.
+    /// Count totals were inconsistent or overflowed.
     InconsistentCounts,
     /// Time window was reversed or attempts were empty.
     InvalidTimeWindow,
@@ -918,6 +918,7 @@ mod tests {
             EvidenceCounts::new(2, 1, 0, 0, 0, 0),
             Err(EvidenceResultBuildError::InconsistentCounts)
         );
+        assert_eq!(EvidenceCounts::new(0, 0, 0, 0, 0, 0)?.selected, 0);
         Ok(())
     }
 
