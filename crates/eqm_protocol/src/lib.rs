@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod adapter;
+mod attestation;
 mod evidence;
 mod report;
 mod results;
@@ -11,6 +12,10 @@ mod schema;
 pub use adapter::{
     AdapterDtoError, AdapterLimitsDto, AdapterOperationDto, AdapterRequestDto, AdapterResponseDto,
     AdapterStatusDto, FactValueDto, InventoryDto, InventoryEntryDto,
+};
+pub use attestation::{
+    AttestationDtoError, AttestationPredicateDto, AttestationSubjectDto, DSSE_PAYLOAD_TYPE,
+    DsseEnvelopeDto, DsseSignatureDto, IN_TOTO_STATEMENT_V1, InTotoStatementDto, SubjectDigestDto,
 };
 pub use evidence::{
     AttachmentDto, AttemptDto, CountsDto, EvidenceDtoError, EvidencePayloadDto, EvidenceResultDto,
