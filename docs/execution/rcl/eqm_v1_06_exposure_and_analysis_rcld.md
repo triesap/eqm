@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 06: Exposure And Analysis
 
-Status: in progress; Step 074 complete
+Status: in progress; Step 075 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 05
-Current checkpoint: `step_075`
+Current checkpoint: `step_076`
 
 ## Purpose
 
@@ -64,4 +64,5 @@ completeness checks.
 | `step_072` | complete | Release gates bind target, version, build, source commit, artifact, channel, contract, policy, profile values, evidence set, runtime facts, trust configuration, release record, and injected clock; verified signed-CI exact inputs pass, visible wholly waived deviation is conditional, complete unwaived mismatch fails, and absent, stale, inexact, invalid, or unverifiable input is unknown |
 | `step_073` | complete | Explicit finalized baseline/candidate projections classify protected-axis additions/removals and ordered changes as strengthened/weakened, unordered entities as added/removed, and evidence, waiver, exposure, and excluded metadata in their stable classes; output sorts by the normative coordinate and reverses directional classes while swapping values |
 | `step_074` | complete | Explicit reverse indexes map artifacts, targets, semantic coordinates, dependency and fragment-consumer edges, and derived obligations; mapped files remain precise, direct impacts expand through transitive dependents, unmapped target files conservatively select every target unit, repository-global or unclassified authority changes select the full workspace, and metadata-only semantic changes may remain empty |
-| `step_075`-`step_076` | pending | - |
+| `step_075` | complete | Exposure, conformance, evidence, release, and equivalence share a closed matrix family with typed target/unit/facet axes, sorted labels, row-major cells, obligation and diagnostic attribution, explicit unknown cells for every unprepared required coordinate, and rejection of empty or out-of-axis inputs |
+| `step_076` | pending | - |

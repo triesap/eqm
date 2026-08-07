@@ -12,6 +12,7 @@ mod expand;
 mod exposure;
 mod freshness;
 mod invariants;
+mod matrix;
 mod monotonicity;
 mod obligations;
 mod outcomes;
@@ -49,6 +50,10 @@ pub use freshness::{
     FreshnessKey, FreshnessMismatch, FreshnessReport, FreshnessStatus, evaluate_evidence_freshness,
 };
 pub use invariants::validate_graph_invariants;
+pub use matrix::{
+    Matrix, MatrixAxis, MatrixAxisKey, MatrixCell, MatrixError, MatrixKind, MatrixStatus,
+    MatrixValue, generate_matrix,
+};
 pub use monotonicity::{
     MonotonicChange, MonotonicityError, ProtectedPolicyInput, ProtectedRequirement,
     enforce_monotonic_policy,
