@@ -9,9 +9,10 @@ use eqm_domain::{
     Applicability, Artifact, ArtifactSelector, Artifacts, Binding, Capability, ComparisonOperator,
     Description, DurationMillis, EvidenceSelector, EvidenceSpecification, ExtensionKey,
     ExtensionNamespace, ExtensionValue, Extensions, Facet, Fragment, FragmentUse, HttpMethod,
-    Journey, MembershipOperator, OwnerRef, PositiveCount, RepoPath, Requirement,
-    RequirementStatement, Revision, RouteSelector, SelectorText, Surface, SymbolicValueId,
-    TargetId, Title, Transition, TransitionTrigger,
+    Journey, MembershipOperator, OwnerRef, Policy, PolicyRule, PolicySelector, PositiveCount,
+    PositiveDays, Profile, ProfileDimension, RepoPath, Requirement, RequirementStatement, Revision,
+    RouteSelector, SelectorText, Surface, SymbolicValueId, TargetId, Title, Transition,
+    TransitionTrigger, WaiverPolicy,
 };
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -188,6 +189,171 @@ pub fn convert_binding(
         extensions(&dto.extensions, source)?,
     )
     .map_err(|_| ConversionError::at(source, "binding"))
+}
+
+/// Converts one strict profile DTO into a finite symbolic profile family.
+pub fn convert_profile(document: &ValidatedDocument) -> Result<Profile, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Profile(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    let mut cohort_count = 1_usize;
+    let dimensions = dto
+        .dimensions
+        .iter()
+        .map(|dimension| {
+            cohort_count = cohort_count
+                .checked_mul(dimension.values.len())
+                .ok_or_else(|| ConversionError::at(source, "dimensions.values"))?;
+            if cohort_count > 100_000 {
+                return Err(ConversionError::at(source, "dimensions.values"));
+            }
+            ProfileDimension::new(
+                parse(&dimension.id, "dimensions.id", source)?,
+                dimension
+                    .values
+                    .iter()
+                    .map(|value| parse(value, "dimensions.values", source))
+                    .collect::<Result<_, _>>()?,
+                description(dimension.description.as_deref(), source)?,
+            )
+            .map_err(|_| ConversionError::at(source, "dimensions"))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Profile::new(
+        parse(&dto.id, "id", source)?,
+        build(Revision::new(dto.revision), "revision", source)?,
+        build(Title::new(dto.title.as_str()), "title", source)?,
+        owners(&dto.owners, source)?,
+        dimensions,
+        dto.defaults
+            .iter()
+            .map(|(dimension, value)| {
+                Ok((
+                    parse(dimension, "defaults", source)?,
+                    parse(value, "defaults", source)?,
+                ))
+            })
+            .collect::<Result<_, ConversionError>>()?,
+        description(dto.description.as_deref(), source)?,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "profile"))
+}
+
+/// Converts one strict policy DTO into its monotonic domain authority.
+pub fn convert_policy(document: &ValidatedDocument) -> Result<Policy, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Policy(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    let rules = dto
+        .rules
+        .iter()
+        .map(|rule| {
+            PolicyRule::new(
+                PolicySelector::new(
+                    optional_parse(&rule.selector.units, "rules.selector.units", source)?,
+                    optional_parse(
+                        &rule.selector.requirements,
+                        "rules.selector.requirements",
+                        source,
+                    )?,
+                    optional_parse(
+                        &rule.selector.risk_classes,
+                        "rules.selector.risk_classes",
+                        source,
+                    )?,
+                    optional_parse(&rule.selector.facets, "rules.selector.facets", source)?,
+                    optional_parse(&rule.selector.scopes, "rules.selector.scopes", source)?,
+                )
+                .map_err(|_| ConversionError::at(source, "rules.selector"))?,
+                parse(&rule.minimum_level, "rules.minimum_level", source)?,
+                rule.facets
+                    .iter()
+                    .map(|value| parse(value, "rules.facets", source))
+                    .collect::<Result<_, _>>()?,
+                parse(&rule.minimum_trust, "rules.minimum_trust", source)?,
+                build(
+                    DurationMillis::new(rule.maximum_age),
+                    "rules.maximum_age",
+                    source,
+                )?,
+                rule.minimum_count
+                    .map(|value| build(PositiveCount::new(value), "rules.minimum_count", source))
+                    .transpose()?,
+            )
+            .map_err(|_| ConversionError::at(source, "rules"))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let waivers = dto
+        .waivers
+        .as_ref()
+        .map(|waivers| {
+            WaiverPolicy::new(
+                waivers.allowed.unwrap_or(false),
+                waivers
+                    .maximum_days
+                    .map(|value| build(PositiveDays::new(value), "waivers.maximum_days", source))
+                    .transpose()?,
+                waivers
+                    .minimum_approvers
+                    .map(|value| {
+                        build(
+                            PositiveCount::new(value),
+                            "waivers.minimum_approvers",
+                            source,
+                        )
+                    })
+                    .transpose()?,
+                waivers
+                    .required_controls
+                    .iter()
+                    .map(|value| parse(value, "waivers.required_controls", source))
+                    .collect::<Result<_, _>>()?,
+            )
+            .map_err(|_| ConversionError::at(source, "waivers"))
+        })
+        .transpose()?
+        .unwrap_or_default();
+    Policy::new(
+        parse(&dto.id, "id", source)?,
+        build(Revision::new(dto.revision), "revision", source)?,
+        build(Title::new(dto.title.as_str()), "title", source)?,
+        owners(&dto.owners, source)?,
+        dto.profiles
+            .iter()
+            .map(|value| parse(value, "profiles", source))
+            .collect::<Result<_, _>>()?,
+        dto.required_targets
+            .iter()
+            .map(|value| parse(value, "required_targets", source))
+            .collect::<Result<_, _>>()?,
+        rules,
+        waivers,
+        description(dto.description.as_deref(), source)?,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "policy"))
+}
+
+fn optional_parse<T>(
+    values: &Option<Vec<String>>,
+    field: &'static str,
+    source: &str,
+) -> Result<Option<Vec<T>>, ConversionError>
+where
+    T: FromStr,
+{
+    values
+        .as_ref()
+        .map(|values| {
+            values
+                .iter()
+                .map(|value| parse(value, field, source))
+                .collect()
+        })
+        .transpose()
 }
 
 fn artifact(
@@ -550,7 +716,10 @@ impl Error for ConversionError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dto::{BindingDto, CapabilityDto, FragmentDto, JourneyDto, SurfaceDto};
+    use crate::dto::{
+        BindingDto, CapabilityDto, FragmentDto, JourneyDto, PolicyDto, ProfileDimensionDto,
+        ProfileDto, SurfaceDto,
+    };
     use eqm_domain::RepoPath;
 
     fn document(document: DocumentDto) -> Result<ValidatedDocument, Box<dyn Error>> {
@@ -739,6 +908,101 @@ test_id = "form submits"
         .err()
         .ok_or("uncovered view accepted")?;
         assert_eq!(error.field(), "artifacts");
+        Ok(())
+    }
+
+    #[test]
+    fn profile_and_policy_convert_with_finite_declared_dimensions() -> Result<(), Box<dyn Error>> {
+        let profile: ProfileDto = toml::from_str(
+            r#"schema = "https://schemas.equivalencematrix.dev/v1/profile"
+id = "audience.default"
+revision = 1
+title = "Audience"
+owners = ["owner://team/product"]
+
+[[dimensions]]
+id = "region"
+values = ["eu", "us"]
+
+[defaults]
+region = "eu"
+"#,
+        )?;
+        let converted = convert_profile(&document(DocumentDto::Profile(profile))?)?;
+        assert_eq!(converted.dimensions().len(), 1);
+        assert_eq!(converted.defaults().len(), 1);
+
+        let policy: PolicyDto = toml::from_str(
+            r#"schema = "https://schemas.equivalencematrix.dev/v1/policy"
+id = "policy.default"
+revision = 1
+title = "Default policy"
+owners = ["owner://team/security"]
+profiles = ["audience.default"]
+required_targets = ["web"]
+
+[[rules]]
+minimum_level = "required"
+facets = ["behavior"]
+minimum_trust = "trusted_ci"
+maximum_age = 86400000
+
+[rules.selector]
+units = ["account.create.primary.form"]
+
+[waivers]
+allowed = true
+maximum_days = 7
+minimum_approvers = 2
+required_controls = ["behavior"]
+"#,
+        )?;
+        let converted = convert_policy(&document(DocumentDto::Policy(policy))?)?;
+        assert_eq!(converted.rules().len(), 1);
+        assert!(converted.waivers().allowed());
+        Ok(())
+    }
+
+    #[test]
+    fn invalid_defaults_and_unbounded_symbolic_cohorts_fail() -> Result<(), Box<dyn Error>> {
+        let mut profile: ProfileDto = toml::from_str(
+            r#"schema = "https://schemas.equivalencematrix.dev/v1/profile"
+id = "audience.default"
+revision = 1
+title = "Audience"
+owners = ["owner://team/product"]
+
+[[dimensions]]
+id = "region"
+values = ["eu"]
+
+[defaults]
+region = "missing"
+"#,
+        )?;
+        let error = convert_profile(&document(DocumentDto::Profile(profile.clone()))?)
+            .err()
+            .ok_or("invalid default accepted")?;
+        assert_eq!(error.field(), "profile");
+
+        let values: Vec<_> = (0..317).map(|index| format!("v{index}")).collect();
+        profile.defaults.clear();
+        profile.dimensions = vec![
+            ProfileDimensionDto {
+                id: "first".to_owned(),
+                values: values.clone(),
+                description: None,
+            },
+            ProfileDimensionDto {
+                id: "second".to_owned(),
+                values,
+                description: None,
+            },
+        ];
+        let error = convert_profile(&document(DocumentDto::Profile(profile))?)
+            .err()
+            .ok_or("unbounded cohort accepted")?;
+        assert_eq!(error.field(), "dimensions.values");
         Ok(())
     }
 }
