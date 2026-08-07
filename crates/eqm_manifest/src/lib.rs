@@ -11,7 +11,7 @@ mod parse;
 mod validation;
 
 pub use config::{ConfigError, WorkspaceConfig, select_workspace_config};
-pub use conversion::{ContractEntity, ConversionError, convert_contract};
+pub use conversion::{ContractEntity, ConversionError, convert_binding, convert_contract};
 pub use discovery::{DiscoveredSource, DiscoveryError, SourceClass, discover_sources};
 pub use parse::{ParseError, ParsedToml, TomlSyntaxError, parse_toml};
 pub use validation::{

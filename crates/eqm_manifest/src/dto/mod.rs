@@ -272,6 +272,7 @@ pub struct EvidenceSpecificationDto {
 pub enum EvidenceSelectorDto {
     Symbol {
         name: String,
+        language: Option<String>,
     },
     Route {
         path: String,
@@ -285,11 +286,15 @@ pub enum EvidenceSelectorDto {
     Inventory {
         record_type: String,
         key: String,
+        value: Option<String>,
     },
     Snapshot {
-        name: String,
+        snapshot_id: String,
+        variant: Option<String>,
     },
-    Release,
+    Release {
+        channel: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
