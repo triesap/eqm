@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 08: CLI Query Surface
 
-Status: in progress; Step 097 complete
+Status: in progress; Step 098 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 07
-Current checkpoint: `step_098`
+Current checkpoint: `step_099`
 
 ## Purpose
 
@@ -87,4 +87,5 @@ output goldens, no-execution assertions, and clean-worktree checks.
 | `step_095` | complete | `show` resolves every approved entity kind from one finalized graph, emits the exact canonical semantic projection plus its repository-relative authority source, rejects missing or multi-revision matches with registered `EQM-E0001` and exit 2, and returns deterministic typed envelopes without execution or writes |
 | `step_096` | complete | `locate` resolves an exact unit and optional target across binding authority, returns deterministically sorted source, artifact, and evidence declaration locations with repository-relative paths and manifest source spans, and reports missing coordinates through typed `EQM-E0001` query failure without execution or writes |
 | `step_097` | complete | `context` combines exact graph authority, complete profile-aware obligations, binding product paths, evidence declarations, findings, and relevant waivers under explicit provenance/trust labels; depth and byte bounds truncate only complete records with visible omission accounting, Markdown remains bounded, and no runner or adapter executes |
-| `step_098`-`step_103` | pending | - |
+| `step_098` | complete | All five matrix modes use complete stable typed axes and Cartesian cells; conformance and evidence views expose current missing obligations and diagnostics while exposure, release, and equivalence preserve explicit unknown state until trusted observations exist, and exact unit/target/profile filters apply without execution |
+| `step_099`-`step_103` | pending | - |
