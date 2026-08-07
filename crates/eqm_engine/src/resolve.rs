@@ -10,9 +10,11 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 /// Returns the stable graph-resolution diagnostic registry.
-pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 2], DiagnosticBuildError> {
+pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 4], DiagnosticBuildError> {
     let duplicate = DiagnosticCode::from_number(300).ok_or(DiagnosticBuildError::InvalidCode)?;
     let dangling = DiagnosticCode::from_number(301).ok_or(DiagnosticBuildError::InvalidCode)?;
+    let invariant = DiagnosticCode::from_number(302).ok_or(DiagnosticBuildError::InvalidCode)?;
+    let risk = DiagnosticCode::from_number(303).ok_or(DiagnosticBuildError::InvalidCode)?;
     Ok([
         DiagnosticDescriptor {
             code: duplicate,
@@ -29,6 +31,22 @@ pub fn resolution_diagnostics() -> Result<[DiagnosticDescriptor; 2], DiagnosticB
             authority: "docs/specification/canonicalization.md",
             explanation: "An authored typed reference has no matching authority.",
             remediation: "Add the exact authority or correct the typed reference.",
+        },
+        DiagnosticDescriptor {
+            code: invariant,
+            severity: Severity::Error,
+            title: "invalid graph relationship",
+            authority: "docs/specification/manifest-contracts.md",
+            explanation: "A resolved relationship violates hierarchy, membership, or lifecycle rules.",
+            remediation: "Align parent references, membership, identifiers, and lifecycle state.",
+        },
+        DiagnosticDescriptor {
+            code: risk,
+            severity: Severity::Error,
+            title: "invalid risk inheritance",
+            authority: "docs/specification/vocabularies.md",
+            explanation: "A requirement lowers its journey or fragment risk authority.",
+            remediation: "Retain inherited risk or raise the requirement risk class.",
         },
     ])
 }
@@ -444,7 +462,7 @@ fn require(
     Ok(())
 }
 
-fn diagnostic<'a>(
+pub(crate) fn diagnostic<'a>(
     code: u16,
     message: String,
     primary: Option<&str>,

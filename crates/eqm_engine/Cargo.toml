@@ -13,6 +13,8 @@ eqm_domain.workspace = true
 
 [dev-dependencies]
 eqm_manifest.workspace = true
+tempfile.workspace = true
+toml.workspace = true
 
 [lints]
 workspace = true

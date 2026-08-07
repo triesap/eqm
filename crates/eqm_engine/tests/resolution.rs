@@ -58,5 +58,7 @@ fn resolution_diagnostic_registry_is_complete_and_sorted() -> Result<(), Box<dyn
     validate_diagnostic_registry(&registry)?;
     assert_eq!(registry[0].code.to_string(), "EQM-E0300");
     assert_eq!(registry[1].code.to_string(), "EQM-E0301");
+    assert_eq!(registry[2].code.to_string(), "EQM-E0302");
+    assert_eq!(registry[3].code.to_string(), "EQM-E0303");
     Ok(())
 }
