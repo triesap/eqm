@@ -4,6 +4,7 @@
 
 mod diagnostic;
 mod digest;
+mod entity;
 mod id;
 mod path;
 mod reference;
@@ -17,6 +18,10 @@ pub use diagnostic::{
     validate_diagnostic_registry,
 };
 pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
+pub use entity::{
+    Capability, Description, EntityBuildError, ExtensionKey, ExtensionNamespace, ExtensionValue,
+    Extensions, Title,
+};
 pub use id::{
     AdapterId, ArtifactId, BindingId, CapabilityId, EvidenceSpecId, FragmentId, FullRequirementId,
     IdParseError, JourneyId, LocalRequirementId, PolicyId, ProfileId, ProviderId, RunnerId,
