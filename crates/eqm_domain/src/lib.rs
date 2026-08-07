@@ -8,6 +8,7 @@ mod entity;
 mod evidence;
 mod evidence_result;
 mod id;
+mod inventory;
 mod path;
 mod policy;
 mod reference;
@@ -43,6 +44,10 @@ pub use id::{
     FrameworkId, FullRequirementId, IdParseError, JourneyId, LocalRequirementId, PlatformId,
     PolicyId, ProfileId, ProviderId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId,
     WaiverId,
+};
+pub use inventory::{
+    AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,
+    ReconcileStatus, ReleaseRecord, RuntimeFact, RuntimeFactsSnapshot,
 };
 pub use path::{RepoPath, RepoPathError};
 pub use policy::{
