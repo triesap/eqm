@@ -102,6 +102,8 @@ dependencies = [
  "eqm_mcp",
  "eqm_protocol",
  "eqm_runner",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

@@ -585,14 +585,40 @@ where
         )));
     }
     validate_command(name, &operands, &command_values, &global_values)?;
+    let global = build_globals(global_values)?;
+    validate_format(name, global.format)?;
     Ok(ParseOutcome::Run(ParsedCli {
-        global: build_globals(global_values)?,
+        global,
         command: ParsedCommand {
             name,
             operands,
             options: command_values,
         },
     }))
+}
+
+fn validate_format(name: CommandName, format: OutputFormat) -> Result<(), UsageError> {
+    match format {
+        OutputFormat::Markdown if name != CommandName::Context => {
+            Err(usage("markdown format is supported only by context"))
+        }
+        OutputFormat::Sarif
+            if !matches!(
+                name,
+                CommandName::Validate
+                    | CommandName::Check
+                    | CommandName::Verify
+                    | CommandName::ReleaseCheck
+                    | CommandName::Doctor
+            ) =>
+        {
+            Err(usage(format!(
+                "sarif format is unsupported for {}",
+                name.as_str()
+            )))
+        }
+        _ => Ok(()),
+    }
 }
 
 fn validate_command(
