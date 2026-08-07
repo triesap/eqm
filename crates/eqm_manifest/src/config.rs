@@ -1,7 +1,7 @@
 //! Repository-bound workspace configuration selection.
 
 use crate::{ParseError, dto::WorkspaceDto, parse_toml};
-use eqm_domain::{RepoPath, SourceName};
+use eqm_domain::{RepoPath, SchemaKind, SchemaUri, SourceName};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
@@ -126,6 +126,10 @@ fn find_configs(
 }
 
 fn validate_declarations(dto: &WorkspaceDto) -> Result<(), ConfigError> {
+    let schema: SchemaUri = dto.schema.parse().map_err(|_| ConfigError::InvalidConfig)?;
+    if schema.kind() != SchemaKind::Workspace {
+        return Err(ConfigError::InvalidConfig);
+    }
     if dto.contract_sources.is_empty()
         || dto.binding_sources.is_empty()
         || dto.policy_sources.is_empty()
