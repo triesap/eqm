@@ -2,11 +2,16 @@
 
 #![forbid(unsafe_code)]
 
+mod adapter;
 mod evidence;
 mod report;
 mod results;
 mod schema;
 
+pub use adapter::{
+    AdapterDtoError, AdapterLimitsDto, AdapterOperationDto, AdapterRequestDto, AdapterResponseDto,
+    AdapterStatusDto, FactValueDto, InventoryDto, InventoryEntryDto,
+};
 pub use evidence::{
     AttachmentDto, AttemptDto, CountsDto, EvidenceDtoError, EvidencePayloadDto, EvidenceResultDto,
     EvidenceSelectorDto, EvidenceSubjectDto, ExecutionPayloadDto, ScopeSubjectDto, TestResultDto,
