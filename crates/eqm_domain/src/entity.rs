@@ -1,10 +1,11 @@
 //! Shared entity values and the capability model.
 
 use crate::{
-    ArtifactId, ArtifactRole, CapabilityId, DimensionId, Facet, FragmentId, FrameworkId,
-    HttpMethod, IntendedExposureState, JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef,
-    PlatformId, ProviderId, RepoPath, RequirementLevel, RequirementScope, RiskClass, Sha256Digest,
-    SurfaceId, SymbolicValueId, TargetId,
+    ArtifactId, ArtifactRole, BindingId, CapabilityId, DimensionId, EvidenceSpecId,
+    EvidenceSpecification, Facet, FragmentId, FrameworkId, HttpMethod, IntendedExposureState,
+    JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef, PlatformId, ProviderId, RepoPath,
+    RequirementLevel, RequirementScope, RiskClass, Sha256Digest, SurfaceId, SymbolicValueId,
+    TargetId, UnitId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -1334,6 +1335,108 @@ impl Exposure {
     }
 }
 
+/// A versioned declaration that maps one product unit onto one implementation target.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Binding {
+    id: BindingId,
+    revision: Revision,
+    owners: BTreeSet<OwnerRef>,
+    target: TargetId,
+    unit: UnitId,
+    artifacts: Artifacts,
+    exposures: Vec<Exposure>,
+    evidence: BTreeMap<EvidenceSpecId, EvidenceSpecification>,
+    extensions: Extensions,
+}
+
+impl Binding {
+    /// Creates a binding with unique owners, exposures, and evidence IDs.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        id: BindingId,
+        revision: Revision,
+        owners: Vec<OwnerRef>,
+        target: TargetId,
+        unit: UnitId,
+        artifacts: Artifacts,
+        exposures: Vec<Exposure>,
+        evidence: Vec<EvidenceSpecification>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        let owners = owner_set(owners)?;
+        for (index, exposure) in exposures.iter().enumerate() {
+            if exposures[..index].contains(exposure) {
+                return Err(EntityBuildError::DuplicateExposure);
+            }
+        }
+        let evidence_count = evidence.len();
+        let evidence: BTreeMap<_, _> = evidence
+            .into_iter()
+            .map(|specification| (specification.id().clone(), specification))
+            .collect();
+        if evidence.len() != evidence_count {
+            return Err(EntityBuildError::DuplicateEvidenceSpecification);
+        }
+        Ok(Self {
+            id,
+            revision,
+            owners,
+            target,
+            unit,
+            artifacts,
+            exposures,
+            evidence,
+            extensions,
+        })
+    }
+
+    /// Returns the binding authority ID.
+    #[must_use]
+    pub const fn id(&self) -> &BindingId {
+        &self.id
+    }
+    /// Returns the authored revision.
+    #[must_use]
+    pub const fn revision(&self) -> Revision {
+        self.revision
+    }
+    /// Returns owners in deterministic order.
+    #[must_use]
+    pub const fn owners(&self) -> &BTreeSet<OwnerRef> {
+        &self.owners
+    }
+    /// Returns the implementation target.
+    #[must_use]
+    pub const fn target(&self) -> &TargetId {
+        &self.target
+    }
+    /// Returns the fully qualified product unit.
+    #[must_use]
+    pub const fn unit(&self) -> &UnitId {
+        &self.unit
+    }
+    /// Returns the nonempty artifacts by local ID.
+    #[must_use]
+    pub const fn artifacts(&self) -> &Artifacts {
+        &self.artifacts
+    }
+    /// Returns intended exposures in authored order until graph finalization.
+    #[must_use]
+    pub fn exposures(&self) -> &[Exposure] {
+        &self.exposures
+    }
+    /// Returns evidence specifications by local ID.
+    #[must_use]
+    pub const fn evidence(&self) -> &BTreeMap<EvidenceSpecId, EvidenceSpecification> {
+        &self.evidence
+    }
+    /// Returns normative extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// Entity construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EntityBuildError {
@@ -1381,6 +1484,10 @@ pub enum EntityBuildError {
     ArtifactsRequired,
     /// A local artifact ID appeared more than once.
     DuplicateArtifact,
+    /// A binding repeated the same exposure declaration.
+    DuplicateExposure,
+    /// A binding repeated a local evidence-specification ID.
+    DuplicateEvidenceSpecification,
     /// An extension namespace was invalid.
     InvalidExtensionNamespace,
     /// An extension object key was invalid.
@@ -1422,6 +1529,10 @@ impl Display for EntityBuildError {
             Self::ArtifactLocatorRequired => "user-visible artifact requires a coverage locator",
             Self::ArtifactsRequired => "binding requires at least one artifact",
             Self::DuplicateArtifact => "binding artifacts contain a duplicate local ID",
+            Self::DuplicateExposure => "binding exposures contain a duplicate declaration",
+            Self::DuplicateEvidenceSpecification => {
+                "binding evidence contains a duplicate local ID"
+            }
             Self::InvalidExtensionNamespace => "invalid extension namespace",
             Self::InvalidExtensionKey => "invalid extension key",
             Self::InvalidExtensionValue => "invalid extension value",
@@ -1900,6 +2011,49 @@ mod tests {
             ApplicabilityKind::Comparison
         );
         assert_eq!(exposure.route().map(RouteSelector::as_str), Some("/signup"));
+        Ok(())
+    }
+
+    #[test]
+    fn binding_enforces_local_uniqueness_and_preserves_coordinates() -> Result<(), Box<dyn Error>> {
+        let artifact = Artifact::new(
+            ArtifactId::new("config")?,
+            ArtifactRole::Configuration,
+            RepoPath::new("config/eqm.toml")?,
+            None,
+            None,
+            None,
+            Extensions::default(),
+        )?;
+        let exposure = Exposure::new(
+            SurfaceId::new("account.create.signup.start")?,
+            IntendedExposureState::Required,
+            Applicability::default(),
+            None,
+            Extensions::default(),
+        );
+        let build = |exposures| {
+            Binding::new(
+                BindingId::new("web.account").map_err(|_| EntityBuildError::InvalidText)?,
+                Revision::new(1)?,
+                vec![owner("owner://team/web").map_err(|_| EntityBuildError::InvalidText)?],
+                TargetId::new("web").map_err(|_| EntityBuildError::InvalidText)?,
+                UnitId::new("account.create").map_err(|_| EntityBuildError::InvalidText)?,
+                Artifacts::new(vec![artifact.clone()])?,
+                exposures,
+                Vec::new(),
+                Extensions::default(),
+            )
+        };
+        assert_eq!(
+            build(vec![exposure.clone(), exposure.clone()]),
+            Err(EntityBuildError::DuplicateExposure)
+        );
+        let binding = build(vec![exposure])?;
+        assert_eq!(binding.target().as_str(), "web");
+        assert_eq!(binding.unit().as_str(), "account.create");
+        assert_eq!(binding.artifacts().values().len(), 1);
+        assert!(binding.evidence().is_empty());
         Ok(())
     }
 }

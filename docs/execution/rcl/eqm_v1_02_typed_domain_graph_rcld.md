@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 02: Typed Domain Graph
 
-Status: in progress; Step 030 complete
+Status: in progress; Step 031 complete
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 01
-Current checkpoint: `step_031`
+Current checkpoint: `step_032`
 
 ## Purpose
 
@@ -83,4 +83,5 @@ construction, ordering, duplicate, and doc tests in `eqm_domain`.
 | `step_028` | complete | Waivers require exact scope, external authority, approvals, dates, controls, and visible waived effect |
 | `step_029` | complete | Shell-free runners and pinned adapters enforce typed placeholders, bounds, isolation claims, and discovery identity |
 | `step_030` | complete | Inventories, runtime snapshots, reconciliation, and releases retain exact identity and completeness semantics |
-| `step_031`-`step_032` | pending | - |
+| `step_031` | complete | Bindings and immutable workspace indexes reject duplicate authority independent of insertion order |
+| `step_032` | pending | - |
