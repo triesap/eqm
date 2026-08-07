@@ -6,15 +6,16 @@ use crate::dto::{
 };
 use crate::{DocumentDto, ValidatedDocument};
 use eqm_domain::{
-    Applicability, ArgumentTemplate, Artifact, ArtifactSelector, Artifacts, Binding, Capability,
-    ComparisonOperator, Description, DurationMillis, EnvironmentBinding, EnvironmentName,
-    EnvironmentSource, EvidenceSelector, EvidenceSpecification, ExtensionKey, ExtensionNamespace,
-    ExtensionValue, Extensions, Facet, Fragment, FragmentUse, HttpMethod, Journey,
-    MembershipOperator, OwnerRef, Policy, PolicyRule, PolicySelector, PositiveCount, PositiveDays,
-    Profile, ProfileDimension, RepoPath, Requirement, RequirementStatement, Revision,
-    RouteSelector, RunnerDefinition, RunnerLimits, RunnerProgram, SecretBinding, SecretProviderRef,
-    SelectorText, Surface, SymbolicValueId, TargetId, Title, Transition, TransitionTrigger,
-    WaiverPolicy, WorkingDirectoryTemplate,
+    Applicability, ArgumentTemplate, Artifact, ArtifactSelector, Artifacts, Binding, CalendarDate,
+    Capability, ComparisonOperator, Description, DurationMillis, EnvironmentBinding,
+    EnvironmentName, EnvironmentSource, EvidenceScopeSubject, EvidenceSelector,
+    EvidenceSpecification, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Facet,
+    Fragment, FragmentUse, HttpMethod, Journey, MembershipOperator, OwnerRef, Policy, PolicyRule,
+    PolicySelector, PositiveCount, PositiveDays, Profile, ProfileDimension, RepoPath, Requirement,
+    RequirementStatement, Revision, RouteSelector, RunnerDefinition, RunnerLimits, RunnerProgram,
+    SecretBinding, SecretProviderRef, SelectorText, Surface, SymbolicValueId, TargetId, Title,
+    Transition, TransitionTrigger, Waiver, WaiverPolicy, WaiverProfileScope, WaiverReason,
+    WaiverScope, WorkingDirectoryTemplate,
 };
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -447,6 +448,85 @@ pub fn convert_runner(document: &ValidatedDocument) -> Result<RunnerDefinition, 
     .map_err(|_| ConversionError::at(source, "runner"))
 }
 
+/// Converts one strict waiver DTO into an exact, externally approved scope.
+pub fn convert_waiver(document: &ValidatedDocument) -> Result<Waiver, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Waiver(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    let scope = WaiverScope::new(
+        EvidenceScopeSubject::Target(parse(&dto.scope.target, "scope.target", source)?),
+        parse(&dto.scope.unit, "scope.unit", source)?,
+        parse(&dto.scope.requirement, "scope.requirement", source)?,
+        dto.scope
+            .facets
+            .iter()
+            .map(|value| parse(value, "scope.facets", source))
+            .collect::<Result<_, _>>()?,
+        dto.scope
+            .profiles
+            .iter()
+            .map(|(profile, values)| {
+                WaiverProfileScope::new(
+                    parse(profile, "scope.profiles", source)?,
+                    values
+                        .iter()
+                        .map(|(dimension, value)| {
+                            Ok((
+                                parse(dimension, "scope.profiles.dimension", source)?,
+                                parse(value, "scope.profiles.value", source)?,
+                            ))
+                        })
+                        .collect::<Result<_, ConversionError>>()?,
+                )
+                .map_err(|_| ConversionError::at(source, "scope.profiles"))
+            })
+            .collect::<Result<_, _>>()?,
+    )
+    .map_err(|_| ConversionError::at(source, "scope"))?;
+    Waiver::new(
+        parse(&dto.id, "id", source)?,
+        build(Revision::new(dto.revision), "revision", source)?,
+        owners(&dto.owners, source)?,
+        parse(&dto.policy, "policy", source)?,
+        scope,
+        build(WaiverReason::new(dto.reason.as_str()), "reason", source)?,
+        parse(&dto.issue, "issue", source)?,
+        owners(&dto.approvers, source).map_err(|_| ConversionError::at(source, "approvers"))?,
+        parse(&dto.starts_on, "starts_on", source)?,
+        parse(&dto.expires_on, "expires_on", source)?,
+        dto.controls
+            .iter()
+            .map(|value| parse(value, "controls", source))
+            .collect::<Result<_, _>>()?,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "waiver"))
+}
+
+/// Evaluation-time classification of an otherwise valid waiver.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WaiverTemporalStatus {
+    /// The inclusive start date has not arrived.
+    NotYetActive,
+    /// The waiver is active at the evaluation date.
+    Active,
+    /// The exclusive expiry date has arrived or passed.
+    Expired,
+}
+
+/// Classifies a valid waiver against an injected evaluation date.
+#[must_use]
+pub fn classify_waiver(waiver: &Waiver, evaluation_date: CalendarDate) -> WaiverTemporalStatus {
+    if evaluation_date < waiver.starts_on() {
+        WaiverTemporalStatus::NotYetActive
+    } else if waiver.is_active_on(evaluation_date) {
+        WaiverTemporalStatus::Active
+    } else {
+        WaiverTemporalStatus::Expired
+    }
+}
+
 fn argument(value: &str, source: &str) -> Result<ArgumentTemplate, ConversionError> {
     match value {
         "{target_root}" => Ok(ArgumentTemplate::TargetRoot),
@@ -852,7 +932,7 @@ mod tests {
     use super::*;
     use crate::dto::{
         BindingDto, CapabilityDto, FragmentDto, JourneyDto, PolicyDto, ProfileDimensionDto,
-        ProfileDto, RunnerDto, SurfaceDto,
+        ProfileDto, RunnerDto, SurfaceDto, WaiverDto,
     };
     use eqm_domain::RepoPath;
 
@@ -1221,6 +1301,79 @@ provider = "secret://vault/token"
             .err()
             .ok_or("unsupported local guarantee accepted")?;
         assert_eq!(error.field(), "runner");
+        Ok(())
+    }
+
+    fn waiver() -> Result<WaiverDto, toml::de::Error> {
+        toml::from_str(
+            r#"schema = "https://schemas.equivalencematrix.dev/v1/waiver"
+id = "waiver.signup"
+revision = 1
+owners = ["owner://team/product"]
+policy = "policy.default"
+reason = "Temporary remediation"
+issue = "issue://PRODUCT-42"
+approvers = ["owner://role/reviewer"]
+starts_on = "2026-08-01"
+expires_on = "2026-08-08"
+controls = ["accessibility"]
+
+[scope]
+target = "web"
+unit = "account.create.primary.form"
+requirement = "account.create.primary.form#submit"
+facets = ["accessibility"]
+
+[scope.profiles."audience.default"]
+region = "eu"
+"#,
+        )
+    }
+
+    #[test]
+    fn waiver_conversion_and_temporal_classification_are_exact() -> Result<(), Box<dyn Error>> {
+        let converted = convert_waiver(&document(DocumentDto::Waiver(waiver()?))?)?;
+        assert_eq!(
+            classify_waiver(&converted, "2026-07-31".parse()?),
+            WaiverTemporalStatus::NotYetActive
+        );
+        assert_eq!(
+            classify_waiver(&converted, "2026-08-01".parse()?),
+            WaiverTemporalStatus::Active
+        );
+        assert_eq!(
+            classify_waiver(&converted, "2026-08-08".parse()?),
+            WaiverTemporalStatus::Expired
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn incomplete_overlong_reversed_and_invalid_scopes_fail() -> Result<(), Box<dyn Error>> {
+        let mut missing = waiver()?;
+        missing.approvers.clear();
+        assert!(convert_waiver(&document(DocumentDto::Waiver(missing))?).is_err());
+
+        let mut overlong = waiver()?;
+        overlong.reason = "x".repeat(2_049);
+        let error = convert_waiver(&document(DocumentDto::Waiver(overlong))?)
+            .err()
+            .ok_or("overlong reason accepted")?;
+        assert_eq!(error.field(), "reason");
+
+        let mut reversed = waiver()?;
+        reversed.expires_on = reversed.starts_on.clone();
+        let error = convert_waiver(&document(DocumentDto::Waiver(reversed))?)
+            .err()
+            .ok_or("reversed window accepted")?;
+        assert_eq!(error.field(), "waiver");
+
+        let mut invalid_scope = waiver()?;
+        invalid_scope.scope.facets.clear();
+        let error = convert_waiver(&document(DocumentDto::Waiver(invalid_scope))?)
+            .err()
+            .ok_or("empty scope accepted")?;
+        assert_eq!(error.field(), "scope");
         Ok(())
     }
 }
