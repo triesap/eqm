@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "TargetDto": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": true,
+          "default": {},
+          "type": "object"
+        },
+        "framework": {
+          "type": "string"
+        },
+        "owners": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "root": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "root",
+        "platform",
+        "framework",
+        "owners"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/workspace",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "binding_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "contract_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "generated_root": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lockfile": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "policy_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "profile_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "runner_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "targets": {
+      "additionalProperties": {
+        "$ref": "#/$defs/TargetDto"
+      },
+      "type": "object"
+    },
+    "waiver_sources": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "contract_sources",
+    "binding_sources",
+    "policy_sources",
+    "profile_sources",
+    "runner_sources",
+    "waiver_sources"
+  ],
+  "title": "WorkspaceDto",
+  "type": "object"
+}

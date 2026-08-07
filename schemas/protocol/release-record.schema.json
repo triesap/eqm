@@ -1,0 +1,55 @@
+{
+  "$id": "https://schemas.equivalencematrix.dev/v1/release-record",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "app_version": {
+      "type": "string"
+    },
+    "artifact_digest": {
+      "type": "string"
+    },
+    "build_number": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "claimed_trust": {
+      "type": "string"
+    },
+    "producer": {
+      "type": "string"
+    },
+    "record_digest": {
+      "type": "string"
+    },
+    "released_at": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "source_commit": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "target",
+    "app_version",
+    "build_number",
+    "source_commit",
+    "artifact_digest",
+    "channel",
+    "released_at",
+    "producer",
+    "claimed_trust",
+    "record_digest"
+  ],
+  "title": "ReleaseRecordDto",
+  "type": "object"
+}

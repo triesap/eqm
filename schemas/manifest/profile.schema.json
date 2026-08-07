@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "ProfileDimensionDto": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "values"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/profile",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "defaults": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "type": "object"
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "dimensions": {
+      "items": {
+        "$ref": "#/$defs/ProfileDimensionDto"
+      },
+      "type": "array"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "title",
+    "owners",
+    "dimensions"
+  ],
+  "title": "ProfileDto",
+  "type": "object"
+}

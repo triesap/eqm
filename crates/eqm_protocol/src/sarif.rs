@@ -3,12 +3,13 @@
 #![allow(missing_docs)]
 
 use eqm_domain::{Diagnostic, DiagnosticDescriptor, Severity, SourceLocation, ToolVersion};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 pub const SARIF_SCHEMA: &str = "https://json.schemastore.org/sarif-2.1.0.json";
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifLogDto {
     #[serde(rename = "$schema")]
@@ -17,20 +18,20 @@ pub struct SarifLogDto {
     pub runs: Vec<SarifRunDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifRunDto {
     pub tool: SarifToolDto,
     pub results: Vec<SarifResultDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifToolDto {
     pub driver: SarifDriverDto,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifDriverDto {
     pub name: String,
@@ -38,7 +39,7 @@ pub struct SarifDriverDto {
     pub rules: Vec<SarifRuleDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifRuleDto {
     pub id: String,
@@ -50,13 +51,13 @@ pub struct SarifRuleDto {
     pub help: SarifMessageDto,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifMessageDto {
     pub text: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifResultDto {
     #[serde(rename = "ruleId")]
@@ -74,14 +75,14 @@ pub struct SarifResultDto {
     pub properties: BTreeMap<String, String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifLocationDto {
     #[serde(rename = "physicalLocation")]
     pub physical_location: SarifPhysicalLocationDto,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifPhysicalLocationDto {
     #[serde(rename = "artifactLocation")]
@@ -89,13 +90,13 @@ pub struct SarifPhysicalLocationDto {
     pub region: SarifRegionDto,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifArtifactLocationDto {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SarifRegionDto {
     #[serde(rename = "startLine")]

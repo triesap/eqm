@@ -5,6 +5,7 @@ use eqm_domain::{
     Revision, Severity, Sha256Digest, SourceName, SymbolicValueId, TargetId, ToolVersion, UnitId,
     UtcInstant,
 };
+use schemars::JsonSchema;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::error::Error;
@@ -53,7 +54,7 @@ impl<'de> Deserialize<'de> for ToolVersionDto {
 }
 
 /// Closed command identity used by result envelopes and discriminated results.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CommandIdentity {
     /// Initialize a workspace.
@@ -101,7 +102,7 @@ pub enum CommandIdentity {
 }
 
 /// Closed evaluation mode.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EvaluationModeDto {
     /// Local development evaluation.
@@ -113,7 +114,7 @@ pub enum EvaluationModeDto {
 }
 
 /// One selected profile dimension, sortable by profile then dimension.
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProfileValueDto {
     profile: String,
@@ -141,7 +142,7 @@ impl ProfileValueDto {
 
 /// Explicit invocation context. Subject and baseline shapes are supplied by
 /// their owning command DTOs and cannot be untyped maps through this API.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct InvocationContextDto<S, B> {
     mode: EvaluationModeDto,
@@ -209,7 +210,9 @@ impl<S, B> InvocationContextDto<S, B> {
 }
 
 /// One one-based source position.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize,
+)]
 #[serde(deny_unknown_fields)]
 pub struct SourcePositionDto {
     line: u32,
@@ -217,7 +220,7 @@ pub struct SourcePositionDto {
 }
 
 /// One source span in CLI protocol output.
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SourceLocationDto {
     uri: String,
@@ -247,7 +250,9 @@ impl SourceLocationDto {
 }
 
 /// Closed diagnostic severity on the wire.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum SeverityDto {
     /// Blocking error.
@@ -269,7 +274,7 @@ impl From<Severity> for SeverityDto {
 }
 
 /// Public diagnostic record with every optional semantic coordinate explicit.
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DiagnosticDto {
     code: String,
@@ -438,10 +443,12 @@ pub trait CommandResultDto {
 }
 
 /// Common JSON response envelope.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ReportEnvelope<R, S, B> {
+    #[schemars(with = "String")]
     schema: ResultSchema,
+    #[schemars(with = "String")]
     tool_version: ToolVersionDto,
     command: CommandIdentity,
     workspace_digest: Option<String>,
@@ -553,7 +560,7 @@ mod tests {
     use super::*;
     use eqm_domain::{DiagnosticCode, SourceLocation, SourceName, SourcePosition};
 
-    #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+    #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
     #[serde(deny_unknown_fields)]
     struct ValidateResult {
         kind: CommandIdentity,

@@ -1,0 +1,524 @@
+{
+  "$defs": {
+    "AttachmentDto": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "media_type": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "size": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "media_type",
+        "digest",
+        "size"
+      ],
+      "type": "object"
+    },
+    "AttemptDto": {
+      "additionalProperties": false,
+      "properties": {
+        "finished_at": {
+          "type": "string"
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "number": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "outcome",
+        "started_at",
+        "finished_at"
+      ],
+      "type": "object"
+    },
+    "CountsDto": {
+      "additionalProperties": false,
+      "properties": {
+        "failed": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "filtered": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "passed": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "quarantined": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "selected": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "skipped": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "selected",
+        "passed",
+        "failed",
+        "skipped",
+        "filtered",
+        "quarantined"
+      ],
+      "type": "object"
+    },
+    "EvidencePayloadDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "execution": {
+              "$ref": "#/$defs/ExecutionPayloadDto"
+            },
+            "kind": {
+              "const": "structural_check",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "execution"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "counts": {
+              "$ref": "#/$defs/CountsDto"
+            },
+            "inventory_digest": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "static_inventory",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "inventory_digest",
+            "counts"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "execution": {
+              "$ref": "#/$defs/ExecutionPayloadDto"
+            },
+            "kind": {
+              "const": "test",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "execution"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "execution": {
+              "$ref": "#/$defs/ExecutionPayloadDto"
+            },
+            "kind": {
+              "const": "snapshot",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "execution"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "manual_review",
+              "type": "string"
+            },
+            "message": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "outcome": {
+              "type": "string"
+            },
+            "reviewer": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "outcome",
+            "reviewer"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "counts": {
+              "$ref": "#/$defs/CountsDto"
+            },
+            "kind": {
+              "const": "runtime_snapshot",
+              "type": "string"
+            },
+            "runtime_facts_digest": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "runtime_facts_digest",
+            "counts"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "release_record",
+              "type": "string"
+            },
+            "release_record_digest": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "release_record_digest"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "EvidenceSubjectDto": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "repository_id_digest": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/ScopeSubjectDto"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "target_configuration_digest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "repository_id_digest",
+        "scope",
+        "source_commit",
+        "target_configuration_digest"
+      ],
+      "type": "object"
+    },
+    "ExecutionPayloadDto": {
+      "additionalProperties": false,
+      "properties": {
+        "attempts": {
+          "items": {
+            "$ref": "#/$defs/AttemptDto"
+          },
+          "type": "array"
+        },
+        "counts": {
+          "$ref": "#/$defs/CountsDto"
+        },
+        "finished_at": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "attempts",
+        "counts",
+        "started_at",
+        "finished_at"
+      ],
+      "type": "object"
+    },
+    "ProfileValueDto": {
+      "additionalProperties": false,
+      "description": "One selected profile dimension, sortable by profile then dimension.",
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "revision",
+        "dimension",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ScopeSubjectDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target",
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "target"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "provider",
+              "type": "string"
+            },
+            "provider": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "provider"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target_set",
+              "type": "string"
+            },
+            "targets": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "targets"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/evidence-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "attachments": {
+      "items": {
+        "$ref": "#/$defs/AttachmentDto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "binding_digest": {
+      "type": "string"
+    },
+    "claimed_trust": {
+      "type": "string"
+    },
+    "contract_digest": {
+      "type": "string"
+    },
+    "evidence_spec_digest": {
+      "type": "string"
+    },
+    "facets": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "id": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "payload": {
+      "$ref": "#/$defs/EvidencePayloadDto"
+    },
+    "policy_digest": {
+      "type": "string"
+    },
+    "producer": {
+      "type": "string"
+    },
+    "profile_values": {
+      "items": {
+        "$ref": "#/$defs/ProfileValueDto"
+      },
+      "type": "array"
+    },
+    "release_record_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "requirements": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "result_digest": {
+      "type": "string"
+    },
+    "runner_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "runtime_facts_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema": {
+      "type": "string"
+    },
+    "subject": {
+      "$ref": "#/$defs/EvidenceSubjectDto"
+    },
+    "target": {
+      "type": "string"
+    },
+    "unit": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "subject",
+    "target",
+    "unit",
+    "requirements",
+    "facets",
+    "kind",
+    "evidence_spec_digest",
+    "contract_digest",
+    "binding_digest",
+    "policy_digest",
+    "profile_values",
+    "producer",
+    "claimed_trust",
+    "observed_at",
+    "payload",
+    "attachments",
+    "result_digest"
+  ],
+  "title": "EvidenceResultDto",
+  "type": "object"
+}

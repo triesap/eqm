@@ -2,13 +2,14 @@
 
 #![allow(missing_docs)]
 
+use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 
 pub type ExtensionsDto = Map<String, Value>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct WorkspaceDto {
     pub schema: String,
@@ -26,7 +27,7 @@ pub struct WorkspaceDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct TargetDto {
     pub root: String,
@@ -37,7 +38,7 @@ pub struct TargetDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct CapabilityDto {
     pub schema: String,
@@ -50,7 +51,7 @@ pub struct CapabilityDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct JourneyDto {
     pub schema: String,
@@ -69,7 +70,7 @@ pub struct JourneyDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct TransitionDto {
     pub from: String,
@@ -77,7 +78,7 @@ pub struct TransitionDto {
     pub trigger: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct SurfaceDto {
     pub schema: String,
@@ -96,7 +97,7 @@ pub struct SurfaceDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct FragmentDto {
     pub schema: String,
@@ -111,7 +112,7 @@ pub struct FragmentDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct RequirementDto {
     pub id: String,
@@ -126,7 +127,7 @@ pub struct RequirementDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(untagged)]
 pub enum ApplicabilityDto {
     Constant(ApplicabilityConstantDto),
@@ -137,13 +138,13 @@ pub enum ApplicabilityDto {
     Not(ApplicabilityNotDto),
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ApplicabilityConstantDto {
     pub always: bool,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ApplicabilityComparisonDto {
     pub dimension: String,
@@ -151,7 +152,7 @@ pub struct ApplicabilityComparisonDto {
     pub value: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ApplicabilityMembershipDto {
     pub dimension: String,
@@ -159,25 +160,25 @@ pub struct ApplicabilityMembershipDto {
     pub values: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ApplicabilityAllDto {
     pub all: Vec<ApplicabilityDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ApplicabilityAnyDto {
     pub any: Vec<ApplicabilityDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ApplicabilityNotDto {
     pub not: Box<ApplicabilityDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct FragmentUseDto {
     pub fragment: String,
@@ -186,7 +187,7 @@ pub struct FragmentUseDto {
     pub prefix: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct BindingDto {
     pub schema: String,
@@ -204,7 +205,7 @@ pub struct BindingDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ArtifactDto {
     pub id: String,
@@ -217,7 +218,7 @@ pub struct ArtifactDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ArtifactSelectorDto {
     Symbol {
@@ -240,7 +241,7 @@ pub enum ArtifactSelectorDto {
     },
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ExposureDto {
     pub surface: String,
@@ -251,7 +252,7 @@ pub struct ExposureDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct EvidenceSpecificationDto {
     pub id: String,
@@ -266,7 +267,7 @@ pub struct EvidenceSpecificationDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum EvidenceSelectorDto {
     Symbol {
@@ -291,7 +292,7 @@ pub enum EvidenceSelectorDto {
     Release,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct PolicyDto {
     pub schema: String,
@@ -308,7 +309,7 @@ pub struct PolicyDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct PolicyRuleDto {
     pub selector: PolicySelectorDto,
@@ -319,7 +320,7 @@ pub struct PolicyRuleDto {
     pub minimum_count: Option<u64>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct PolicySelectorDto {
     pub units: Option<Vec<String>>,
@@ -329,7 +330,7 @@ pub struct PolicySelectorDto {
     pub scopes: Option<Vec<String>>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct WaiverPolicyDto {
     pub allowed: Option<bool>,
@@ -339,7 +340,7 @@ pub struct WaiverPolicyDto {
     pub required_controls: Vec<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ProfileDto {
     pub schema: String,
@@ -355,7 +356,7 @@ pub struct ProfileDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ProfileDimensionDto {
     pub id: String,
@@ -363,7 +364,7 @@ pub struct ProfileDimensionDto {
     pub description: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct RunnerDto {
     pub schema: String,
@@ -387,7 +388,7 @@ pub struct RunnerDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct EnvironmentBindingDto {
     pub name: String,
@@ -395,14 +396,14 @@ pub struct EnvironmentBindingDto {
     pub value: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct SecretBindingDto {
     pub name: String,
     pub provider: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct WaiverDto {
     pub schema: String,
@@ -422,7 +423,7 @@ pub struct WaiverDto {
     pub extensions: ExtensionsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct WaiverScopeDto {
     pub target: String,
@@ -432,7 +433,7 @@ pub struct WaiverScopeDto {
     pub profiles: BTreeMap<String, BTreeMap<String, String>>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct LockDto {
     pub schema: String,
@@ -443,7 +444,7 @@ pub struct LockDto {
     pub adapters: Vec<AdapterLockDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ImportLockDto {
     pub id: String,
@@ -455,7 +456,7 @@ pub struct ImportLockDto {
     pub signature: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterLockDto {
     pub id: String,

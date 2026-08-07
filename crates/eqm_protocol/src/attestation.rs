@@ -3,26 +3,27 @@
 #![allow(missing_docs)]
 
 use crate::{ATTESTATION_SCHEMA, EvidenceSubjectDto, ProfileValueDto};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
 pub const IN_TOTO_STATEMENT_V1: &str = "https://in-toto.io/Statement/v1";
 pub const DSSE_PAYLOAD_TYPE: &str = "application/vnd.in-toto+json";
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SubjectDigestDto {
     pub sha256: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttestationSubjectDto {
     pub name: String,
     pub digest: SubjectDigestDto,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttestationPredicateDto {
     pub tool_version: String,
@@ -42,7 +43,7 @@ pub struct AttestationPredicateDto {
     pub waivers: BTreeSet<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct InTotoStatementDto {
     #[serde(rename = "_type")]
@@ -89,14 +90,14 @@ impl InTotoStatementDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DsseSignatureDto {
     pub keyid: String,
     pub sig: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DsseEnvelopeDto {
     #[serde(rename = "payloadType")]

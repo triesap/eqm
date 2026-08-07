@@ -1,0 +1,207 @@
+{
+  "$defs": {
+    "PolicyRuleDto": {
+      "additionalProperties": false,
+      "properties": {
+        "facets": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "maximum_age": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "minimum_count": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "minimum_level": {
+          "type": "string"
+        },
+        "minimum_trust": {
+          "type": "string"
+        },
+        "selector": {
+          "$ref": "#/$defs/PolicySelectorDto"
+        }
+      },
+      "required": [
+        "selector",
+        "minimum_level",
+        "facets",
+        "minimum_trust",
+        "maximum_age"
+      ],
+      "type": "object"
+    },
+    "PolicySelectorDto": {
+      "additionalProperties": false,
+      "properties": {
+        "facets": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "requirements": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "risk_classes": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "scopes": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "units": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "WaiverPolicyDto": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "maximum_days": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "minimum_approvers": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "required_controls": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/policy",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "profiles": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "required_targets": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/PolicyRuleDto"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "waivers": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/WaiverPolicyDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "title",
+    "owners",
+    "profiles",
+    "required_targets",
+    "rules"
+  ],
+  "title": "PolicyDto",
+  "type": "object"
+}

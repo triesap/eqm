@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 03: Protocol And Schemas
 
-Status: in progress; Step 040 complete
+Status: complete; Steps 033-041 green
 Created: 2026-08-07
 Updated: 2026-08-07
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 02
-Current checkpoint: `step_041`
+Current checkpoint: none
 
 ## Purpose
 
@@ -81,4 +81,4 @@ manifest DTO checkpoint.
 | `step_038` | complete | Adapter requests, responses, and inventories bind exact pins, subjects, limits, completeness, and correlation IDs |
 | `step_039` | complete | In-toto Statement v1 and DSSE DTOs retain exact predicate fields, ordered subjects, and explicit signature state |
 | `step_040` | complete | Diagnostics map deterministically to one SARIF 2.1.0 run with stable rules, spans, levels, and plain-text remediation |
-| `step_041` | pending | - |
+| `step_041` | complete | Both DTO owners generate deterministic Draft 2020-12 schemas and the aggregate verifier rejects drift |

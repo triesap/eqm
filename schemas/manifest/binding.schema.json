@@ -1,0 +1,562 @@
+{
+  "$defs": {
+    "ApplicabilityAllDto": {
+      "additionalProperties": false,
+      "properties": {
+        "all": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityDto"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "all"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityAnyDto": {
+      "additionalProperties": false,
+      "properties": {
+        "any": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityDto"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "any"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityComparisonDto": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "dimension",
+        "operator",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityConstantDto": {
+      "additionalProperties": false,
+      "properties": {
+        "always": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "always"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityDto": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApplicabilityConstantDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityComparisonDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityMembershipDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityAllDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityAnyDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityNotDto"
+        }
+      ]
+    },
+    "ApplicabilityMembershipDto": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "dimension",
+        "operator",
+        "values"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityNotDto": {
+      "additionalProperties": false,
+      "properties": {
+        "not": {
+          "$ref": "#/$defs/ApplicabilityDto"
+        }
+      },
+      "required": [
+        "not"
+      ],
+      "type": "object"
+    },
+    "ArtifactDto": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": true,
+          "default": {},
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "selector": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArtifactSelectorDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "surface": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "symbol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "path"
+      ],
+      "type": "object"
+    },
+    "ArtifactSelectorDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "symbol",
+              "type": "string"
+            },
+            "language": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "route",
+              "type": "string"
+            },
+            "method": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "framework": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "test",
+              "type": "string"
+            },
+            "suite": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "test_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "framework",
+            "test_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "inventory",
+              "type": "string"
+            },
+            "record_type": {
+              "type": "string"
+            },
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "record_type",
+            "key"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "EvidenceSelectorDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "symbol",
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "route",
+              "type": "string"
+            },
+            "method": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "framework": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "test",
+              "type": "string"
+            },
+            "suite": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "test_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "framework",
+            "test_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "inventory",
+              "type": "string"
+            },
+            "record_type": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "record_type",
+            "key"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "snapshot",
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "release",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "EvidenceSpecificationDto": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "additionalProperties": true,
+          "default": {},
+          "type": "object"
+        },
+        "facets": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "freshness": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "minimum_count": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "requirements": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "runner": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "selector": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceSelectorDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "requirements",
+        "facets"
+      ],
+      "type": "object"
+    },
+    "ExposureDto": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ApplicabilityDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "default": {},
+          "type": "object"
+        },
+        "route": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": "string"
+        },
+        "surface": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "surface",
+        "state"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/binding",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactDto"
+      },
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/EvidenceSpecificationDto"
+      },
+      "type": "array"
+    },
+    "exposures": {
+      "items": {
+        "$ref": "#/$defs/ExposureDto"
+      },
+      "type": "array"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    },
+    "unit": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "owners",
+    "target",
+    "unit",
+    "artifacts"
+  ],
+  "title": "BindingDto",
+  "type": "object"
+}

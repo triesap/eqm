@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "WaiverScopeDto": {
+      "additionalProperties": false,
+      "properties": {
+        "facets": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "profiles": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "requirement": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "target",
+        "unit",
+        "requirement",
+        "facets",
+        "profiles"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/waiver",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approvers": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "controls": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "expires_on": {
+      "type": "string"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "issue": {
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "policy": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "scope": {
+      "$ref": "#/$defs/WaiverScopeDto"
+    },
+    "starts_on": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "owners",
+    "policy",
+    "scope",
+    "reason",
+    "issue",
+    "approvers",
+    "starts_on",
+    "expires_on"
+  ],
+  "title": "WaiverDto",
+  "type": "object"
+}

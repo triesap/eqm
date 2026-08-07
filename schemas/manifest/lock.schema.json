@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "AdapterLockDto": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "protocol": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resolved": {
+          "type": "string"
+        },
+        "signature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "trust": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "source",
+        "resolved",
+        "digest",
+        "protocol"
+      ],
+      "type": "object"
+    },
+    "ImportLockDto": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "resolved": {
+          "type": "string"
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "signature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "type": "string"
+        },
+        "trust": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "source",
+        "resolved",
+        "digest"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/lock",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapters": {
+      "items": {
+        "$ref": "#/$defs/AdapterLockDto"
+      },
+      "type": "array"
+    },
+    "imports": {
+      "items": {
+        "$ref": "#/$defs/ImportLockDto"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "version": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema",
+    "version"
+  ],
+  "title": "LockDto",
+  "type": "object"
+}

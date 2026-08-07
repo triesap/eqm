@@ -8,10 +8,11 @@ use eqm_domain::{
     EvidencePayload, EvidenceResult, EvidenceScopeSubject, EvidenceSelector, EvidenceSubject,
     ExecutionPayload, PositiveCount, ProducerRef, Sha256Digest, TrustLevel, UtcInstant,
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CountsDto {
     pub selected: u64,
@@ -35,7 +36,7 @@ impl From<EvidenceCounts> for CountsDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttemptDto {
     pub number: u64,
@@ -57,7 +58,7 @@ impl From<&EvidenceAttempt> for AttemptDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum EvidenceSelectorDto {
     Symbol {
@@ -130,7 +131,7 @@ impl From<&EvidenceSelector> for EvidenceSelectorDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttachmentDto {
     pub name: String,
@@ -150,7 +151,7 @@ impl From<&EvidenceAttachment> for AttachmentDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct TestResultDto {
     pub schema: String,
@@ -194,7 +195,7 @@ impl TestResultDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ScopeSubjectDto {
     Target { target: String },
@@ -202,7 +203,7 @@ pub enum ScopeSubjectDto {
     TargetSet { targets: BTreeSet<String> },
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EvidenceSubjectDto {
     pub repository: String,
@@ -242,7 +243,7 @@ impl From<&EvidenceSubject> for EvidenceSubjectDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExecutionPayloadDto {
     pub attempts: Vec<AttemptDto>,
@@ -262,7 +263,7 @@ impl From<&ExecutionPayload> for ExecutionPayloadDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum EvidencePayloadDto {
     StructuralCheck {
@@ -336,7 +337,7 @@ impl From<&EvidencePayload> for EvidencePayloadDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EvidenceResultDto {
     pub schema: String,

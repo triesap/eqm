@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "EnvironmentBindingDto": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "source"
+      ],
+      "type": "object"
+    },
+    "SecretBindingDto": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "provider"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/runner",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "args": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "backend": {
+      "type": "string"
+    },
+    "cwd": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "environment": {
+      "items": {
+        "$ref": "#/$defs/EnvironmentBindingDto"
+      },
+      "type": "array"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "guarantees": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "id": {
+      "type": "string"
+    },
+    "max_concurrency": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "max_output_bytes": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "program": {
+      "type": "string"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "secrets": {
+      "items": {
+        "$ref": "#/$defs/SecretBindingDto"
+      },
+      "type": "array"
+    },
+    "timeout_ms": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "owners",
+    "backend",
+    "program",
+    "args",
+    "timeout_ms",
+    "max_output_bytes"
+  ],
+  "title": "RunnerDto",
+  "type": "object"
+}

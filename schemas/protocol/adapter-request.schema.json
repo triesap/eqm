@@ -1,0 +1,192 @@
+{
+  "$defs": {
+    "AdapterLimitsDto": {
+      "additionalProperties": false,
+      "properties": {
+        "max_depth": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_entries": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_input_bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_output_bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "timeout_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "timeout_ms",
+        "max_input_bytes",
+        "max_output_bytes",
+        "max_entries",
+        "max_depth"
+      ],
+      "type": "object"
+    },
+    "AdapterOperationDto": {
+      "enum": [
+        "discover"
+      ],
+      "type": "string"
+    },
+    "EvidenceSubjectDto": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "repository_id_digest": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/ScopeSubjectDto"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "target_configuration_digest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "repository_id_digest",
+        "scope",
+        "source_commit",
+        "target_configuration_digest"
+      ],
+      "type": "object"
+    },
+    "ScopeSubjectDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target",
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "target"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "provider",
+              "type": "string"
+            },
+            "provider": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "provider"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target_set",
+              "type": "string"
+            },
+            "targets": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "targets"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/adapter-request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter": {
+      "type": "string"
+    },
+    "adapter_digest": {
+      "type": "string"
+    },
+    "limits": {
+      "$ref": "#/$defs/AdapterLimitsDto"
+    },
+    "operation": {
+      "$ref": "#/$defs/AdapterOperationDto"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "subject": {
+      "$ref": "#/$defs/EvidenceSubjectDto"
+    },
+    "target": {
+      "type": "string"
+    },
+    "target_root": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "request_id",
+    "adapter",
+    "adapter_digest",
+    "operation",
+    "subject",
+    "target",
+    "target_root",
+    "limits"
+  ],
+  "title": "AdapterRequestDto",
+  "type": "object"
+}

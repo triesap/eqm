@@ -7,16 +7,17 @@ use crate::{
     INVENTORY_SCHEMA,
 };
 use eqm_domain::{FactValue, Inventory, InventoryEntry};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AdapterOperationDto {
     Discover,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterLimitsDto {
     pub timeout_ms: u64,
@@ -26,7 +27,7 @@ pub struct AdapterLimitsDto {
     pub max_depth: u64,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterRequestDto {
     pub schema: String,
@@ -40,7 +41,7 @@ pub struct AdapterRequestDto {
     pub limits: AdapterLimitsDto,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(
     tag = "type",
     content = "value",
@@ -65,7 +66,7 @@ impl From<&FactValue> for FactValueDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct InventoryEntryDto {
     pub kind: String,
@@ -89,7 +90,7 @@ impl From<&InventoryEntry> for InventoryEntryDto {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct InventoryDto {
     pub schema: String,
@@ -131,7 +132,7 @@ impl From<&Inventory> for InventoryDto {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AdapterStatusDto {
     Ok,
@@ -139,7 +140,7 @@ pub enum AdapterStatusDto {
     Error,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterResponseDto {
     pub schema: String,

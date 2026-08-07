@@ -1,0 +1,237 @@
+{
+  "$defs": {
+    "ApplicabilityAllDto": {
+      "additionalProperties": false,
+      "properties": {
+        "all": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityDto"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "all"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityAnyDto": {
+      "additionalProperties": false,
+      "properties": {
+        "any": {
+          "items": {
+            "$ref": "#/$defs/ApplicabilityDto"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "any"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityComparisonDto": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "dimension",
+        "operator",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityConstantDto": {
+      "additionalProperties": false,
+      "properties": {
+        "always": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "always"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityDto": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApplicabilityConstantDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityComparisonDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityMembershipDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityAllDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityAnyDto"
+        },
+        {
+          "$ref": "#/$defs/ApplicabilityNotDto"
+        }
+      ]
+    },
+    "ApplicabilityMembershipDto": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "dimension",
+        "operator",
+        "values"
+      ],
+      "type": "object"
+    },
+    "ApplicabilityNotDto": {
+      "additionalProperties": false,
+      "properties": {
+        "not": {
+          "$ref": "#/$defs/ApplicabilityDto"
+        }
+      },
+      "required": [
+        "not"
+      ],
+      "type": "object"
+    },
+    "RequirementDto": {
+      "additionalProperties": false,
+      "properties": {
+        "applicability": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ApplicabilityDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "default": {},
+          "type": "object"
+        },
+        "facets": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        },
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "risk_class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scope": {
+          "type": "string"
+        },
+        "statement": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "scope",
+        "statement",
+        "facets"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/fragment",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "requirements": {
+      "items": {
+        "$ref": "#/$defs/RequirementDto"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "risk_class": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "title",
+    "risk_class",
+    "owners",
+    "requirements"
+  ],
+  "title": "FragmentDto",
+  "type": "object"
+}

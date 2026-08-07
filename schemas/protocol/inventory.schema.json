@@ -1,0 +1,400 @@
+{
+  "$defs": {
+    "DiagnosticDto": {
+      "additionalProperties": false,
+      "description": "Public diagnostic record with every optional semantic coordinate explicit.",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "facet": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "obligation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "related": {
+          "items": {
+            "$ref": "#/$defs/SourceLocationDto"
+          },
+          "type": "array"
+        },
+        "remediation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requirement": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "severity": {
+          "$ref": "#/$defs/SeverityDto"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceLocationDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "related"
+      ],
+      "type": "object"
+    },
+    "EvidenceSubjectDto": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "repository_id_digest": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/ScopeSubjectDto"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "target_configuration_digest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "repository_id_digest",
+        "scope",
+        "source_commit",
+        "target_configuration_digest"
+      ],
+      "type": "object"
+    },
+    "FactValueDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "boolean",
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "integer",
+              "type": "string"
+            },
+            "value": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "symbol",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "text",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "InventoryEntryDto": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/FactValueDto"
+          },
+          "type": "object"
+        },
+        "key": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "key",
+        "attributes",
+        "source"
+      ],
+      "type": "object"
+    },
+    "ScopeSubjectDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target",
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "target"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "provider",
+              "type": "string"
+            },
+            "provider": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "provider"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target_set",
+              "type": "string"
+            },
+            "targets": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "targets"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "SeverityDto": {
+      "description": "Closed diagnostic severity on the wire.",
+      "oneOf": [
+        {
+          "const": "error",
+          "description": "Blocking error.",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "description": "Non-blocking warning.",
+          "type": "string"
+        },
+        {
+          "const": "note",
+          "description": "Informational note.",
+          "type": "string"
+        }
+      ]
+    },
+    "SourceLocationDto": {
+      "additionalProperties": false,
+      "description": "One source span in CLI protocol output.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/SourcePositionDto"
+        },
+        "start": {
+          "$ref": "#/$defs/SourcePositionDto"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "SourcePositionDto": {
+      "additionalProperties": false,
+      "description": "One one-based source position.",
+      "properties": {
+        "column": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "column"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/inventory",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter": {
+      "type": "string"
+    },
+    "adapter_digest": {
+      "type": "string"
+    },
+    "completeness": {
+      "type": "string"
+    },
+    "diagnostics": {
+      "items": {
+        "$ref": "#/$defs/DiagnosticDto"
+      },
+      "type": "array"
+    },
+    "entries": {
+      "items": {
+        "$ref": "#/$defs/InventoryEntryDto"
+      },
+      "type": "array"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "inventory_digest": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "subject": {
+      "$ref": "#/$defs/EvidenceSubjectDto"
+    },
+    "target": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "adapter",
+    "adapter_digest",
+    "subject",
+    "target",
+    "generated_at",
+    "completeness",
+    "entries",
+    "diagnostics",
+    "inventory_digest"
+  ],
+  "title": "InventoryDto",
+  "type": "object"
+}

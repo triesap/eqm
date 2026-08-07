@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "EvidenceSubjectDto": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "repository_id_digest": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/ScopeSubjectDto"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "target_configuration_digest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "repository_id_digest",
+        "scope",
+        "source_commit",
+        "target_configuration_digest"
+      ],
+      "type": "object"
+    },
+    "FactValueDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "boolean",
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "integer",
+              "type": "string"
+            },
+            "value": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "symbol",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "text",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ProfileValueDto": {
+      "additionalProperties": false,
+      "description": "One selected profile dimension, sortable by profile then dimension.",
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "revision",
+        "dimension",
+        "value"
+      ],
+      "type": "object"
+    },
+    "RuntimeFactDto": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "surface": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FactValueDto"
+        }
+      },
+      "required": [
+        "surface",
+        "dimension",
+        "key",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ScopeSubjectDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target",
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "target"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "provider",
+              "type": "string"
+            },
+            "provider": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "provider"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target_set",
+              "type": "string"
+            },
+            "targets": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "targets"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/runtime-facts",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "claimed_trust": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/RuntimeFactDto"
+      },
+      "type": "array"
+    },
+    "facts_digest": {
+      "type": "string"
+    },
+    "observed_at": {
+      "type": "string"
+    },
+    "producer": {
+      "type": "string"
+    },
+    "profile_values": {
+      "items": {
+        "$ref": "#/$defs/ProfileValueDto"
+      },
+      "type": "array"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "subject": {
+      "$ref": "#/$defs/EvidenceSubjectDto"
+    },
+    "target": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "provider",
+    "subject",
+    "target",
+    "profile_values",
+    "observed_at",
+    "expires_at",
+    "facts",
+    "producer",
+    "claimed_trust",
+    "facts_digest"
+  ],
+  "title": "RuntimeFactsDto",
+  "type": "object"
+}

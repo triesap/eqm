@@ -1,0 +1,45 @@
+{
+  "$id": "https://schemas.equivalencematrix.dev/v1/capability",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "title",
+    "status",
+    "owners"
+  ],
+  "title": "CapabilityDto",
+  "type": "object"
+}

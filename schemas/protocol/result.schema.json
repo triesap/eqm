@@ -1,0 +1,528 @@
+{
+  "$defs": {
+    "CommandIdentity": {
+      "description": "Closed command identity used by result envelopes and discriminated results.",
+      "oneOf": [
+        {
+          "const": "init",
+          "description": "Initialize a workspace.",
+          "type": "string"
+        },
+        {
+          "const": "new",
+          "description": "Create an authority document.",
+          "type": "string"
+        },
+        {
+          "const": "fmt",
+          "description": "Format authored manifests.",
+          "type": "string"
+        },
+        {
+          "const": "validate",
+          "description": "Validate and finalize the graph.",
+          "type": "string"
+        },
+        {
+          "const": "check",
+          "description": "Evaluate policy without execution.",
+          "type": "string"
+        },
+        {
+          "const": "show",
+          "description": "Show an entity.",
+          "type": "string"
+        },
+        {
+          "const": "locate",
+          "description": "Locate implementation declarations.",
+          "type": "string"
+        },
+        {
+          "const": "context",
+          "description": "Produce bounded unit context.",
+          "type": "string"
+        },
+        {
+          "const": "matrix",
+          "description": "Produce a matrix view.",
+          "type": "string"
+        },
+        {
+          "const": "obligations",
+          "description": "List obligations.",
+          "type": "string"
+        },
+        {
+          "const": "diff",
+          "description": "Compare semantic graphs.",
+          "type": "string"
+        },
+        {
+          "const": "affected",
+          "description": "Compute affected authority.",
+          "type": "string"
+        },
+        {
+          "const": "discover",
+          "description": "Invoke an inventory adapter.",
+          "type": "string"
+        },
+        {
+          "const": "reconcile",
+          "description": "Reconcile intended and observed facts.",
+          "type": "string"
+        },
+        {
+          "const": "verify",
+          "description": "Execute approved evidence runners.",
+          "type": "string"
+        },
+        {
+          "const": "attest",
+          "description": "Produce an attestation.",
+          "type": "string"
+        },
+        {
+          "const": "release_check",
+          "description": "Evaluate an exact release.",
+          "type": "string"
+        },
+        {
+          "const": "explain",
+          "description": "Explain a diagnostic.",
+          "type": "string"
+        },
+        {
+          "const": "doctor",
+          "description": "Run non-executing health checks.",
+          "type": "string"
+        },
+        {
+          "const": "lock_update",
+          "description": "Update immutable lock entries.",
+          "type": "string"
+        },
+        {
+          "const": "mcp_serve",
+          "description": "Serve the MCP stdio adapter.",
+          "type": "string"
+        }
+      ]
+    },
+    "DiagnosticDto": {
+      "additionalProperties": false,
+      "description": "Public diagnostic record with every optional semantic coordinate explicit.",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "facet": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "obligation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "related": {
+          "items": {
+            "$ref": "#/$defs/SourceLocationDto"
+          },
+          "type": "array"
+        },
+        "remediation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requirement": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "severity": {
+          "$ref": "#/$defs/SeverityDto"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceLocationDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "related"
+      ],
+      "type": "object"
+    },
+    "EvaluationModeDto": {
+      "description": "Closed evaluation mode.",
+      "oneOf": [
+        {
+          "const": "development",
+          "description": "Local development evaluation.",
+          "type": "string"
+        },
+        {
+          "const": "pull_request",
+          "description": "Pull-request evaluation.",
+          "type": "string"
+        },
+        {
+          "const": "release",
+          "description": "Release evaluation.",
+          "type": "string"
+        }
+      ]
+    },
+    "EvidenceSubjectDto": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "repository_id_digest": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/ScopeSubjectDto"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "target_configuration_digest": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "repository",
+        "repository_id_digest",
+        "scope",
+        "source_commit",
+        "target_configuration_digest"
+      ],
+      "type": "object"
+    },
+    "InvocationContextDto": {
+      "additionalProperties": false,
+      "description": "Explicit invocation context. Subject and baseline shapes are supplied by\ntheir owning command DTOs and cannot be untyped maps through this API.",
+      "properties": {
+        "baseline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceSubjectDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evaluated_at": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/$defs/EvaluationModeDto"
+        },
+        "offline": {
+          "type": "boolean"
+        },
+        "profiles": {
+          "items": {
+            "$ref": "#/$defs/ProfileValueDto"
+          },
+          "type": "array"
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceSubjectDto"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "profiles",
+        "offline",
+        "evaluated_at"
+      ],
+      "type": "object"
+    },
+    "ProfileValueDto": {
+      "additionalProperties": false,
+      "description": "One selected profile dimension, sortable by profile then dimension.",
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "revision",
+        "dimension",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ScopeSubjectDto": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target",
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "target"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "provider",
+              "type": "string"
+            },
+            "provider": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "provider"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "target_set",
+              "type": "string"
+            },
+            "targets": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "targets"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "SeverityDto": {
+      "description": "Closed diagnostic severity on the wire.",
+      "oneOf": [
+        {
+          "const": "error",
+          "description": "Blocking error.",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "description": "Non-blocking warning.",
+          "type": "string"
+        },
+        {
+          "const": "note",
+          "description": "Informational note.",
+          "type": "string"
+        }
+      ]
+    },
+    "SourceLocationDto": {
+      "additionalProperties": false,
+      "description": "One source span in CLI protocol output.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/SourcePositionDto"
+        },
+        "start": {
+          "$ref": "#/$defs/SourcePositionDto"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "SourcePositionDto": {
+      "additionalProperties": false,
+      "description": "One one-based source position.",
+      "properties": {
+        "column": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "column"
+      ],
+      "type": "object"
+    },
+    "ValidateResultDto": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_counts": {
+          "additionalProperties": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "object"
+        },
+        "graph_digest": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/CommandIdentity"
+        },
+        "valid": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "valid",
+        "entity_counts",
+        "graph_digest"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Common JSON response envelope.",
+  "properties": {
+    "command": {
+      "$ref": "#/$defs/CommandIdentity"
+    },
+    "context": {
+      "$ref": "#/$defs/InvocationContextDto"
+    },
+    "diagnostics": {
+      "items": {
+        "$ref": "#/$defs/DiagnosticDto"
+      },
+      "type": "array"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ValidateResultDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema": {
+      "type": "string"
+    },
+    "tool_version": {
+      "type": "string"
+    },
+    "workspace_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "tool_version",
+    "command",
+    "context",
+    "diagnostics"
+  ],
+  "title": "ReportEnvelope",
+  "type": "object"
+}

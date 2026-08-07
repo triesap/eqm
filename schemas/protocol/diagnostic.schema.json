@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "SeverityDto": {
+      "description": "Closed diagnostic severity on the wire.",
+      "oneOf": [
+        {
+          "const": "error",
+          "description": "Blocking error.",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "description": "Non-blocking warning.",
+          "type": "string"
+        },
+        {
+          "const": "note",
+          "description": "Informational note.",
+          "type": "string"
+        }
+      ]
+    },
+    "SourceLocationDto": {
+      "additionalProperties": false,
+      "description": "One source span in CLI protocol output.",
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/SourcePositionDto"
+        },
+        "start": {
+          "$ref": "#/$defs/SourcePositionDto"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "uri",
+        "start",
+        "end"
+      ],
+      "type": "object"
+    },
+    "SourcePositionDto": {
+      "additionalProperties": false,
+      "description": "One one-based source position.",
+      "properties": {
+        "column": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "line": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line",
+        "column"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/diagnostic",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Public diagnostic record with every optional semantic coordinate explicit.",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "facet": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "obligation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "related": {
+      "items": {
+        "$ref": "#/$defs/SourceLocationDto"
+      },
+      "type": "array"
+    },
+    "remediation": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "requirement": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "severity": {
+      "$ref": "#/$defs/SeverityDto"
+    },
+    "source": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SourceLocationDto"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "target": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "unit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "code",
+    "severity",
+    "message",
+    "related"
+  ],
+  "title": "DiagnosticDto",
+  "type": "object"
+}

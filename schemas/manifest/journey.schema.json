@@ -1,0 +1,94 @@
+{
+  "$defs": {
+    "TransitionDto": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "trigger": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "trigger"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.equivalencematrix.dev/v1/journey",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capability": {
+      "type": "string"
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "owners": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "risk_class": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "surfaces": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "title": {
+      "type": "string"
+    },
+    "transitions": {
+      "items": {
+        "$ref": "#/$defs/TransitionDto"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "title",
+    "capability",
+    "status",
+    "risk_class",
+    "owners",
+    "surfaces"
+  ],
+  "title": "JourneyDto",
+  "type": "object"
+}

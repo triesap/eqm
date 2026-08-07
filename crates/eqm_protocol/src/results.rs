@@ -3,11 +3,14 @@
 #![allow(missing_docs)]
 
 use crate::{CommandIdentity, CommandResultDto, ProfileValueDto, SourceLocationDto};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum ResultStatusDto {
     Ok,
@@ -15,7 +18,9 @@ pub enum ResultStatusDto {
     Error,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum FacetStatusDto {
     Satisfied,
@@ -28,7 +33,7 @@ pub enum FacetStatusDto {
     NotApplicable,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EntityReferenceDto {
     pub kind: String,
@@ -37,7 +42,7 @@ pub struct EntityReferenceDto {
     pub digest: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct LocationDto {
     pub role: String,
@@ -46,7 +51,7 @@ pub struct LocationDto {
     pub source: Option<SourceLocationDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ObligationDto {
     pub id: String,
@@ -65,7 +70,7 @@ pub struct ObligationDto {
     pub waiver: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct FindingDto {
     pub diagnostic_code: String,
@@ -75,14 +80,14 @@ pub struct FindingDto {
     pub waiver: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct MatrixAxisDto {
     pub id: String,
     pub label: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct MatrixCellDto {
     pub row: String,
@@ -92,7 +97,7 @@ pub struct MatrixCellDto {
     pub diagnostic_codes: BTreeSet<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExposureFactDto {
     pub name: String,
@@ -102,7 +107,7 @@ pub struct ExposureFactDto {
     pub effective_trust: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExposureComparisonDto {
     pub fact: String,
@@ -111,7 +116,7 @@ pub struct ExposureComparisonDto {
     pub result: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SemanticChangeDto {
     pub unit: Option<String>,
@@ -124,7 +129,7 @@ pub struct SemanticChangeDto {
     pub after: Option<Value>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DoctorCheckDto {
     pub id: String,
@@ -133,7 +138,7 @@ pub struct DoctorCheckDto {
     pub remediation: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct FileChangeDto {
     pub path: String,
@@ -144,7 +149,7 @@ pub struct FileChangeDto {
 
 macro_rules! mutation_result {
     ($name:ident, $command:ident) => {
-        #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+        #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
         #[serde(deny_unknown_fields)]
         pub struct $name {
             pub kind: CommandIdentity,
@@ -168,7 +173,7 @@ mutation_result!(NewResultDto, New);
 mutation_result!(FmtResultDto, Fmt);
 mutation_result!(LockUpdateResultDto, LockUpdate);
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ValidateResultDto {
     pub kind: CommandIdentity,
@@ -177,7 +182,7 @@ pub struct ValidateResultDto {
     pub graph_digest: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CheckResultDto {
     pub kind: CommandIdentity,
@@ -186,7 +191,7 @@ pub struct CheckResultDto {
     pub findings: BTreeSet<FindingDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ShowResultDto<E> {
     pub kind: CommandIdentity,
@@ -195,7 +200,7 @@ pub struct ShowResultDto<E> {
     pub entity: E,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct LocateResultDto {
     pub kind: CommandIdentity,
@@ -204,7 +209,7 @@ pub struct LocateResultDto {
     pub locations: BTreeSet<LocationDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ContextResultDto<A, P, E, W> {
     pub kind: CommandIdentity,
@@ -220,7 +225,7 @@ pub struct ContextResultDto<A, P, E, W> {
     pub omitted_bytes: u64,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct MatrixResultDto {
     pub kind: CommandIdentity,
@@ -230,7 +235,7 @@ pub struct MatrixResultDto {
     pub cells: BTreeSet<MatrixCellDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ObligationsResultDto {
     pub kind: CommandIdentity,
@@ -238,7 +243,7 @@ pub struct ObligationsResultDto {
     pub obligations: BTreeSet<ObligationDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DiffResultDto {
     pub kind: CommandIdentity,
@@ -247,7 +252,7 @@ pub struct DiffResultDto {
     pub changes: Vec<SemanticChangeDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AffectedResultDto {
     pub kind: CommandIdentity,
@@ -258,7 +263,7 @@ pub struct AffectedResultDto {
     pub conservative: bool,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DiscoverResultDto<I> {
     pub kind: CommandIdentity,
@@ -267,7 +272,7 @@ pub struct DiscoverResultDto<I> {
     pub inventory: I,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ReconcileResultDto {
     pub kind: CommandIdentity,
@@ -277,7 +282,7 @@ pub struct ReconcileResultDto {
     pub comparisons: BTreeSet<ExposureComparisonDto>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct VerifyResultDto<S, E> {
     pub kind: CommandIdentity,
@@ -286,7 +291,7 @@ pub struct VerifyResultDto<S, E> {
     pub summary: BTreeMap<FacetStatusDto, u64>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttestResultDto<S> {
     pub kind: CommandIdentity,
@@ -295,7 +300,7 @@ pub struct AttestResultDto<S> {
     pub signer: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ReleaseCheckResultDto<S, E> {
     pub kind: CommandIdentity,
@@ -307,7 +312,7 @@ pub struct ReleaseCheckResultDto<S, E> {
     pub waivers: BTreeSet<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExplainResultDto {
     pub kind: CommandIdentity,
@@ -318,7 +323,7 @@ pub struct ExplainResultDto {
     pub remediation: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DoctorResultDto {
     pub kind: CommandIdentity,

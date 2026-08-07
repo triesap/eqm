@@ -5,6 +5,7 @@
 mod adapter;
 mod attestation;
 mod evidence;
+mod records;
 mod report;
 mod results;
 mod sarif;
@@ -22,6 +23,7 @@ pub use evidence::{
     AttachmentDto, AttemptDto, CountsDto, EvidenceDtoError, EvidencePayloadDto, EvidenceResultDto,
     EvidenceSelectorDto, EvidenceSubjectDto, ExecutionPayloadDto, ScopeSubjectDto, TestResultDto,
 };
+pub use records::{ReleaseRecordDto, RuntimeFactDto, RuntimeFactsDto};
 pub use report::{
     CommandIdentity, CommandResultDto, DiagnosticDto, EvaluationModeDto, InvocationContextDto,
     ProfileValueDto, ReportBuildError, ReportEnvelope, ResultSchema, SeverityDto,
