@@ -4,6 +4,7 @@ use crate::cli::{ParseOutcome, ParsedCli, parse};
 use crate::commands;
 use eqm_mcp::{McpReadToolHandler, McpToolError, ReadTool};
 use serde_json::Value;
+use std::io::{self, BufReader};
 use std::path::Path;
 
 /// Reuses the exact CLI parse and command implementation paths for MCP reads.
@@ -28,6 +29,18 @@ impl McpReadToolHandler for CliReadToolHandler<'_> {
         };
         execute(parsed, self.start).map_err(|_| McpToolError::Invocation)
     }
+}
+
+/// Runs the current MCP server directly over process stdio.
+pub fn serve_stdio(parsed: ParsedCli, start: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let request = crate::session::SessionRequest::new(parsed.global, parsed.command.name);
+    let session = crate::session::prepare(&request, start)?;
+    let mcp = session.mcp_session()?;
+    let handler = CliReadToolHandler::new(start);
+    let stdin = io::stdin();
+    let stdout = io::stdout();
+    eqm_mcp::serve(&mcp, &handler, BufReader::new(stdin.lock()), stdout.lock())?;
+    Ok(())
 }
 
 fn execute(parsed: ParsedCli, start: &Path) -> Result<Value, Box<dyn std::error::Error>> {
@@ -108,6 +121,7 @@ mod tests {
     use super::*;
     use eqm_mcp::call_read_tool;
     use serde_json::json;
+    use std::io::Cursor;
     use std::process::Command;
 
     #[test]
@@ -147,6 +161,57 @@ mod tests {
             .output()?
             .stdout;
         assert_eq!(before, after);
+        Ok(())
+    }
+
+    #[test]
+    fn stdio_handshake_lists_and_calls_are_json_only() -> Result<(), Box<dyn std::error::Error>> {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let request = crate::session::SessionRequest::new(
+            Default::default(),
+            crate::cli::CommandName::McpServe,
+        );
+        let session = crate::session::prepare(&request, &root)?;
+        let mcp = session.mcp_session()?;
+        let handler = CliReadToolHandler::new(&root);
+        let frames = [
+            json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":eqm_mcp::MCP_PROTOCOL_VERSION}}),
+            json!({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}),
+            json!({"jsonrpc":"2.0","id":2,"method":"resources/list","params":{}}),
+            json!({"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}),
+            json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"eqm_explain","arguments":{"code":"EQM-E0300"}}}),
+        ];
+        let input = frames
+            .iter()
+            .map(serde_json::to_string)
+            .collect::<Result<Vec<_>, _>>()?
+            .join("\n")
+            + "\n";
+        let mut output = Vec::new();
+        eqm_mcp::serve(&mcp, &handler, Cursor::new(input), &mut output)?;
+        let text = String::from_utf8(output)?;
+        let responses = text
+            .lines()
+            .map(serde_json::from_str::<Value>)
+            .collect::<Result<Vec<_>, _>>()?;
+        assert_eq!(responses.len(), 4);
+        assert_eq!(
+            responses[0]["result"]["protocolVersion"],
+            eqm_mcp::MCP_PROTOCOL_VERSION
+        );
+        assert!(
+            responses[1]["result"]["resources"]
+                .as_array()
+                .is_some_and(|value| !value.is_empty())
+        );
+        assert_eq!(
+            responses[2]["result"]["tools"].as_array().map(Vec::len),
+            Some(5)
+        );
+        assert_eq!(
+            responses[3]["result"]["structuredContent"]["command"],
+            "explain"
+        );
         Ok(())
     }
 }

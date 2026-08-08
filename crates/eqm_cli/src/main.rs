@@ -19,6 +19,18 @@ fn main() -> ExitCode {
         }
         Ok(cli::ParseOutcome::Run(parsed)) => {
             let command = parsed.command.name;
+            if command == cli::CommandName::McpServe {
+                return match std::env::current_dir()
+                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
+                    .and_then(|start| commands::mcp::serve_stdio(parsed, &start))
+                {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(error) => {
+                        eprintln!("error: {error}");
+                        ExitCode::from(6)
+                    }
+                };
+            }
             let format = parsed.global.format;
             let no_progress = parsed.global.no_progress;
             let color = parsed.global.color;

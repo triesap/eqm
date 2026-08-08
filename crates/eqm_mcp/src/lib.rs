@@ -3,12 +3,14 @@
 #![forbid(unsafe_code)]
 
 mod resources;
+mod server;
 mod session;
 mod tools;
 
 pub use resources::{
     McpResource, McpResourceError, McpResourceUri, ResourceTrust, list_resources, read_resource,
 };
+pub use server::{MCP_PROTOCOL_VERSION, McpServerError, serve};
 pub use session::{McpSessionError, PreparedMcpSession};
 pub use tools::{
     McpReadToolHandler, McpToolError, McpToolResult, ReadTool, call_read_tool, read_tool_schemas,
