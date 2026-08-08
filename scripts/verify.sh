@@ -7,6 +7,7 @@ cd "$repository_root"
 bash scripts/check_generated_state_clean.sh
 bash scripts/test_no_legacy_names.sh
 bash scripts/test_validate_authority.sh
+bash scripts/check_security_matrix.sh
 bash scripts/check_schemas.sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
