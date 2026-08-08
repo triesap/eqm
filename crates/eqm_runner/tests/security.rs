@@ -254,8 +254,12 @@ fn declared_secrets_are_redacted_from_retained_output() -> Result<(), Box<dyn Er
             BTreeMap::from([(name, Box::from("sensitive-value"))]),
         ),
     )?;
-    let output = String::from_utf8(report.stdout)?;
-    assert!(!output.contains("sensitive-value"));
-    assert!(output.contains("TOKEN=[REDACTED]"));
+    let stdout = String::from_utf8(report.stdout)?;
+    let stderr = String::from_utf8(report.stderr)?;
+    assert!(!stdout.contains("sensitive-value"));
+    assert!(!stderr.contains("sensitive-value"));
+    assert!(!stdout.contains("secret://vault/token"));
+    assert!(!stderr.contains("secret://vault/token"));
+    assert!(stdout.contains("TOKEN=[REDACTED]"));
     Ok(())
 }

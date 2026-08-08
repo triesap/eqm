@@ -174,21 +174,66 @@ mod tests {
     #[test]
     fn rejects_escape_separator_collision_and_normalization_hazards() {
         let cases = [
-            ("", RepoPathError::Empty),
-            ("/etc/passwd", RepoPathError::Absolute),
-            ("C:relative", RepoPathError::DrivePrefix),
-            ("C:/absolute", RepoPathError::DrivePrefix),
-            ("eqm\\file", RepoPathError::InvalidSeparator),
-            ("eqm//file", RepoPathError::EmptySegment),
-            ("eqm/./file", RepoPathError::Traversal),
-            ("eqm/../file", RepoPathError::Traversal),
-            ("eqm/file\0", RepoPathError::ControlCharacter),
-            ("eqm/file.", RepoPathError::NonPortableSegment),
-            ("eqm/NUL.txt", RepoPathError::NonPortableSegment),
-            ("apps/cafe\u{301}/view", RepoPathError::NotNormalized),
+            ("", RepoPathError::Empty, "repository path is empty"),
+            (
+                "/etc/passwd",
+                RepoPathError::Absolute,
+                "repository path is absolute",
+            ),
+            (
+                "C:relative",
+                RepoPathError::DrivePrefix,
+                "repository path contains a drive prefix",
+            ),
+            (
+                "C:/absolute",
+                RepoPathError::DrivePrefix,
+                "repository path contains a drive prefix",
+            ),
+            (
+                "eqm\\file",
+                RepoPathError::InvalidSeparator,
+                "repository path uses a backslash separator",
+            ),
+            (
+                "eqm//file",
+                RepoPathError::EmptySegment,
+                "repository path contains an empty segment",
+            ),
+            (
+                "eqm/./file",
+                RepoPathError::Traversal,
+                "repository path contains traversal",
+            ),
+            (
+                "eqm/../file",
+                RepoPathError::Traversal,
+                "repository path contains traversal",
+            ),
+            (
+                "eqm/file\0",
+                RepoPathError::ControlCharacter,
+                "repository path contains a control character",
+            ),
+            (
+                "eqm/file.",
+                RepoPathError::NonPortableSegment,
+                "repository path contains a non-portable segment",
+            ),
+            (
+                "eqm/NUL.txt",
+                RepoPathError::NonPortableSegment,
+                "repository path contains a non-portable segment",
+            ),
+            (
+                "apps/cafe\u{301}/view",
+                RepoPathError::NotNormalized,
+                "repository path is not Unicode NFC",
+            ),
         ];
-        for (value, error) in cases {
+        for (value, error, diagnostic) in cases {
             assert_eq!(RepoPath::new(value), Err(error), "accepted {value:?}");
+            assert_eq!(error.to_string(), diagnostic);
         }
     }
 

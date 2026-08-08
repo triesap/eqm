@@ -116,7 +116,7 @@ close:
   CLI and MCP entry points;
 - [x] fuzz production TOML, protocol, graph, adapter, inventory, evidence, and
   canonicalization boundaries rather than generic parsers;
-- add direct adversarial assertions for every security-matrix case, including
+- [x] add direct adversarial assertions for every security-matrix case, including
   stable diagnostics and secret non-disclosure;
 - measure cold validation, warm context, affected analysis, and peak memory
   through production code at the specified 10,000-unit/100,000-requirement
