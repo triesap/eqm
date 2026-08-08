@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 12: Hardening And Packaging
 
-Status: in progress; Step 127 complete
+Status: complete; Steps 123-128 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 11
-Current checkpoint: `step_128`
+Current checkpoint: none
 
 ## Purpose
 
@@ -78,4 +78,4 @@ target blocks the checkpoint unless authority explicitly narrows the claim.
 | `step_125` | complete | A mandatory 12-case adversarial matrix maps traversal, symlink escape, argv injection, inherited environment, output flood, timeout, secret redaction, signature tamper, replay, subject substitution, immutable collision, and MCP execution authority to concrete fail-closed tests; its verifier requires every source and exact test function to exist and is part of the aggregate lane, consolidating the existing runner, domain, persistence, CI import, and MCP security corpus without suppressing any failure |
 | `step_126` | complete | A non-publishable deterministic release-mode scale probe constructs 10,000 stable unit keys and 100,000 requirement coordinates, measures cold construction/validation, warm context lookup, conservative 20,000-coordinate affected expansion, canonical serialization/digesting, and a conservative memory upper bound, and fails the documented 10s/250ms/2s/1GiB ceilings; the recorded 8-core-or-better local reference run passed all thresholds and emitted a replayable fixture digest without committing environment-specific raw timing |
 | `step_127` | complete | Mandatory parity verification regenerates all 21 manifest/protocol schemas into an isolated directory and requires a byte-clean diff, then independently requires 21 unique `$id` authorities and proves every current schema URI used by authored examples and the signup corpus maps to that exact inventory; an explicit nonexistent-current URI self-check remains rejected, and parity runs unsuppressed inside the aggregate lane with the loader's positive/negative examples and URI tests |
-| `step_128` | pending | - |
+| `step_128` | complete | A deterministic non-publishing package script builds the locked `eqm` binary, includes only binary/current schemas/license/README plus SPDX 2.3 dependency inventory and exact source/lock provenance inputs, normalizes archive metadata, emits SHA-256 checksums, and explicitly records no production signature; signing requires a separately supplied absolute executable and artifact with no credential fallback, and read-only Linux/macOS workflow definitions inspect but never publish dry-run packages; two clean local dry runs produced byte-identical archives and passed content/no-legacy/schema inspection |

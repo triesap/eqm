@@ -1,0 +1,20 @@
+name: release-dry-run
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Build non-publishing package
+        run: bash scripts/package_release.sh "$RUNNER_TEMP/package"
+      - name: Inspect package
+        run: tar -tzf "$RUNNER_TEMP"/package/*.tar.gz

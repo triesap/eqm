@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 Full Implementation Multi-RCLD
 
-Status: in progress; RCLDs 00-11 complete; RCLD 12 active
+Status: in progress; RCLDs 00-12 complete; RCLD 13 active
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Cargo workspace root: repository root
 Planning base commit: `859205c`
-Current child RCLD: `12`
+Current child RCLD: `13`
 
 ## Purpose
 
