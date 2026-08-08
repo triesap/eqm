@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 12: Hardening And Packaging
 
-Status: in progress; Step 122 dependency complete
+Status: in progress; Step 123 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 11
-Current checkpoint: `step_123`
+Current checkpoint: `step_124`
 
 ## Purpose
 
@@ -73,4 +73,5 @@ target blocks the checkpoint unless authority explicitly narrows the claim.
 
 | Step range | Status | Result |
 | --- | --- | --- |
-| `step_123`-`step_128` | pending | - |
+| `step_123` | complete | A deterministic 512-case property lane records seed `0x45514d313233`, generates bounded digest and ordering inputs with replayable case indices, proves content identity stability and insertion-order independence, and explicitly proves waived, unknown, missing, and unstable facets are never satisfied; it consolidates the existing exhaustive policy-strength monotonicity, waiver non-satisfaction, affected conservatism, canonical digest, and stable matrix/order integration suites without introducing nondeterministic generators |
+| `step_124`-`step_128` | pending | - |
