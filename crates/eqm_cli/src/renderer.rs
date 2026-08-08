@@ -213,8 +213,10 @@ mod tests {
     use super::*;
     use crate::cli::{ParseOutcome, parse};
     use crate::commands;
+    use std::collections::BTreeMap;
     use std::fs;
     use std::path::Path;
+    use std::process::Command;
 
     fn payload() -> OutputPayload {
         OutputPayload {
@@ -279,6 +281,12 @@ mod tests {
         assert_eq!(index["commands"].as_array().map(Vec::len), Some(21));
         assert_eq!(index["mcp_reads"].as_array().map(Vec::len), Some(4));
 
+        let command_golden = render_public_commands()?;
+        if std::env::var_os("EQM_UPDATE_GOLDENS").is_some() {
+            fs::write(golden_root.join("commands.json"), &command_golden)?;
+        }
+        assert_eq!(command_golden, fs::read(golden_root.join("commands.json"))?);
+
         let repository = materialized_signup_fixture()?;
         let ParseOutcome::Run(parsed) = parse([
             "context",
@@ -316,6 +324,219 @@ mod tests {
             let _: Value = serde_json::from_slice(&bytes)?;
         }
         Ok(())
+    }
+
+    fn render_public_commands() -> Result<Vec<u8>, Box<dyn Error>> {
+        let repository = git_signup_fixture()?;
+        let commit = git_output(repository.path(), &["rev-parse", "HEAD"])?;
+        let release_repository =
+            commands::release_check::tests::release_fixture("pass", false, "signed_ci")?;
+        let empty = tempfile::tempdir()?;
+        let cases = [
+            ("init", vec!["init", "--dry-run"], empty.path()),
+            (
+                "new",
+                vec![
+                    "new",
+                    "surface",
+                    "account.create.signup.example",
+                    "--dry-run",
+                ],
+                repository.path(),
+            ),
+            ("fmt", vec!["fmt", "--dry-run"], repository.path()),
+            ("validate", vec!["validate"], repository.path()),
+            ("check", vec!["check"], repository.path()),
+            (
+                "show",
+                vec!["show", "surface", "account.create.signup.identifier"],
+                repository.path(),
+            ),
+            (
+                "locate",
+                vec!["locate", "account.create.signup.identifier"],
+                repository.path(),
+            ),
+            (
+                "context",
+                vec![
+                    "context",
+                    "account.create.signup.identifier",
+                    "--max-bytes",
+                    "1024",
+                ],
+                repository.path(),
+            ),
+            ("matrix", vec!["matrix", "conformance"], repository.path()),
+            ("obligations", vec!["obligations"], repository.path()),
+            (
+                "diff",
+                vec!["--baseline", commit.as_str(), "diff"],
+                repository.path(),
+            ),
+            (
+                "affected",
+                vec![
+                    "--baseline",
+                    commit.as_str(),
+                    "affected",
+                    "--path",
+                    "targets/web/src/routes/signup/+page.svelte",
+                ],
+                repository.path(),
+            ),
+            (
+                "discover",
+                vec![
+                    "discover",
+                    "--adapter",
+                    "adapter.missing",
+                    "--target",
+                    "web",
+                ],
+                repository.path(),
+            ),
+            (
+                "reconcile",
+                vec!["reconcile", "--target", "web"],
+                repository.path(),
+            ),
+            ("verify", vec!["verify", "--dry-run"], repository.path()),
+            ("attest", vec!["attest"], release_repository.path()),
+            (
+                "release_check",
+                vec![
+                    "--profile",
+                    "audience.default",
+                    "release",
+                    "check",
+                    "--release-record",
+                    "releases/pass.generated.json",
+                ],
+                release_repository.path(),
+            ),
+            ("explain", vec!["explain", "EQM-E0300"], repository.path()),
+            ("doctor", vec!["doctor"], repository.path()),
+            (
+                "lock_update",
+                vec!["lock", "update", "--dry-run"],
+                repository.path(),
+            ),
+        ];
+        let mut documents = BTreeMap::new();
+        for (name, arguments, root) in cases {
+            let ParseOutcome::Run(parsed) = parse(arguments)? else {
+                return Err(format!("{name}: unexpected help").into());
+            };
+            let execution = commands::execute(parsed, root)?;
+            let mut payload = execution.payload;
+            normalize_volatile(&mut payload.json);
+            let document = render(&payload, OutputFormat::Json)?;
+            documents.insert(
+                name,
+                serde_json::json!({
+                    "exit_code": execution.exit_code,
+                    "document": String::from_utf8(document.bytes().to_vec())?,
+                }),
+            );
+        }
+        let mut bytes = serde_json::to_vec(&documents)?;
+        bytes.push(b'\n');
+        Ok(bytes)
+    }
+
+    fn normalize_volatile(value: &mut Value) {
+        match value {
+            Value::Array(values) => values.iter_mut().for_each(normalize_volatile),
+            Value::Object(values) => {
+                for (key, value) in values {
+                    if key == "evaluated_at" {
+                        *value = Value::String("<evaluated_at>".to_owned());
+                    } else {
+                        normalize_volatile(value);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn git_signup_fixture() -> Result<tempfile::TempDir, Box<dyn Error>> {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/signup");
+        let repository = tempfile::tempdir()?;
+        copy_git_fixture(&source, repository.path())?;
+        git(repository.path(), &["init", "-q"])?;
+        git(
+            repository.path(),
+            &[
+                "remote",
+                "add",
+                "origin",
+                "git@github.com:example/signup-fixture.git",
+            ],
+        )?;
+        git(repository.path(), &["add", "."])?;
+        git(
+            repository.path(),
+            &[
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.invalid",
+                "commit",
+                "-qm",
+                "fixture",
+            ],
+        )?;
+        Ok(repository)
+    }
+
+    fn copy_git_fixture(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
+        fs::create_dir_all(destination)?;
+        for entry in fs::read_dir(source)? {
+            let entry = entry?;
+            if entry.file_name() == "GIT_HEAD.fixture" || entry.file_name() == "goldens" {
+                continue;
+            }
+            let name = if entry.file_name() == "eqm.toml.fixture" {
+                "eqm.toml".into()
+            } else {
+                entry.file_name()
+            };
+            let target = destination.join(name);
+            if entry.file_type()?.is_dir() {
+                copy_git_fixture(&entry.path(), &target)?;
+            } else {
+                fs::copy(entry.path(), target)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn git(root: &Path, arguments: &[&str]) -> Result<(), Box<dyn Error>> {
+        if Command::new("git")
+            .args(arguments)
+            .current_dir(root)
+            .env("GIT_AUTHOR_DATE", "2026-08-08T00:00:00Z")
+            .env("GIT_COMMITTER_DATE", "2026-08-08T00:00:00Z")
+            .status()?
+            .success()
+        {
+            Ok(())
+        } else {
+            Err("Git fixture command failed".into())
+        }
+    }
+
+    fn git_output(root: &Path, arguments: &[&str]) -> Result<String, Box<dyn Error>> {
+        let output = Command::new("git")
+            .args(arguments)
+            .current_dir(root)
+            .output()?;
+        if !output.status.success() {
+            return Err("Git fixture query failed".into());
+        }
+        Ok(String::from_utf8(output.stdout)?.trim().to_owned())
     }
 
     fn materialized_signup_fixture() -> Result<tempfile::TempDir, Box<dyn Error>> {

@@ -617,7 +617,7 @@ fn context(offline: bool, at: UtcInstant) -> Result<InvocationContextDto<(), ()>
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::cli::{ParseOutcome, parse};
     use serde_json::json;
@@ -746,7 +746,7 @@ mod tests {
         Ok(parsed)
     }
 
-    fn release_fixture(
+    pub(crate) fn release_fixture(
         name: &str,
         failed: bool,
         claim: &str,
@@ -931,7 +931,7 @@ mod tests {
         fs::create_dir_all(destination)?;
         for entry in fs::read_dir(source)? {
             let entry = entry?;
-            if entry.file_name() == "GIT_HEAD.fixture" {
+            if entry.file_name() == "GIT_HEAD.fixture" || entry.file_name() == "goldens" {
                 continue;
             }
             let name = if entry.file_name() == "eqm.toml.fixture" {
@@ -953,6 +953,8 @@ mod tests {
         if Command::new("git")
             .args(arguments)
             .current_dir(root)
+            .env("GIT_AUTHOR_DATE", "2026-08-08T00:00:00Z")
+            .env("GIT_COMMITTER_DATE", "2026-08-08T00:00:00Z")
             .status()?
             .success()
         {

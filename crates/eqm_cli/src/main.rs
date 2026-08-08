@@ -7,7 +7,6 @@ mod commands;
 mod renderer;
 mod session;
 
-use serde_json::json;
 use std::io::{self, IsTerminal};
 use std::process::ExitCode;
 
@@ -41,100 +40,9 @@ fn main() -> ExitCode {
             if reporter.progress("rendering command result").is_err() {
                 return ExitCode::from(6);
             }
-            let execution = if command == cli::CommandName::Init {
-                std::env::current_dir()
-                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
-                    .and_then(|start| commands::init_new::init(parsed, &start))
-            } else if command == cli::CommandName::New {
-                std::env::current_dir()
-                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
-                    .and_then(|start| commands::init_new::new(parsed, &start))
-            } else if command == cli::CommandName::Fmt {
-                std::env::current_dir()
-                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
-                    .and_then(|start| commands::fmt::execute(parsed, &start))
-            } else if command == cli::CommandName::LockUpdate {
-                std::env::current_dir()
-                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
-                    .and_then(|start| commands::lock::execute(parsed, &start))
-            } else if command == cli::CommandName::Explain {
-                commands::explain::execute(parsed)
-            } else if matches!(
-                command,
-                cli::CommandName::Validate
-                    | cli::CommandName::Check
-                    | cli::CommandName::Show
-                    | cli::CommandName::Locate
-                    | cli::CommandName::Context
-                    | cli::CommandName::Matrix
-                    | cli::CommandName::Obligations
-                    | cli::CommandName::Diff
-                    | cli::CommandName::Affected
-                    | cli::CommandName::Discover
-                    | cli::CommandName::Reconcile
-                    | cli::CommandName::Verify
-                    | cli::CommandName::Attest
-                    | cli::CommandName::ReleaseCheck
-                    | cli::CommandName::Doctor
-            ) {
-                match std::env::current_dir() {
-                    Ok(start) if command == cli::CommandName::Validate => {
-                        commands::validate::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Check => {
-                        commands::check::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Show => {
-                        commands::show::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Locate => {
-                        commands::locate::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Context => {
-                        commands::context::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Matrix => {
-                        commands::matrix::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Obligations => {
-                        commands::obligations::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Diff => {
-                        commands::diff::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Affected => {
-                        commands::affected::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Discover => {
-                        commands::discover::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Reconcile => {
-                        commands::reconcile::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Verify => {
-                        commands::verify::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::Attest => {
-                        commands::attest::execute(parsed, &start)
-                    }
-                    Ok(start) if command == cli::CommandName::ReleaseCheck => {
-                        commands::release_check::execute(parsed, &start)
-                    }
-                    Ok(start) => commands::doctor::execute(parsed, &start),
-                    Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
-                }
-            } else {
-                let _request = session::SessionRequest::new(parsed.global, command);
-                Ok(commands::CommandExecution {
-                    payload: renderer::OutputPayload {
-                        human: format!("{} is not implemented yet", command.as_str()),
-                        json: json!({"command": command.as_str(), "status": "not_implemented"}),
-                        sarif: Some(json!({"version":"2.1.0", "runs":[]})),
-                        markdown: Some(format!("# {}\n\nNot implemented yet.", command.as_str())),
-                    },
-                    exit_code: 0,
-                })
-            };
+            let execution = std::env::current_dir()
+                .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
+                .and_then(|start| commands::execute(parsed, &start));
             let execution = match execution {
                 Ok(value) => value,
                 Err(error) => {
