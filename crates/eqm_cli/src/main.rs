@@ -37,6 +37,10 @@ fn main() -> ExitCode {
                 std::env::current_dir()
                     .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
                     .and_then(|start| commands::init_new::new(parsed, &start))
+            } else if command == cli::CommandName::Fmt {
+                std::env::current_dir()
+                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
+                    .and_then(|start| commands::fmt::execute(parsed, &start))
             } else if command == cli::CommandName::Explain {
                 commands::explain::execute(parsed)
             } else if matches!(
