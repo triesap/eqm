@@ -114,7 +114,7 @@ close:
   release-gate fixtures carrying runtime facts and immutable evidence;
 - [ ] replace hand-authored command samples with byte-compared outputs from real
   CLI and MCP entry points;
-- fuzz production TOML, protocol, graph, adapter, inventory, evidence, and
+- [x] fuzz production TOML, protocol, graph, adapter, inventory, evidence, and
   canonicalization boundaries rather than generic parsers;
 - add direct adversarial assertions for every security-matrix case, including
   stable diagnostics and secret non-disclosure;

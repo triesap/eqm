@@ -1,3 +1,10 @@
 #![no_main]
+use eqm_domain::SourceName;
 use libfuzzer_sys::fuzz_target;
-fuzz_target!(|data: &[u8]| if let Ok(text) = std::str::from_utf8(data) { let _ = text.parse::<toml::Table>(); });
+
+fuzz_target!(|data: &[u8]| {
+    let Ok(source) = SourceName::new("fuzz/input.eqm.toml") else {
+        return;
+    };
+    let _ = eqm_manifest::parse_toml(source, data);
+});

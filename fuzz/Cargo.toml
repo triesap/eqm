@@ -11,7 +11,8 @@ cargo-fuzz = true
 libfuzzer-sys = "=0.4.10"
 serde_json = "=1.0.145"
 serde_json_canonicalizer = "=0.3.2"
-toml = "=1.1.4"
+eqm_domain = { path = "../crates/eqm_domain" }
+eqm_manifest = { path = "../crates/eqm_manifest" }
 eqm_protocol = { path = "../crates/eqm_protocol" }
 eqm_runner = { path = "../crates/eqm_runner" }
 
