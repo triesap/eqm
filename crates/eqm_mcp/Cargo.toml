@@ -9,6 +9,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+eqm_domain.workspace = true
 eqm_engine.workspace = true
 eqm_protocol.workspace = true
 eqm_runner.workspace = true

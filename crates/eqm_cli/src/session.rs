@@ -36,6 +36,16 @@ pub struct PreparedSession {
 }
 
 impl PreparedSession {
+    /// Borrows the already finalized session through the thin MCP boundary.
+    pub fn mcp_session(&self) -> Result<eqm_mcp::PreparedMcpSession<'_>, eqm_mcp::McpSessionError> {
+        eqm_mcp::PreparedMcpSession::new(
+            &self.repository_root,
+            &self.finalized,
+            &self.source_map,
+            self.workspace_digest,
+        )
+    }
+
     /// Returns the canonical repository root used for confined inspection.
     #[must_use]
     pub fn repository_root(&self) -> &Path {
@@ -58,6 +68,23 @@ impl PreparedSession {
     #[must_use]
     pub const fn workspace_digest(&self) -> Sha256Digest {
         self.workspace_digest
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn finalized_cli_session_is_borrowed_without_reloading_for_mcp() -> Result<(), Box<dyn Error>> {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let request = SessionRequest::new(Default::default(), CommandName::Validate);
+        let session = prepare(&request, &root)?;
+        let mcp = session.mcp_session()?;
+        assert_eq!(mcp.workspace_digest(), session.workspace_digest());
+        assert!(std::ptr::eq(mcp.finalized(), session.finalized()));
+        assert!(std::ptr::eq(mcp.source_map(), session.source_map()));
+        Ok(())
     }
 }
 

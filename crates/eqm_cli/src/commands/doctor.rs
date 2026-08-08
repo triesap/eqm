@@ -62,10 +62,13 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     });
     let request = SessionRequest::new(parsed.global, parsed.command.name);
     let workspace = prepare(&request, start);
+    let workspace_healthy = workspace
+        .as_ref()
+        .is_ok_and(|session| session.mcp_session().is_ok());
     checks.insert(check(
         "workspace",
-        workspace.is_ok(),
-        "workspace authority finalizes without execution",
+        workspace_healthy,
+        "workspace authority finalizes and exposes the read-only adapter boundary without execution",
         "Correct manifest, graph, invariant, expansion, or canonicalization failures.",
     ));
     let status = if checks

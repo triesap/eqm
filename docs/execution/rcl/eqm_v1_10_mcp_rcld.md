@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 10: MCP
 
-Status: in progress; RCLD 09 complete
+Status: in progress; Step 112 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 09
-Current checkpoint: `step_112`
+Current checkpoint: `step_113`
 
 ## Purpose
 
@@ -59,4 +59,5 @@ default denial, authorization, and audit tests.
 
 | Step range | Status | Result |
 | --- | --- | --- |
-| `step_112`-`step_116` | pending | - |
+| `step_112` | complete | `eqm_mcp` accepts only a borrowed canonical repository root, finalized immutable graph, semantic source map, and exact workspace digest supplied by CLI orchestration; it contains no manifest-loader dependency or duplicate preparation path, a DAG test proves every core crate remains independent of MCP, CLI tests prove identity-preserving borrowing, doctor exercises the production boundary, and the adapter timing fixture now separates normal startup allowance from its deliberately short timeout assertion without changing production limits |
+| `step_113`-`step_116` | pending | - |

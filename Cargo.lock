@@ -148,6 +148,7 @@ dependencies = [
 name = "eqm_mcp"
 version = "0.1.0"
 dependencies = [
+ "eqm_domain",
  "eqm_engine",
  "eqm_protocol",
  "eqm_runner",

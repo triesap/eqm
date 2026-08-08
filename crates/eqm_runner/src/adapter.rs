@@ -218,6 +218,13 @@ mod tests {
     }
 
     fn definition_fixture(executable: &Path) -> Result<AdapterDefinition, Box<dyn Error>> {
+        definition_fixture_with_timeout(executable, 30_000)
+    }
+
+    fn definition_fixture_with_timeout(
+        executable: &Path,
+        timeout_ms: u64,
+    ) -> Result<AdapterDefinition, Box<dyn Error>> {
         Ok(AdapterDefinition::new(
             AdapterId::new("adapter.test")?,
             SelectorText::new("1.0.0")?,
@@ -226,7 +233,7 @@ mod tests {
             Revision::new(1)?,
             InventoryCompleteness::Complete,
             AdapterLimits::new(
-                eqm_domain::DurationMillis::new(5_000)?,
+                eqm_domain::DurationMillis::new(timeout_ms)?,
                 eqm_domain::PositiveCount::new(4 * 1024 * 1024)?,
                 eqm_domain::PositiveCount::new(1_024)?,
                 eqm_domain::PositiveCount::new(10)?,
@@ -236,6 +243,7 @@ mod tests {
     }
 
     fn request_fixture(definition: &AdapterDefinition, target: &Path) -> AdapterRequestDto {
+        let limits = definition.limits();
         AdapterRequestDto {
             schema: ADAPTER_REQUEST_SCHEMA.to_string(),
             request_id: "request-1".to_owned(),
@@ -260,11 +268,11 @@ mod tests {
             target: "web".to_owned(),
             target_root: target.to_string_lossy().into_owned(),
             limits: AdapterLimitsDto {
-                timeout_ms: 5_000,
-                max_input_bytes: 4 * 1024 * 1024,
-                max_output_bytes: 1_024,
-                max_entries: 10,
-                max_depth: 8,
+                timeout_ms: limits.timeout().get(),
+                max_input_bytes: limits.max_input_bytes().get(),
+                max_output_bytes: limits.max_output_bytes().get(),
+                max_entries: limits.max_entries().get(),
+                max_depth: limits.max_depth().get(),
             },
         }
     }
@@ -321,8 +329,8 @@ printf '{"schema":"https://schemas.equivalencematrix.dev/v1/adapter-response","r
             ),
             Err(AdapterInvocationError::NonzeroExit(Some(7)))
         );
-        let timeout = script(root.path(), "/bin/cat >/dev/null; /bin/sleep 6")?;
-        let timeout_definition = definition_fixture(&timeout)?;
+        let timeout = script(root.path(), "/bin/cat >/dev/null; /bin/sleep 3")?;
+        let timeout_definition = definition_fixture_with_timeout(&timeout, 2_000)?;
         assert_eq!(
             invoke_adapter(
                 &timeout_definition,
