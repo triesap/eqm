@@ -44,6 +44,7 @@ fn main() -> ExitCode {
                     | cli::CommandName::Reconcile
                     | cli::CommandName::Verify
                     | cli::CommandName::Attest
+                    | cli::CommandName::ReleaseCheck
             ) {
                 match std::env::current_dir() {
                     Ok(start) if command == cli::CommandName::Validate => {
@@ -82,7 +83,10 @@ fn main() -> ExitCode {
                     Ok(start) if command == cli::CommandName::Verify => {
                         commands::verify::execute(parsed, &start)
                     }
-                    Ok(start) => commands::attest::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::Attest => {
+                        commands::attest::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::release_check::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {
@@ -103,7 +107,7 @@ fn main() -> ExitCode {
                     let _ = reporter.log(&format!("error: {error}"));
                     return ExitCode::from(match command {
                         cli::CommandName::Verify => 5,
-                        cli::CommandName::Attest => 7,
+                        cli::CommandName::Attest | cli::CommandName::ReleaseCheck => 7,
                         _ => 6,
                     });
                 }

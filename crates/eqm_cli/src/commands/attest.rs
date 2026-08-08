@@ -157,7 +157,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     })
 }
 
-fn evidence_paths(
+pub(super) fn evidence_paths(
     session: &PreparedSession,
     requested: &BTreeSet<String>,
 ) -> Result<Vec<PathBuf>, Box<dyn Error>> {
@@ -194,7 +194,7 @@ fn evidence_paths(
     Ok(paths)
 }
 
-fn read_evidence(
+pub(super) fn read_evidence(
     session: &PreparedSession,
     path: &Path,
 ) -> Result<EvidenceResultDto, Box<dyn Error>> {
@@ -292,7 +292,7 @@ fn common_optional<'a>(
     Ok(first)
 }
 
-fn selected_profile_values(
+pub(super) fn selected_profile_values(
     selection: &eqm_engine::SelectedPolicyProfiles<'_>,
 ) -> Result<Vec<ProfileValueDto>, Box<dyn Error>> {
     let mut values = Vec::new();
@@ -351,7 +351,7 @@ fn definitively_failed(value: &EvidenceResultDto) -> bool {
     }
 }
 
-fn trust_config_digest(session: &PreparedSession) -> Sha256Digest {
+pub(super) fn trust_config_digest(session: &PreparedSession) -> Sha256Digest {
     Sha256Digest::hash_content(
         format!("eqm:v1:trust-config\0{}", session.workspace_digest()).as_bytes(),
     )

@@ -11,6 +11,7 @@ pub mod locate;
 pub mod matrix;
 pub mod obligations;
 pub mod reconcile;
+pub mod release_check;
 pub mod show;
 pub mod validate;
 pub mod verify;
