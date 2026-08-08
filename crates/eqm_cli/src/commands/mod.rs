@@ -1,6 +1,7 @@
 //! Command orchestration over one prepared session.
 
 pub mod affected;
+pub mod attest;
 pub mod check;
 pub mod context;
 pub mod diff;
