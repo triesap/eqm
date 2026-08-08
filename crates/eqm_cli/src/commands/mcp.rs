@@ -284,6 +284,34 @@ mod tests {
             responses[3]["result"]["structuredContent"]["command"],
             "explain"
         );
+
+        let mut resource_families = responses[1]["result"]["resources"]
+            .as_array()
+            .ok_or("resources/list did not return an array")?
+            .iter()
+            .filter_map(|resource| resource["uri"].as_str())
+            .filter_map(|uri| uri.strip_prefix("eqm://v1/").map(str::to_owned))
+            .map(|path| path.split('/').next().unwrap_or_default().to_owned())
+            .collect::<Vec<_>>();
+        resource_families.sort();
+        resource_families.dedup();
+        let mut tool_names = responses[2]["result"]["tools"]
+            .as_array()
+            .ok_or("tools/list did not return an array")?
+            .iter()
+            .filter_map(|tool| tool["name"].as_str().map(str::to_owned))
+            .collect::<Vec<_>>();
+        tool_names.sort();
+        let summary = json!({
+            "called_command": responses[3]["result"]["structuredContent"]["command"],
+            "protocol_version": responses[0]["result"]["protocolVersion"],
+            "resource_families": resource_families,
+            "tool_names": tool_names,
+        });
+        let mut actual = serde_json::to_vec(&summary)?;
+        actual.push(b'\n');
+        let golden = root.join("tests/fixtures/signup/goldens/mcp-workspace.json");
+        assert_eq!(actual, fs::read(golden)?);
         Ok(())
     }
 

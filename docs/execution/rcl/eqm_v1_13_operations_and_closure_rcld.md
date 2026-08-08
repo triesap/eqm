@@ -112,7 +112,7 @@ close:
   claims from being promoted at attestation and release boundaries;
 - [x] replace declared release outcomes with exercised pass, fail, and unknown
   release-gate fixtures carrying runtime facts and immutable evidence;
-- replace hand-authored command samples with byte-compared outputs from real
+- [ ] replace hand-authored command samples with byte-compared outputs from real
   CLI and MCP entry points;
 - fuzz production TOML, protocol, graph, adapter, inventory, evidence, and
   canonicalization boundaries rather than generic parsers;

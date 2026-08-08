@@ -211,7 +211,10 @@ pub fn explicit_output_path(path: Option<PathBuf>) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cli::{ParseOutcome, parse};
+    use crate::commands;
     use std::fs;
+    use std::path::Path;
 
     fn payload() -> OutputPayload {
         OutputPayload {
@@ -270,29 +273,78 @@ mod tests {
     #[test]
     fn reviewed_signup_goldens_cover_the_public_surface_and_are_byte_stable()
     -> Result<(), Box<dyn Error>> {
-        let root =
+        let golden_root =
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/signup/goldens");
-        let index: Value = serde_json::from_slice(&fs::read(root.join("index.json"))?)?;
+        let index: Value = serde_json::from_slice(&fs::read(golden_root.join("index.json"))?)?;
         assert_eq!(index["commands"].as_array().map(Vec::len), Some(21));
-        assert_eq!(
-            index["formats"],
-            serde_json::json!(["human", "json", "sarif", "markdown"])
-        );
         assert_eq!(index["mcp_reads"].as_array().map(Vec::len), Some(4));
-        for name in [
-            "context.human",
-            "context.json",
-            "context.sarif",
-            "context.md",
-            "mcp-workspace.json",
+
+        let repository = materialized_signup_fixture()?;
+        let ParseOutcome::Run(parsed) = parse([
+            "context",
+            "account.create.signup.identifier",
+            "--max-bytes",
+            "1024",
+            "--no-progress",
+        ])?
+        else {
+            return Err("unexpected help".into());
+        };
+        let mut context = commands::context::execute(parsed, repository.path())?.payload;
+        context.json["context"]["evaluated_at"] = Value::String("<evaluated_at>".to_owned());
+        for (format, name) in [
+            (OutputFormat::Human, "context.human"),
+            (OutputFormat::Json, "context.json"),
+            (OutputFormat::Markdown, "context.md"),
         ] {
-            let first = fs::read(root.join(name))?;
-            let second = fs::read(root.join(name))?;
-            assert_eq!(first, second);
-            assert!(first.ends_with(b"\n"));
-            assert!(!String::from_utf8_lossy(&first).contains(env!("CARGO_MANIFEST_DIR")));
-            if name.ends_with(".json") || name.ends_with(".sarif") {
-                let _: Value = serde_json::from_slice(&first)?;
+            let actual = render(&context, format)?;
+            assert_eq!(actual.bytes(), fs::read(golden_root.join(name))?);
+        }
+
+        let ParseOutcome::Run(parsed) = parse(["validate", "--no-progress"])? else {
+            return Err("unexpected help".into());
+        };
+        let validation = commands::validate::execute(parsed, repository.path())?.payload;
+        let actual = render(&validation, OutputFormat::Sarif)?;
+        assert_eq!(
+            actual.bytes(),
+            fs::read(golden_root.join("validate.sarif"))?
+        );
+
+        for name in ["context.json", "validate.sarif", "mcp-workspace.json"] {
+            let bytes = fs::read(golden_root.join(name))?;
+            let _: Value = serde_json::from_slice(&bytes)?;
+        }
+        Ok(())
+    }
+
+    fn materialized_signup_fixture() -> Result<tempfile::TempDir, Box<dyn Error>> {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/signup");
+        let repository = tempfile::tempdir()?;
+        copy_fixture(&source, repository.path())?;
+        Ok(repository)
+    }
+
+    fn copy_fixture(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
+        fs::create_dir_all(destination)?;
+        for entry in fs::read_dir(source)? {
+            let entry = entry?;
+            if entry.file_name() == "GIT_HEAD.fixture" {
+                let git = destination.join(".git");
+                fs::create_dir_all(&git)?;
+                fs::copy(entry.path(), git.join("HEAD"))?;
+                continue;
+            }
+            let name = if entry.file_name() == "eqm.toml.fixture" {
+                "eqm.toml".into()
+            } else {
+                entry.file_name()
+            };
+            let target = destination.join(name);
+            if entry.file_type()?.is_dir() {
+                copy_fixture(&entry.path(), &target)?;
+            } else {
+                fs::copy(entry.path(), target)?;
             }
         }
         Ok(())

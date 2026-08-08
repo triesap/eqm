@@ -1,1 +1,1 @@
-{"command":"mcp_resource","result":{"trust":"finalized_authority","uri":"eqm://v1/workspace"},"schema":"https://schemas.equivalencematrix.dev/v1/result"}
+{"called_command":"explain","protocol_version":"2025-06-18","resource_families":["context","findings","unit","workspace"],"tool_names":["eqm_affected","eqm_check","eqm_context","eqm_explain","eqm_matrix"]}
