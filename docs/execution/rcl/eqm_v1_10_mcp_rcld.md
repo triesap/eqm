@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 10: MCP
 
-Status: in progress; Step 113 complete
+Status: in progress; Step 114 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 09
-Current checkpoint: `step_114`
+Current checkpoint: `step_115`
 
 ## Purpose
 
@@ -61,4 +61,5 @@ default denial, authorization, and audit tests.
 | --- | --- | --- |
 | `step_112` | complete | `eqm_mcp` accepts only a borrowed canonical repository root, finalized immutable graph, semantic source map, and exact workspace digest supplied by CLI orchestration; it contains no manifest-loader dependency or duplicate preparation path, a DAG test proves every core crate remains independent of MCP, CLI tests prove identity-preserving borrowing, doctor exercises the production boundary, and the adapter timing fixture now separates normal startup allowance from its deliberately short timeout assertion without changing production limits |
 | `step_113` | complete | MCP exposes only the closed `eqm://v1/workspace`, `eqm://v1/unit/{percent-encoded-id}`, `eqm://v1/context/{percent-encoded-id}`, and `eqm://v1/findings` URI families; strict parsing rejects wrong schemes, versions, paths, encodings, and absent units, listing is stable and deduplicated, reads produce common current result envelopes with exact workspace digests and resource source URIs, and mixed context product/tool records carry explicit untrusted labels while finalized authority remains distinguished |
-| `step_114`-`step_116` | pending | - |
+| `step_114` | complete | MCP registers exactly `eqm_context`, `eqm_matrix`, `eqm_affected`, `eqm_check`, and `eqm_explain` as read-only tools with closed schemas and strict required/type/unknown-field validation; its router delegates through a CLI-owned handler that rebuilds the corresponding approved CLI invocation and calls the same command implementation, then rejects mismatched result schemas or command envelopes, and integration tests prove every tool returns the corresponding structured CLI envelope without changing repository status |
+| `step_115`-`step_116` | pending | - |

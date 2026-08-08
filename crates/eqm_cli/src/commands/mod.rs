@@ -14,6 +14,7 @@ pub mod init_new;
 pub mod locate;
 pub mod lock;
 pub mod matrix;
+pub mod mcp;
 pub mod obligations;
 pub mod reconcile;
 pub mod release_check;

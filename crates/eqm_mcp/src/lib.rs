@@ -4,11 +4,15 @@
 
 mod resources;
 mod session;
+mod tools;
 
 pub use resources::{
     McpResource, McpResourceError, McpResourceUri, ResourceTrust, list_resources, read_resource,
 };
 pub use session::{McpSessionError, PreparedMcpSession};
+pub use tools::{
+    McpReadToolHandler, McpToolError, McpToolResult, ReadTool, call_read_tool, read_tool_schemas,
+};
 
 #[cfg(test)]
 mod tests {

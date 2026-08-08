@@ -19,6 +19,7 @@ use std::time::SystemTime;
 
 /// Inspects readiness without spawning runners, adapters, package tools, or VCS commands.
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
+    let _mcp_read_tools = super::mcp::CliReadToolHandler::new(start);
     let offline = parsed.global.offline;
     let explicit = parsed
         .global
