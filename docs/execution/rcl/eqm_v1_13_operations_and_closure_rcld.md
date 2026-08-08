@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 13: Operations And Closure
 
-Status: in progress; Step 132 complete
+Status: in progress; Step 133 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 12
-Current checkpoint: `step_133`
+Current checkpoint: `step_134`
 
 ## Purpose
 
@@ -97,4 +97,5 @@ until those values are supplied and verified.
 | `step_130` | complete | The agent guide defines authority and untrusted-data boundaries, prescribes bounded context/obligations/matrix/affected/check reads, preserves every non-success state, explains conservative inventory semantics, documents the default MCP read surface and paired invocation-only audited verify gate, confirms no waiver tool or prose authority exists, requires dry-run inspection and channel purity, and forbids unauthorized waiver/policy/trust/signing/evidence/publication mutation |
 | `step_131` | complete | `SECURITY.md` states current-major support, a safe disclosure fallback without inventing a contact, and the deliberately unassigned security-owner production gate; the threat model distinguishes hostile and trusted inputs, maps traversal/symlink, argv/env, flood/timeout/redaction, signature/replay/substitution, immutable evidence, and MCP escalation to mandatory tests, and states limits around OS behavior, untrusted programs, declared-secret redaction, external trust/retention, completeness, application security, legal approval, and organizational ownership |
 | `step_132` | complete | Bootstrap contribution prose is replaced with exact toolchain/router setup, repository boundaries, current-only/unsafe/generated-state rules, the real aggregate command and its gates, schema-generation ownership, exact dependency/lock expectations, commit/PR evidence, dual licensing, and release linkage; maintenance guidance defines shared semantic versioning, no-deprecation compatibility policy, synchronized generated artifacts, dependency/advisory/license/MSRV/SBOM review, candidate fuzz/scale/package gates, and explicit publication prerequisites, while README routes operators, agents, and reporters to the implemented guides |
-| `step_133`-`step_134` | pending | - |
+| `step_133` | complete | No-compat enforcement scans text and binary content across production source, schemas, ordinary docs, examples, fixtures, workflows, packaging, fuzz/benchmark packages, and arbitrary produced-artifact roots while narrowly excluding only the authority contract, encoded scanner tokens, and controlled negative corpus from the ordinary repository pass; negative self-tests prove both repository-inclusive and explicit artifact-root scans reject the forbidden corpus, and dry-run packaging scans its exact staged contents before archive creation |
+| `step_134` | pending | - |

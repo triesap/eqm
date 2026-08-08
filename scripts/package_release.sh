@@ -24,6 +24,7 @@ cargo metadata --format-version 1 --locked \
 jq -nS --arg commit "$(git rev-parse HEAD)" --arg lock "$(shasum -a 256 Cargo.lock | cut -d ' ' -f1)" \
   '{builder:"local-dry-run",source_commit:$commit,cargo_lock_sha256:$lock,production_signature:false}' \
   > "$root/provenance-inputs.json"
+bash scripts/check_no_legacy_names.sh "$root"
 find "$root" -exec touch -t 202608080000 {} +
 (
   cd "$staging"

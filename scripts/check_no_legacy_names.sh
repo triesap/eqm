@@ -3,6 +3,10 @@ set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
+roots=("$@")
+if [[ "${#roots[@]}" -eq 0 ]]; then
+  roots=(.)
+fi
 
 legacy_product='Feature''Matrix'
 legacy_cli='fm''tx'
@@ -13,6 +17,7 @@ forbidden_pattern="${legacy_product}|${legacy_cli}|${legacy_upper}|${legacy_hidd
 
 scan_args=(
   --hidden
+  --text
   --line-number
   --glob '!.git/**'
   --glob '!target/**'
@@ -24,7 +29,7 @@ if [[ "${EQM_NO_LEGACY_INCLUDE_NEGATIVE:-0}" != "1" ]]; then
   scan_args+=(--glob '!tests/fixtures/no_legacy/negative/**')
 fi
 
-if rg "${scan_args[@]}" "$forbidden_pattern" .; then
+if rg "${scan_args[@]}" "$forbidden_pattern" "${roots[@]}"; then
   echo "error: forbidden compatibility identifier detected" >&2
   exit 1
 fi

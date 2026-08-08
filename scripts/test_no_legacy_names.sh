@@ -10,3 +10,9 @@ if EQM_NO_LEGACY_INCLUDE_NEGATIVE=1 scripts/check_no_legacy_names.sh >/dev/null 
   echo "error: negative compatibility fixture was not rejected" >&2
   exit 1
 fi
+
+if EQM_NO_LEGACY_INCLUDE_NEGATIVE=1 scripts/check_no_legacy_names.sh \
+  tests/fixtures/no_legacy/negative >/dev/null 2>&1; then
+  echo "error: explicit produced-artifact scan accepted rejection data" >&2
+  exit 1
+fi
