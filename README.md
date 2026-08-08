@@ -13,7 +13,10 @@ EquivalenceMatrix is a deterministic product-conformance graph for establishing 
 
 See `CONTRIBUTING.md`.
 
+Operators should start with `docs/operator-guide.md`; automation guidance is in
+`docs/agent-guide.md`, and security controls/reporting are in `SECURITY.md` and
+`docs/threat-model.md`.
+
 ## License
 
 MIT OR Apache-2.0. See `LICENSE-MIT` and `LICENSE-APACHE`.
-
