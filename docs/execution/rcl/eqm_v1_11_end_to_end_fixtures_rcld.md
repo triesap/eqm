@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 11: End-To-End Fixtures
 
-Status: in progress; Step 117 complete
+Status: in progress; Step 118 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 10
-Current checkpoint: `step_118`
+Current checkpoint: `step_119`
 
 ## Purpose
 
@@ -72,4 +72,5 @@ CLI, MCP read-tool, golden, and deterministic repeated-output tests.
 | Step range | Status | Result |
 | --- | --- | --- |
 | `step_117` | complete | A standalone materialized signup corpus uses only current schemas and exact fragment pinning to define one capability, one journey, two surfaces, one fragment, atomic each-target and end-to-end requirements, three independently owned SvelteKit/SwiftUI/Compose targets and bindings, a closed profile, three-target policy, and bounded runner; its integration test builds an isolated VCS fixture, loads and resolves the graph, expands the independently fixed fragment digest, selects trusted policy/profile authority, and proves six target plus one target-set obligations with no unmatched warnings, while aggregate verification remains green |
-| `step_118`-`step_122` | pending | - |
+| `step_118` | complete | The web target contains a minimal idiomatic SvelteKit signup route whose email control and continuation state correspond to the binding, plus a current normalized Vitest evidence result with exact selector and one successful attempt; fixture tests parse the evidence through the production normalization boundary and assert the bound artifact shape, complementing the existing filesystem discovery/reconciliation corpus and aggregate structure/conformance lanes |
+| `step_119`-`step_122` | pending | - |
