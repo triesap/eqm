@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 13: Operations And Closure
 
-Status: in progress; Step 134 corrective completion audit active
+Status: complete; Steps 129-134 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 12
-Current checkpoint: step_134
+Current checkpoint: none
 
 ## Purpose
 
@@ -98,7 +98,7 @@ until those values are supplied and verified.
 | `step_131` | complete | `SECURITY.md` states current-major support, a safe disclosure fallback without inventing a contact, and the deliberately unassigned security-owner production gate; the threat model distinguishes hostile and trusted inputs, maps traversal/symlink, argv/env, flood/timeout/redaction, signature/replay/substitution, immutable evidence, and MCP escalation to mandatory tests, and states limits around OS behavior, untrusted programs, declared-secret redaction, external trust/retention, completeness, application security, legal approval, and organizational ownership |
 | `step_132` | complete | Bootstrap contribution prose is replaced with exact toolchain/router setup, repository boundaries, current-only/unsafe/generated-state rules, the real aggregate command and its gates, schema-generation ownership, exact dependency/lock expectations, commit/PR evidence, dual licensing, and release linkage; maintenance guidance defines shared semantic versioning, no-deprecation compatibility policy, synchronized generated artifacts, dependency/advisory/license/MSRV/SBOM review, candidate fuzz/scale/package gates, and explicit publication prerequisites, while README routes operators, agents, and reporters to the implemented guides |
 | `step_133` | complete | No-compat enforcement scans text and binary content across production source, schemas, ordinary docs, examples, fixtures, workflows, packaging, fuzz/benchmark packages, and arbitrary produced-artifact roots while narrowly excluding only the authority contract, encoded scanner tokens, and controlled negative corpus from the ordinary repository pass; negative self-tests prove both repository-inclusive and explicit artifact-root scans reject the forbidden corpus, and dry-run packaging scans its exact staged contents before archive creation |
-| `step_134` | in progress | A corrective completion audit withdrew the prior local acceptance claim after finding that several reported lanes used synthetic declarations instead of production entry points, the aggregate gate omitted mandatory lanes, and production limits did not fully match the normative security contract. The checkpoint remains active until every finding below is corrected and every mandatory lane is rerun. |
+| `step_134` | complete | The corrective audit findings were implemented and the replacement aggregate passed on candidate `d735f76f00286b28db5938ac0a65bdd14c549c15`: 140 authority decisions, 134 checkpoints, and 140 traceability rows reconciled; every public CLI/MCP/release path exercised; all mandatory security, schema, fixture, golden, property, dependency/license, cross-target lint, coverage, mutation, fuzz, performance, reproducible package, SBOM, provenance, clean-state, and diff gates passed; `docs/v1-acceptance-report.md` records exact observed results and bounded non-claims. |
 
 ## Corrective Completion Audit
 
@@ -121,12 +121,12 @@ close:
 - [x] measure cold validation, warm context, affected analysis, and peak memory
   through production code at the specified 10,000-unit/100,000-requirement
   scale;
-- make the final aggregate gate invoke every mandatory fixture, golden,
+- [x] make the final aggregate gate invoke every mandatory fixture, golden,
   property, fuzz, security, cross-platform, coverage/mutation, performance,
   dependency/license, package, CLI/MCP, and release lane;
 - [x] pin workflow dependencies immutably and add Linux, macOS, and Windows
   compilation, test, and lint jobs;
-- regenerate package/SBOM/provenance
+- [x] regenerate package/SBOM/provenance
   evidence; and
-- rerun requirement-by-requirement traceability and publish a replacement
+- [x] rerun requirement-by-requirement traceability and publish a replacement
   acceptance report containing only observed results.
