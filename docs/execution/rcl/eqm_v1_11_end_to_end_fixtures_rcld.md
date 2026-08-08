@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 11: End-To-End Fixtures
 
-Status: in progress; Step 120 complete
+Status: in progress; Step 121 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 10
-Current checkpoint: `step_121`
+Current checkpoint: `step_122`
 
 ## Purpose
 
@@ -75,4 +75,5 @@ CLI, MCP read-tool, golden, and deterministic repeated-output tests.
 | `step_118` | complete | The web target contains a minimal idiomatic SvelteKit signup route whose email control and continuation state correspond to the binding, plus a current normalized Vitest evidence result with exact selector and one successful attempt; fixture tests parse the evidence through the production normalization boundary and assert the bound artifact shape, complementing the existing filesystem discovery/reconciliation corpus and aggregate structure/conformance lanes |
 | `step_119` | complete | The iOS target contains an idiomatic SwiftUI form/navigation flow, a synthetic complete build-export inventory bound to the exact iOS target/build subject, and a current successful XCTest result whose selector matches the binding; fixture tests assert source shape, export target/completeness, and production evidence normalization alongside the existing SwiftUI inventory reconciliation lane |
 | `step_120` | complete | The Android target contains a minimal state-driven Kotlin/Compose-shaped signup screen, a synthetic complete Compose build-export inventory bound to the exact Android target/build subject, and a current successful JUnit result matching the binding; fixture tests assert source state behavior, target/completeness, and production evidence normalization alongside the existing Compose reconciliation lane |
-| `step_121`-`step_122` | pending | - |
+| `step_121` | complete | The signup corpus adds exact canonical release records for signed-CI pass, trusted-CI failure, and untrusted-local unknown scenarios plus the closed 0/1/7 exit table, synthetic-authority label, and conditional-only waiver rule; tests strictly deserialize each current record, independently remove its claimed digest and recompute canonical content identity, then assert the status table, while existing end-to-end release, runtime-facts, evidence freshness/trust, subject, and waiver engine/CLI lanes remain green |
+| `step_122` | pending | - |

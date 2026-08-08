@@ -1,0 +1,1 @@
+{"cases":[{"record":"pass.json","status":"pass","exit_code":0},{"record":"fail.json","status":"fail","exit_code":1},{"record":"unknown.json","status":"unknown","exit_code":7}],"authority":"synthetic fixture only","waiver_effect":"conditional_only"}
