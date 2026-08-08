@@ -161,20 +161,24 @@ fn adapter_request(
     target: &TargetId,
     target_root: &Path,
 ) -> Result<eqm_protocol::AdapterRequestDto, Box<dyn Error>> {
+    adapter_request_with_random(session, definition, target, target_root, |bytes| {
+        getrandom::fill(bytes).map_err(|_| "secure random source unavailable")
+    })
+}
+
+fn adapter_request_with_random(
+    session: &PreparedSession,
+    definition: &AdapterDefinition,
+    target: &TargetId,
+    target_root: &Path,
+    random: impl FnOnce(&mut [u8]) -> Result<(), &'static str>,
+) -> Result<eqm_protocol::AdapterRequestDto, Box<dyn Error>> {
     let repository = repository_identity(session.repository_root())?;
     let source_commit = git_output(session.repository_root(), &["rev-parse", "HEAD"])?;
-    let request_seed = format!(
-        "{}\0{}\0{}",
-        session.workspace_digest(),
-        definition.digest(),
-        target
-    );
+    let request_id = invocation_request_id(random)?;
     Ok(eqm_protocol::AdapterRequestDto {
         schema: ADAPTER_REQUEST_SCHEMA.to_string(),
-        request_id: format!(
-            "discover-{}",
-            Sha256Digest::hash_content(request_seed.as_bytes())
-        ),
+        request_id,
         adapter: definition.id().as_str().to_owned(),
         adapter_digest: definition.digest().to_string(),
         operation: AdapterOperationDto::Discover,
@@ -200,6 +204,18 @@ fn adapter_request(
             max_depth: MAX_DEPTH,
         },
     })
+}
+
+fn invocation_request_id(
+    random: impl FnOnce(&mut [u8]) -> Result<(), &'static str>,
+) -> Result<String, Box<dyn Error>> {
+    let mut request_random = [0_u8; 16];
+    random(&mut request_random)?;
+    let random_hex = request_random
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    Ok(format!("discover-{random_hex}"))
 }
 
 fn repository_identity(root: &Path) -> Result<RepositoryIdentity, Box<dyn Error>> {
@@ -307,14 +323,30 @@ fn context(offline: bool) -> Result<InvocationContextDto<(), ()>, Box<dyn Error>
     )?)
 }
 
-#[cfg(all(test, unix))]
+#[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use crate::cli::{ParseOutcome, parse};
+    #[cfg(unix)]
     use std::fs;
+    #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt as _;
 
     #[test]
+    fn invocation_id_uses_all_injected_128_random_bits() -> Result<(), Box<dyn Error>> {
+        let request_id = invocation_request_id(|bytes| {
+            for (index, byte) in bytes.iter_mut().enumerate() {
+                *byte = u8::try_from(index).map_err(|_| "test byte overflow")?;
+            }
+            Ok(())
+        })?;
+        assert_eq!(request_id, "discover-000102030405060708090a0b0c0d0e0f");
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(unix)]
     fn fake_adapter_is_invoked_only_through_its_exact_local_pin() -> Result<(), Box<dyn Error>> {
         let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let directory = tempfile::tempdir()?;
@@ -390,6 +422,7 @@ mod tests {
         })()
     }
 
+    #[cfg(unix)]
     fn copy_tree(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
         fs::create_dir_all(destination)?;
         for entry in fs::read_dir(source)? {
@@ -404,6 +437,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(unix)]
     fn git(root: &Path, arguments: &[&str]) -> Result<(), Box<dyn Error>> {
         if Command::new("git")
             .args(arguments)

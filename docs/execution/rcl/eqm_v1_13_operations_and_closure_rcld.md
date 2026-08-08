@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 13: Operations And Closure
 
-Status: complete; Steps 129-134 complete
+Status: in progress; Step 134 corrective completion audit active
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 12
-Current checkpoint: none
+Current checkpoint: step_134
 
 ## Purpose
 
@@ -98,4 +98,32 @@ until those values are supplied and verified.
 | `step_131` | complete | `SECURITY.md` states current-major support, a safe disclosure fallback without inventing a contact, and the deliberately unassigned security-owner production gate; the threat model distinguishes hostile and trusted inputs, maps traversal/symlink, argv/env, flood/timeout/redaction, signature/replay/substitution, immutable evidence, and MCP escalation to mandatory tests, and states limits around OS behavior, untrusted programs, declared-secret redaction, external trust/retention, completeness, application security, legal approval, and organizational ownership |
 | `step_132` | complete | Bootstrap contribution prose is replaced with exact toolchain/router setup, repository boundaries, current-only/unsafe/generated-state rules, the real aggregate command and its gates, schema-generation ownership, exact dependency/lock expectations, commit/PR evidence, dual licensing, and release linkage; maintenance guidance defines shared semantic versioning, no-deprecation compatibility policy, synchronized generated artifacts, dependency/advisory/license/MSRV/SBOM review, candidate fuzz/scale/package gates, and explicit publication prerequisites, while README routes operators, agents, and reporters to the implemented guides |
 | `step_133` | complete | No-compat enforcement scans text and binary content across production source, schemas, ordinary docs, examples, fixtures, workflows, packaging, fuzz/benchmark packages, and arbitrary produced-artifact roots while narrowly excluding only the authority contract, encoded scanner tokens, and controlled negative corpus from the ordinary repository pass; negative self-tests prove both repository-inclusive and explicit artifact-root scans reject the forbidden corpus, and dry-run packaging scans its exact staged contents before archive creation |
-| `step_134` | complete | Final acceptance reconciles all 134 checkpoints and 140 authority rows; aggregate, schema, no-compat, security, supply-chain, coverage, targeted critical mutation, fuzz, scale, package, CLI/MCP, and release-fixture lanes passed without suppressed failures, including closure fixes for explicit license policy and two initially surviving digest mutations; the report records toolchain/lock/artifact digests, commands and measured results, duplicate-free reproducible package/SBOM/provenance contents, no remote or signing action, the targeted (not exhaustive) mutation scope, and the remaining ownership/baseline/CI-signing/pilot/retention/namespace/legal inputs that prevent publication or production-readiness claims |
+| `step_134` | in progress | A corrective completion audit withdrew the prior local acceptance claim after finding that several reported lanes used synthetic declarations instead of production entry points, the aggregate gate omitted mandatory lanes, and production limits did not fully match the normative security contract. The checkpoint remains active until every finding below is corrected and every mandatory lane is rerun. |
+
+## Corrective Completion Audit
+
+The following findings are part of the active Step 134 scope. Earlier owning
+RCLDs remain historically complete, but their affected behavior must be
+corrected and their downstream evidence regenerated before this ledger can
+close:
+
+- enforce the normative MCP frame limit and secure invocation correlation IDs;
+- enforce the exact signed-CI trust profile at the verification boundary;
+- replace declared release outcomes with exercised pass, fail, and unknown
+  release-gate fixtures carrying runtime facts and immutable evidence;
+- replace hand-authored command samples with byte-compared outputs from real
+  CLI and MCP entry points;
+- fuzz production TOML, protocol, graph, adapter, inventory, evidence, and
+  canonicalization boundaries rather than generic parsers;
+- add direct adversarial assertions for every security-matrix case, including
+  stable diagnostics and secret non-disclosure;
+- measure cold validation, warm context, affected analysis, and peak memory
+  through production code at the specified 10,000-unit/100,000-requirement
+  scale;
+- make the final aggregate gate invoke every mandatory fixture, golden,
+  property, fuzz, security, cross-platform, coverage/mutation, performance,
+  dependency/license, package, CLI/MCP, and release lane;
+- pin workflow dependencies immutably and regenerate package/SBOM/provenance
+  evidence; and
+- rerun requirement-by-requirement traceability and publish a replacement
+  acceptance report containing only observed results.

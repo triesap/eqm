@@ -15,7 +15,7 @@ use std::time::SystemTime;
 
 /// The sole supported v1 MCP protocol revision.
 pub const MCP_PROTOCOL_VERSION: &str = "2025-06-18";
-const MAX_FRAME_BYTES: usize = 1024 * 1024;
+const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 
 /// Serves newline-delimited JSON-RPC until EOF without writing logs to protocol output.
 pub fn serve(
@@ -30,13 +30,11 @@ pub fn serve(
     let mut frame = Vec::new();
     loop {
         frame.clear();
-        let count = input
-            .read_until(b'\n', &mut frame)
-            .map_err(|_| McpServerError::Io)?;
+        let (count, oversized) = read_bounded_frame(&mut input, &mut frame)?;
         if count == 0 {
             break;
         }
-        if frame.len() > MAX_FRAME_BYTES {
+        if oversized {
             write_response(
                 &mut output,
                 error(Value::Null, -32600, "frame exceeds v1 limit"),
@@ -82,6 +80,45 @@ pub fn serve(
         }
     }
     Ok(())
+}
+
+fn read_bounded_frame(
+    input: &mut impl BufRead,
+    frame: &mut Vec<u8>,
+) -> Result<(usize, bool), McpServerError> {
+    let mut consumed = 0_usize;
+    let mut oversized = false;
+    loop {
+        let available = input.fill_buf().map_err(|_| McpServerError::Io)?;
+        if available.is_empty() {
+            oversized |= frame.len() > MAX_FRAME_BYTES;
+            return Ok((consumed, oversized));
+        }
+        let end = available
+            .iter()
+            .position(|byte| *byte == b'\n')
+            .map_or(available.len(), |index| index + 1);
+        consumed = consumed.saturating_add(end);
+        if !oversized {
+            let remaining = (MAX_FRAME_BYTES + 2).saturating_sub(frame.len());
+            let copied = end.min(remaining);
+            frame.extend_from_slice(&available[..copied]);
+            oversized = copied < end;
+        }
+        let ended = available[..end].last() == Some(&b'\n');
+        input.consume(end);
+        if ended {
+            let payload_len = frame
+                .strip_suffix(b"\n")
+                .and_then(|value| value.strip_suffix(b"\r").or(Some(value)))
+                .map_or(frame.len(), <[u8]>::len);
+            oversized |= payload_len > MAX_FRAME_BYTES;
+            return Ok((consumed, oversized));
+        }
+        if frame.len() > MAX_FRAME_BYTES + 1 {
+            oversized = true;
+        }
+    }
 }
 
 fn dispatch(
@@ -275,6 +312,7 @@ impl Error for McpServerError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Cursor;
 
     #[test]
     fn unsupported_version_and_malformed_frames_fail_as_pure_json() {
@@ -285,5 +323,37 @@ mod tests {
         for response in responses {
             assert!(serde_json::to_vec(&response).is_ok());
         }
+    }
+
+    #[test]
+    fn bounded_reader_accepts_limit_and_discards_oversized_remainder() -> Result<(), McpServerError>
+    {
+        let mut input = vec![b'x'; MAX_FRAME_BYTES];
+        input.push(b'\n');
+        input.extend_from_slice(&vec![b'y'; MAX_FRAME_BYTES + 1]);
+        input.push(b'\n');
+        input.extend_from_slice(b"{}\n");
+        let mut input = Cursor::new(input);
+        let mut frame = Vec::new();
+
+        let (_, oversized) = read_bounded_frame(&mut input, &mut frame)?;
+        assert!(!oversized);
+        assert_eq!(frame.len(), MAX_FRAME_BYTES + 1);
+
+        frame.clear();
+        let (_, oversized) = read_bounded_frame(&mut input, &mut frame)?;
+        assert!(oversized);
+        assert_eq!(frame.len(), MAX_FRAME_BYTES + 2);
+
+        frame.clear();
+        let (_, oversized) = read_bounded_frame(&mut input, &mut frame)?;
+        assert!(!oversized);
+        assert_eq!(frame, b"{}\n");
+
+        let mut input = Cursor::new(vec![b'z'; MAX_FRAME_BYTES + 1]);
+        frame.clear();
+        let (_, oversized) = read_bounded_frame(&mut input, &mut frame)?;
+        assert!(oversized);
+        Ok(())
     }
 }

@@ -1,5 +1,11 @@
 # EquivalenceMatrix v1 local acceptance report
 
+> **Withdrawn:** a corrective completion audit found that this report
+> overstated several verification lanes. It is retained as historical input
+> while Step 134 is active and must not be used as acceptance evidence. A
+> replacement report will be generated only after every corrective finding and
+> mandatory lane passes through its production boundary.
+
 Date: 2026-08-08
 
 Acceptance candidate base: `1c439e78f34c1b0a5bd09136a8b6799b797ff90f`

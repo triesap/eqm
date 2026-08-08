@@ -7,7 +7,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-const MAX_SIGNATURE_BYTES: usize = 16 * 1024;
+const ED25519_SIGNATURE_BYTES: usize = 64;
+const ED25519_ALGORITHM: &str = "ed25519";
 
 /// Bounded detached signature metadata supplied with a CI result.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -118,17 +119,15 @@ pub fn import_ci_delegated_result(
 }
 
 fn validate_signature_metadata(signature: &CiSignature) -> Result<(), CiImportError> {
-    if signature.key_id.is_empty()
-        || signature.key_id.len() > 512
-        || signature.algorithm.is_empty()
-        || signature.algorithm.len() > 64
-        || signature.signature.is_empty()
-        || signature.signature.len() > MAX_SIGNATURE_BYTES
-        || signature
-            .key_id
-            .chars()
-            .chain(signature.algorithm.chars())
-            .any(char::is_control)
+    let key_id = signature.key_id.as_ref();
+    let valid_key_id = key_id.len() == 71
+        && key_id.starts_with("sha256:")
+        && key_id[7..]
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
+    if !valid_key_id
+        || signature.algorithm.as_ref() != ED25519_ALGORITHM
+        || signature.signature.len() != ED25519_SIGNATURE_BYTES
     {
         return Err(CiImportError::InvalidSignatureMetadata);
     }
@@ -232,7 +231,8 @@ mod tests {
         let dto = EvidenceResultDto::from_json(bytes)?;
         Ok((
             CiSignature {
-                key_id: "ci-key".into(),
+                key_id: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    .into(),
                 algorithm: "ed25519".into(),
                 signature: vec![1; 64],
             },
@@ -241,7 +241,9 @@ mod tests {
                 subject: dto.subject,
                 producer: "producer://ci/actions/run-1".parse()?,
                 minimum_trust: TrustLevel::SignedCi,
-                trusted_signers: BTreeSet::from([Box::from("ci-key")]),
+                trusted_signers: BTreeSet::from([Box::from(
+                    "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                )]),
             },
         ))
     }
@@ -296,6 +298,37 @@ mod tests {
         assert_eq!(
             import_ci_delegated_result(&bytes, &signature, &authority, &valid, &mut replay),
             Err(CiImportError::SubjectMismatch)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn unsupported_signature_profiles_fail_before_verifier() -> Result<(), Box<dyn Error>> {
+        let bytes = evidence()?;
+        let (mut signature, authority) = inputs(&bytes)?;
+        let verifier = Verifier {
+            trust: TrustLevel::SignedCi,
+            wrong_payload: false,
+        };
+        let mut replay = CiReplayGuard::default();
+
+        signature.algorithm = "rsa-pss".into();
+        assert_eq!(
+            import_ci_delegated_result(&bytes, &signature, &authority, &verifier, &mut replay),
+            Err(CiImportError::InvalidSignatureMetadata)
+        );
+        signature.algorithm = ED25519_ALGORITHM.into();
+        signature.key_id = "ci-key".into();
+        assert_eq!(
+            import_ci_delegated_result(&bytes, &signature, &authority, &verifier, &mut replay),
+            Err(CiImportError::InvalidSignatureMetadata)
+        );
+        signature.key_id =
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into();
+        signature.signature.pop();
+        assert_eq!(
+            import_ci_delegated_result(&bytes, &signature, &authority, &verifier, &mut replay),
+            Err(CiImportError::InvalidSignatureMetadata)
         );
         Ok(())
     }

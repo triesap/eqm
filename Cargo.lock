@@ -103,6 +103,7 @@ dependencies = [
  "eqm_mcp",
  "eqm_protocol",
  "eqm_runner",
+ "getrandom",
  "serde",
  "serde_json",
  "serde_json_canonicalizer",
