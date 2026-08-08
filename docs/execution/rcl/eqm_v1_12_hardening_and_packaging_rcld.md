@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 12: Hardening And Packaging
 
-Status: in progress; Step 126 complete
+Status: in progress; Step 127 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 11
-Current checkpoint: `step_127`
+Current checkpoint: `step_128`
 
 ## Purpose
 
@@ -77,4 +77,5 @@ target blocks the checkpoint unless authority explicitly narrows the claim.
 | `step_124` | complete | A standalone non-publishable cargo-fuzz package pins `libfuzzer-sys` and supplies buildable TOML, common protocol envelope, adapter response, inventory response, normalized evidence, JSON canonicalization, and 1 MiB-bounded graph-input targets; the documented smoke command fixes run and timeout bounds, every target compiles under the pinned Rust toolchain, and a 1,000-run smoke campaign per target completed without crash, panic, timeout, or retained artifact |
 | `step_125` | complete | A mandatory 12-case adversarial matrix maps traversal, symlink escape, argv injection, inherited environment, output flood, timeout, secret redaction, signature tamper, replay, subject substitution, immutable collision, and MCP execution authority to concrete fail-closed tests; its verifier requires every source and exact test function to exist and is part of the aggregate lane, consolidating the existing runner, domain, persistence, CI import, and MCP security corpus without suppressing any failure |
 | `step_126` | complete | A non-publishable deterministic release-mode scale probe constructs 10,000 stable unit keys and 100,000 requirement coordinates, measures cold construction/validation, warm context lookup, conservative 20,000-coordinate affected expansion, canonical serialization/digesting, and a conservative memory upper bound, and fails the documented 10s/250ms/2s/1GiB ceilings; the recorded 8-core-or-better local reference run passed all thresholds and emitted a replayable fixture digest without committing environment-specific raw timing |
-| `step_127`-`step_128` | pending | - |
+| `step_127` | complete | Mandatory parity verification regenerates all 21 manifest/protocol schemas into an isolated directory and requires a byte-clean diff, then independently requires 21 unique `$id` authorities and proves every current schema URI used by authored examples and the signup corpus maps to that exact inventory; an explicit nonexistent-current URI self-check remains rejected, and parity runs unsuppressed inside the aggregate lane with the loader's positive/negative examples and URI tests |
+| `step_128` | pending | - |

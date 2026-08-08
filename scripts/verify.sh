@@ -9,6 +9,7 @@ bash scripts/test_no_legacy_names.sh
 bash scripts/test_validate_authority.sh
 bash scripts/check_security_matrix.sh
 bash scripts/check_schemas.sh
+bash scripts/check_schema_parity.sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
 cargo test --workspace --all-targets --locked
