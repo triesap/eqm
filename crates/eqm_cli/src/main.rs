@@ -29,7 +29,9 @@ fn main() -> ExitCode {
             if reporter.progress("rendering command result").is_err() {
                 return ExitCode::from(6);
             }
-            let execution = if matches!(
+            let execution = if command == cli::CommandName::Explain {
+                commands::explain::execute(parsed)
+            } else if matches!(
                 command,
                 cli::CommandName::Validate
                     | cli::CommandName::Check

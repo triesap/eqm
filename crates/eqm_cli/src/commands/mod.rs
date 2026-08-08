@@ -7,6 +7,7 @@ pub mod context;
 pub mod diff;
 pub mod discover;
 pub mod evaluation;
+pub mod explain;
 pub mod locate;
 pub mod matrix;
 pub mod obligations;
