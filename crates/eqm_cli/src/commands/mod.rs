@@ -12,6 +12,7 @@ pub mod explain;
 pub mod fmt;
 pub mod init_new;
 pub mod locate;
+pub mod lock;
 pub mod matrix;
 pub mod obligations;
 pub mod reconcile;

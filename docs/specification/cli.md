@@ -52,7 +52,7 @@ command's mutability contract permits it.
 | `release check` | none | required `--release-record`; release profile required | exact release evaluation |
 | `explain` | `EQM-E####` | none | diagnostic registry query |
 | `doctor` | none | none | non-executing environment and repository checks |
-| `lock update` | none | optional repeatable `--import`, `--adapter`; `--dry-run` false | sole remote acquisition boundary |
+| `lock update` | none | optional repeatable `--import ID@REVISION`, `--adapter ID@VERSION=PATH`; `--dry-run` false | sole acquisition boundary; v1 accepts exact local authority only |
 | `mcp serve` | none | `--allow-verify` false; optional `--audit-output` | local stdio MCP server |
 
 `KIND` for `new` is one of `capability`, `journey`, `surface`, `fragment`,

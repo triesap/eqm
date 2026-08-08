@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 09: Verification And Mutation
 
-Status: in progress; Step 110 complete
+Status: complete; Steps 104-111 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 08
-Current checkpoint: `step_111`
+Current checkpoint: none
 
 ## Purpose
 
@@ -85,4 +85,4 @@ workspace cleanliness assertions.
 | `step_108` | complete | `doctor` performs a deterministic read-only readiness inspection without spawning VCS, package, runner, or adapter processes; it checks strict configuration selection, exact offline lock pins, finalized workspace authority, consistent pinned Rust and required components, ignored/confined/bounded generated state, and the repository no-legacy contract, returning sorted typed checks and a blocking result when any required condition is unhealthy |
 | `step_109` | complete | `init` plans or atomically creates a collision-free empty current-schema workspace and exact lockfile, validates the completed graph, and rolls back both files and a newly created destination on failure; `new` validates the closed authority kind and typed ID, derives a stable current-schema source path and comment-preserving TOML scaffold for every approved kind, supports write-free dry-run, refuses collisions and symlink parents, uses create-new atomic persistence, validates the resulting workspace, and removes a failed authority without leaving partial authored state |
 | `step_110` | complete | `fmt` deterministically selects explicit confined TOML paths or every discovered authority plus workspace and lock files, rejects symlinks and oversized or non-TOML inputs, computes every comment-preserving semantics-safe formatting result before mutation, supports write-free dry-run and drift-reporting check mode, atomically stages and replaces the complete changed set with rollback of earlier replacements on a late failure, preserves permissions and comments, and is idempotent after a successful write |
-| `step_111` | pending | - |
+| `step_111` | complete | `lock update` is the explicit exact-pin boundary with documented `ID@REVISION` local fragment imports and `ID@VERSION=PATH` local adapter artifacts, prepares existing authority before acquisition, rejects floating or nonlocal forms, derives semantic fragment and raw adapter SHA-256 digests, binds the configured HTTPS repository identity and exact current commit, preserves validated optional metadata for untouched pins, renders imports and adapters in deterministic key order, supports offline-local dry-run without writes, and atomically replaces then revalidates or restores `eqm.lock` |

@@ -248,7 +248,7 @@ fn validate_subject_binding(
     Ok(())
 }
 
-fn repository_identity(root: &Path) -> Result<String, Box<dyn Error>> {
+pub(super) fn repository_identity(root: &Path) -> Result<String, Box<dyn Error>> {
     let remote = git_output(root, &["remote", "get-url", "origin"])?;
     let normalized = if let Some(path) = remote.strip_prefix("git@github.com:") {
         format!("https://github.com/{}", path.trim_end_matches(".git"))
@@ -259,7 +259,7 @@ fn repository_identity(root: &Path) -> Result<String, Box<dyn Error>> {
     Ok(normalized)
 }
 
-fn git_output(root: &Path, arguments: &[&str]) -> Result<String, Box<dyn Error>> {
+pub(super) fn git_output(root: &Path, arguments: &[&str]) -> Result<String, Box<dyn Error>> {
     let output = Command::new("git")
         .args(arguments)
         .current_dir(root)

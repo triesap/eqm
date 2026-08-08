@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 10: MCP
 
-Status: planned; blocked by RCLD 09
+Status: in progress; RCLD 09 complete
 Created: 2026-08-07
-Updated: 2026-08-07
+Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 09
-Current checkpoint: none
+Current checkpoint: `step_112`
 
 ## Purpose
 
