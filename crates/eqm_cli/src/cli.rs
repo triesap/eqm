@@ -653,6 +653,13 @@ fn validate_command(
     if options.contains_key("--check") && options.contains_key("--dry-run") {
         return Err(usage("fmt --check cannot be combined with --dry-run"));
     }
+    if name == CommandName::McpServe
+        && options.contains_key("--allow-verify") != options.contains_key("--audit-output")
+    {
+        return Err(usage(
+            "mcp serve requires --allow-verify and --audit-output together",
+        ));
+    }
     if name == CommandName::New
         && !matches!(
             operands[0].as_str(),
@@ -845,6 +852,8 @@ mod tests {
             vec!["validate", "--baseline", "abc"],
             vec!["new", "unknown", "id"],
             vec!["--profile", "release=cohort:a,cohort:b", "validate"],
+            vec!["mcp", "serve", "--allow-verify"],
+            vec!["mcp", "serve", "--audit-output", "audit.jsonl"],
         ] {
             assert!(parse(arguments).is_err());
         }

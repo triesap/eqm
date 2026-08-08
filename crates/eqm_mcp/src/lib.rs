@@ -13,7 +13,8 @@ pub use resources::{
 pub use server::{MCP_PROTOCOL_VERSION, McpServerError, serve};
 pub use session::{McpSessionError, PreparedMcpSession};
 pub use tools::{
-    McpReadToolHandler, McpToolError, McpToolResult, ReadTool, call_read_tool, read_tool_schemas,
+    McpReadToolHandler, McpToolError, McpToolResult, ReadTool, call_read_tool, call_verify_tool,
+    read_tool_schemas, verify_tool_schema,
 };
 
 #[cfg(test)]

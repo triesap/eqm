@@ -1,10 +1,11 @@
 //! Current-version line-framed JSON-RPC MCP stdio server.
 
 use crate::{
-    McpReadToolHandler, McpResourceUri, PreparedMcpSession, call_read_tool, list_resources,
-    read_resource, read_tool_schemas,
+    McpReadToolHandler, McpResourceUri, PreparedMcpSession, call_read_tool, call_verify_tool,
+    list_resources, read_resource, read_tool_schemas, verify_tool_schema,
 };
 use chrono::{DateTime, SecondsFormat, Utc};
+use eqm_domain::Sha256Digest;
 use eqm_domain::UtcInstant;
 use serde_json::{Map, Value, json};
 use std::error::Error;
@@ -22,6 +23,8 @@ pub fn serve(
     handler: &impl McpReadToolHandler,
     mut input: impl BufRead,
     mut output: impl Write,
+    allow_verify: bool,
+    mut audit: Option<&mut dyn Write>,
 ) -> Result<(), McpServerError> {
     let mut initialized = false;
     let mut frame = Vec::new();
@@ -66,7 +69,14 @@ pub fn serve(
         };
         let id = object.get("id").cloned();
         let notification = id.is_none();
-        let response = dispatch(session, handler, object, &mut initialized);
+        let response = dispatch(
+            session,
+            handler,
+            object,
+            &mut initialized,
+            allow_verify,
+            &mut audit,
+        );
         if !notification {
             write_response(&mut output, response.unwrap_or_else(|response| response))?;
         }
@@ -79,6 +89,8 @@ fn dispatch(
     handler: &impl McpReadToolHandler,
     object: &Map<String, Value>,
     initialized: &mut bool,
+    allow_verify: bool,
+    audit: &mut Option<&mut dyn Write>,
 ) -> Result<Value, Value> {
     let id = object.get("id").cloned().unwrap_or(Value::Null);
     if object
@@ -144,10 +156,16 @@ fn dispatch(
                 json!({"contents":[{"uri":resource.uri.to_string(),"mimeType":"application/json","text":resource.text}]}),
             ))
         }
-        "tools/list" => Ok(success(
-            id,
-            json!({"tools":read_tool_schemas().into_iter().map(|(name, input_schema)| json!({"name":name,"inputSchema":input_schema})).collect::<Vec<_>>() }),
-        )),
+        "tools/list" => {
+            let mut tools = read_tool_schemas()
+                .into_iter()
+                .map(|(name, input_schema)| json!({"name":name,"inputSchema":input_schema}))
+                .collect::<Vec<_>>();
+            if allow_verify {
+                tools.push(json!({"name":"eqm_verify","inputSchema":verify_tool_schema()}));
+            }
+            Ok(success(id, json!({"tools":tools})))
+        }
         "tools/call" => {
             let params = params
                 .as_object()
@@ -166,8 +184,29 @@ fn dispatch(
                 .get("arguments")
                 .cloned()
                 .unwrap_or_else(|| json!({}));
-            let result = call_read_tool(handler, name, &arguments)
-                .map_err(|_| error(id.clone(), -32602, "tool call rejected"))?;
+            let result = if name == "eqm_verify" {
+                if !allow_verify || audit.is_none() {
+                    return Err(error(id, -32601, "tool not available"));
+                }
+                write_audit(session, audit, &arguments, "authorized")
+                    .map_err(|_| error(id.clone(), -32603, "audit unavailable"))?;
+                let result = call_verify_tool(handler, &arguments);
+                write_audit(
+                    session,
+                    audit,
+                    &arguments,
+                    if result.is_ok() {
+                        "executed"
+                    } else {
+                        "rejected"
+                    },
+                )
+                .map_err(|_| error(id.clone(), -32603, "audit unavailable"))?;
+                result.map_err(|_| error(id.clone(), -32602, "tool call rejected"))?
+            } else {
+                call_read_tool(handler, name, &arguments)
+                    .map_err(|_| error(id.clone(), -32602, "tool call rejected"))?
+            };
             Ok(success(
                 id,
                 json!({"content":[],"structuredContent":result.structured_content,"isError":false}),
@@ -175,6 +214,26 @@ fn dispatch(
         }
         _ => Err(error(id, -32601, "method not found")),
     }
+}
+
+fn write_audit(
+    session: &PreparedMcpSession<'_>,
+    audit: &mut Option<&mut dyn Write>,
+    arguments: &Value,
+    decision: &str,
+) -> Result<(), McpServerError> {
+    let request = serde_json::to_vec(arguments).map_err(|_| McpServerError::Protocol)?;
+    let record = json!({
+        "tool":"eqm_verify",
+        "decision":decision,
+        "request_digest":Sha256Digest::hash_content(&request).to_string(),
+        "workspace_digest":session.workspace_digest().to_string()
+    });
+    let mut bytes = serde_json::to_vec(&record).map_err(|_| McpServerError::Protocol)?;
+    bytes.push(b'\n');
+    let sink = audit.as_deref_mut().ok_or(McpServerError::Io)?;
+    sink.write_all(&bytes).map_err(|_| McpServerError::Io)?;
+    sink.flush().map_err(|_| McpServerError::Io)
 }
 
 fn success(id: Value, result: Value) -> Value {

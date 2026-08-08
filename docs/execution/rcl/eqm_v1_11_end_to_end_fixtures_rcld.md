@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 11: End-To-End Fixtures
 
-Status: planned; blocked by RCLD 10
+Status: in progress; Step 116 dependency complete
 Created: 2026-08-07
-Updated: 2026-08-07
+Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 10
-Current checkpoint: none
+Current checkpoint: `step_117`
 
 ## Purpose
 

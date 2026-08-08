@@ -39,6 +39,11 @@ impl ReadTool {
 pub trait McpReadToolHandler {
     /// Invokes one already validated read-only tool.
     fn invoke(&self, tool: ReadTool, input: &Value) -> Result<Value, McpToolError>;
+
+    /// Invokes the separately authorized evidence-executing tool.
+    fn invoke_verify(&self, _input: &Value) -> Result<Value, McpToolError> {
+        Err(McpToolError::Invocation)
+    }
 }
 
 /// Structured authoritative tool result.
@@ -70,6 +75,23 @@ pub fn read_tool_schemas() -> BTreeMap<&'static str, Value> {
     .into_iter()
     .map(|(tool, schema)| (tool.name(), schema))
     .collect()
+}
+
+/// Returns the closed schema for the separately authorized verify tool.
+#[must_use]
+pub fn verify_tool_schema() -> Value {
+    schema(&[], &["unit", "target", "affected", "baseline", "dry_run"])
+}
+
+/// Validates and invokes an already authorized verify request.
+pub fn call_verify_tool(
+    handler: &impl McpReadToolHandler,
+    input: &Value,
+) -> Result<McpToolResult, McpToolError> {
+    validate_verify_input(input)?;
+    let structured_content = handler.invoke_verify(input)?;
+    validate_command_envelope("verify", &structured_content)?;
+    Ok(McpToolResult { structured_content })
 }
 
 /// Validates a closed input, delegates to shared CLI orchestration, and validates its envelope.
@@ -127,8 +149,30 @@ fn validate_input(tool: ReadTool, input: &Value) -> Result<(), McpToolError> {
     Ok(())
 }
 
+fn validate_verify_input(input: &Value) -> Result<(), McpToolError> {
+    let object = input.as_object().ok_or(McpToolError::InvalidInput)?;
+    let allowed = ["unit", "target", "affected", "baseline", "dry_run"];
+    if object.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return Err(McpToolError::InvalidInput);
+    }
+    for (key, value) in object {
+        let valid = match key.as_str() {
+            "affected" | "dry_run" => value.is_boolean(),
+            _ => value.as_str().is_some_and(|value| !value.is_empty()),
+        };
+        if !valid {
+            return Err(McpToolError::InvalidInput);
+        }
+    }
+    if object.get("affected").and_then(Value::as_bool) == Some(true)
+        && !object.contains_key("baseline")
+    {
+        return Err(McpToolError::InvalidInput);
+    }
+    Ok(())
+}
+
 fn validate_envelope(tool: ReadTool, value: &Value) -> Result<(), McpToolError> {
-    let object = value.as_object().ok_or(McpToolError::InvalidResult)?;
     let command = match tool {
         ReadTool::Context => "context",
         ReadTool::Matrix => "matrix",
@@ -136,6 +180,11 @@ fn validate_envelope(tool: ReadTool, value: &Value) -> Result<(), McpToolError> 
         ReadTool::Check => "check",
         ReadTool::Explain => "explain",
     };
+    validate_command_envelope(command, value)
+}
+
+fn validate_command_envelope(command: &str, value: &Value) -> Result<(), McpToolError> {
+    let object = value.as_object().ok_or(McpToolError::InvalidResult)?;
     if object.get("schema").and_then(Value::as_str) != Some(&RESULT_SCHEMA.to_string())
         || object.get("command").and_then(Value::as_str) != Some(command)
         || object.get("result").is_none()
@@ -151,6 +200,7 @@ fn schema(required: &[&str], allowed: &[&str]) -> Value {
         .map(|name| {
             let property = match *name {
                 "max_bytes" | "max_depth" => json!({"type":"integer","minimum":1}),
+                "affected" | "dry_run" => json!({"type":"boolean"}),
                 "paths" | "units" | "targets" => {
                     json!({"type":"array","items":{"type":"string"},"uniqueItems":true})
                 }
@@ -213,5 +263,12 @@ mod tests {
             call_read_tool(&Handler, "eqm_unknown", &json!({})),
             Err(McpToolError::UnknownTool)
         );
+        assert!(
+            !read_tool_schemas()
+                .keys()
+                .any(|name| name.contains("waiver"))
+        );
+        assert_eq!(verify_tool_schema()["additionalProperties"], false);
+        assert!(call_verify_tool(&Handler, &json!({"dry_run":true})).is_err());
     }
 }

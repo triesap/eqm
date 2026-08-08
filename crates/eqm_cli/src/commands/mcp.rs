@@ -4,6 +4,7 @@ use crate::cli::{ParseOutcome, ParsedCli, parse};
 use crate::commands;
 use eqm_mcp::{McpReadToolHandler, McpToolError, ReadTool};
 use serde_json::Value;
+use std::fs::{self, OpenOptions};
 use std::io::{self, BufReader};
 use std::path::Path;
 
@@ -29,17 +30,45 @@ impl McpReadToolHandler for CliReadToolHandler<'_> {
         };
         execute(parsed, self.start).map_err(|_| McpToolError::Invocation)
     }
+
+    fn invoke_verify(&self, input: &Value) -> Result<Value, McpToolError> {
+        let arguments = verify_arguments(input)?;
+        let ParseOutcome::Run(parsed) = parse(arguments).map_err(|_| McpToolError::InvalidInput)?
+        else {
+            return Err(McpToolError::InvalidInput);
+        };
+        execute(parsed, self.start).map_err(|_| McpToolError::Invocation)
+    }
 }
 
 /// Runs the current MCP server directly over process stdio.
 pub fn serve_stdio(parsed: ParsedCli, start: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let allow_verify = parsed.command.options.contains_key("--allow-verify");
+    let audit_path = parsed
+        .command
+        .options
+        .get("--audit-output")
+        .and_then(|values| values.first())
+        .and_then(Option::as_deref)
+        .map(str::to_owned);
     let request = crate::session::SessionRequest::new(parsed.global, parsed.command.name);
     let session = crate::session::prepare(&request, start)?;
     let mcp = session.mcp_session()?;
     let handler = CliReadToolHandler::new(start);
+    let mut audit = audit_path
+        .as_deref()
+        .map(|path| open_audit(mcp.repository_root(), path))
+        .transpose()?;
     let stdin = io::stdin();
     let stdout = io::stdout();
-    eqm_mcp::serve(&mcp, &handler, BufReader::new(stdin.lock()), stdout.lock())?;
+    eqm_mcp::serve(
+        &mcp,
+        &handler,
+        BufReader::new(stdin.lock()),
+        stdout.lock(),
+        allow_verify,
+        audit.as_mut().map(|file| file as &mut dyn io::Write),
+    )?;
     Ok(())
 }
 
@@ -51,9 +80,52 @@ fn execute(parsed: ParsedCli, start: &Path) -> Result<Value, Box<dyn std::error:
         crate::cli::CommandName::Affected => commands::affected::execute(parsed, start)?,
         crate::cli::CommandName::Check => commands::check::execute(parsed, start)?,
         crate::cli::CommandName::Explain => commands::explain::execute(parsed)?,
-        _ => return Err("non-read command reached MCP handler".into()),
+        crate::cli::CommandName::Verify => commands::verify::execute(parsed, start)?,
+        _ => return Err("unsupported command reached MCP handler".into()),
     };
     Ok(execution.payload.json)
+}
+
+fn verify_arguments(input: &Value) -> Result<Vec<String>, McpToolError> {
+    let object = input.as_object().ok_or(McpToolError::InvalidInput)?;
+    let mut arguments = vec!["verify".to_owned()];
+    for (field, option) in [
+        ("unit", "--unit"),
+        ("target", "--target"),
+        ("baseline", "--baseline"),
+    ] {
+        if let Some(value) = object.get(field) {
+            arguments.extend([
+                option.to_owned(),
+                value.as_str().ok_or(McpToolError::InvalidInput)?.to_owned(),
+            ]);
+        }
+    }
+    for (field, option) in [("affected", "--affected"), ("dry_run", "--dry-run")] {
+        if object.get(field).and_then(Value::as_bool) == Some(true) {
+            arguments.push(option.to_owned());
+        }
+    }
+    Ok(arguments)
+}
+
+fn open_audit(root: &Path, relative: &str) -> Result<std::fs::File, Box<dyn std::error::Error>> {
+    let relative = eqm_domain::RepoPath::new(relative)?;
+    let root = root.canonicalize()?;
+    let mut current = root.clone();
+    let components = relative.as_str().split('/').collect::<Vec<_>>();
+    for component in &components[..components.len().saturating_sub(1)] {
+        current.push(component);
+        let metadata = fs::symlink_metadata(&current)?;
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            return Err("audit path parent must be a regular repository directory".into());
+        }
+    }
+    let path = root.join(relative.as_str());
+    if fs::symlink_metadata(&path).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
+        return Err("audit path must not be a symlink".into());
+    }
+    Ok(OpenOptions::new().create(true).append(true).open(path)?)
 }
 
 fn arguments(tool: ReadTool, input: &Value) -> Result<Vec<String>, McpToolError> {
@@ -188,7 +260,7 @@ mod tests {
             .join("\n")
             + "\n";
         let mut output = Vec::new();
-        eqm_mcp::serve(&mcp, &handler, Cursor::new(input), &mut output)?;
+        eqm_mcp::serve(&mcp, &handler, Cursor::new(input), &mut output, false, None)?;
         let text = String::from_utf8(output)?;
         let responses = text
             .lines()
@@ -212,6 +284,81 @@ mod tests {
             responses[3]["result"]["structuredContent"]["command"],
             "explain"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn verify_is_default_denied_and_explicit_authority_is_audited()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let request = crate::session::SessionRequest::new(
+            Default::default(),
+            crate::cli::CommandName::McpServe,
+        );
+        let session = crate::session::prepare(&request, &root)?;
+        let mcp = session.mcp_session()?;
+        let handler = CliReadToolHandler::new(&root);
+        let input = |id| {
+            [
+                json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":eqm_mcp::MCP_PROTOCOL_VERSION}}),
+                json!({"jsonrpc":"2.0","id":id,"method":"tools/list","params":{}}),
+                json!({"jsonrpc":"2.0","id":id + 1,"method":"tools/call","params":{"name":"eqm_verify","arguments":{"dry_run":true}}}),
+            ]
+            .iter()
+            .map(serde_json::to_string)
+            .collect::<Result<Vec<_>, _>>()
+            .map(|frames| frames.join("\n") + "\n")
+        };
+
+        let mut denied_output = Vec::new();
+        eqm_mcp::serve(
+            &mcp,
+            &handler,
+            Cursor::new(input(2)?),
+            &mut denied_output,
+            false,
+            None,
+        )?;
+        let denied = String::from_utf8(denied_output)?
+            .lines()
+            .map(serde_json::from_str::<Value>)
+            .collect::<Result<Vec<_>, _>>()?;
+        assert_eq!(
+            denied[1]["result"]["tools"].as_array().map(Vec::len),
+            Some(5)
+        );
+        assert_eq!(denied[2]["error"]["code"], -32601);
+
+        let mut allowed_output = Vec::new();
+        let mut audit = Vec::new();
+        eqm_mcp::serve(
+            &mcp,
+            &handler,
+            Cursor::new(input(5)?),
+            &mut allowed_output,
+            true,
+            Some(&mut audit),
+        )?;
+        let allowed = String::from_utf8(allowed_output)?
+            .lines()
+            .map(serde_json::from_str::<Value>)
+            .collect::<Result<Vec<_>, _>>()?;
+        assert_eq!(
+            allowed[1]["result"]["tools"].as_array().map(Vec::len),
+            Some(6)
+        );
+        assert_eq!(
+            allowed[2]["result"]["structuredContent"]["command"],
+            "verify"
+        );
+        let audit = String::from_utf8(audit)?
+            .lines()
+            .map(serde_json::from_str::<Value>)
+            .collect::<Result<Vec<_>, _>>()?;
+        assert_eq!(audit.len(), 2);
+        assert_eq!(audit[0]["decision"], "authorized");
+        assert_eq!(audit[1]["decision"], "executed");
+        assert!(audit.iter().all(|record| record["tool"] == "eqm_verify"));
         Ok(())
     }
 }

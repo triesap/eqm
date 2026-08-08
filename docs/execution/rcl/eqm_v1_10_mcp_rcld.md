@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 10: MCP
 
-Status: in progress; Step 115 complete
+Status: complete; Steps 112-116 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 09
-Current checkpoint: `step_116`
+Current checkpoint: none
 
 ## Purpose
 
@@ -63,4 +63,4 @@ default denial, authorization, and audit tests.
 | `step_113` | complete | MCP exposes only the closed `eqm://v1/workspace`, `eqm://v1/unit/{percent-encoded-id}`, `eqm://v1/context/{percent-encoded-id}`, and `eqm://v1/findings` URI families; strict parsing rejects wrong schemes, versions, paths, encodings, and absent units, listing is stable and deduplicated, reads produce common current result envelopes with exact workspace digests and resource source URIs, and mixed context product/tool records carry explicit untrusted labels while finalized authority remains distinguished |
 | `step_114` | complete | MCP registers exactly `eqm_context`, `eqm_matrix`, `eqm_affected`, `eqm_check`, and `eqm_explain` as read-only tools with closed schemas and strict required/type/unknown-field validation; its router delegates through a CLI-owned handler that rebuilds the corresponding approved CLI invocation and calls the same command implementation, then rejects mismatched result schemas or command envelopes, and integration tests prove every tool returns the corresponding structured CLI envelope without changing repository status |
 | `step_115` | complete | `mcp serve` takes over process stdio before normal CLI progress or rendering, supports only MCP `2025-06-18`, enforces bounded newline-delimited JSON-RPC objects and closed request fields, performs initialization, ping, resource list/read, tool list/call, notification suppression, EOF shutdown, stable JSON-RPC errors, and exact structured tool output, while malformed frames, unknown methods, unavailable resources, and unsupported versions fail closed; in-memory and real-binary tests prove protocol stdout contains JSON frames only |
-| `step_116` | pending | - |
+| `step_116` | complete | `eqm_verify` is absent from default tool discovery and rejected before delegation unless the invocation supplies both `--allow-verify` and an explicit repository-confined, non-symlink audit path; its closed schema permits only bounded verify selection and dry-run fields, affected mode requires an exact baseline, no waiver tool exists, and authorization is recorded durably before execution with request/workspace digests followed by executed or rejected disposition; parser, protocol, actual CLI-handler dry-run, default-denial, conditional-listing, and audit tests pass without enabling authored metadata mutation |
