@@ -84,6 +84,18 @@ mod tests {
         assert_eq!(mcp.workspace_digest(), session.workspace_digest());
         assert!(std::ptr::eq(mcp.finalized(), session.finalized()));
         assert!(std::ptr::eq(mcp.source_map(), session.source_map()));
+        let resources = eqm_mcp::list_resources(&mcp);
+        assert!(resources.contains(&eqm_mcp::McpResourceUri::Workspace));
+        assert!(resources.contains(&eqm_mcp::McpResourceUri::Findings));
+        let evaluated_at = "2026-08-08T00:00:00Z".parse()?;
+        for uri in resources {
+            let resource = eqm_mcp::read_resource(&mcp, &uri, evaluated_at)?;
+            let payload: serde_json::Value = serde_json::from_str(&resource.text)?;
+            assert_eq!(
+                payload.get("schema").and_then(serde_json::Value::as_str),
+                Some("https://schemas.equivalencematrix.dev/v1/result")
+            );
+        }
         Ok(())
     }
 }

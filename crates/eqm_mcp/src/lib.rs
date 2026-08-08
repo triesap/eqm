@@ -2,8 +2,12 @@
 
 #![forbid(unsafe_code)]
 
+mod resources;
 mod session;
 
+pub use resources::{
+    McpResource, McpResourceError, McpResourceUri, ResourceTrust, list_resources, read_resource,
+};
 pub use session::{McpSessionError, PreparedMcpSession};
 
 #[cfg(test)]

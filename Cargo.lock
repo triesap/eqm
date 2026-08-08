@@ -152,6 +152,7 @@ dependencies = [
  "eqm_engine",
  "eqm_protocol",
  "eqm_runner",
+ "serde_json",
 ]
 
 [[package]]
