@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 13: Operations And Closure
 
-Status: in progress; Step 129 complete
+Status: in progress; Step 130 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 12
-Current checkpoint: `step_130`
+Current checkpoint: `step_131`
 
 ## Purpose
 
@@ -94,4 +94,5 @@ until those values are supplied and verified.
 | Step range | Status | Result |
 | --- | --- | --- |
 | `step_129` | complete | The standalone operator guide covers initialization, authored/generated boundaries, validation/checking, explicit profiles, exact baselines, conservative affected analysis, pinned runners/adapters, discovery/reconciliation, dry-run and authorized verification, immutable evidence, independent trust, conditional-only waivers, exact runtime/release subjects, offline operation, doctor, and fail-closed recovery without implying production authority or recommending policy weakening |
-| `step_130`-`step_134` | pending | - |
+| `step_130` | complete | The agent guide defines authority and untrusted-data boundaries, prescribes bounded context/obligations/matrix/affected/check reads, preserves every non-success state, explains conservative inventory semantics, documents the default MCP read surface and paired invocation-only audited verify gate, confirms no waiver tool or prose authority exists, requires dry-run inspection and channel purity, and forbids unauthorized waiver/policy/trust/signing/evidence/publication mutation |
+| `step_131`-`step_134` | pending | - |
