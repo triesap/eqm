@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 09: Verification And Mutation
 
-Status: in progress; Step 107 complete
+Status: in progress; Step 108 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 08
-Current checkpoint: `step_108`
+Current checkpoint: `step_109`
 
 ## Purpose
 
@@ -82,4 +82,5 @@ workspace cleanliness assertions.
 | `step_105` | complete | `attest` loads explicit digest/path-selected or default immutable evidence under repository confinement, revalidates every closed DTO and canonical result digest, requires exact common repository/source/configuration/policy/profile/runtime/release subjects, derives visible conformance/equivalence/release state without upgrading untrusted evidence, emits a sorted in-toto Statement v1 with complete EQM predicate and trust/waiver bindings, labels it unsigned, rejects unavailable signer authority with trust exit semantics, and relies on the shared atomic explicit-output boundary without generated or authored writes |
 | `step_106` | complete | `release check` requires an explicit release profile and canonical exact-subject release record, confines and revalidates immutable evidence by content digest, matches the release target, source commit, record digest, workspace, policy, and profile tuple, enforces obligation counts, independently claimed trust ceilings, evidence age including future-clock rejection, terminal and unstable result aggregation, and exact release context before applying the closed pass/conditional/fail/unknown gate with trust failures on exit 7; protected signing and waiver authority remain fail-closed when no external authority is configured |
 | `step_107` | complete | `explain` is a workspace-independent query over the complete stable diagnostic registry, renders the authoritative title, specification reference, explanation, and remediation through the common result envelope, proves every registered code is reachable, and returns usage/not-found exit 2 for malformed, allocated-but-unregistered, or unknown codes without preparing or executing workspace content |
-| `step_108`-`step_111` | pending | - |
+| `step_108` | complete | `doctor` performs a deterministic read-only readiness inspection without spawning VCS, package, runner, or adapter processes; it checks strict configuration selection, exact offline lock pins, finalized workspace authority, consistent pinned Rust and required components, ignored/confined/bounded generated state, and the repository no-legacy contract, returning sorted typed checks and a blocking result when any required condition is unhealthy |
+| `step_109`-`step_111` | pending | - |

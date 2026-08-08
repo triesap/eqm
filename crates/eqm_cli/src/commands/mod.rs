@@ -6,6 +6,7 @@ pub mod check;
 pub mod context;
 pub mod diff;
 pub mod discover;
+pub mod doctor;
 pub mod evaluation;
 pub mod explain;
 pub mod locate;

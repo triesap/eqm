@@ -47,6 +47,7 @@ fn main() -> ExitCode {
                     | cli::CommandName::Verify
                     | cli::CommandName::Attest
                     | cli::CommandName::ReleaseCheck
+                    | cli::CommandName::Doctor
             ) {
                 match std::env::current_dir() {
                     Ok(start) if command == cli::CommandName::Validate => {
@@ -88,7 +89,10 @@ fn main() -> ExitCode {
                     Ok(start) if command == cli::CommandName::Attest => {
                         commands::attest::execute(parsed, &start)
                     }
-                    Ok(start) => commands::release_check::execute(parsed, &start),
+                    Ok(start) if command == cli::CommandName::ReleaseCheck => {
+                        commands::release_check::execute(parsed, &start)
+                    }
+                    Ok(start) => commands::doctor::execute(parsed, &start),
                     Err(error) => Err(Box::new(error) as Box<dyn std::error::Error>),
                 }
             } else {
