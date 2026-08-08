@@ -118,7 +118,7 @@ close:
   canonicalization boundaries rather than generic parsers;
 - [x] add direct adversarial assertions for every security-matrix case, including
   stable diagnostics and secret non-disclosure;
-- measure cold validation, warm context, affected analysis, and peak memory
+- [x] measure cold validation, warm context, affected analysis, and peak memory
   through production code at the specified 10,000-unit/100,000-requirement
   scale;
 - make the final aggregate gate invoke every mandatory fixture, golden,
