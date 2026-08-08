@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 12: Hardening And Packaging
 
-Status: in progress; Step 123 complete
+Status: in progress; Step 124 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 11
-Current checkpoint: `step_124`
+Current checkpoint: `step_125`
 
 ## Purpose
 
@@ -74,4 +74,5 @@ target blocks the checkpoint unless authority explicitly narrows the claim.
 | Step range | Status | Result |
 | --- | --- | --- |
 | `step_123` | complete | A deterministic 512-case property lane records seed `0x45514d313233`, generates bounded digest and ordering inputs with replayable case indices, proves content identity stability and insertion-order independence, and explicitly proves waived, unknown, missing, and unstable facets are never satisfied; it consolidates the existing exhaustive policy-strength monotonicity, waiver non-satisfaction, affected conservatism, canonical digest, and stable matrix/order integration suites without introducing nondeterministic generators |
-| `step_124`-`step_128` | pending | - |
+| `step_124` | complete | A standalone non-publishable cargo-fuzz package pins `libfuzzer-sys` and supplies buildable TOML, common protocol envelope, adapter response, inventory response, normalized evidence, JSON canonicalization, and 1 MiB-bounded graph-input targets; the documented smoke command fixes run and timeout bounds, every target compiles under the pinned Rust toolchain, and a 1,000-run smoke campaign per target completed without crash, panic, timeout, or retained artifact |
+| `step_125`-`step_128` | pending | - |
