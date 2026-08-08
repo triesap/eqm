@@ -523,6 +523,7 @@ JSON
         Ok(())
     }
 
+    #[cfg(unix)]
     fn copy_tree(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
         fs::create_dir_all(destination)?;
         for entry in fs::read_dir(source)? {
@@ -537,6 +538,7 @@ JSON
         Ok(())
     }
 
+    #[cfg(unix)]
     fn git(root: &Path, arguments: &[&str]) -> Result<(), Box<dyn Error>> {
         if Command::new("git")
             .args(arguments)
