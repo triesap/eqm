@@ -1,13 +1,13 @@
 # EquivalenceMatrix V1 RCLD 13: Operations And Closure
 
-Status: in progress; Step 133 complete
+Status: complete; Steps 129-134 complete
 Created: 2026-08-07
 Updated: 2026-08-08
 Mode: rcl-durable
 Repository: `triesap/eqm`
 Governing plan: `docs/execution/rcl/eqm_v1_multi_rcld.md`
 Depends on: RCLD 12
-Current checkpoint: `step_134`
+Current checkpoint: none
 
 ## Purpose
 
@@ -98,4 +98,4 @@ until those values are supplied and verified.
 | `step_131` | complete | `SECURITY.md` states current-major support, a safe disclosure fallback without inventing a contact, and the deliberately unassigned security-owner production gate; the threat model distinguishes hostile and trusted inputs, maps traversal/symlink, argv/env, flood/timeout/redaction, signature/replay/substitution, immutable evidence, and MCP escalation to mandatory tests, and states limits around OS behavior, untrusted programs, declared-secret redaction, external trust/retention, completeness, application security, legal approval, and organizational ownership |
 | `step_132` | complete | Bootstrap contribution prose is replaced with exact toolchain/router setup, repository boundaries, current-only/unsafe/generated-state rules, the real aggregate command and its gates, schema-generation ownership, exact dependency/lock expectations, commit/PR evidence, dual licensing, and release linkage; maintenance guidance defines shared semantic versioning, no-deprecation compatibility policy, synchronized generated artifacts, dependency/advisory/license/MSRV/SBOM review, candidate fuzz/scale/package gates, and explicit publication prerequisites, while README routes operators, agents, and reporters to the implemented guides |
 | `step_133` | complete | No-compat enforcement scans text and binary content across production source, schemas, ordinary docs, examples, fixtures, workflows, packaging, fuzz/benchmark packages, and arbitrary produced-artifact roots while narrowly excluding only the authority contract, encoded scanner tokens, and controlled negative corpus from the ordinary repository pass; negative self-tests prove both repository-inclusive and explicit artifact-root scans reject the forbidden corpus, and dry-run packaging scans its exact staged contents before archive creation |
-| `step_134` | pending | - |
+| `step_134` | complete | Final acceptance reconciles all 134 checkpoints and 140 authority rows; aggregate, schema, no-compat, security, supply-chain, coverage, targeted critical mutation, fuzz, scale, package, CLI/MCP, and release-fixture lanes passed without suppressed failures, including closure fixes for explicit license policy and two initially surviving digest mutations; the report records toolchain/lock/artifact digests, commands and measured results, duplicate-free reproducible package/SBOM/provenance contents, no remote or signing action, the targeted (not exhaustive) mutation scope, and the remaining ownership/baseline/CI-signing/pilot/retention/namespace/legal inputs that prevent publication or production-readiness claims |

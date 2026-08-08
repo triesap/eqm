@@ -186,6 +186,24 @@ mod tests {
         ] {
             assert_eq!(value.parse::<Sha256Digest>(), Err(error));
         }
+        let parsed = "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+            .parse::<Sha256Digest>();
+        assert_eq!(
+            parsed.map(Sha256Digest::into_bytes),
+            Ok([
+                0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab,
+                0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67,
+                0x89, 0xab, 0xcd, 0xef,
+            ])
+        );
+        for error in [
+            DigestParseError::MissingPrefix,
+            DigestParseError::WrongLength,
+            DigestParseError::UppercaseHex,
+            DigestParseError::InvalidHex,
+        ] {
+            assert!(!error.to_string().is_empty());
+        }
     }
 
     #[test]
