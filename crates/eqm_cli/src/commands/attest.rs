@@ -8,8 +8,8 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use eqm_domain::{RepoPath, Sha256Digest, ToolVersion, UtcInstant};
 use eqm_protocol::{
     AttestResultDto, AttestationPredicateDto, AttestationSubjectDto, CommandIdentity,
-    EvaluationModeDto, EvidencePayloadDto, EvidenceResultDto, EvidenceSubjectDto,
-    InTotoStatementDto, InvocationContextDto, ProfileValueDto, ReportEnvelope, SubjectDigestDto,
+    EvaluationModeDto, EvidenceResultDto, EvidenceSubjectDto, InTotoStatementDto,
+    InvocationContextDto, ProfileValueDto, ReportEnvelope, SubjectDigestDto,
 };
 use serde_json::Value;
 use std::collections::BTreeSet;
@@ -310,45 +310,11 @@ pub(super) fn selected_profile_values(
     Ok(values)
 }
 
-fn conformance(evidence: &[EvidenceResultDto]) -> &'static str {
-    if evidence.iter().all(satisfied) {
-        "conformant"
-    } else if evidence.iter().any(definitively_failed) {
-        "nonconformant"
-    } else {
-        "unknown"
-    }
-}
-
-fn satisfied(value: &EvidenceResultDto) -> bool {
-    if value.claimed_trust == "untrusted_local" {
-        return false;
-    }
-    match &value.payload {
-        EvidencePayloadDto::StructuralCheck { execution }
-        | EvidencePayloadDto::Test { execution }
-        | EvidencePayloadDto::Snapshot { execution } => {
-            execution.counts.passed > 0
-                && execution.counts.failed == 0
-                && execution.counts.skipped == 0
-                && execution.counts.filtered == 0
-                && execution.counts.quarantined == 0
-        }
-        EvidencePayloadDto::ManualReview { outcome, .. } => outcome == "passed",
-        EvidencePayloadDto::StaticInventory { .. }
-        | EvidencePayloadDto::RuntimeSnapshot { .. }
-        | EvidencePayloadDto::ReleaseRecord { .. } => true,
-    }
-}
-
-fn definitively_failed(value: &EvidenceResultDto) -> bool {
-    match &value.payload {
-        EvidencePayloadDto::StructuralCheck { execution }
-        | EvidencePayloadDto::Test { execution }
-        | EvidencePayloadDto::Snapshot { execution } => execution.counts.failed > 0,
-        EvidencePayloadDto::ManualReview { outcome, .. } => outcome == "failed",
-        _ => false,
-    }
+fn conformance(_evidence: &[EvidenceResultDto]) -> &'static str {
+    // Evidence files carry claims, not verification authority. This command has
+    // no configured CI transport or signature verifier in v1, so an unsigned
+    // statement must not promote those claims into a conformance conclusion.
+    "unknown"
 }
 
 pub(super) fn trust_config_digest(session: &PreparedSession) -> Sha256Digest {

@@ -37,7 +37,7 @@ fn current_signup_fixture_resolves_and_derives_all_target_obligations() -> Resul
     let root = tempfile::tempdir()?;
     copy_tree(&source, root.path())?;
     let loaded = load_workspace(root.path(), None)?;
-    assert_eq!(loaded.graph_input().bindings.len(), 3);
+    assert_eq!(loaded.graph_input().bindings.len(), 6);
     assert_eq!(loaded.graph_input().targets.len(), 3);
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let selection_graph = graph.clone();

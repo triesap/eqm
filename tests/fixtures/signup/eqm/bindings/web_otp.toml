@@ -1,0 +1,29 @@
+schema = "https://schemas.equivalencematrix.dev/v1/binding"
+id = "binding.web.signup_otp"
+revision = 1
+owners = ["owner://team/web"]
+target = "web"
+unit = "account.create.signup.otp"
+
+[[artifacts]]
+id = "otp_view"
+role = "view"
+path = "targets/web/src/routes/signup/+page.svelte"
+surface = "account.create.signup.otp"
+
+[[exposures]]
+surface = "account.create.signup.otp"
+state = "required"
+route = "/signup"
+
+[[evidence]]
+id = "otp_behavior"
+kind = "test"
+requirements = ["account.create.signup.otp#six_decimal_digits"]
+facets = ["accessibility", "behavior"]
+runner = "runner.fixture"
+
+[evidence.selector]
+kind = "test"
+framework = "vitest"
+test_id = "fixture web otp"

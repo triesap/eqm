@@ -1,0 +1,20 @@
+schema = "https://schemas.equivalencematrix.dev/v1/waiver"
+id = "waiver.fixture.release"
+revision = 1
+owners = ["owner://team/product"]
+policy = "consumer.critical_flow"
+reason = "Synthetic fixture for conditional release evaluation."
+issue = "issue://FIXTURE-1"
+approvers = ["owner://role/fixture_approver"]
+starts_on = "2026-08-08"
+expires_on = "2026-08-09"
+controls = ["behavior"]
+
+[scope]
+target = "web"
+unit = "account.create.signup.otp"
+requirement = "account.create.signup.otp#six_decimal_digits"
+facets = ["behavior"]
+
+[scope.profiles."audience.default"]
+region = "us"

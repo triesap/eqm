@@ -175,6 +175,23 @@ fn dangling_findings(
                 .keys()
                 .map(|requirement| format!("{}#{requirement}", surface.id()))
         })
+        .chain(graph.surfaces().values().flat_map(|surface| {
+            surface.fragments().iter().flat_map(move |pin| {
+                graph
+                    .fragments()
+                    .get(&(pin.fragment().clone(), pin.revision()))
+                    .into_iter()
+                    .flat_map(move |fragment| {
+                        fragment.requirements().keys().map(move |requirement| {
+                            let local = pin.prefix().map_or_else(
+                                || requirement.to_string(),
+                                |prefix| format!("{prefix}_{requirement}"),
+                            );
+                            format!("{}#{local}", surface.id())
+                        })
+                    })
+            })
+        }))
         .chain(graph.fragments().values().flat_map(|fragment| {
             fragment
                 .requirements()

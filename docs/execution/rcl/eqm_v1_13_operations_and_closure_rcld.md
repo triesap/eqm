@@ -107,9 +107,10 @@ RCLDs remain historically complete, but their affected behavior must be
 corrected and their downstream evidence regenerated before this ledger can
 close:
 
-- enforce the normative MCP frame limit and secure invocation correlation IDs;
-- enforce the exact signed-CI trust profile at the verification boundary;
-- replace declared release outcomes with exercised pass, fail, and unknown
+- [x] enforce the normative MCP frame limit and secure invocation correlation IDs;
+- [x] enforce exact Ed25519 signature metadata and prevent unverified trust
+  claims from being promoted at attestation and release boundaries;
+- [x] replace declared release outcomes with exercised pass, fail, and unknown
   release-gate fixtures carrying runtime facts and immutable evidence;
 - replace hand-authored command samples with byte-compared outputs from real
   CLI and MCP entry points;
@@ -123,7 +124,9 @@ close:
 - make the final aggregate gate invoke every mandatory fixture, golden,
   property, fuzz, security, cross-platform, coverage/mutation, performance,
   dependency/license, package, CLI/MCP, and release lane;
-- pin workflow dependencies immutably and regenerate package/SBOM/provenance
+- [x] pin workflow dependencies immutably and add Linux, macOS, and Windows
+  compilation, test, and lint jobs;
+- regenerate package/SBOM/provenance
   evidence; and
 - rerun requirement-by-requirement traceability and publish a replacement
   acceptance report containing only observed results.
