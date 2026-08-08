@@ -9,6 +9,7 @@ pub mod discover;
 pub mod doctor;
 pub mod evaluation;
 pub mod explain;
+pub mod init_new;
 pub mod locate;
 pub mod matrix;
 pub mod obligations;

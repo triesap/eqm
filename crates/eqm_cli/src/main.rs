@@ -29,7 +29,15 @@ fn main() -> ExitCode {
             if reporter.progress("rendering command result").is_err() {
                 return ExitCode::from(6);
             }
-            let execution = if command == cli::CommandName::Explain {
+            let execution = if command == cli::CommandName::Init {
+                std::env::current_dir()
+                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
+                    .and_then(|start| commands::init_new::init(parsed, &start))
+            } else if command == cli::CommandName::New {
+                std::env::current_dir()
+                    .map_err(|error| Box::new(error) as Box<dyn std::error::Error>)
+                    .and_then(|start| commands::init_new::new(parsed, &start))
+            } else if command == cli::CommandName::Explain {
                 commands::explain::execute(parsed)
             } else if matches!(
                 command,
