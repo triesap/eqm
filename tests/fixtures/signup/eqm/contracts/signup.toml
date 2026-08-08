@@ -1,0 +1,5 @@
+schema = "https://schemas.equivalencematrix.dev/v1/capability"
+id = "account.create"
+title = "Fixture account creation"
+status = "active"
+owners = ["owner://team/product"]

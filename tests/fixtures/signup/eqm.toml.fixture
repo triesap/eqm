@@ -1,0 +1,25 @@
+schema = "https://schemas.equivalencematrix.dev/v1/workspace"
+contract_sources = ["eqm/contracts/**/*.toml"]
+binding_sources = ["eqm/bindings/**/*.toml"]
+policy_sources = ["eqm/policies/**/*.toml"]
+profile_sources = ["eqm/profiles/**/*.toml"]
+runner_sources = ["eqm/runners/**/*.toml"]
+waiver_sources = ["eqm/waivers/**/*.toml"]
+
+[targets.web]
+root = "targets/web"
+platform = "web"
+framework = "sveltekit"
+owners = ["owner://team/web"]
+
+[targets.ios]
+root = "targets/ios"
+platform = "ios"
+framework = "swiftui"
+owners = ["owner://team/ios"]
+
+[targets.android]
+root = "targets/android"
+platform = "android"
+framework = "compose"
+owners = ["owner://team/android"]

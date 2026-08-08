@@ -1,0 +1,14 @@
+schema = "https://schemas.equivalencematrix.dev/v1/journey"
+id = "account.create.signup"
+revision = 1
+title = "Fixture signup"
+capability = "account.create"
+status = "active"
+risk_class = "high"
+owners = ["owner://team/product"]
+surfaces = ["account.create.signup.identifier", "account.create.signup.otp"]
+
+[[transitions]]
+from = "account.create.signup.identifier"
+to = "account.create.signup.otp"
+trigger = "otp_sent"

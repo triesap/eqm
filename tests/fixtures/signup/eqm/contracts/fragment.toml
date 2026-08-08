@@ -1,0 +1,13 @@
+schema = "https://schemas.equivalencematrix.dev/v1/fragment"
+id = "auth.otp_entry"
+revision = 1
+title = "OTP entry"
+risk_class = "high"
+owners = ["owner://team/identity_product"]
+
+[[requirements]]
+id = "six_decimal_digits"
+level = "required"
+scope = "each_target"
+statement = "The visible OTP entry accepts exactly six decimal digits."
+facets = ["behavior", "accessibility"]

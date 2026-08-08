@@ -1,0 +1,19 @@
+schema = "https://schemas.equivalencematrix.dev/v1/surface"
+id = "account.create.signup.otp"
+revision = 1
+title = "Fixture OTP"
+journey = "account.create.signup"
+status = "active"
+owners = ["owner://team/product"]
+
+[[requirements]]
+id = "valid_code_advances"
+level = "required"
+scope = "end_to_end"
+statement = "A valid code advances signup."
+facets = ["behavior"]
+
+[[fragments]]
+fragment = "auth.otp_entry"
+revision = 1
+digest = "sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378"

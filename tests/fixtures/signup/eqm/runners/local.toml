@@ -1,0 +1,15 @@
+schema = "https://schemas.equivalencematrix.dev/v1/runner"
+id = "runner.fixture"
+revision = 1
+owners = ["owner://team/tooling"]
+backend = "local"
+program = "scripts/fixture-runner"
+args = ["{selector_json}", "{result_path}"]
+cwd = "{target_root}"
+timeout_ms = 5000
+max_output_bytes = 65536
+max_concurrency = 1
+
+[[environment]]
+name = "PATH"
+source = "trusted_path"
