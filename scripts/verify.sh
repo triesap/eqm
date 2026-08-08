@@ -16,5 +16,11 @@ cargo check --workspace --all-targets --locked
 cargo test --workspace --all-targets --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo doc --workspace --no-deps --locked
+bash scripts/check_end_to_end.sh
+bash scripts/check_core_coverage.sh
+bash scripts/check_critical_mutation.sh
+bash scripts/check_fuzz_smoke.sh
+bash scripts/check_performance.sh
+bash scripts/check_package.sh
 bash scripts/check_generated_state_clean.sh
 git diff --check

@@ -294,4 +294,70 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn every_unknown_axis_and_scope_participation_is_explicit() -> Result<(), Box<dyn Error>> {
+        for configure in [
+            |value: &mut FacetEvaluationInput| value.coverage = CoverageStatus::Unknown,
+            |value: &mut FacetEvaluationInput| value.outcome = EvidenceOutcome::Unknown,
+            |value: &mut FacetEvaluationInput| value.freshness = FreshnessStatus::Unknown,
+            |value: &mut FacetEvaluationInput| value.trust = TrustEvaluation::Unknown,
+            |value: &mut FacetEvaluationInput| value.exposure = SupportingCheck::Unknown,
+            |value: &mut FacetEvaluationInput| value.release = SupportingCheck::Unknown,
+        ] {
+            let mut value = base();
+            configure(&mut value);
+            assert_eq!(evaluate_facet_status(&value), FacetStatus::Unknown);
+        }
+
+        let web = TargetId::new("web")?;
+        let ios = TargetId::new("ios")?;
+        let requirement: eqm_domain::FullRequirementId =
+            "account.create.signup.identifier#email_default".parse()?;
+        let provider = crate::ObligationKey {
+            policy: eqm_domain::PolicyId::new("policy.release")?,
+            policy_revision: eqm_domain::Revision::new(1)?,
+            profiles: BTreeMap::new(),
+            unit: eqm_domain::UnitId::new("account.create.signup.identifier")?,
+            requirement: requirement.clone(),
+            subject: ScopeSubject::Provider(eqm_domain::ProviderId::new("identity.primary")?),
+            facet: eqm_domain::Facet::Behavior,
+            release_context: None,
+        };
+        let target = crate::ObligationKey {
+            subject: ScopeSubject::Target(web.clone()),
+            ..provider.clone()
+        };
+        let target_set = crate::ObligationKey {
+            subject: ScopeSubject::TargetSet(std::collections::BTreeSet::from([web.clone(), ios])),
+            ..provider.clone()
+        };
+        let facets = BTreeMap::from([
+            (provider, FacetStatus::Satisfied),
+            (target, FacetStatus::Satisfied),
+            (target_set, FacetStatus::Waived),
+        ]);
+        assert_eq!(
+            evaluate_target_conformance(&web, &facets, true)?,
+            TargetConformance::ConditionallyConformant
+        );
+        assert_eq!(
+            evaluate_target_conformance(&web, &facets, false),
+            Err(ConformanceError::IncompletePolicyResolution)
+        );
+        assert!(participates(
+            &ScopeSubject::Provider(eqm_domain::ProviderId::new("identity.primary")?),
+            &web
+        ));
+        assert!(participates(&ScopeSubject::Target(web.clone()), &web));
+        assert!(!participates(
+            &ScopeSubject::Target(TargetId::new("android")?),
+            &web
+        ));
+        assert_eq!(
+            ConformanceError::IncompletePolicyResolution.to_string(),
+            "IncompletePolicyResolution"
+        );
+        Ok(())
+    }
 }

@@ -236,4 +236,70 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn every_gate_precondition_and_terminal_branch_is_explicit() -> Result<(), Box<dyn Error>> {
+        let mut cases = Vec::new();
+
+        let mut value = base()?;
+        value.release_record_verified = false;
+        cases.push((value, ReleaseGateStatus::Unknown));
+        let mut value = base()?;
+        value.observed_subject = None;
+        cases.push((value, ReleaseGateStatus::Unknown));
+        let mut value = base()?;
+        value.observed_context = None;
+        cases.push((value, ReleaseGateStatus::Unknown));
+        let mut value = base()?;
+        value.conformance = None;
+        cases.push((value, ReleaseGateStatus::Unknown));
+        let mut value = base()?;
+        value.effective_trust = None;
+        cases.push((value, ReleaseGateStatus::Unknown));
+        let mut value = base()?;
+        value.exposure = vec![ReleaseCheck::Unknown];
+        cases.push((value, ReleaseGateStatus::Unknown));
+        for status in [
+            FacetStatus::Unknown,
+            FacetStatus::Unstable,
+            FacetStatus::Stale,
+        ] {
+            let mut value = base()?;
+            value.release_facets = vec![status];
+            cases.push((value, ReleaseGateStatus::Unknown));
+        }
+
+        let mut value = base()?;
+        value.conformance = Some(TargetConformance::Nonconformant);
+        cases.push((value, ReleaseGateStatus::Fail));
+        for status in [FacetStatus::Failed, FacetStatus::Missing] {
+            let mut value = base()?;
+            value.release_facets = vec![status];
+            cases.push((value, ReleaseGateStatus::Fail));
+        }
+
+        for configure in [
+            |value: &mut ReleaseGateInput| value.exposure = vec![ReleaseCheck::Waived],
+            |value: &mut ReleaseGateInput| {
+                value.conformance = Some(TargetConformance::ConditionallyConformant);
+            },
+            |value: &mut ReleaseGateInput| value.release_facets = vec![FacetStatus::Waived],
+        ] {
+            let mut without_authority = base()?;
+            configure(&mut without_authority);
+            assert_eq!(
+                evaluate_release_gate(&without_authority),
+                ReleaseGateStatus::Unknown
+            );
+            without_authority
+                .waivers
+                .insert(WaiverId::new("waiver.release")?);
+            cases.push((without_authority, ReleaseGateStatus::Conditional));
+        }
+
+        for (input, expected) in cases {
+            assert_eq!(evaluate_release_gate(&input), expected);
+        }
+        Ok(())
+    }
 }

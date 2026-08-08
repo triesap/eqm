@@ -146,3 +146,21 @@ impl Display for MonotonicityError {
 }
 
 impl Error for MonotonicityError {}
+
+#[cfg(test)]
+mod display_tests {
+    use super::MonotonicityError;
+
+    #[test]
+    fn error_display_is_stable() {
+        assert_eq!(
+            MonotonicityError::InvalidPreparedInput.to_string(),
+            "InvalidPreparedInput"
+        );
+        assert_eq!(
+            MonotonicityError::IncomparableAuthority.to_string(),
+            "IncomparableAuthority"
+        );
+        assert_eq!(MonotonicityError::Weakening.to_string(), "Weakening");
+    }
+}
