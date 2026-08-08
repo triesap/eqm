@@ -266,4 +266,35 @@ mod tests {
         assert!(!color_enabled(OutputFormat::Json, ColorWhen::Always, true));
         Ok(())
     }
+
+    #[test]
+    fn reviewed_signup_goldens_cover_the_public_surface_and_are_byte_stable()
+    -> Result<(), Box<dyn Error>> {
+        let root =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/signup/goldens");
+        let index: Value = serde_json::from_slice(&fs::read(root.join("index.json"))?)?;
+        assert_eq!(index["commands"].as_array().map(Vec::len), Some(21));
+        assert_eq!(
+            index["formats"],
+            serde_json::json!(["human", "json", "sarif", "markdown"])
+        );
+        assert_eq!(index["mcp_reads"].as_array().map(Vec::len), Some(4));
+        for name in [
+            "context.human",
+            "context.json",
+            "context.sarif",
+            "context.md",
+            "mcp-workspace.json",
+        ] {
+            let first = fs::read(root.join(name))?;
+            let second = fs::read(root.join(name))?;
+            assert_eq!(first, second);
+            assert!(first.ends_with(b"\n"));
+            assert!(!String::from_utf8_lossy(&first).contains(env!("CARGO_MANIFEST_DIR")));
+            if name.ends_with(".json") || name.ends_with(".sarif") {
+                let _: Value = serde_json::from_slice(&first)?;
+            }
+        }
+        Ok(())
+    }
 }

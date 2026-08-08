@@ -1,0 +1,1 @@
+{"commands":["init","new","fmt","validate","check","show","locate","context","matrix","obligations","diff","affected","discover","reconcile","verify","attest","release_check","explain","doctor","lock_update","mcp_serve"],"formats":["human","json","sarif","markdown"],"mcp_reads":["workspace","unit","context","findings"]}
