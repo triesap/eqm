@@ -459,7 +459,7 @@ mod tests {
         code: DiagnosticCode(100),
         severity: Severity::Error,
         title: "Invalid manifest syntax",
-        authority: "docs/specification/manifest-contracts.md",
+        authority: "docs/manifests.md",
         explanation: "The authored document is not valid TOML.",
         remediation: "Correct the reported syntax.",
     };

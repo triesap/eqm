@@ -161,7 +161,6 @@ fn check_no_legacy_names(include_negative: bool, roots: &[PathBuf]) -> Result<()
             let relative_text = relative.to_string_lossy();
             if relative_text.starts_with(".git/")
                 || relative_text.starts_with("target/")
-                || relative_text == "docs/specification/naming-and-no-compat.md"
                 || (!include_negative
                     && relative_text.starts_with("tests/fixtures/no_legacy/negative/"))
             {

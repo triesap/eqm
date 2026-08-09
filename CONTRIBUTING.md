@@ -1,37 +1,45 @@
 # Contributing
 
-EquivalenceMatrix is a Rust workspace with current-only v1 schemas. Install the
-toolchain pinned by `rust-toolchain.toml`, clone with Git metadata available,
-and run `cargo extbuild doctor` where the external build router is installed.
-Repository build, dependency, generation, test, benchmark, fuzz, and packaging
-commands must use that router on configured development machines.
+EquivalenceMatrix is a Rust 2024 workspace with current-only v1 contracts.
+Install the toolchain pinned by `rust-toolchain.toml` and keep `Cargo.lock`
+committed. Normal Cargo target directories are ignored; generated EQM consumer
+state under `/.eqm/` must never be committed.
 
-Before editing, read `AGENTS.md`, the relevant specification in
-`docs/specification/`, and the owning crate tests. Keep changes focused and
-standalone. Public content must not contain workstation paths, credentials,
-private coordination references, generated `.eqm` state, or local `target`
-output. Unsafe Rust and compatibility aliases/readers are forbidden.
+Before changing behavior, read [docs/agent-context.md](docs/agent-context.md),
+the relevant usage document, the owning crate, and its tests. Preserve crate
+boundaries and deterministic ordering. Do not add unsafe Rust, shell command
+strings, floating production dependencies, legacy readers, schema aliases, or
+implicit network acquisition.
 
-For ordinary changes run:
+The standard contributor gate is:
 
 ```text
-cargo extbuild run -- bash scripts/verify.sh
+cargo xtask check
 ```
 
-The lane checks authority, security coverage, generated schemas, URI parity,
-formatting, locked compilation/tests, clippy with warnings denied, docs,
-generated-state cleanliness, and diff whitespace. Schema changes must update
-the authoritative specification/decision record, DTO/domain boundary,
-generators, checked artifacts, examples, positive/negative tests, and schema
-parity together. Never hand-edit generated schema JSON.
+It verifies generated schemas and URI parity, formatting, locked compilation,
+all workspace tests, Clippy with warnings denied, Rust documentation,
+end-to-end behavior, generated-state boundaries, and diff whitespace.
 
-Dependency updates must be exact, justified, reflected in `Cargo.lock` and any
-isolated fuzz/benchmark lockfiles, and pass advisory/license/SBOM review.
-Commits should be small, verified, and explain one coherent behavior. Pull
-requests must state commands run, skipped lanes, security/schema impact,
-generated-file changes, and remaining risk.
+The release-candidate gate is:
 
-Releases follow `docs/release-packaging.md`. Dry-run packaging does not publish
-or sign. Versioning, maintenance, deprecation policy, and production
-prerequisites are documented in `docs/maintenance.md`. Contributions are
-licensed under MIT OR Apache-2.0.
+```text
+cargo xtask verify
+```
+
+It adds the adversarial security matrix, dependency audit and policy checks,
+coverage and mutation thresholds, bounded fuzzing, the production-scale
+benchmark, and reproducible distribution verification. These extended lanes
+require the Cargo subcommands named by their output.
+
+Never hand-edit generated schema JSON. Use `cargo xtask schemas generate`,
+review source and generated changes together, and run `cargo xtask schemas
+check`. Dependency changes must be exact, justified, locked, and pass the
+supply-chain lanes. Pull requests should state the commands run, skipped lanes,
+schema or security impact, generated changes, and remaining risk.
+
+Distribution archives are local, unsigned build outputs. `cargo xtask dist
+OUTPUT_DIRECTORY` produces a deterministic archive, checksum, SPDX package
+inventory, and provenance inputs; it does not publish or sign anything.
+
+Contributions are licensed under MIT OR Apache-2.0.

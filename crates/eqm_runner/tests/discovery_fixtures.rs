@@ -179,7 +179,7 @@ fn validate_export_fixture(
     request_id: &str,
 ) -> Result<eqm_runner::InventoryObservation, Box<dyn Error>> {
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../examples/fixtures")
+        .join("../../tests/fixtures/discovery")
         .join(fixture_name);
     let inventory: InventoryDto = serde_json::from_slice(&fs::read(fixture)?)?;
     let request = request_for_inventory(definition, &inventory, request_id);
@@ -198,7 +198,7 @@ fn validate_export_fixture(
 #[test]
 fn sveltekit_filesystem_inventory_is_sorted_confined_and_reconciles() -> Result<(), Box<dyn Error>>
 {
-    let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/fixtures/web");
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/discovery/web");
     let entries = discover_sveltekit_routes(&fixture)?;
     assert_eq!(
         entries
