@@ -111,6 +111,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "eqm-benchmarks"
+version = "0.0.0"
+dependencies = [
+ "eqm_domain",
+ "eqm_engine",
+ "eqm_manifest",
+ "eqm_mcp",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "eqm_domain"
 version = "0.1.0"
 dependencies = [

@@ -1,3 +1,5 @@
+//! Deterministic performance checks for EQM's production paths.
+
 use eqm_domain::{TargetId, UnitId};
 use eqm_engine::{
     AffectedIndexes, ChangedFile, FragmentDigestMap, analyze_affected_set, expand_fragments,

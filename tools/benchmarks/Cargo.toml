@@ -1,0 +1,18 @@
+[package]
+name = "eqm-benchmarks"
+version = "0.0.0"
+publish = false
+edition = "2024"
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+eqm_domain.workspace = true
+eqm_engine.workspace = true
+eqm_manifest.workspace = true
+eqm_mcp.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

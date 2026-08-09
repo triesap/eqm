@@ -3,4 +3,4 @@ set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repository_root"
-cargo run --release --manifest-path benchmarks/Cargo.toml --locked
+cargo run --release --package eqm-benchmarks --locked

@@ -9,8 +9,10 @@ members = [
     "crates/eqm_protocol",
     "crates/eqm_runner",
     "crates/eqm_test_support",
+    "tools/benchmarks",
     "tools/xtask",
 ]
+exclude = ["tools/fuzz"]
 
 [workspace.package]
 version = "0.1.0"
