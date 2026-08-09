@@ -6,7 +6,12 @@ license.workspace = true
 authors.workspace = true
 readme.workspace = true
 repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
 rust-version.workspace = true
+description = "Deterministic product conformance and equivalence CLI"
 
 [dependencies]
 chrono.workspace = true

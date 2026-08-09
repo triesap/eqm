@@ -1,6 +1,6 @@
 //! Repository automation for EquivalenceMatrix.
 
-use flate2::{Compression, GzBuilder};
+use flate2::{Compression, GzBuilder, read::GzDecoder};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
@@ -8,10 +8,10 @@ use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::fs::{self, File};
-use std::io::{self};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode, Output};
-use tar::{Builder, Header};
+use tar::{Archive, Builder, Header};
 use tempfile::{NamedTempFile, TempDir};
 
 const NIGHTLY: &str = "nightly-2026-07-16";
@@ -61,6 +61,7 @@ fn run(args: impl IntoIterator<Item = OsString>) -> Result<()> {
 }
 
 fn check() -> Result<()> {
+    check_public_repository()?;
     check_generated_state()?;
     check_no_legacy_names(false, &[repository_root()])?;
     check_schemas()?;
@@ -80,6 +81,85 @@ fn check() -> Result<()> {
     cargo(["doc", "--workspace", "--no-deps", "--locked"])?;
     check_end_to_end()?;
     git(["diff", "--check"])
+}
+
+fn check_public_repository() -> Result<()> {
+    let root = repository_root();
+    for forbidden in [".github", "scripts"] {
+        if root.join(forbidden).exists() {
+            return Err(Error::message(format!(
+                "public repository must not contain `{forbidden}`"
+            )));
+        }
+    }
+
+    let expected_docs = BTreeSet::from([
+        "README.md",
+        "agent-context.md",
+        "cli.md",
+        "concepts.md",
+        "evidence-and-trust.md",
+        "getting-started.md",
+        "integrations/android-ios.md",
+        "manifests.md",
+        "mcp.md",
+    ])
+    .into_iter()
+    .map(str::to_owned)
+    .collect::<BTreeSet<_>>();
+    let actual_docs = files_below(&root.join("docs"))?
+        .into_iter()
+        .map(|path| {
+            path.strip_prefix(root.join("docs"))
+                .map(|relative| relative.to_string_lossy().replace('\\', "/"))
+                .map_err(|error| Error::message(error.to_string()))
+        })
+        .collect::<Result<BTreeSet<_>>>()?;
+    if actual_docs != expected_docs {
+        return Err(Error::message(format!(
+            "public documentation inventory differs: {actual_docs:?}"
+        )));
+    }
+
+    let tracked = String::from_utf8(capture("git", ["ls-files"])?.stdout)
+        .map_err(|error| Error::message(error.to_string()))?;
+    let allowed_directories = BTreeSet::from([
+        ".cargo", "crates", "docs", "examples", "schemas", "tests", "tools",
+    ]);
+    for path in tracked.lines() {
+        if let Some((directory, _)) = path.split_once('/')
+            && !allowed_directories.contains(directory)
+        {
+            return Err(Error::message(format!(
+                "unexpected tracked top-level directory: {directory}"
+            )));
+        }
+    }
+
+    let private_markers = [
+        ["ext", "build"].concat(),
+        ["triesap", "/dev"].concat(),
+        ["hand", "off"].concat(),
+        ["rcl", "d"].concat(),
+        ["be", "ads"].concat(),
+        ["host ", "system"].concat(),
+    ];
+    for path in files_below(&root)? {
+        let Ok(contents) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let lower = contents.to_lowercase();
+        if let Some(marker) = private_markers
+            .iter()
+            .find(|marker| lower.contains(marker.as_str()))
+        {
+            return Err(Error::message(format!(
+                "private development marker `{marker}` detected in {}",
+                path.display()
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn verify() -> Result<()> {
@@ -110,7 +190,7 @@ fn schemas(args: &[OsString]) -> Result<()> {
 fn test_lane(args: &[OsString]) -> Result<()> {
     let [lane] = args else {
         return Err(Error::usage(
-            "test requires one of `security`, `coverage`, `mutation`, or `fuzz`",
+            "test requires one of `security`, `coverage`, `mutation`, `fuzz`, or `package`",
         ));
     };
     match lane.to_str() {
@@ -118,6 +198,7 @@ fn test_lane(args: &[OsString]) -> Result<()> {
         Some("coverage") => coverage(),
         Some("mutation") => mutation(),
         Some("fuzz") => fuzz(),
+        Some("package") => check_package(),
         _ => Err(Error::usage(format!(
             "unsupported test lane `{}`",
             lane.to_string_lossy()
@@ -548,7 +629,77 @@ fn check_package() -> Result<()> {
             "distribution archives are not byte-identical",
         ));
     }
+    if fs::read(first.with_extension("gz.sha256")).map_err(Error::io)?
+        != fs::read(second.with_extension("gz.sha256")).map_err(Error::io)?
+    {
+        return Err(Error::message(
+            "distribution checksums are not byte-identical",
+        ));
+    }
+    inspect_archive(&first)?;
     println!("package: two byte-identical archives with SBOM and provenance inputs");
+    Ok(())
+}
+
+fn inspect_archive(path: &Path) -> Result<()> {
+    let mut archive = Archive::new(GzDecoder::new(File::open(path).map_err(Error::io)?));
+    let mut paths = BTreeSet::new();
+    let mut sbom = None;
+    let mut provenance = None;
+    for entry in archive.entries().map_err(Error::io)? {
+        let mut entry = entry.map_err(Error::io)?;
+        let path = entry
+            .path()
+            .map_err(Error::io)?
+            .to_string_lossy()
+            .into_owned();
+        if !paths.insert(path.clone()) {
+            return Err(Error::message(format!("duplicate archive entry: {path}")));
+        }
+        let mut bytes = Vec::new();
+        entry.read_to_end(&mut bytes).map_err(Error::io)?;
+        if path.ends_with("/SBOM.spdx.json") {
+            sbom = Some(serde_json::from_slice::<Value>(&bytes).map_err(Error::json)?);
+        } else if path.ends_with("/provenance-inputs.json") {
+            provenance = Some(serde_json::from_slice::<Value>(&bytes).map_err(Error::json)?);
+        }
+    }
+    if paths.len() != 28 || paths.iter().any(|path| !path.starts_with("eqm-")) {
+        return Err(Error::message(format!(
+            "unexpected distribution inventory: {} entries",
+            paths.len()
+        )));
+    }
+    let sbom = sbom.ok_or_else(|| Error::message("distribution omitted SBOM.spdx.json"))?;
+    if sbom.get("spdxVersion").and_then(Value::as_str) != Some("SPDX-2.3")
+        || sbom.get("name").and_then(Value::as_str) != Some("eqm")
+        || sbom
+            .get("packages")
+            .and_then(Value::as_array)
+            .is_none_or(Vec::is_empty)
+    {
+        return Err(Error::message("distribution SBOM is incomplete"));
+    }
+    let provenance =
+        provenance.ok_or_else(|| Error::message("distribution omitted provenance inputs"))?;
+    if provenance.get("builder").and_then(Value::as_str) != Some("local-dry-run")
+        || provenance
+            .get("production_signature")
+            .and_then(Value::as_bool)
+            != Some(false)
+        || provenance
+            .get("source_commit")
+            .and_then(Value::as_str)
+            .is_none_or(|value| value.len() != 40)
+        || provenance
+            .get("cargo_lock_sha256")
+            .and_then(Value::as_str)
+            .is_none_or(|value| value.len() != 64)
+    {
+        return Err(Error::message(
+            "distribution provenance inputs are incomplete",
+        ));
+    }
     Ok(())
 }
 
@@ -690,10 +841,11 @@ fn files_below(root: &Path) -> Result<Vec<PathBuf>> {
     while let Some(directory) = pending.pop() {
         for entry in fs::read_dir(&directory).map_err(Error::io)? {
             let path = entry.map_err(Error::io)?.path();
+            if path.file_name() == Some(OsStr::new(".git")) {
+                continue;
+            }
             if path.is_dir() {
-                if path.file_name() == Some(OsStr::new(".git"))
-                    || path.file_name() == Some(OsStr::new("target"))
-                {
+                if path.file_name() == Some(OsStr::new("target")) {
                     continue;
                 }
                 pending.push(path);
@@ -854,6 +1006,7 @@ fn print_help() {
            test coverage          Enforce core coverage thresholds\n\
            test mutation          Enforce critical mutation thresholds\n\
            test fuzz              Run bounded production fuzz targets\n\
+           test package           Verify reproducible distribution output\n\
            benchmark              Run the production-scale benchmark\n\
            dist <OUTPUT>           Build an unsigned reproducible archive"
     );

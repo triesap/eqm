@@ -6,7 +6,9 @@ license.workspace = true
 authors.workspace = true
 readme.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
+description = "Bounded Model Context Protocol adapter for EquivalenceMatrix"
 
 [dependencies]
 chrono.workspace = true

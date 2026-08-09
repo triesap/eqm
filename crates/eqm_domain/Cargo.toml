@@ -6,7 +6,9 @@ license.workspace = true
 authors.workspace = true
 readme.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
+description = "Pure domain types and invariants for EquivalenceMatrix"
 
 [dependencies]
 chrono.workspace = true

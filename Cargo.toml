@@ -21,6 +21,10 @@ license = "MIT OR Apache-2.0"
 authors = ["Tyson Lupul <tyson@radroots.org>"]
 readme = "README.md"
 repository = "https://github.com/triesap/eqm"
+homepage = "https://github.com/triesap/eqm"
+documentation = "https://docs.rs/eqm"
+keywords = ["conformance", "equivalence", "mobile", "testing"]
+categories = ["command-line-utilities", "development-tools", "development-tools::testing"]
 rust-version = "1.97.1"
 
 [workspace.lints.rust]

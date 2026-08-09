@@ -6,7 +6,9 @@ license.workspace = true
 authors.workspace = true
 readme.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
+description = "Deterministic conformance and equivalence evaluation engine"
 
 [dependencies]
 eqm_domain.workspace = true
