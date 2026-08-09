@@ -216,7 +216,7 @@ mod tests {
 
     fn result(attempts: &str, counts: &str) -> Vec<u8> {
         format!(
-            r#"{{"schema":"https://schemas.equivalencematrix.dev/v1/test-result","selector":{{"kind":"test","framework":"cargo","test_id":"suite::case","suite":null}},"attempts":[{attempts}],"counts":{counts},"started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:03Z","attachments":[]}}"#
+            r#"{{"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/test-result.schema.json","selector":{{"kind":"test","framework":"cargo","test_id":"suite::case","suite":null}},"attempts":[{attempts}],"counts":{counts},"started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:03Z","attachments":[]}}"#
         )
         .into_bytes()
     }

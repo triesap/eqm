@@ -956,7 +956,7 @@ facets = ["behavior"]
     #[test]
     fn every_contract_family_converts_to_domain_authority() -> Result<(), Box<dyn Error>> {
         let capability: CapabilityDto = toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/capability"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json"
 id = "account.create"
 title = "Account"
 status = "active"
@@ -969,7 +969,7 @@ owners = ["owner://team/accounts"]
         ));
 
         let journey: JourneyDto = toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/journey"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/journey.schema.json"
 id = "account.create.primary"
 revision = 1
 title = "Create account"
@@ -986,7 +986,7 @@ surfaces = ["account.create.primary.form"]
         ));
 
         let surface: SurfaceDto = toml::from_str(&format!(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/surface"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/surface.schema.json"
 id = "account.create.primary.form"
 revision = 1
 title = "Account form"
@@ -1002,7 +1002,7 @@ owners = ["owner://team/accounts"]
         ));
 
         let fragment: FragmentDto = toml::from_str(&format!(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/fragment"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/fragment.schema.json"
 id = "common.form"
 revision = 1
 title = "Common form"
@@ -1021,7 +1021,7 @@ owners = ["owner://team/design"]
     #[test]
     fn invalid_fields_report_the_nearest_field_and_source() -> Result<(), Box<dyn Error>> {
         let capability: CapabilityDto = toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/capability"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json"
 id = "INVALID"
 title = "Account"
 status = "active"
@@ -1035,7 +1035,7 @@ owners = ["owner://team/accounts"]
         assert_eq!(error.source(), "eqm/contracts/example.toml");
 
         let surface: SurfaceDto = toml::from_str(&format!(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/surface"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/surface.schema.json"
 id = "account.create.primary.form"
 revision = 1
 title = "Account form"
@@ -1054,7 +1054,7 @@ owners = ["owner://team/accounts"]
 
     fn binding() -> Result<BindingDto, toml::de::Error> {
         toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/binding"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/binding.schema.json"
 id = "binding.web"
 revision = 1
 owners = ["owner://team/web"]
@@ -1128,7 +1128,7 @@ test_id = "form submits"
     #[test]
     fn profile_and_policy_convert_with_finite_declared_dimensions() -> Result<(), Box<dyn Error>> {
         let profile: ProfileDto = toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/profile"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/profile.schema.json"
 id = "audience.default"
 revision = 1
 title = "Audience"
@@ -1147,7 +1147,7 @@ region = "eu"
         assert_eq!(converted.defaults().len(), 1);
 
         let policy: PolicyDto = toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/policy"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/policy.schema.json"
 id = "policy.default"
 revision = 1
 title = "Default policy"
@@ -1180,7 +1180,7 @@ required_controls = ["behavior"]
     #[test]
     fn invalid_defaults_and_unbounded_symbolic_cohorts_fail() -> Result<(), Box<dyn Error>> {
         let mut profile: ProfileDto = toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/profile"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/profile.schema.json"
 id = "audience.default"
 revision = 1
 title = "Audience"
@@ -1222,7 +1222,7 @@ region = "missing"
 
     fn runner() -> Result<RunnerDto, toml::de::Error> {
         toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/runner"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/runner.schema.json"
 id = "runner.web"
 revision = 1
 owners = ["owner://team/tooling"]
@@ -1306,7 +1306,7 @@ provider = "secret://vault/token"
 
     fn waiver() -> Result<WaiverDto, toml::de::Error> {
         toml::from_str(
-            r#"schema = "https://schemas.equivalencematrix.dev/v1/waiver"
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/waiver.schema.json"
 id = "waiver.signup"
 revision = 1
 owners = ["owner://team/product"]

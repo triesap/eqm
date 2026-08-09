@@ -60,7 +60,7 @@ root `extensions` object is present even when empty.
 
 | Key | Value | Array order |
 | --- | --- | --- |
-| `schema` | exact `https://schemas.equivalencematrix.dev/v1/semantic-graph` | n/a |
+| `schema` | exact `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json` | n/a |
 | `capabilities` | capability projections | `id` |
 | `journeys` | journey projections | `id` |
 | `surfaces` | surface projections | `id` |
@@ -205,13 +205,13 @@ The expected bytes below are one physical UTF-8 line with no trailing newline.
 Expected JCS bytes (253 bytes):
 
 ```json
-{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://schemas.equivalencematrix.dev/v1/semantic-graph","surfaces":[],"targets":[],"waivers":[]}
+{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json","surfaces":[],"targets":[],"waivers":[]}
 ```
 
 Expected digest:
 
 ```text
-sha256:2323afb42c366664f47a5f90c597c7968f651f74f875ed95aec4dcc02283994c
+sha256:d157825d4fbaafe9fa2b0313c4f2465a13cf30fb088a86f445192b042376d2b3
 ```
 
 ### Vector 2: capability and target
@@ -219,7 +219,7 @@ sha256:2323afb42c366664f47a5f90c597c7968f651f74f875ed95aec4dcc02283994c
 Expected JCS bytes (523 bytes):
 
 ```json
-{"adapters":[],"bindings":[],"capabilities":[{"description":"Create an account","extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://schemas.equivalencematrix.dev/v1/semantic-graph","surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","root":"apps/web"}],"waivers":[]}
+{"adapters":[],"bindings":[],"capabilities":[{"description":"Create an account","extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json","surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","root":"apps/web"}],"waivers":[]}
 ```
 
 Expected digest:

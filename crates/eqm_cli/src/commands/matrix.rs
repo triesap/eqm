@@ -260,7 +260,8 @@ mod tests {
 
     #[test]
     fn all_matrix_views_are_complete_and_filters_are_exact() -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         for kind in [
             "conformance",
             "evidence",
@@ -274,7 +275,7 @@ mod tests {
                 "--unit",
                 "account.create.signup.identifier",
                 "--target",
-                "web",
+                "android",
                 "--format",
                 "json",
                 "--no-progress",
@@ -282,7 +283,7 @@ mod tests {
             else {
                 return Err("unexpected help".into());
             };
-            let result = execute(parsed, &root)?;
+            let result = execute(parsed, root)?;
             assert_eq!(result.exit_code, 0, "{kind}");
             assert_eq!(result.payload.json["result"]["matrix_kind"], kind);
             assert!(

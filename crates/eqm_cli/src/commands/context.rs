@@ -254,12 +254,13 @@ mod tests {
 
     #[test]
     fn context_is_bounded_trust_labeled_and_nonexecuting() -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let ParseOutcome::Run(parsed) = parse([
             "context",
             "account.create.signup.identifier",
             "--target",
-            "web",
+            "android",
             "--max-bytes",
             "1024",
             "--max-depth",
@@ -271,7 +272,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let result = execute(parsed, &root)?;
+        let result = execute(parsed, root)?;
         assert_eq!(result.exit_code, 0);
         let markdown = result.payload.markdown.ok_or("markdown")?;
         assert!(markdown.len() <= 1024);

@@ -1,0 +1,68 @@
+{
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Canonical EQM semantic graph projection.",
+  "properties": {
+    "adapters": {
+      "type": "array"
+    },
+    "bindings": {
+      "type": "array"
+    },
+    "capabilities": {
+      "type": "array"
+    },
+    "extensions": {
+      "type": "object"
+    },
+    "fragments": {
+      "type": "array"
+    },
+    "imports": {
+      "type": "array"
+    },
+    "journeys": {
+      "type": "array"
+    },
+    "policies": {
+      "type": "array"
+    },
+    "profiles": {
+      "type": "array"
+    },
+    "runners": {
+      "type": "array"
+    },
+    "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json"
+    },
+    "surfaces": {
+      "type": "array"
+    },
+    "targets": {
+      "type": "array"
+    },
+    "waivers": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "adapters",
+    "bindings",
+    "capabilities",
+    "extensions",
+    "fragments",
+    "imports",
+    "journeys",
+    "policies",
+    "profiles",
+    "runners",
+    "schema",
+    "surfaces",
+    "targets",
+    "waivers"
+  ],
+  "title": "SemanticGraph",
+  "type": "object"
+}

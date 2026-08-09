@@ -134,12 +134,13 @@ mod tests {
     #[test]
     fn valid_and_invalid_workspaces_return_exact_categories_without_writes()
     -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let ParseOutcome::Run(valid) = parse(["validate", "--format", "json", "--no-progress"])?
         else {
             return Err("unexpected help".into());
         };
-        let valid = execute(valid, &root)?;
+        let valid = execute(valid, root)?;
         assert_eq!(valid.exit_code, 0);
         assert_eq!(valid.payload.json["command"], "validate");
         assert_eq!(valid.payload.json["result"]["valid"], true);
@@ -160,7 +161,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let invalid = execute(invalid, &root)?;
+        let invalid = execute(invalid, root)?;
         assert_eq!(invalid.exit_code, 3);
         assert!(invalid.payload.json["result"].is_null());
         assert_eq!(invalid.payload.json["diagnostics"][0]["code"], "EQM-E0100");

@@ -6,6 +6,8 @@ mod cli;
 mod commands;
 mod renderer;
 mod session;
+#[cfg(test)]
+mod test_support;
 
 use std::io::{self, IsTerminal};
 use std::process::ExitCode;

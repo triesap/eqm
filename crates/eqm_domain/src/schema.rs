@@ -4,7 +4,27 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
-const SCHEMA_PREFIX: &str = "https://schemas.equivalencematrix.dev/v1/";
+const SCHEMA_BASE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1";
+
+/// The public repository directory that owns a schema document.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum SchemaGroup {
+    /// Authored workspace and authority manifests.
+    Manifest,
+    /// Runtime, evidence, adapter, and report protocol documents.
+    Protocol,
+}
+
+impl SchemaGroup {
+    /// Returns the stable repository path component.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Manifest => "manifest",
+            Self::Protocol => "protocol",
+        }
+    }
+}
 
 /// The coordinated EQM v1 schema version.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -146,6 +166,35 @@ impl SchemaKind {
             Self::AdapterResponse => "adapter-response",
         }
     }
+
+    /// Returns the repository directory that owns this schema kind.
+    #[must_use]
+    pub const fn group(self) -> SchemaGroup {
+        match self {
+            Self::Workspace
+            | Self::Capability
+            | Self::Journey
+            | Self::Surface
+            | Self::Fragment
+            | Self::Binding
+            | Self::Policy
+            | Self::Profile
+            | Self::Runner
+            | Self::Waiver
+            | Self::Lock => SchemaGroup::Manifest,
+            Self::SemanticGraph
+            | Self::Result
+            | Self::Diagnostic
+            | Self::TestResult
+            | Self::EvidenceResult
+            | Self::Inventory
+            | Self::RuntimeFacts
+            | Self::ReleaseRecord
+            | Self::Attestation
+            | Self::AdapterRequest
+            | Self::AdapterResponse => SchemaGroup::Protocol,
+        }
+    }
 }
 
 impl Display for SchemaKind {
@@ -191,7 +240,12 @@ impl SchemaUri {
 
 impl Display for SchemaUri {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{SCHEMA_PREFIX}{}", self.0)
+        write!(
+            formatter,
+            "{SCHEMA_BASE}/{group}/{kind}.schema.json",
+            group = self.0.group().as_str(),
+            kind = self.0.as_str(),
+        )
     }
 }
 
@@ -199,13 +253,11 @@ impl FromStr for SchemaUri {
     type Err = SchemaParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let Some(kind) = value.strip_prefix(SCHEMA_PREFIX) else {
-            return Err(SchemaParseError::InvalidSchemaUri);
-        };
-        if kind.is_empty() || kind.contains('/') || kind.contains('?') || kind.contains('#') {
-            return Err(SchemaParseError::InvalidSchemaUri);
-        }
-        Ok(Self(kind.parse()?))
+        SchemaKind::ALL
+            .into_iter()
+            .map(Self::new)
+            .find(|uri| uri.to_string() == value)
+            .ok_or(SchemaParseError::InvalidSchemaUri)
     }
 }
 
@@ -286,15 +338,15 @@ mod tests {
     fn malformed_foreign_old_and_future_schemas_fail_closed() {
         for value in [
             "",
-            "http://schemas.equivalencematrix.dev/v1/workspace",
-            "https://example.dev/v1/workspace",
-            "https://schemas.equivalencematrix.dev/workspace",
-            "https://schemas.equivalencematrix.dev/v0/workspace",
-            "https://schemas.equivalencematrix.dev/v2/workspace",
-            "https://schemas.equivalencematrix.dev/v1/workspace/",
-            "https://schemas.equivalencematrix.dev/v1/workspace?x=1",
-            "https://schemas.equivalencematrix.dev/v1/workspace#x",
-            "https://schemas.equivalencematrix.dev/v1/unknown",
+            "http://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json",
+            "https://example.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/main/schemas/v1/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v0/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json?x=1",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json#x",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/unknown.schema.json",
         ] {
             assert!(value.parse::<SchemaUri>().is_err(), "accepted {value}");
         }

@@ -283,7 +283,7 @@ mod tests {
     use super::*;
     use std::fs;
 
-    const CONFIG: &str = r#"schema = "https://schemas.equivalencematrix.dev/v1/workspace"
+    const CONFIG: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json"
 contract_sources = ["eqm/contracts/**/*.toml"]
 binding_sources = ["eqm/bindings/**/*.toml"]
 policy_sources = ["eqm/policies/**/*.toml"]
@@ -297,10 +297,10 @@ platform = "web"
 framework = "sveltekit"
 owners = ["owner://team/web"]
 "#;
-    const LOCK: &str = r#"schema = "https://schemas.equivalencematrix.dev/v1/lock"
+    const LOCK: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json"
 version = 1
 "#;
-    const CAPABILITY: &str = r#"schema = "https://schemas.equivalencematrix.dev/v1/capability"
+    const CAPABILITY: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json"
 id = "account.create"
 title = "Account creation"
 status = "active"

@@ -1,5 +1,7 @@
 //! Policy/profile authority-selection fixtures.
 
+mod support;
+
 use eqm_domain::{
     Facet, FullRequirementId, PolicyId, ProfileId, RequirementScope, Revision, RiskClass, UnitId,
 };
@@ -7,16 +9,7 @@ use eqm_engine::{
     AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,
     SelectionError, matching_policy_rules, resolve_graph, select_policy_profiles,
 };
-use eqm_manifest::load_workspace;
 use std::error::Error;
-use std::path::Path;
-
-fn repository_root() -> Result<&'static Path, Box<dyn Error>> {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| "workspace root unavailable".into())
-}
 
 fn request(
     origin: AuthorityOrigin,
@@ -40,7 +33,7 @@ fn request(
 
 #[test]
 fn development_uses_defaults_and_explicit_values_override_them() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(repository_root()?, None)?;
+    let (_repository, loaded) = support::loaded_example()?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let default = request(AuthorityOrigin::CandidateLocal, Vec::new())?;
     let selected =
@@ -72,7 +65,7 @@ fn development_uses_defaults_and_explicit_values_override_them() -> Result<(), B
 
 #[test]
 fn non_local_modes_require_explicit_authoritative_selection() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(repository_root()?, None)?;
+    let (_repository, loaded) = support::loaded_example()?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let local = request(AuthorityOrigin::CandidateLocal, vec![("region", None)])?;
     assert_eq!(
@@ -100,7 +93,7 @@ fn non_local_modes_require_explicit_authoritative_selection() -> Result<(), Box<
 #[test]
 fn invalid_authority_and_closed_selector_axes_fail_or_filter_exactly() -> Result<(), Box<dyn Error>>
 {
-    let loaded = load_workspace(repository_root()?, None)?;
+    let (_repository, loaded) = support::loaded_example()?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let invalid = request(
         AuthorityOrigin::TrustedInvocation,

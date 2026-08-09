@@ -119,34 +119,6 @@
       ],
       "type": "object"
     },
-    "FragmentUseDto": {
-      "additionalProperties": false,
-      "properties": {
-        "digest": {
-          "type": "string"
-        },
-        "fragment": {
-          "type": "string"
-        },
-        "prefix": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "revision": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "fragment",
-        "revision",
-        "digest"
-      ],
-      "type": "object"
-    },
     "RequirementDto": {
       "additionalProperties": false,
       "properties": {
@@ -206,7 +178,7 @@
       "type": "object"
     }
   },
-  "$id": "https://schemas.equivalencematrix.dev/v1/surface",
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/fragment.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
@@ -221,16 +193,7 @@
       "default": {},
       "type": "object"
     },
-    "fragments": {
-      "items": {
-        "$ref": "#/$defs/FragmentUseDto"
-      },
-      "type": "array"
-    },
     "id": {
-      "type": "string"
-    },
-    "journey": {
       "type": "string"
     },
     "owners": {
@@ -250,10 +213,10 @@
       "minimum": 0,
       "type": "integer"
     },
-    "schema": {
+    "risk_class": {
       "type": "string"
     },
-    "status": {
+    "schema": {
       "type": "string"
     },
     "title": {
@@ -265,10 +228,10 @@
     "id",
     "revision",
     "title",
-    "journey",
-    "status",
-    "owners"
+    "risk_class",
+    "owners",
+    "requirements"
   ],
-  "title": "SurfaceDto",
+  "title": "FragmentDto",
   "type": "object"
 }

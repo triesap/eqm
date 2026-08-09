@@ -1,32 +1,25 @@
 //! Injected repository-view structural fixtures.
 
+mod support;
+
 use eqm_domain::{ArtifactRole, RepoPath};
 use eqm_engine::{
     RepositoryEntry, RepositoryEntryKind, RepositoryView, StructureFindingKind, evaluate_structure,
     resolve_graph,
 };
-use eqm_manifest::load_workspace;
 use std::collections::BTreeSet;
 use std::error::Error;
-use std::path::Path;
-
-fn repository_root() -> Result<&'static Path, Box<dyn Error>> {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| "workspace root unavailable".into())
-}
 
 #[test]
 fn existence_role_collision_and_symlink_resolution_are_fail_closed() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(repository_root()?, None)?;
+    let (_repository, loaded) = support::loaded_example()?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let binding = graph.bindings().values().next().ok_or("binding missing")?;
     let target = graph
         .targets()
         .get(binding.target())
         .ok_or("target missing")?;
-    let path = RepoPath::new("apps/web/src/signup/identifier.svelte")?;
+    let path = RepoPath::new("apps/android/app/src/main/java/com/example/signup/SignupScreen.kt")?;
     let mut view = RepositoryView::from([(
         path.clone(),
         RepositoryEntry {
@@ -58,7 +51,7 @@ fn existence_role_collision_and_symlink_resolution_are_fail_closed() -> Result<(
             .any(|finding| finding.kind == StructureFindingKind::InvalidSymlink)
     );
     view.insert(
-        RepoPath::new("apps/web/src/signup/IDENTIFIER.svelte")?,
+        RepoPath::new("apps/android/app/src/main/java/com/example/signup/SIGNUPSCREEN.kt")?,
         RepositoryEntry {
             kind: RepositoryEntryKind::File,
             resolved: None,

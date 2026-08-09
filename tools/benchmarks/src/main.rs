@@ -203,7 +203,7 @@ fn materialize_scale_fixture() -> Result<tempfile::TempDir, Box<dyn Error>> {
     fs::create_dir_all(&contracts)?;
     fs::write(
         repository.path().join("eqm.toml"),
-        r#"schema = "https://schemas.equivalencematrix.dev/v1/workspace"
+        r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json"
 contract_sources = ["eqm/contracts/*.toml"]
 binding_sources = ["eqm/bindings/*.toml"]
 policy_sources = ["eqm/policies/*.toml"]
@@ -214,11 +214,11 @@ waiver_sources = ["eqm/waivers/*.toml"]
     )?;
     fs::write(
         repository.path().join("eqm.lock"),
-        "schema = \"https://schemas.equivalencematrix.dev/v1/lock\"\nversion = 1\n",
+        "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json\"\nversion = 1\n",
     )?;
     fs::write(
         contracts.join("capability.toml"),
-        r#"schema = "https://schemas.equivalencematrix.dev/v1/capability"
+        r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json"
 id = "bench.scale"
 title = "Scale benchmark"
 status = "active"
@@ -227,7 +227,7 @@ owners = ["owner://team/performance"]
     )?;
 
     let mut journey = String::from(
-        r#"schema = "https://schemas.equivalencematrix.dev/v1/journey"
+        r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/journey.schema.json"
 id = "bench.scale.flow"
 revision = 1
 title = "Scale benchmark flow"
@@ -247,7 +247,7 @@ surfaces = [
     for surface in 0..SURFACES {
         let id = format!("bench.scale.flow.unit{surface:05}");
         let mut document = format!(
-            "schema = \"https://schemas.equivalencematrix.dev/v1/surface\"\nid = \"{id}\"\nrevision = 1\ntitle = \"Scale unit {surface:05}\"\njourney = \"bench.scale.flow\"\nstatus = \"active\"\nowners = [\"owner://team/performance\"]\n"
+            "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/surface.schema.json\"\nid = \"{id}\"\nrevision = 1\ntitle = \"Scale unit {surface:05}\"\njourney = \"bench.scale.flow\"\nstatus = \"active\"\nowners = [\"owner://team/performance\"]\n"
         );
         let count = if surface == 0 { 30 } else { 10 };
         for requirement in 0..count {

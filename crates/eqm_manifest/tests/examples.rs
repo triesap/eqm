@@ -87,7 +87,9 @@ fn positive_examples_are_current_toml_and_contain_no_placeholder_digest()
             }
             let source = fs::read_to_string(entry.path())?;
             let _: toml::Table = toml::from_str(&source)?;
-            assert!(source.contains("https://schemas.equivalencematrix.dev/v1/"));
+            assert!(source.contains(
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/"
+            ));
             assert!(!source.to_ascii_lowercase().contains("placeholder"));
         }
     }

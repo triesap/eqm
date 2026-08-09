@@ -1,5 +1,5 @@
 {
-  "$id": "https://schemas.equivalencematrix.dev/v1/release-record",
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/release-record.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

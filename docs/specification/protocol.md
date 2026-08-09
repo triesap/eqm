@@ -14,7 +14,7 @@ Every CLI JSON response uses the result schema and these exact fields:
 
 | Field | Type | Rule |
 | --- | --- | --- |
-| `schema` | string | exact `https://schemas.equivalencematrix.dev/v1/result` |
+| `schema` | string | exact `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/result.schema.json` |
 | `tool_version` | semantic-version string | executing EQM version |
 | `command` | command identity | exact invoked command, with spaces represented by `_` |
 | `workspace_digest` | digest or JSON `null` | null only when a valid finalized graph was not available |
@@ -30,7 +30,7 @@ identity.
 
 ## Diagnostic DTO
 
-Schema: `https://schemas.equivalencematrix.dev/v1/diagnostic`.
+Schema: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/diagnostic.schema.json`.
 
 | Field | Type | Presence |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ that are absent from the semantic entity are not exposed.
 
 ## Normalized Test Result
 
-Schema: `https://schemas.equivalencematrix.dev/v1/test-result`.
+Schema: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/test-result.schema.json`.
 
 | Field | Type | Rule |
 | --- | --- | --- |
@@ -124,7 +124,7 @@ and `size`; attachment bytes are external and content-addressed.
 
 ## Immutable Evidence Result
 
-Schema: `https://schemas.equivalencematrix.dev/v1/evidence-result`.
+Schema: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/evidence-result.schema.json`.
 
 | Field | Type | Rule |
 | --- | --- | --- |
@@ -154,7 +154,7 @@ equal the full canonical `sha256:` result-digest wire value.
 
 ## Inventory And Runtime Facts
 
-Inventory schema: `https://schemas.equivalencematrix.dev/v1/inventory`.
+Inventory schema: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/inventory.schema.json`.
 
 An inventory has exact fields `schema`, `adapter`, `adapter_digest`, `subject`,
 `target`, `generated_at`, `completeness`, `entries`, `diagnostics`, and
@@ -164,7 +164,7 @@ JSON data. Completeness is `complete`, `partial`, or `unknown`; only `complete`
 can prove absence.
 
 Runtime-facts schema:
-`https://schemas.equivalencematrix.dev/v1/runtime-facts`. It has exact fields
+`https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/runtime-facts.schema.json`. It has exact fields
 `schema`, `provider`, `subject`, `target`, `profile_values`, `observed_at`,
 `expires_at`, `facts`, `producer`, `claimed_trust`, and `facts_digest`. Facts
 sort by `(surface, dimension, key)` and contain exact `surface`, `dimension`,
@@ -173,7 +173,7 @@ payloads are forbidden.
 
 ## Release Record
 
-Schema: `https://schemas.equivalencematrix.dev/v1/release-record`.
+Schema: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/release-record.schema.json`.
 
 Exact fields are `schema`, `target`, `app_version`, `build_number`,
 `source_commit`, `artifact_digest`, `channel`, `released_at`, `producer`,
@@ -182,8 +182,8 @@ object ID, not a branch or tag. The record digest covers every preceding field.
 
 ## Adapter Protocol
 
-Request schema: `https://schemas.equivalencematrix.dev/v1/adapter-request`.
-Response schema: `https://schemas.equivalencematrix.dev/v1/adapter-response`.
+Request schema: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-request.schema.json`.
+Response schema: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-response.schema.json`.
 
 | Request field | Type |
 | --- | --- |
@@ -208,7 +208,7 @@ EQM emits an in-toto Statement v1 with:
 - nonempty `subject`, each with `name` and a `digest` object containing exactly
   `sha256`;
 - `predicateType` exactly
-  `https://schemas.equivalencematrix.dev/v1/attestation`;
+  `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/attestation.schema.json`;
 - `predicate` with exact fields `tool_version`, `command`, `workspace_digest`,
   `policy_digest`, `profile_values`, `evaluation_subject`, `evidence_digests`,
   `runtime_facts_digest`, `release_record_digest`, `trust_config_digest`,

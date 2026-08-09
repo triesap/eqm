@@ -1,4 +1,4 @@
-schema = "https://schemas.equivalencematrix.dev/v1/surface"
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/surface.schema.json"
 id = "account.create.signup.otp"
 revision = 1
 title = "Fixture OTP"

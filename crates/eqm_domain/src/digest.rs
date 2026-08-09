@@ -142,7 +142,7 @@ impl Error for DigestParseError {}
 mod tests {
     use super::*;
 
-    const EMPTY_GRAPH: &[u8] = br#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://schemas.equivalencematrix.dev/v1/semantic-graph","surfaces":[],"targets":[],"waivers":[]}"#;
+    const EMPTY_GRAPH: &[u8] = br#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json","surfaces":[],"targets":[],"waivers":[]}"#;
 
     #[test]
     fn content_hash_matches_standard_empty_vector() {
@@ -156,7 +156,7 @@ mod tests {
     fn semantic_domain_matches_authority_vector() {
         assert_eq!(
             Sha256Digest::hash_domain(DigestDomain::SemanticGraph, EMPTY_GRAPH).to_string(),
-            "sha256:2323afb42c366664f47a5f90c597c7968f651f74f875ed95aec4dcc02283994c"
+            "sha256:d157825d4fbaafe9fa2b0313c4f2465a13cf30fb088a86f445192b042376d2b3"
         );
     }
 

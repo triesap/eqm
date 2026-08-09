@@ -1,4 +1,4 @@
-schema = "https://schemas.equivalencematrix.dev/v1/waiver"
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/waiver.schema.json"
 id = "waiver.fixture.release"
 revision = 1
 owners = ["owner://team/product"]

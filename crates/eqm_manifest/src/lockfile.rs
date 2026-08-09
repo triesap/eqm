@@ -236,7 +236,7 @@ mod tests {
     use super::*;
     use crate::select_workspace_config;
 
-    const CONFIG: &str = r#"schema = "https://schemas.equivalencematrix.dev/v1/workspace"
+    const CONFIG: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json"
 contract_sources = ["eqm/contracts/**/*.toml"]
 binding_sources = ["eqm/bindings/**/*.toml"]
 policy_sources = ["eqm/policies/**/*.toml"]
@@ -244,7 +244,7 @@ profile_sources = ["eqm/profiles/**/*.toml"]
 runner_sources = ["eqm/runners/**/*.toml"]
 waiver_sources = ["eqm/waivers/**/*.toml"]
 "#;
-    const LOCK: &str = r#"schema = "https://schemas.equivalencematrix.dev/v1/lock"
+    const LOCK: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json"
 version = 1
 
 [[imports]]
@@ -315,7 +315,7 @@ digest = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85
             Err(LockError::InvalidDigest)
         );
         assert_eq!(
-            load(&LOCK.replace("/v1/lock", "/v0/lock")),
+            load(&LOCK.replace("/schemas/v1/manifest/lock", "/schemas/v0/manifest/lock")),
             Err(LockError::WrongSchema)
         );
     }

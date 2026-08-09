@@ -64,7 +64,9 @@ pub fn canonicalize_graph(
     let root = object([
         (
             "schema",
-            json!("https://schemas.equivalencematrix.dev/v1/semantic-graph"),
+            json!(
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json"
+            ),
         ),
         (
             "capabilities",
@@ -804,8 +806,8 @@ mod tests {
     };
     use std::str::FromStr;
 
-    const EMPTY: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://schemas.equivalencematrix.dev/v1/semantic-graph","surfaces":[],"targets":[],"waivers":[]}"#;
-    const CAPABILITY_TARGET: &str = r#"{"adapters":[],"bindings":[],"capabilities":[{"description":"Create an account","extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://schemas.equivalencematrix.dev/v1/semantic-graph","surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","root":"apps/web"}],"waivers":[]}"#;
+    const EMPTY: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json","surfaces":[],"targets":[],"waivers":[]}"#;
+    const CAPABILITY_TARGET: &str = r#"{"adapters":[],"bindings":[],"capabilities":[{"description":"Create an account","extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json","surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","root":"apps/web"}],"waivers":[]}"#;
 
     fn capability() -> Result<Capability, Box<dyn Error>> {
         Ok(Capability::new(
@@ -839,7 +841,7 @@ mod tests {
         assert_eq!(canonical.bytes(), EMPTY.as_bytes());
         assert_eq!(
             canonical.digest().to_string(),
-            "sha256:2323afb42c366664f47a5f90c597c7968f651f74f875ed95aec4dcc02283994c"
+            "sha256:d157825d4fbaafe9fa2b0313c4f2465a13cf30fb088a86f445192b042376d2b3"
         );
         Ok(())
     }
@@ -865,7 +867,7 @@ mod tests {
         assert_eq!(canonical.bytes(), CAPABILITY_TARGET.as_bytes());
         assert_eq!(
             canonical.digest().to_string(),
-            "sha256:a22165d85e6f4d5ee0891f17da7116d8eb497122d06893bca9a95e0241e7ebc7"
+            "sha256:b534a799ef196804b497851a5a5707669ffff519df3d7516285f3b70ec0819a4"
         );
         assert_eq!(canonical, canonicalize_graph(&second)?);
         Ok(())

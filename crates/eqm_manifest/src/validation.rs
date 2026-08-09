@@ -359,7 +359,7 @@ pub enum ValidationErrorKind {
 mod tests {
     use super::*;
 
-    const CAPABILITY: &str = r#"schema = "https://schemas.equivalencematrix.dev/v1/capability"
+    const CAPABILITY: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json"
 id = "account.create"
 title = "Account creation"
 status = "active"
@@ -391,11 +391,11 @@ owners = ["owner://team/accounts"]
     fn old_future_foreign_and_cross_class_schemas_fail() -> Result<(), Box<dyn Error>> {
         for (schema, kind) in [
             (
-                "https://schemas.equivalencematrix.dev/v0/capability",
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v0/manifest/capability.schema.json",
                 ValidationErrorKind::WrongSchema,
             ),
             (
-                "https://schemas.equivalencematrix.dev/v2/capability",
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/capability.schema.json",
                 ValidationErrorKind::WrongSchema,
             ),
             (
@@ -403,7 +403,7 @@ owners = ["owner://team/accounts"]
                 ValidationErrorKind::WrongSchema,
             ),
             (
-                "https://schemas.equivalencematrix.dev/v1/policy",
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/policy.schema.json",
                 ValidationErrorKind::WrongSourceClass,
             ),
         ] {
@@ -411,7 +411,7 @@ owners = ["owner://team/accounts"]
             fs::write(
                 repository.path().join("document.toml"),
                 CAPABILITY.replace(
-                    "https://schemas.equivalencematrix.dev/v1/capability",
+                    "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json",
                     schema,
                 ),
             )?;

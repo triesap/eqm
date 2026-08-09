@@ -238,12 +238,12 @@ mod tests {
 
     #[test]
     fn response_status_controls_inventory_presence() {
-        let value = br#"{"schema":"https://schemas.equivalencematrix.dev/v1/adapter-response","request_id":"run-1","adapter":"source.rust","adapter_digest":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","status":"error","inventory":{},"diagnostics":[]}"#;
+        let value = br#"{"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-response.schema.json","request_id":"run-1","adapter":"source.rust","adapter_digest":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","status":"error","inventory":{},"diagnostics":[]}"#;
         assert_eq!(
             AdapterResponseDto::from_json(value),
             Err(AdapterDtoError::Json)
         );
-        let value = br#"{"schema":"https://schemas.equivalencematrix.dev/v1/adapter-response","request_id":"run-1","adapter":"source.rust","adapter_digest":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","status":"error","inventory":null,"diagnostics":[]}"#;
+        let value = br#"{"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-response.schema.json","request_id":"run-1","adapter":"source.rust","adapter_digest":"sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","status":"error","inventory":null,"diagnostics":[]}"#;
         assert!(AdapterResponseDto::from_json(value).is_ok());
     }
 }

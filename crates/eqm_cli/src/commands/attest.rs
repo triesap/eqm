@@ -370,16 +370,17 @@ mod tests {
         let directory = tempfile::tempdir()?;
         let path = directory.path().join("result.json");
         fs::write(&path, b"{}")?;
-        let session_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let session_root = repository.path();
         let request = SessionRequest::new(Default::default(), crate::cli::CommandName::Attest);
-        let session = prepare(&request, &session_root)?;
+        let session = prepare(&request, session_root)?;
         assert!(read_evidence(&session, &path).is_err());
         Ok(())
     }
 
     #[test]
     fn unsigned_statement_binds_exact_evidence_and_workspace() -> Result<(), Box<dyn Error>> {
-        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/android-ios");
         let directory = tempfile::tempdir()?;
         let root = directory.path();
         fs::copy(source.join("eqm.toml"), root.join("eqm.toml"))?;
@@ -420,13 +421,13 @@ mod tests {
             "subject": {
                 "repository": repository,
                 "repository_id_digest": Sha256Digest::hash_content(b"https://github.com/example/project").to_string(),
-                "scope": {"kind":"target", "target":"web"},
+                "scope": {"kind":"target", "target":"android"},
                 "source_commit": commit,
                 "build_id": null,
                 "artifact_digest": null,
                 "target_configuration_digest": digest,
             },
-            "target":"web",
+            "target":"android",
             "unit":"account.create.signup.identifier",
             "requirements":["account.create.signup.identifier#email_default"],
             "facets":["release_presence"],

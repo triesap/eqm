@@ -118,7 +118,7 @@ fn path_collision_and_lock_fixtures_fail_at_their_stage() -> Result<(), Box<dyn 
 fn materialized_limit_collision_and_symlink_cases_fail_closed() -> Result<(), Box<dyn Error>> {
     let repository = workspace()?;
     let oversized = format!(
-        "schema = \"https://schemas.equivalencematrix.dev/v1/capability\"\nid = \"oversized.value\"\ntitle = \"{}\"\nstatus = \"active\"\nowners = [\"owner://team/test\"]\n",
+        "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json\"\nid = \"oversized.value\"\ntitle = \"{}\"\nstatus = \"active\"\nowners = [\"owner://team/test\"]\n",
         "x".repeat(4 * 1024 * 1024)
     );
     fs::write(

@@ -204,7 +204,8 @@ mod tests {
     #[test]
     fn check_is_nonexecuting_and_reports_stable_missing_obligations() -> Result<(), Box<dyn Error>>
     {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let before = fs::read_dir(root.join(".eqm"))
             .ok()
             .map(|entries| entries.count());
@@ -212,8 +213,8 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let first = execute(parsed.clone(), &root)?;
-        let second = execute(parsed, &root)?;
+        let first = execute(parsed.clone(), root)?;
+        let second = execute(parsed, root)?;
         assert_eq!(first.exit_code, 1);
         assert_eq!(first.payload.json["result"], second.payload.json["result"]);
         assert!(

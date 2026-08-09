@@ -166,12 +166,13 @@ mod tests {
     #[test]
     fn signup_locations_are_sorted_source_linked_and_missing_is_typed() -> Result<(), Box<dyn Error>>
     {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let ParseOutcome::Run(parsed) = parse([
             "locate",
             "account.create.signup.identifier",
             "--target",
-            "web",
+            "android",
             "--format",
             "json",
             "--no-progress",
@@ -179,23 +180,19 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let result = execute(parsed, &root)?;
+        let result = execute(parsed, root)?;
         assert_eq!(result.exit_code, 0);
         let locations = result.payload.json["result"]["locations"]
             .as_array()
             .ok_or("locations")?;
         assert_eq!(locations.len(), 3);
         assert!(locations.iter().any(|value| value["role"] == "source"));
-        assert!(
-            locations
-                .iter()
-                .any(|value| value["path"] == "apps/web/src/signup/identifier.svelte")
-        );
-        assert!(
-            locations.iter().all(|value| {
-                value["source"]["uri"] == "file:eqm/bindings/web.auth_signup.toml"
-            })
-        );
+        assert!(locations.iter().any(|value| {
+            value["path"] == "apps/android/app/src/main/java/com/example/signup/SignupScreen.kt"
+        }));
+        assert!(locations.iter().all(|value| {
+            value["source"]["uri"] == "file:eqm/bindings/android.auth_signup.toml"
+        }));
 
         let ParseOutcome::Run(parsed) = parse([
             "locate",
@@ -207,7 +204,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let result = execute(parsed, &root)?;
+        let result = execute(parsed, root)?;
         assert_eq!(result.exit_code, 2);
         assert!(result.payload.json["result"].is_null());
         assert_eq!(result.payload.json["diagnostics"][0]["code"], "EQM-E0001");

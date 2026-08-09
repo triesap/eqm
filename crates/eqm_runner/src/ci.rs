@@ -173,7 +173,7 @@ mod tests {
 
     fn evidence() -> Result<Vec<u8>, Box<dyn Error>> {
         let mut value = json!({
-            "schema": "https://schemas.equivalencematrix.dev/v1/evidence-result",
+            "schema": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/evidence-result.schema.json",
             "subject": {
                 "repository": "https://example.com/team/project",
                 "repository_id_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",

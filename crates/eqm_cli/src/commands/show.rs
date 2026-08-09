@@ -235,25 +235,26 @@ mod tests {
     #[test]
     fn every_approved_kind_is_exact_source_located_and_missing_is_typed()
     -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         for (kind, id) in [
             ("capability", "account.create"),
             ("journey", "account.create.signup"),
             ("surface", "account.create.signup.identifier"),
             ("fragment", "auth.otp_entry"),
-            ("target", "web"),
-            ("binding", "binding.web.auth_signup"),
+            ("target", "android"),
+            ("binding", "binding.android.auth_signup"),
             ("policy", "consumer.critical_flow"),
             ("profile", "audience.default"),
-            ("runner", "runner.web"),
-            ("waiver", "waiver.web.signup_email"),
+            ("runner", "runner.android"),
+            ("waiver", "waiver.android.signup_email"),
         ] {
             let ParseOutcome::Run(parsed) =
                 parse(["show", kind, id, "--format", "json", "--no-progress"])?
             else {
                 return Err("unexpected help".into());
             };
-            let result = execute(parsed, &root)?;
+            let result = execute(parsed, root)?;
             assert_eq!(result.exit_code, 0, "{kind} {id}");
             assert_eq!(result.payload.json["result"]["entity_kind"], kind);
             assert_eq!(result.payload.json["result"]["entity_id"], id);
@@ -276,7 +277,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let result = execute(parsed, &root)?;
+        let result = execute(parsed, root)?;
         assert_eq!(result.exit_code, 2);
         assert!(result.payload.json["result"].is_null());
         assert_eq!(result.payload.json["diagnostics"][0]["code"], "EQM-E0001");

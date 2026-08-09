@@ -618,7 +618,7 @@ mod tests {
         assert_eq!(
             String::from_utf8(bytes.clone())?,
             concat!(
-                "{\"schema\":\"https://schemas.equivalencematrix.dev/v1/result\",",
+                "{\"schema\":\"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/result.schema.json\",",
                 "\"tool_version\":\"0.1.0\",\"command\":\"validate\",",
                 "\"workspace_digest\":null,\"context\":{\"mode\":\"development\",",
                 "\"profiles\":[],\"subject\":null,\"baseline\":null,\"offline\":true,",
@@ -687,7 +687,7 @@ mod tests {
             ),
             Err(ReportBuildError::CommandMismatch)
         );
-        let unknown = br#"{"schema":"https://schemas.equivalencematrix.dev/v1/result","tool_version":"0.1.0","command":"validate","workspace_digest":null,"context":{"mode":"development","profiles":[],"subject":null,"baseline":null,"offline":true,"evaluated_at":"2026-08-07T12:00:00Z"},"result":null,"diagnostics":[],"extra":true}"#;
+        let unknown = br#"{"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/result.schema.json","tool_version":"0.1.0","command":"validate","workspace_digest":null,"context":{"mode":"development","profiles":[],"subject":null,"baseline":null,"offline":true,"evaluated_at":"2026-08-07T12:00:00Z"},"result":null,"diagnostics":[],"extra":true}"#;
         assert_eq!(
             ReportEnvelope::<ValidateResult, (), ()>::from_json(unknown),
             Err(ReportBuildError::Json)

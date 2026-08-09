@@ -247,7 +247,7 @@ fn render_lock<'a>(
     adapters: impl Iterator<Item = &'a AdapterPin>,
 ) -> String {
     let mut output =
-        "schema = \"https://schemas.equivalencematrix.dev/v1/lock\"\nversion = 1\n".to_owned();
+        "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json\"\nversion = 1\n".to_owned();
     for value in imports {
         output.push_str(&format!(
             "\n[[imports]]\nid = {}\nrevision = {}\nsource = {}\nresolved = {}\ndigest = {}\n",

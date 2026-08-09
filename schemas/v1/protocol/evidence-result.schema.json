@@ -397,7 +397,7 @@
       ]
     }
   },
-  "$id": "https://schemas.equivalencematrix.dev/v1/evidence-result",
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/evidence-result.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

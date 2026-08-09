@@ -1,5 +1,7 @@
 //! Exact protected waiver evaluation fixtures.
 
+mod support;
+
 use eqm_domain::{
     DimensionId, Extensions, Facet, Policy, PolicyId, PositiveDays, ProfileId, Revision,
     SymbolicValueId, WaiverPolicy,
@@ -9,21 +11,13 @@ use eqm_engine::{
     PolicyRef, ProfileRequest, WaivableStatus, WaiverEvaluation, WaiverInvalidReason,
     derive_obligations, evaluate_waivers, expand_fragments, resolve_graph, select_policy_profiles,
 };
-use eqm_manifest::{canonicalize_fragment, load_workspace};
+use eqm_manifest::canonicalize_fragment;
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
-use std::path::Path;
-
-fn repository_root() -> Result<&'static Path, Box<dyn Error>> {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| "workspace root unavailable".into())
-}
 
 #[test]
 fn exact_valid_waiver_is_visible_but_never_satisfies_evidence() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(repository_root()?, None)?;
+    let (_repository, loaded) = support::loaded_example()?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let selection_graph = graph.clone();
     let digests: FragmentDigestMap = graph

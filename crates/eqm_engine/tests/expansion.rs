@@ -6,11 +6,12 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-fn source_root() -> Result<&'static Path, Box<dyn Error>> {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
+fn source_root() -> Result<PathBuf, Box<dyn Error>> {
+    Ok(Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(Path::parent)
-        .ok_or_else(|| "workspace root unavailable".into())
+        .ok_or("workspace root unavailable")?
+        .join("examples/android-ios"))
 }
 
 fn digest_map(graph: &eqm_domain::WorkspaceGraph) -> Result<FragmentDigestMap, Box<dyn Error>> {
@@ -57,7 +58,8 @@ fn replace(path: PathBuf, before: &str, after: &str) -> Result<(), Box<dyn Error
 
 #[test]
 fn exact_pins_expand_before_finalized_canonicalization() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(source_root()?, None)?;
+    let repository = workspace()?;
+    let loaded = load_workspace(repository.path(), None)?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let digests = digest_map(&graph)?;
     let finalized = expand_fragments(graph, &digests, loaded.source_map())?;
@@ -110,13 +112,14 @@ fn pin_mismatch_and_requirement_collision_fail_closed() -> Result<(), Box<dyn Er
 #[test]
 fn semantic_mutation_changes_final_digest_but_source_layout_does_not() -> Result<(), Box<dyn Error>>
 {
-    let baseline = load_workspace(source_root()?, None)?;
+    let baseline_repository = workspace()?;
+    let baseline = load_workspace(baseline_repository.path(), None)?;
     let graph = resolve_graph(baseline.graph_input().clone(), baseline.source_map())?;
     let finalized = expand_fragments(graph.clone(), &digest_map(&graph)?, baseline.source_map())?;
     let baseline_digest = canonicalize_graph(&finalized)?.digest();
     assert_eq!(
         baseline_digest.to_string(),
-        "sha256:9ecf98479d24db6cef16adb395f27de68e5a8e1295de5928f0e2646cf68b793a"
+        "sha256:edaea5fb3e53ebac478e1916ac360b137ad281bfed2e8914dc67c5eb8b39eb78"
     );
 
     let repository = workspace()?;

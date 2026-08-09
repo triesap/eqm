@@ -617,7 +617,7 @@ mod tests {
 
     #[test]
     fn executable_validation_rejects_inconsistent_counts() {
-        let json = br#"{"schema":"https://schemas.equivalencematrix.dev/v1/test-result","selector":{"kind":"release","channel":"production"},"attempts":[{"number":1,"outcome":"passed","started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","message":null}],"counts":{"selected":2,"passed":1,"failed":0,"skipped":0,"filtered":0,"quarantined":0},"started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","attachments":[]}"#;
+        let json = br#"{"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/test-result.schema.json","selector":{"kind":"release","channel":"production"},"attempts":[{"number":1,"outcome":"passed","started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","message":null}],"counts":{"selected":2,"passed":1,"failed":0,"skipped":0,"filtered":0,"quarantined":0},"started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","attachments":[]}"#;
         assert_eq!(
             TestResultDto::from_json(json),
             Err(EvidenceDtoError::InvalidCounts)

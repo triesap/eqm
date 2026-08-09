@@ -11,17 +11,17 @@ ranges are not accepted.
 
 | Document | Exact schema URI | Source class | Authority key |
 | --- | --- | --- | --- |
-| workspace | `https://schemas.equivalencematrix.dev/v1/workspace` | explicit `eqm.toml` | singleton config |
-| capability | `https://schemas.equivalencematrix.dev/v1/capability` | contract | `id` |
-| journey | `https://schemas.equivalencematrix.dev/v1/journey` | contract | `id` |
-| surface | `https://schemas.equivalencematrix.dev/v1/surface` | contract | `id` |
-| fragment | `https://schemas.equivalencematrix.dev/v1/fragment` | contract | `id` plus revision/digest at use sites |
-| binding | `https://schemas.equivalencematrix.dev/v1/binding` | binding | `(target, unit)`; `id` is stable record identity |
-| policy | `https://schemas.equivalencematrix.dev/v1/policy` | policy | `id` |
-| profile | `https://schemas.equivalencematrix.dev/v1/profile` | profile | `id` |
-| runner | `https://schemas.equivalencematrix.dev/v1/runner` | runner | `id` |
-| waiver | `https://schemas.equivalencematrix.dev/v1/waiver` | waiver | `id` |
-| lock | `https://schemas.equivalencematrix.dev/v1/lock` | explicit `eqm.lock` | singleton lock |
+| workspace | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json` | explicit `eqm.toml` | singleton config |
+| capability | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json` | contract | `id` |
+| journey | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/journey.schema.json` | contract | `id` |
+| surface | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/surface.schema.json` | contract | `id` |
+| fragment | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/fragment.schema.json` | contract | `id` plus revision/digest at use sites |
+| binding | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/binding.schema.json` | binding | `(target, unit)`; `id` is stable record identity |
+| policy | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/policy.schema.json` | policy | `id` |
+| profile | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/profile.schema.json` | profile | `id` |
+| runner | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/runner.schema.json` | runner | `id` |
+| waiver | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/waiver.schema.json` | waiver | `id` |
+| lock | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json` | explicit `eqm.lock` | singleton lock |
 
 Every schema is closed: JSON Schema object definitions set
 `unevaluatedProperties: false`, unions are discriminated and exclusive, and
@@ -37,16 +37,16 @@ implemented.
 
 | Payload | Exact schema URI |
 | --- | --- |
-| result envelope | `https://schemas.equivalencematrix.dev/v1/result` |
-| diagnostic | `https://schemas.equivalencematrix.dev/v1/diagnostic` |
-| normalized test result | `https://schemas.equivalencematrix.dev/v1/test-result` |
-| evidence result | `https://schemas.equivalencematrix.dev/v1/evidence-result` |
-| inventory | `https://schemas.equivalencematrix.dev/v1/inventory` |
-| runtime facts | `https://schemas.equivalencematrix.dev/v1/runtime-facts` |
-| release record | `https://schemas.equivalencematrix.dev/v1/release-record` |
-| attestation | `https://schemas.equivalencematrix.dev/v1/attestation` |
-| adapter request | `https://schemas.equivalencematrix.dev/v1/adapter-request` |
-| adapter response | `https://schemas.equivalencematrix.dev/v1/adapter-response` |
+| result envelope | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/result.schema.json` |
+| diagnostic | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/diagnostic.schema.json` |
+| normalized test result | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/test-result.schema.json` |
+| evidence result | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/evidence-result.schema.json` |
+| inventory | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/inventory.schema.json` |
+| runtime facts | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/runtime-facts.schema.json` |
+| release record | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/release-record.schema.json` |
+| attestation | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/attestation.schema.json` |
+| adapter request | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-request.schema.json` |
+| adapter response | `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-response.schema.json` |
 
 ## Discovery And Duplicate Authority
 

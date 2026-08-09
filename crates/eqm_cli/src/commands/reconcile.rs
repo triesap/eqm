@@ -353,14 +353,15 @@ mod tests {
 
     #[test]
     fn declarations_reconcile_without_implicit_discovery() -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let before = fs::read_dir(root.join(".eqm"))
             .ok()
             .map(|entries| entries.count());
         let ParseOutcome::Run(parsed) = parse([
             "reconcile",
             "--target",
-            "web",
+            "android",
             "--format",
             "json",
             "--no-progress",
@@ -368,7 +369,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let execution = execute(parsed, &root)?;
+        let execution = execute(parsed, root)?;
         assert_eq!(execution.exit_code, 0);
         assert_eq!(execution.payload.json["command"], "reconcile");
         assert!(

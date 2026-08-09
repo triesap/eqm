@@ -1,5 +1,5 @@
 {
-  "schema": "https://schemas.equivalencematrix.dev/v1/test-result",
+  "schema": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/test-result.schema.json",
   "selector": {"kind":"test","framework":"vitest","test_id":"fixture web signup","suite":null},
   "attempts": [{"number":1,"outcome":"passed","started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","message":null}],
   "counts": {"selected":1,"passed":1,"failed":0,"skipped":0,"filtered":0,"quarantined":0},

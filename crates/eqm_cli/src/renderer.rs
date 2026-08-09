@@ -306,6 +306,9 @@ mod tests {
             (OutputFormat::Markdown, "context.md"),
         ] {
             let actual = render(&context, format)?;
+            if std::env::var_os("EQM_UPDATE_GOLDENS").is_some() {
+                fs::write(golden_root.join(name), actual.bytes())?;
+            }
             assert_eq!(actual.bytes(), fs::read(golden_root.join(name))?);
         }
 
@@ -314,6 +317,9 @@ mod tests {
         };
         let validation = commands::validate::execute(parsed, repository.path())?.payload;
         let actual = render(&validation, OutputFormat::Sarif)?;
+        if std::env::var_os("EQM_UPDATE_GOLDENS").is_some() {
+            fs::write(golden_root.join("validate.sarif"), actual.bytes())?;
+        }
         assert_eq!(
             actual.bytes(),
             fs::read(golden_root.join("validate.sarif"))?

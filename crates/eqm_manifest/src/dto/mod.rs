@@ -479,7 +479,7 @@ mod tests {
     use super::*;
 
     const WORKSPACE: &str = r#"
-schema = "https://schemas.equivalencematrix.dev/v1/workspace"
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json"
 contract_sources = ["eqm/contracts/**/*.toml"]
 binding_sources = ["eqm/bindings/**/*.toml"]
 policy_sources = ["eqm/policies/**/*.toml"]
@@ -518,7 +518,7 @@ owners = ["owner://team/web"]
     #[test]
     fn every_document_family_denies_unknown_fields() {
         let capability = r#"
-schema = "https://schemas.equivalencematrix.dev/v1/capability"
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/capability.schema.json"
 id = "account.create"
 title = "Account creation"
 status = "active"
@@ -528,7 +528,7 @@ owners = ["owner://team/accounts"]
         assert!(toml::from_str::<CapabilityDto>(&format!("{capability}\nlegacy = true")).is_err());
 
         let lock = r#"
-schema = "https://schemas.equivalencematrix.dev/v1/lock"
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json"
 version = 1
 
 [[imports]]

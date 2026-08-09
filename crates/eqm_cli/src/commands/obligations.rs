@@ -122,13 +122,14 @@ mod tests {
 
     #[test]
     fn missing_and_noncurrent_status_filters_are_stable() -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let ParseOutcome::Run(missing) = parse([
             "obligations",
             "--unit",
             "account.create.signup.identifier",
             "--target",
-            "web",
+            "android",
             "--status",
             "missing",
             "--format",
@@ -138,7 +139,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let missing = execute(missing, &root)?;
+        let missing = execute(missing, root)?;
         assert!(
             !missing.payload.json["result"]["obligations"]
                 .as_array()
@@ -164,7 +165,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let stale = execute(stale, &root)?;
+        let stale = execute(stale, root)?;
         assert!(
             stale.payload.json["result"]["obligations"]
                 .as_array()

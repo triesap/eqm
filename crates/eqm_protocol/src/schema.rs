@@ -40,7 +40,7 @@ pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
 #[cfg(test)]
 mod tests {
     use super::*;
-    use eqm_domain::SchemaVersion;
+    use eqm_domain::{SchemaGroup, SchemaVersion};
     use std::collections::BTreeSet;
 
     #[test]
@@ -49,9 +49,9 @@ mod tests {
         let unique: BTreeSet<_> = values.iter().collect();
         assert_eq!(unique.len(), PROTOCOL_SCHEMAS.len());
         assert!(
-            values
+            PROTOCOL_SCHEMAS
                 .iter()
-                .all(|value| value.starts_with("https://schemas.equivalencematrix.dev/v1/"))
+                .all(|schema| schema.kind().group() == SchemaGroup::Protocol)
         );
         assert!(
             PROTOCOL_SCHEMAS

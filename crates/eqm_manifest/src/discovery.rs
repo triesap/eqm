@@ -239,7 +239,7 @@ mod tests {
     use super::*;
     use crate::select_workspace_config;
 
-    const CONFIG: &str = r#"schema = "https://schemas.equivalencematrix.dev/v1/workspace"
+    const CONFIG: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json"
 contract_sources = ["eqm/contracts/**/*.toml"]
 binding_sources = ["eqm/bindings/**/*.toml"]
 policy_sources = ["eqm/policies/**/*.toml"]

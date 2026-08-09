@@ -348,12 +348,12 @@ mod tests {
     #[test]
     #[cfg(unix)]
     fn fake_adapter_is_invoked_only_through_its_exact_local_pin() -> Result<(), Box<dyn Error>> {
-        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/android-ios");
         let directory = tempfile::tempdir()?;
         let root = directory.path();
         fs::copy(source.join("eqm.toml"), root.join("eqm.toml"))?;
         copy_tree(&source.join("eqm"), &root.join("eqm"))?;
-        fs::create_dir_all(root.join("apps/web"))?;
+        fs::create_dir_all(root.join("apps/android"))?;
         git(root, &["init", "-q"])?;
         git(
             root,
@@ -385,7 +385,7 @@ mod tests {
         fs::write(&executable, script)?;
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700))?;
         let lock = format!(
-            "schema = \"https://schemas.equivalencematrix.dev/v1/lock\"\nversion = 1\n\n[[adapters]]\nid = \"adapter.test\"\nversion = \"1.0.0\"\nsource = \"https://example.com/adapters/test\"\nresolved = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\ndigest = \"{digest}\"\nprotocol = 1\n"
+            "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json\"\nversion = 1\n\n[[adapters]]\nid = \"adapter.test\"\nversion = \"1.0.0\"\nsource = \"https://example.com/adapters/test\"\nresolved = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\ndigest = \"{digest}\"\nprotocol = 1\n"
         );
         fs::write(&lock_path, lock)?;
         (|| {
@@ -394,7 +394,7 @@ mod tests {
                 "--adapter",
                 "adapter.test",
                 "--target",
-                "web",
+                "android",
                 "--offline",
                 "--format",
                 "json",
@@ -411,8 +411,13 @@ mod tests {
             );
             assert!(execution.payload.json["result"].is_null());
             fs::write(&executable, b"#!/bin/sh\nexit 0\n")?;
-            let ParseOutcome::Run(parsed) =
-                parse(["discover", "--adapter", "adapter.test", "--target", "web"])?
+            let ParseOutcome::Run(parsed) = parse([
+                "discover",
+                "--adapter",
+                "adapter.test",
+                "--target",
+                "android",
+            ])?
             else {
                 return Err("unexpected help".into());
             };

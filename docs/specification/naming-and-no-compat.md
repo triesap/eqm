@@ -11,7 +11,7 @@ Canonical identities are:
 - `EQM-`
 - `EQM_`
 - `eqm://`
-- `https://schemas.equivalencematrix.dev/v1/`
+- `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/`
 
 The prior identifiers `FeatureMatrix`, `fmtx`, `.fmtx`, `fmtx.toml`, and `FMTX`
 are rejection data only. They must not appear as accepted input, aliases,

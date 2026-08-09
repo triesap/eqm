@@ -7,7 +7,7 @@ use crate::session::{SessionRequest, prepare};
 use chrono::{DateTime, SecondsFormat, Utc};
 use eqm_domain::{
     BindingId, CapabilityId, FragmentId, JourneyId, PolicyId, ProfileId, RepoPath, RunnerId,
-    Sha256Digest, SurfaceId, UtcInstant, WaiverId,
+    SchemaKind, SchemaUri, Sha256Digest, SurfaceId, UtcInstant, WaiverId,
 };
 use eqm_manifest::{format_manifest, select_workspace_config};
 use eqm_protocol::{
@@ -21,8 +21,8 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-const WORKSPACE: &str = "schema = \"https://schemas.equivalencematrix.dev/v1/workspace\"\ncontract_sources = [\"eqm/contracts/**/*.toml\"]\nbinding_sources = [\"eqm/bindings/**/*.toml\"]\npolicy_sources = [\"eqm/policies/**/*.toml\"]\nprofile_sources = [\"eqm/profiles/**/*.toml\"]\nrunner_sources = [\"eqm/runners/**/*.toml\"]\nwaiver_sources = [\"eqm/waivers/**/*.toml\"]\n";
-const LOCK: &str = "schema = \"https://schemas.equivalencematrix.dev/v1/lock\"\nversion = 1\n";
+const WORKSPACE: &str = "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json\"\ncontract_sources = [\"eqm/contracts/**/*.toml\"]\nbinding_sources = [\"eqm/bindings/**/*.toml\"]\npolicy_sources = [\"eqm/policies/**/*.toml\"]\nprofile_sources = [\"eqm/profiles/**/*.toml\"]\nrunner_sources = [\"eqm/runners/**/*.toml\"]\nwaiver_sources = [\"eqm/waivers/**/*.toml\"]\n";
+const LOCK: &str = "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json\"\nversion = 1\n";
 
 /// Initializes a new empty current-schema EQM workspace.
 pub fn init(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
@@ -278,7 +278,7 @@ fn validate_id(kind: &str, id: &str) -> Result<(), Box<dyn Error>> {
 }
 
 fn template(kind: &str, id: &str) -> Result<String, Box<dyn Error>> {
-    let schema = format!("https://schemas.equivalencematrix.dev/v1/{kind}");
+    let schema = SchemaUri::new(kind.parse::<SchemaKind>()?).to_string();
     let parent = id.rsplit_once('.').map(|(value, _)| value).unwrap_or(id);
     let source = match kind {
         "capability" => format!(
@@ -395,7 +395,7 @@ mod tests {
                     _ => "waiver.signup",
                 },
             )?;
-            assert!(format_manifest(&value)?.contains(&format!("/v1/{kind}")));
+            assert!(format_manifest(&value)?.contains(&format!("/{kind}.schema.json")));
             assert!(!value.contains("sha256:0000"));
         }
         Ok(())

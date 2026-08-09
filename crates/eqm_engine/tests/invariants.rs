@@ -7,11 +7,12 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-fn source_root() -> Result<&'static Path, Box<dyn Error>> {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
+fn source_root() -> Result<PathBuf, Box<dyn Error>> {
+    Ok(Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(Path::parent)
-        .ok_or_else(|| "workspace root unavailable".into())
+        .ok_or("workspace root unavailable")?
+        .join("examples/android-ios"))
 }
 
 fn copy_tree(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
@@ -50,7 +51,8 @@ fn replace(path: PathBuf, before: &str, after: &str) -> Result<(), Box<dyn Error
 
 #[test]
 fn valid_graph_satisfies_every_invariant() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(source_root()?, None)?;
+    let repository = workspace()?;
+    let loaded = load_workspace(repository.path(), None)?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     validate_graph_invariants(&graph, loaded.source_map())?;
     Ok(())
@@ -140,7 +142,7 @@ fn transition_orphan_lifecycle_and_risk_violations_are_source_linked() -> Result
 
 #[test]
 fn fragment_nesting_and_cycles_are_unrepresentable_in_v1() {
-    let source = r#"schema = "https://schemas.equivalencematrix.dev/v1/fragment"
+    let source = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/fragment.schema.json"
 id = "common.cycle"
 revision = 1
 title = "Cycle"

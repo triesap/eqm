@@ -1,4 +1,4 @@
-schema = "https://schemas.equivalencematrix.dev/v1/runner"
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/runner.schema.json"
 id = "runner.fixture"
 revision = 1
 owners = ["owner://team/tooling"]

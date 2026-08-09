@@ -1,32 +1,25 @@
 //! End-to-end graph-resolution fixtures.
 
+mod support;
+
 use eqm_domain::validate_diagnostic_registry;
 use eqm_engine::{ResolutionError, resolution_diagnostics, resolve_graph};
-use eqm_manifest::load_workspace;
 use std::error::Error;
-use std::path::Path;
-
-fn repository_root() -> Result<&'static Path, Box<dyn Error>> {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .ok_or_else(|| "workspace root unavailable".into())
-}
 
 #[test]
 fn valid_graph_resolves_deterministically() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(repository_root()?, None)?;
+    let (_repository, loaded) = support::loaded_example()?;
     let first = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let second = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     assert_eq!(first, second);
     assert_eq!(first.capabilities().len(), 1);
-    assert_eq!(first.bindings().len(), 1);
+    assert_eq!(first.bindings().len(), 2);
     Ok(())
 }
 
 #[test]
 fn duplicates_and_dangling_references_are_stable_and_source_linked() -> Result<(), Box<dyn Error>> {
-    let loaded = load_workspace(repository_root()?, None)?;
+    let (_repository, loaded) = support::loaded_example()?;
     let mut duplicate = loaded.graph_input().clone();
     duplicate
         .capabilities

@@ -77,9 +77,10 @@ mod tests {
 
     #[test]
     fn finalized_cli_session_is_borrowed_without_reloading_for_mcp() -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let request = SessionRequest::new(Default::default(), CommandName::Validate);
-        let session = prepare(&request, &root)?;
+        let session = prepare(&request, root)?;
         let mcp = session.mcp_session()?;
         assert_eq!(mcp.workspace_digest(), session.workspace_digest());
         assert!(std::ptr::eq(mcp.finalized(), session.finalized()));
@@ -93,7 +94,9 @@ mod tests {
             let payload: serde_json::Value = serde_json::from_str(&resource.text)?;
             assert_eq!(
                 payload.get("schema").and_then(serde_json::Value::as_str),
-                Some("https://schemas.equivalencematrix.dev/v1/result")
+                Some(
+                    "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/result.schema.json"
+                )
             );
         }
         Ok(())

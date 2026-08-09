@@ -439,13 +439,14 @@ mod tests {
 
     #[test]
     fn dry_run_returns_an_exact_plan_without_execution_or_writes() -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let ParseOutcome::Run(parsed) =
             parse(["verify", "--dry-run", "--format", "json", "--no-progress"])?
         else {
             return Err("unexpected help".into());
         };
-        let execution = execute(parsed, &root)?;
+        let execution = execute(parsed, root)?;
         assert_eq!(execution.exit_code, 0);
         assert!(
             !execution.payload.json["result"]["selection"]
@@ -462,20 +463,19 @@ mod tests {
     fn fake_runner_writes_one_valid_immutable_result() -> Result<(), Box<dyn Error>> {
         use std::os::unix::fs::PermissionsExt as _;
 
-        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples/android-ios");
         let directory = tempfile::tempdir()?;
         let root = directory.path();
         fs::copy(source.join("eqm.toml"), root.join("eqm.toml"))?;
         fs::copy(source.join("eqm.lock"), root.join("eqm.lock"))?;
         copy_tree(&source.join("eqm"), &root.join("eqm"))?;
-        fs::create_dir_all(root.join("apps/web"))?;
-        fs::create_dir_all(root.join("scripts"))?;
-        let script = root.join("scripts/run_example");
+        fs::create_dir_all(root.join("apps/android"))?;
+        let script = root.join("apps/android/gradlew");
         fs::write(
             &script,
             r##"#!/bin/sh
-/bin/cat > "$3" <<'JSON'
-{"schema":"https://schemas.equivalencematrix.dev/v1/test-result","selector":{"kind":"test","framework":"vitest","test_id":"signup identifier defaults to email","suite":null},"attempts":[{"number":1,"outcome":"passed","started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","message":null}],"counts":{"selected":1,"passed":1,"failed":0,"skipped":0,"filtered":0,"quarantined":0},"started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","attachments":[]}
+/bin/cat > "$5" <<'JSON'
+{"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/test-result.schema.json","selector":{"kind":"test","framework":"junit","test_id":"signupIdentifierDefaultsToEmail","suite":null},"attempts":[{"number":1,"outcome":"passed","started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","message":null}],"counts":{"selected":1,"passed":1,"failed":0,"skipped":0,"filtered":0,"quarantined":0},"started_at":"2026-08-07T12:00:00Z","finished_at":"2026-08-07T12:00:01Z","attachments":[]}
 JSON
 "##,
         )?;
@@ -507,6 +507,8 @@ JSON
             "verify",
             "--unit",
             "account.create.signup.identifier",
+            "--target",
+            "android",
             "--format",
             "json",
             "--no-progress",

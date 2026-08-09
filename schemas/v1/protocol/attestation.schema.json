@@ -1,49 +1,5 @@
 {
   "$defs": {
-    "AdapterLimitsDto": {
-      "additionalProperties": false,
-      "properties": {
-        "max_depth": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "max_entries": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "max_input_bytes": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "max_output_bytes": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "timeout_ms": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
-        }
-      },
-      "required": [
-        "timeout_ms",
-        "max_input_bytes",
-        "max_output_bytes",
-        "max_entries",
-        "max_depth"
-      ],
-      "type": "object"
-    },
-    "AdapterOperationDto": {
-      "enum": [
-        "discover"
-      ],
-      "type": "string"
-    },
     "EvidenceSubjectDto": {
       "additionalProperties": false,
       "properties": {
@@ -81,6 +37,33 @@
         "scope",
         "source_commit",
         "target_configuration_digest"
+      ],
+      "type": "object"
+    },
+    "ProfileValueDto": {
+      "additionalProperties": false,
+      "description": "One selected profile dimension, sortable by profile then dimension.",
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "revision": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "revision",
+        "dimension",
+        "value"
       ],
       "type": "object"
     },
@@ -144,49 +127,88 @@
       ]
     }
   },
-  "$id": "https://schemas.equivalencematrix.dev/v1/adapter-request",
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/attestation.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "adapter": {
+    "command": {
       "type": "string"
     },
-    "adapter_digest": {
+    "conformance": {
       "type": "string"
     },
-    "limits": {
-      "$ref": "#/$defs/AdapterLimitsDto"
-    },
-    "operation": {
-      "$ref": "#/$defs/AdapterOperationDto"
-    },
-    "request_id": {
+    "equivalence": {
       "type": "string"
     },
-    "schema": {
+    "evaluated_at": {
       "type": "string"
     },
-    "subject": {
+    "evaluation_subject": {
       "$ref": "#/$defs/EvidenceSubjectDto"
     },
-    "target": {
+    "evidence_digests": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "policy_digest": {
       "type": "string"
     },
-    "target_root": {
+    "profile_values": {
+      "items": {
+        "$ref": "#/$defs/ProfileValueDto"
+      },
+      "type": "array"
+    },
+    "release_record_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "release_status": {
+      "type": "string"
+    },
+    "runtime_facts_digest": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tool_version": {
+      "type": "string"
+    },
+    "trust_config_digest": {
+      "type": "string"
+    },
+    "waivers": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "workspace_digest": {
       "type": "string"
     }
   },
   "required": [
-    "schema",
-    "request_id",
-    "adapter",
-    "adapter_digest",
-    "operation",
-    "subject",
-    "target",
-    "target_root",
-    "limits"
+    "tool_version",
+    "command",
+    "workspace_digest",
+    "policy_digest",
+    "profile_values",
+    "evaluation_subject",
+    "evidence_digests",
+    "trust_config_digest",
+    "evaluated_at",
+    "conformance",
+    "equivalence",
+    "release_status",
+    "waivers"
   ],
-  "title": "AdapterRequestDto",
+  "title": "AttestationPredicateDto",
   "type": "object"
 }

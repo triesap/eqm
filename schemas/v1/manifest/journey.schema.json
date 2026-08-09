@@ -1,53 +1,38 @@
 {
   "$defs": {
-    "ProfileDimensionDto": {
+    "TransitionDto": {
       "additionalProperties": false,
       "properties": {
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "id": {
+        "from": {
           "type": "string"
         },
-        "values": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+        "to": {
+          "type": "string"
+        },
+        "trigger": {
+          "type": "string"
         }
       },
       "required": [
-        "id",
-        "values"
+        "from",
+        "to",
+        "trigger"
       ],
       "type": "object"
     }
   },
-  "$id": "https://schemas.equivalencematrix.dev/v1/profile",
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/journey.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "defaults": {
-      "additionalProperties": {
-        "type": "string"
-      },
-      "default": {},
-      "type": "object"
+    "capability": {
+      "type": "string"
     },
     "description": {
       "type": [
         "string",
         "null"
       ]
-    },
-    "dimensions": {
-      "items": {
-        "$ref": "#/$defs/ProfileDimensionDto"
-      },
-      "type": "array"
     },
     "extensions": {
       "additionalProperties": true,
@@ -68,11 +53,29 @@
       "minimum": 0,
       "type": "integer"
     },
+    "risk_class": {
+      "type": "string"
+    },
     "schema": {
       "type": "string"
     },
+    "status": {
+      "type": "string"
+    },
+    "surfaces": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "title": {
       "type": "string"
+    },
+    "transitions": {
+      "items": {
+        "$ref": "#/$defs/TransitionDto"
+      },
+      "type": "array"
     }
   },
   "required": [
@@ -80,9 +83,12 @@
     "id",
     "revision",
     "title",
+    "capability",
+    "status",
+    "risk_class",
     "owners",
-    "dimensions"
+    "surfaces"
   ],
-  "title": "ProfileDto",
+  "title": "JourneyDto",
   "type": "object"
 }

@@ -282,8 +282,9 @@ mod tests {
                 options: BTreeMap::new(),
             },
         };
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let execution = execute(parsed, &root)?;
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
+        let execution = execute(parsed, root)?;
         assert_eq!(execution.exit_code, 0);
         assert!(execution.payload.human.contains("workspace: Ok"));
         Ok(())

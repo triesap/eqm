@@ -105,7 +105,9 @@ pub use runner::{
     EnvironmentName, EnvironmentSource, RunnerBuildError, RunnerDefinition, RunnerLimits,
     RunnerProgram, SecretBinding, SecretProviderRef, WorkingDirectoryTemplate,
 };
-pub use schema::{SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion};
+pub use schema::{
+    SchemaGroup, SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion,
+};
 pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
 pub use vocabulary::{
     ArtifactRole, AttemptOutcome, EvidenceKind, Facet, HttpMethod, IntendedExposureState,

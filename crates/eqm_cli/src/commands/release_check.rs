@@ -430,7 +430,10 @@ fn exact_runtime_snapshot<'a>(
                 && expires.is_some_and(|value| evaluated_at < value)
         })
         .collect::<Vec<_>>();
-    Ok((matches.len() == 1).then_some(matches[0]))
+    Ok(match matches.as_slice() {
+        [only] => Some(*only),
+        _ => None,
+    })
 }
 
 fn evidence_subject_matches(
@@ -641,10 +644,11 @@ pub(crate) mod tests {
 
     #[test]
     fn malformed_release_record_fails_before_gate_evaluation() -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let request =
             SessionRequest::new(Default::default(), crate::cli::CommandName::ReleaseCheck);
-        let session = prepare(&request, &root)?;
+        let session = prepare(&request, root)?;
         assert!(read_release_record(&session, "eqm.lock").is_err());
         Ok(())
     }
@@ -818,7 +822,7 @@ pub(crate) mod tests {
                 "target_configuration_digest":workspace_digest
             },
             "target":"web","profile_values":profiles,
-            "observed_at":"2026-08-08T00:00:00Z","expires_at":"2026-08-09T00:00:00Z",
+            "observed_at":"2026-08-08T00:00:00Z","expires_at":"2099-01-01T00:00:00Z",
             "facts":[{"surface":"account.create.signup.otp","dimension":"availability","key":"enabled","value":{"type":"boolean","value":true}}],
             "producer":"producer://runtime/fixture/snapshot-1","claimed_trust":claim
         });

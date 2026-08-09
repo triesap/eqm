@@ -56,7 +56,7 @@ next-step safety.
 - Diagnostics: `EQM-`
 - Environment: `EQM_`
 - MCP resources: `eqm://`
-- Schemas: `https://schemas.equivalencematrix.dev/v1/`
+- Schemas: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/`
 
 Do not add legacy names, aliases, shims, deprecated fields, serde aliases,
 dual readers, migrations, protocol fallbacks, old schemas, compatibility

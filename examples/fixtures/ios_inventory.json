@@ -1,5 +1,5 @@
 {
-  "schema": "https://schemas.equivalencematrix.dev/v1/inventory",
+  "schema": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/inventory.schema.json",
   "adapter": "adapter.swiftui_export",
   "adapter_digest": "sha256:236872a224c3eef93f16f14e0d9244d0116adf25a29486148aa63289a236a4f9",
   "subject": {
@@ -29,5 +29,5 @@
     }
   ],
   "diagnostics": [],
-  "inventory_digest": "sha256:5046621f5dc2eaee5d9b31a5e933c265f0084dc98d282b10a5980b91d8278b98"
+  "inventory_digest": "sha256:4e5b431753a14bf0b2b5cff9c1adfe8532f8904683fe9b07351368c1176512cd"
 }

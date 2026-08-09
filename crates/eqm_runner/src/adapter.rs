@@ -295,7 +295,7 @@ mod tests {
             root.path(),
             r#"input=$(/bin/cat)
 digest=$(printf '%s' "$input" | /usr/bin/sed -n 's/.*"adapter_digest":"\([^"]*\)".*/\1/p')
-printf '{"schema":"https://schemas.equivalencematrix.dev/v1/adapter-response","request_id":"request-1","adapter":"adapter.test","adapter_digest":"%s","status":"error","inventory":null,"diagnostics":[]}' "$digest""#,
+printf '{"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-response.schema.json","request_id":"request-1","adapter":"adapter.test","adapter_digest":"%s","status":"error","inventory":null,"diagnostics":[]}' "$digest""#,
         )?;
         let definition = definition_fixture(&executable)?;
         let initial_request = request_fixture(&definition, &target);

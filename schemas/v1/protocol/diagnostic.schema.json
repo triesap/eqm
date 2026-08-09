@@ -63,7 +63,7 @@
       "type": "object"
     }
   },
-  "$id": "https://schemas.equivalencematrix.dev/v1/diagnostic",
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/diagnostic.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "description": "Public diagnostic record with every optional semantic coordinate explicit.",

@@ -404,7 +404,7 @@
       "type": "object"
     }
   },
-  "$id": "https://schemas.equivalencematrix.dev/v1/adapter-response",
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/adapter-response.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {

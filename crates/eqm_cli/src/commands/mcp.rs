@@ -199,14 +199,15 @@ mod tests {
     #[test]
     fn every_read_tool_reuses_cli_envelopes_without_writes()
     -> Result<(), Box<dyn std::error::Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let before = Command::new("git")
             .args(["status", "--porcelain"])
-            .current_dir(&root)
+            .current_dir(root)
             .output()?
             .stdout;
         let baseline = root.to_string_lossy().into_owned();
-        let handler = CliReadToolHandler::new(&root);
+        let handler = CliReadToolHandler::new(root);
         for (name, input) in [
             (
                 "eqm_context",
@@ -229,7 +230,7 @@ mod tests {
         }
         let after = Command::new("git")
             .args(["status", "--porcelain"])
-            .current_dir(&root)
+            .current_dir(root)
             .output()?
             .stdout;
         assert_eq!(before, after);
@@ -238,14 +239,15 @@ mod tests {
 
     #[test]
     fn stdio_handshake_lists_and_calls_are_json_only() -> Result<(), Box<dyn std::error::Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let request = crate::session::SessionRequest::new(
             Default::default(),
             crate::cli::CommandName::McpServe,
         );
-        let session = crate::session::prepare(&request, &root)?;
+        let session = crate::session::prepare(&request, root)?;
         let mcp = session.mcp_session()?;
-        let handler = CliReadToolHandler::new(&root);
+        let handler = CliReadToolHandler::new(root);
         let frames = [
             json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":eqm_mcp::MCP_PROTOCOL_VERSION}}),
             json!({"jsonrpc":"2.0","method":"notifications/initialized","params":{}}),
@@ -310,7 +312,8 @@ mod tests {
         });
         let mut actual = serde_json::to_vec(&summary)?;
         actual.push(b'\n');
-        let golden = root.join("tests/fixtures/signup/goldens/mcp-workspace.json");
+        let golden = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../tests/fixtures/signup/goldens/mcp-workspace.json");
         assert_eq!(actual, fs::read(golden)?);
         Ok(())
     }
@@ -318,14 +321,15 @@ mod tests {
     #[test]
     fn verify_is_default_denied_and_explicit_authority_is_audited()
     -> Result<(), Box<dyn std::error::Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let request = crate::session::SessionRequest::new(
             Default::default(),
             crate::cli::CommandName::McpServe,
         );
-        let session = crate::session::prepare(&request, &root)?;
+        let session = crate::session::prepare(&request, root)?;
         let mcp = session.mcp_session()?;
-        let handler = CliReadToolHandler::new(&root);
+        let handler = CliReadToolHandler::new(root);
         let input = |id| {
             [
                 json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":eqm_mcp::MCP_PROTOCOL_VERSION}}),

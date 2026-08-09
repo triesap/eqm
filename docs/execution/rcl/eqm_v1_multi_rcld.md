@@ -71,7 +71,7 @@ code or tests.
 - Diagnostic prefix: `EQM-`
 - Environment prefix: `EQM_`
 - MCP URI scheme: `eqm://`
-- Schema namespace: `https://schemas.equivalencematrix.dev/v1/`
+- Schema namespace: `https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/`
 
 There are no legacy aliases, compatibility readers, deprecated keys, migration
 commands, fallback schemas, protocol negotiation fallbacks, ID redirects, or

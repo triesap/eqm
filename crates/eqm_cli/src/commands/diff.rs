@@ -322,7 +322,8 @@ mod tests {
     #[test]
     fn exact_path_and_digest_baselines_are_unchanged_and_floating_is_rejected()
     -> Result<(), Box<dyn Error>> {
-        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
         let identity = root.to_string_lossy().to_string();
         let ParseOutcome::Run(parsed) = parse([
             "diff",
@@ -335,7 +336,7 @@ mod tests {
         else {
             return Err("unexpected help".into());
         };
-        let result = execute(parsed, &root)?;
+        let result = execute(parsed, root)?;
         assert_eq!(result.exit_code, 0);
         assert!(
             result.payload.json["result"]["changes"]
@@ -345,14 +346,14 @@ mod tests {
         );
         let current = prepare(
             &SessionRequest::new(GlobalOptions::default(), CommandName::Diff),
-            &root,
+            root,
         )?;
         assert_eq!(
-            prepare_identity(&current.workspace_digest().to_string(), &current, &root)?
+            prepare_identity(&current.workspace_digest().to_string(), &current, root)?
                 .workspace_digest(),
             current.workspace_digest()
         );
-        assert!(prepare_identity("master", &current, &root).is_err());
+        assert!(prepare_identity("master", &current, root).is_err());
         Ok(())
     }
 }
