@@ -165,14 +165,28 @@ fn check_public_repository() -> Result<()> {
 fn verify() -> Result<()> {
     check()?;
     check_security_matrix()?;
-    cargo(["audit", "--deny", "warnings"])?;
-    cargo(["deny", "check"])?;
+    supply_chain()?;
     coverage()?;
     mutation()?;
     fuzz()?;
     benchmark()?;
     check_package()?;
     check_generated_state()
+}
+
+fn supply_chain() -> Result<()> {
+    let advisory_database = TempDir::new().map_err(Error::io)?;
+    execute(
+        "cargo",
+        [
+            OsStr::new("audit"),
+            OsStr::new("--db"),
+            advisory_database.path().as_os_str(),
+            OsStr::new("--deny"),
+            OsStr::new("warnings"),
+        ],
+    )?;
+    cargo(["deny", "check"])
 }
 
 fn schemas(args: &[OsString]) -> Result<()> {
@@ -525,11 +539,15 @@ fn mutation() -> Result<()> {
             "eqm_engine",
             "--file",
             "crates/eqm_engine/src/{conformance,monotonicity,release}.rs",
-            "--in-place",
+            "--jobs",
+            "4",
             "--timeout",
-            "60",
+            "180",
             "--minimum-test-timeout",
-            "20",
+            "60",
+            "--cargo-test-arg=--lib",
+            "--cargo-test-arg=--test",
+            "--cargo-test-arg=monotonicity",
             "--colors",
             "never",
         ])
@@ -591,6 +609,14 @@ fn inspect_mutation(root: &Path, command_succeeded: bool) -> Result<()> {
 fn fuzz() -> Result<()> {
     let campaigns = TempDir::new().map_err(Error::io)?;
     let nightly = format!("+{NIGHTLY}");
+    let fuzz_directory = repository_root().join("tools/fuzz");
+    let default_artifacts = fuzz_directory.join("artifacts");
+    if default_artifacts.exists() {
+        return Err(Error::message(format!(
+            "remove pre-existing fuzz artifacts before the smoke lane: {}",
+            default_artifacts.display()
+        )));
+    }
     for target in FUZZ_TARGETS {
         let root = campaigns.path().join(target);
         let corpus = root.join("corpus");
@@ -600,11 +626,22 @@ fn fuzz() -> Result<()> {
         let prefix = format!("-artifact_prefix={}/", artifacts.display());
         let mut command = Command::new("cargo");
         command
-            .args([nightly.as_str(), "fuzz", "run", target])
+            .args([nightly.as_str(), "fuzz", "run", "--fuzz-dir"])
+            .arg(&fuzz_directory)
+            .arg(target)
             .arg(&corpus)
             .args(["--", "-runs=1000", "-timeout=10", &prefix])
-            .current_dir(repository_root().join("tools/fuzz"));
+            .current_dir(repository_root());
         execute_command(command)?;
+    }
+    if default_artifacts.exists() {
+        if !files_below(&default_artifacts)?.is_empty() {
+            return Err(Error::message(format!(
+                "cargo-fuzz wrote unexpected persistent artifacts below {}",
+                default_artifacts.display()
+            )));
+        }
+        fs::remove_dir_all(&default_artifacts).map_err(Error::io)?;
     }
     println!("fuzz smoke: 7 production targets x 1000 runs passed");
     Ok(())
