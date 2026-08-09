@@ -9,6 +9,7 @@ members = [
     "crates/eqm_protocol",
     "crates/eqm_runner",
     "crates/eqm_test_support",
+    "tools/xtask",
 ]
 
 [workspace.package]
