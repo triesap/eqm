@@ -4,7 +4,7 @@ revision = 1
 title = "Consumer critical flow policy"
 owners = ["owner://team/product"]
 profiles = ["audience.default"]
-required_targets = ["web"]
+required_targets = ["android", "ios"]
 
 [[rules]]
 minimum_level = "required"

@@ -12,7 +12,8 @@ test "$(wc -l < "$known" | tr -d ' ')" -eq 21
 test "$(sort -u "$known" | wc -l | tr -d ' ')" -eq 21
 
 uris="$(rg --no-filename -o 'https://schemas\.equivalencematrix\.dev/v1/[a-z-]+' \
-  "$repository_root/eqm.toml" "$repository_root/eqm" \
+  "$repository_root/examples/android-ios/eqm.toml" \
+  "$repository_root/examples/android-ios/eqm" \
   "$repository_root/tests/fixtures/signup" | sort -u)"
 while IFS= read -r uri; do
   test -z "$uri" || grep -Fxq "$uri" "$known"

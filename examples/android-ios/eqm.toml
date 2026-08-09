@@ -7,8 +7,14 @@ profile_sources = ["eqm/profiles/**/*.toml"]
 runner_sources = ["eqm/runners/**/*.toml"]
 waiver_sources = ["eqm/waivers/**/*.toml"]
 
-[targets.web]
-root = "apps/web"
-platform = "web"
-framework = "sveltekit"
-owners = ["owner://team/web"]
+[targets.android]
+root = "apps/android"
+platform = "android"
+framework = "compose"
+owners = ["owner://team/android"]
+
+[targets.ios]
+root = "apps/ios"
+platform = "ios"
+framework = "swiftui"
+owners = ["owner://team/ios"]

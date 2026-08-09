@@ -1,10 +1,10 @@
 schema = "https://schemas.equivalencematrix.dev/v1/runner"
-id = "runner.web"
+id = "runner.ios"
 revision = 1
-owners = ["owner://team/tooling"]
+owners = ["owner://team/ios"]
 backend = "local"
-program = "scripts/run_example"
-args = ["test", "{selector_json}", "{result_path}"]
+program = "apps/ios/bin/run-xctest"
+args = ["--scheme", "Signup", "--selector", "{selector_json}", "--result", "{result_path}"]
 cwd = "{target_root}"
 timeout_ms = 60000
 max_output_bytes = 1048576
