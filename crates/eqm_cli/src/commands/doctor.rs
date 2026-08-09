@@ -256,8 +256,6 @@ fn ignored_scan_path(path: &Path) -> bool {
         || value.starts_with(".git/")
         || value.starts_with(".eqm/")
         || value.starts_with("target/")
-        || value == "scripts/check_no_legacy_names.sh"
-        || value == "docs/specification/naming-and-no-compat.md"
         || value.starts_with("tests/fixtures/no_legacy/negative/")
 }
 
