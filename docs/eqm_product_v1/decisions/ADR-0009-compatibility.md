@@ -20,4 +20,4 @@ Use the matching requirements in implementation/TRACEABILITY.md to find acceptan
 
 ## Revision 2 disposition
 
-ADR-0012 records owner approval of an explicit new namespace for incompatible wire changes. This resolves transition direction; Q03/S006 still own exact namespace/URI spelling, representation vectors and disposition of any evidenced conflicting external consumer obligation. The original signed-byte and independent-version-axis decisions remain unchanged.
+ADR-0012 records owner approval of an explicit new namespace for incompatible wire changes. [ADR-0013](ADR-0013-wire-namespace-and-representations.md) closes the exact namespace/URI spelling (`eqm:v2`, `schemas/v2/`) and the numeric/time/null/set/sequence/digest-domain representation vectors under S006; no evidenced external consumer conflicts with the monotonic successor. The original signed-byte and independent-version-axis decisions remain unchanged. Generator and URI-parity extension happens with the first v2 schema in the owning S013+ steps.

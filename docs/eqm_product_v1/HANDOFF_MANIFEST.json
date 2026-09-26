@@ -17,7 +17,7 @@
     "acceptance_cases": 64,
     "review_findings": 20,
     "open_decision_gates": 15,
-    "architecture_decision_records": 12,
+    "architecture_decision_records": 13,
     "review_regression_clauses": 21,
     "execution_cycles": 15
   },

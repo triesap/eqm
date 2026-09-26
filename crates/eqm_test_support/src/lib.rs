@@ -18,6 +18,8 @@ pub mod error;
 pub mod evidence;
 /// Deterministic exact subject builders.
 pub mod subject;
+/// Normative representation and rule vectors frozen by ADR-0013.
+pub mod vectors;
 
 pub use clock::{
     FIXED_EARLIER_TIME, FIXED_EVALUATION_TIME, FIXED_LATER_TIME, earlier_time, evaluation_time,
@@ -32,6 +34,7 @@ pub use subject::{
     FIXTURE_COMMIT, FIXTURE_REPOSITORY, SubjectBuilder, provider_subject, target_set_subject,
     target_subject,
 };
+pub use vectors::{REPRESENTATION_VECTORS, REQUIRED_VECTOR_CATEGORIES, RepresentationVector};
 
 #[cfg(test)]
 mod tests {

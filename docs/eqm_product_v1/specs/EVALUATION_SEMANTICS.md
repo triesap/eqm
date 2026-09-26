@@ -59,3 +59,30 @@ Policy strengthening compares inclusion of the protected required universe plus 
 Expanded fragment requirements inherit the stronger fragment-default and destination-journey risk. Absence inherits that value; explicit risk below it rejects. Validate the expanded graph before finalized/prepared construction. Preserve this rule through canonical projection and real manifest loading; see DEV-001.
 
 Freshness uses explicit evaluation time and policy, preserving exact nanosecond arithmetic rather than flooring to milliseconds. Freeze supported canonical forms and all equality/expiry/skew boundary vectors in S006/S069. Do not inherit an undocumented fixed skew as production policy.
+
+## Frozen count, outcome and risk vectors (S006)
+
+ADR-0013 freezes these rules together with the representation boundaries; the
+machine-readable set is `eqm_test_support::representation_vectors`, and its unit
+test proves each rule has a nonempty vector. Enforcement and semantic
+regressions land in the owning steps S013–S076.
+
+- Required expected selections compose with AND; alternatives need explicit
+  protected authorization bound into the frozen selection, never a pass-driven
+  OR interpretation.
+- Distinct required fail/pass cases aggregate to Failed; fail/pass retries of
+  one logical case in the selected campaign aggregate to Unstable; contradictory
+  assertions for the same immutable attempt aggregate to Unknown conflict.
+- Timeout/cancellation stays Unknown; skip/filter/quarantine/missing stays
+  non-success; enough passing observations cannot hide a required failing or
+  missing case.
+- Count units are logical cases/facts/review slots/eligible verified records per
+  kind; one release-record reference is at most one unit; copies, transports and
+  retries add no credit.
+- Campaign eligibility is an explicit authorized selection; supersession is an
+  explicit trusted relationship, never a latest timestamp.
+- Expanded fragment requirements inherit the stronger fragment/journey risk;
+  absence inherits it and an explicit lower value rejects, validated after
+  expansion before finalized/prepared construction (DEV-001).
+- Freshness uses explicit evaluation time and policy over exact nanoseconds;
+  fixture thresholds and instants are synthetic and never production policy.

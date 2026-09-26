@@ -53,3 +53,25 @@ ADR-0012 approves a new wire namespace for incompatible changes; S006 owns exact
 Actual success and error outputs for every public command family must validate against generated schemas (RA14). Validate supported command/output-format combinations before acquisition or storage (RA20); an accepted format has a renderer. Once an operation has committed, an output-sink failure does not erase its receipt or imply rollback: the error remains truthful and the operation stays discoverable.
 
 MCP preserves startup configuration, selected profiles, authority and one immutable snapshot across tools/resources; refresh and cursor invalidation are explicit (RA17). Bounds include the complete serialized envelope, queued work and pagination state (RA18), with a validated minimum budget for bounded errors. Consumer doctor validates real consumer prerequisites and generated states without importing EQM contributor requirements (RA19).
+
+## Frozen v2 representations (S006)
+
+ADR-0013 freezes the exact representations for incompatible wire work under
+namespace `eqm:v2` and schema base
+`https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/`. Existing
+`schemas/v1` bytes and URIs are preserved and never reinterpreted; there is no
+implicit v1/v2 reader.
+
+| Boundary | Frozen rule |
+| --- | --- |
+| Namespace | `eqm:v2`; new digests use `eqm:v2:<kind>` with the zero-byte delimiter and SHA-256 |
+| Integers | Non-negative counts or `\|n\| <= 2^53-1`; larger/exact quantities use decimal strings `^(0\|[1-9][0-9]*)$`; floats, `NaN`, infinity, negatives and fractional counts rejected |
+| Time | Canonical UTC RFC 3339 with literal `Z`; `AutoSi` subseconds; exact nanosecond arithmetic; no offsets/leap seconds; no hidden skew |
+| Absence | Optional members are omitted, never `null`; explicit `null` rejected where absence applies |
+| Sets/sequences | Sets are canonically ordered duplicate-free arrays; sequences preserve order |
+| Text | Exact NFC required; non-NFC rejected rather than normalized |
+| Digests | `sha256:` plus 64 lowercase hex; domain-separated |
+
+Public member spellings, command flags, and Kotlin/RPC names remain closed at
+their owning steps; this ADR fixes namespace and representation only. The
+normative machine-readable vectors live in `eqm_test_support::representation_vectors`.

@@ -15,3 +15,4 @@ Accepted ADRs record decisions approved in the conversation. Pending values and 
 - [ADR-0011: Separate implementation readiness from operational authorization](ADR-0011-rollout.md) — Accepted.
 
 - [ADR-0012: Approved review closure and execution scope](ADR-0012-approved-review-closure.md) — Accepted; operational values and exact engineering representations remain explicit gates.
+- [ADR-0013: Freeze the v2 wire namespace and canonical representations](ADR-0013-wire-namespace-and-representations.md) — Accepted; closes S006 namespace, numeric/time/null/set/digest representations under ADR-0012.
