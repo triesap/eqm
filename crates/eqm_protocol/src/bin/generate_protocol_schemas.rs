@@ -97,6 +97,27 @@ fn write_v1(root: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn write_v2(root: &Path) -> Result<(), Box<dyn Error>> {
+    write::<v2::EvidenceResultV2Dto>(
+        root,
+        "evidence-result",
+        &EVIDENCE_RESULT_SCHEMA_V2.to_string(),
+    )?;
+    write::<v2::RuntimeFactsV2Dto>(root, "runtime-facts", &RUNTIME_FACTS_SCHEMA_V2.to_string())?;
+    write::<v2::InventoryV2Dto>(root, "inventory", &INVENTORY_SCHEMA_V2.to_string())?;
+    write::<v2::AdapterRequestV2Dto>(
+        root,
+        "adapter-request",
+        &ADAPTER_REQUEST_SCHEMA_V2.to_string(),
+    )?;
+    write::<v2::AdapterResponseV2Dto>(
+        root,
+        "adapter-response",
+        &ADAPTER_RESPONSE_SCHEMA_V2.to_string(),
+    )?;
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let mut arguments = std::env::args().skip(1);
     let root = arguments.next().ok_or("output directory required")?;
@@ -105,8 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let root = Path::new(&root);
     match version {
         SchemaVersion::V1 => write_v1(root)?,
-        // S015-R3 registers the five concrete v2 protocol families.
-        SchemaVersion::V2 => {}
+        SchemaVersion::V2 => write_v2(root)?,
     }
     Ok(())
 }

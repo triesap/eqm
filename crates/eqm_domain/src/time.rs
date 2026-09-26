@@ -5,6 +5,83 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
+/// The exact ECMA regex for a canonical v2 UTC instant spelling.
+///
+/// Years 0001-9999, literal `Z`, and the minimal AutoSi fractional group of
+/// 0/3/6/9 digits. It excludes leap-second notation (`:60`) and redundant
+/// fractions; calendar validity is a separate cross-field check.
+pub const V2_UTC_PATTERN: &str = r"^(000[1-9]|00[1-9][0-9]|0[1-9][0-9]{2}|[1-9][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{3}|\.[0-9]{6}|\.[0-9]{9})?Z$";
+
+/// A canonical v2 UTC instant with exact nanoseconds.
+///
+/// This is the explicit v2 boundary: it rejects leap-second notation, years
+/// outside 0001-9999, offsets, a missing `Z` and redundant fractional forms.
+/// It never changes the retained v1 [`UtcInstant`] parser.
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct UtcInstantV2(DateTime<Utc>);
+
+impl UtcInstantV2 {
+    /// Returns whole Unix seconds when representable.
+    #[must_use]
+    pub const fn unix_seconds(self) -> i64 {
+        self.0.timestamp()
+    }
+
+    /// Returns the nanosecond component.
+    #[must_use]
+    pub const fn subsec_nanos(self) -> u32 {
+        self.0.timestamp_subsec_nanos()
+    }
+}
+
+impl Display for UtcInstantV2 {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0.to_rfc3339_opts(SecondsFormat::AutoSi, true))
+    }
+}
+
+impl FromStr for UtcInstantV2 {
+    type Err = TimeParseError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        if value.len() < 20 || value.len() > 30 || !value.is_ascii() || !value.ends_with('Z') {
+            return Err(TimeParseError::InvalidInstant);
+        }
+        if value.as_bytes().get(10) != Some(&b'T') {
+            return Err(TimeParseError::NonCanonicalInstant);
+        }
+        let date = &value[0..10];
+        let time = &value[11..value.len() - 1];
+        if date.starts_with("0000") {
+            return Err(TimeParseError::InvalidInstant);
+        }
+        let (base, fraction) = match time.split_once('.') {
+            Some((base, fraction)) => (base, Some(fraction)),
+            None => (time, None),
+        };
+        if base.len() != 8 {
+            return Err(TimeParseError::NonCanonicalInstant);
+        }
+        if base.get(6..8) == Some("60") {
+            return Err(TimeParseError::LeapSecond);
+        }
+        if let Some(fraction) = fraction
+            && (!matches!(fraction.len(), 3 | 6 | 9)
+                || !fraction.bytes().all(|byte| byte.is_ascii_digit()))
+        {
+            return Err(TimeParseError::NonCanonicalInstant);
+        }
+        let parsed = DateTime::parse_from_rfc3339(value)
+            .map_err(|_| TimeParseError::InvalidInstant)?
+            .with_timezone(&Utc);
+        let instant = Self(parsed);
+        if instant.to_string() != value {
+            return Err(TimeParseError::NonCanonicalInstant);
+        }
+        Ok(instant)
+    }
+}
+
 /// A canonical UTC instant with nanosecond precision.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct UtcInstant(DateTime<Utc>);
@@ -138,6 +215,8 @@ pub enum TimeParseError {
     NonUtcInstant,
     /// The instant was valid but not in canonical wire form.
     NonCanonicalInstant,
+    /// The instant used leap-second notation, which v2 rejects.
+    LeapSecond,
     /// The calendar date was invalid or noncanonical.
     InvalidDate,
     /// The duration was malformed or noncanonical.
@@ -152,6 +231,7 @@ impl Display for TimeParseError {
             Self::InvalidInstant => "invalid UTC instant",
             Self::NonUtcInstant => "UTC instant requires the Z suffix",
             Self::NonCanonicalInstant => "UTC instant is not in canonical form",
+            Self::LeapSecond => "leap seconds are not a supported UTC instant",
             Self::InvalidDate => "invalid calendar date",
             Self::InvalidDuration => "invalid millisecond duration",
             Self::DurationOverflow => "millisecond duration exceeds its bound",
@@ -190,6 +270,46 @@ mod tests {
         ] {
             assert_eq!(value.parse::<UtcInstant>(), Err(error));
         }
+    }
+
+    #[test]
+    fn v2_instants_accept_only_canonical_forms() -> Result<(), TimeParseError> {
+        for value in [
+            "0001-01-01T00:00:00Z",
+            "2026-01-02T03:04:05Z",
+            "2026-01-02T03:04:05.100Z",
+            "2026-01-02T03:04:05.000001Z",
+            "2026-01-02T03:04:05.000000001Z",
+            "9999-12-31T23:59:59Z",
+        ] {
+            let instant: UtcInstantV2 = value.parse()?;
+            assert_eq!(instant.to_string(), value);
+        }
+        assert_eq!(
+            "2026-01-02T03:04:05.123456789Z"
+                .parse::<UtcInstantV2>()?
+                .subsec_nanos(),
+            123_456_789
+        );
+        for value in [
+            "2016-12-31T23:59:60Z",
+            "2016-12-31T23:59:60.000Z",
+            "0000-01-01T00:00:00Z",
+            "2026-01-02T03:04:05.1Z",
+            "2026-01-02T03:04:05.000Z",
+            "2026-01-02T03:04:05.000000Z",
+            "2026-01-02T03:04:05+00:00",
+            "2026-01-02T03:04:05",
+            "2026-02-30T00:00:00Z",
+            "2026-01-02 03:04:05Z",
+        ] {
+            assert!(value.parse::<UtcInstantV2>().is_err(), "accepted {value}");
+        }
+        assert_eq!(
+            "2016-12-31T23:59:60Z".parse::<UtcInstantV2>().err(),
+            Some(TimeParseError::LeapSecond)
+        );
+        Ok(())
     }
 
     #[test]

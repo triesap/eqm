@@ -23,6 +23,22 @@ pub const ADAPTER_REQUEST_SCHEMA: SchemaUri = SchemaUri::new(SchemaKind::Adapter
 /// Adapter-response schema.
 pub const ADAPTER_RESPONSE_SCHEMA: SchemaUri = SchemaUri::new(SchemaKind::AdapterResponse);
 
+/// Explicit v2 evidence-result schema.
+pub const EVIDENCE_RESULT_SCHEMA_V2: SchemaUri =
+    SchemaUri::versioned(SchemaKind::EvidenceResult, SchemaVersion::V2);
+/// Explicit v2 runtime-facts schema.
+pub const RUNTIME_FACTS_SCHEMA_V2: SchemaUri =
+    SchemaUri::versioned(SchemaKind::RuntimeFacts, SchemaVersion::V2);
+/// Explicit v2 inventory schema.
+pub const INVENTORY_SCHEMA_V2: SchemaUri =
+    SchemaUri::versioned(SchemaKind::Inventory, SchemaVersion::V2);
+/// Explicit v2 adapter-request schema.
+pub const ADAPTER_REQUEST_SCHEMA_V2: SchemaUri =
+    SchemaUri::versioned(SchemaKind::AdapterRequest, SchemaVersion::V2);
+/// Explicit v2 adapter-response schema.
+pub const ADAPTER_RESPONSE_SCHEMA_V2: SchemaUri =
+    SchemaUri::versioned(SchemaKind::AdapterResponse, SchemaVersion::V2);
+
 /// Every v1 EQM-owned protocol schema in stable schema-kind order.
 pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
     ADAPTER_REQUEST_SCHEMA,
@@ -39,9 +55,15 @@ pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
 
 /// Every v2 EQM-owned protocol schema in stable schema-kind order.
 ///
-/// S015-R3 registers the five concrete v2 protocol families here; this explicit
-/// empty inventory is plumbing, not an invented placeholder document.
-pub const V2_PROTOCOL_SCHEMAS: [SchemaUri; 0] = [];
+/// S015-R3 registers the five concrete v2 protocol families: evidence-result,
+/// runtime-facts, inventory, adapter-request and adapter-response.
+pub const V2_PROTOCOL_SCHEMAS: [SchemaUri; 5] = [
+    ADAPTER_REQUEST_SCHEMA_V2,
+    ADAPTER_RESPONSE_SCHEMA_V2,
+    EVIDENCE_RESULT_SCHEMA_V2,
+    INVENTORY_SCHEMA_V2,
+    RUNTIME_FACTS_SCHEMA_V2,
+];
 
 /// Returns the protocol schema inventory for an explicit version.
 #[must_use]
@@ -93,6 +115,14 @@ mod tests {
                     .all(|schema| schema.kind().group() == SchemaGroup::Protocol)
             );
         }
-        assert!(protocol_schemas(SchemaVersion::V2).is_empty());
+        assert_eq!(
+            protocol_schemas(SchemaVersion::V2).len(),
+            V2_PROTOCOL_SCHEMAS.len()
+        );
+        assert!(
+            V2_PROTOCOL_SCHEMAS
+                .iter()
+                .all(|schema| schema.version() == SchemaVersion::V2)
+        );
     }
 }

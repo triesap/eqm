@@ -113,7 +113,9 @@ pub use runner::{
 pub use schema::{
     SchemaGroup, SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion,
 };
-pub use time::{CalendarDate, DurationMillis, TimeParseError, UtcInstant};
+pub use time::{
+    CalendarDate, DurationMillis, TimeParseError, UtcInstant, UtcInstantV2, V2_UTC_PATTERN,
+};
 pub use vocabulary::{
     ArtifactRole, AttemptOutcome, EvidenceKind, Facet, HttpMethod, IntendedExposureState,
     InventoryCompleteness, LifecycleStatus, ReleaseChannel, RequirementLevel, RequirementScope,

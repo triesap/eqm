@@ -9,14 +9,17 @@ S001–S014 are committed; prior review corrections have been independently
 inspected. CR04/CR05/CR07 are accepted for their original bounded scope.
 CR01/CR02/CR03/CR06/CR08 retain obligations mapped to DEV-002.
 S015 has an implementation commit but is **reopened, changes required** after
-supervisor findings RF01–RF10. Corrective checkpoints **S015-R1 and S015-R2 are
-complete**: pre-S015 v1 integer acceptance is restored at all three validation
-sites, the 22 v1 schemas remain byte-identical, and schema identity is now
-explicitly version-qualified with per-version generation/parity plumbing (the
-hardcoded 22-schema total is gone). The v2 protocol DTOs and generated schemas
-land in S015-R3. The next action is **S015-R3**, followed by R4–R5, then S016 in
-the governing COMMIT_SEQUENCE.md. Checkpoint SHAs are recorded externally and
-backfilled into `progress.json` one checkpoint later (R1 = `92f781a`).
+supervisor findings RF01–RF10. Corrective checkpoints **S015-R1, S015-R2 and
+S015-R3 are complete**: pre-S015 v1 integer acceptance is restored at all three
+validation sites, the 22 v1 schemas remain byte-identical, schema identity is
+explicitly version-qualified with per-version generation/parity plumbing, and
+the five concrete v2 protocol families (`evidence-result`, `runtime-facts`,
+`inventory`, `adapter-request`, `adapter-response`) exist with generated v2
+schemas, full-domain numeric forms, canonical v2 UTC time and absence-only
+optionals. The next action is **S015-R4**, followed by R5, then S016 in the
+governing COMMIT_SEQUENCE.md. Checkpoint SHAs are recorded externally and
+backfilled into `progress.json` one checkpoint later (R1 = `92f781a`,
+R2 = `0fb6a86`).
 
 EQM-P01's 12 numbered steps are recorded complete, with remaining regression
 contributions explicitly assigned to the current corrections. EQM-P02 has
