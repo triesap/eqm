@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S012",
+ "next_step": "S013",
  "implementation": "in_progress",
  "local_verification": "not_run",
  "platform_verification": "not_run",
@@ -179,10 +179,17 @@
   },
   {
    "id": "S012",
-   "status": "pending",
-   "commit_sha": null,
-   "report": null,
-   "verification": [],
+   "status": "complete",
+   "commit_sha": "daa48401f691cde8bd9e1f5ab1a9e41be5b4ff0f",
+   "report": "implementation/reports/S012.md",
+   "verification": [
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo test --all-targets --locked -p eqm_application",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "git diff --check"
+   ],
    "baseline_exceptions": []
   },
   {
@@ -2109,14 +2116,14 @@
   "scope": "All 64 requirements and acceptance cases, F01-F20, RA01-RA21, the ordered 15-cycle sequence and DEV-001.",
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
- "next_cycle": "EQM-P01",
- "active_step": "S012",
+ "next_cycle": "EQM-P02",
+ "active_step": "S013",
  "cycles": [
   {
    "id": "EQM-P01",
    "first_step": "S001",
    "last_step": "S012",
-   "status": "in_progress",
+   "status": "complete",
    "completed_steps": 11,
    "total_steps": 12
   },
@@ -2124,7 +2131,7 @@
    "id": "EQM-P02",
    "first_step": "S013",
    "last_step": "S027",
-   "status": "pending",
+   "status": "in_progress",
    "completed_steps": 0,
    "total_steps": 15
   },

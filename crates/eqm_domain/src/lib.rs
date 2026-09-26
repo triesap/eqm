@@ -62,7 +62,12 @@ pub use diagnostic::{
     DiagnosticRegistryError, Severity, SourceLocation, SourceName, SourcePosition,
     validate_diagnostic_registry,
 };
-pub use digest::{DigestDomain, DigestParseError, Sha256Digest};
+pub use digest::{
+    AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest, ContractDigest,
+    DigestDomain, DigestParseError, EvaluationContextDigest, EvidenceSpecificationDigest,
+    PlanDigest, PolicySelectionDigest, RawObjectDigest, RunnerDigest, SemanticEvidenceDigest,
+    Sha256Digest, TargetConfigurationDigest, TrustConfigurationDigest,
+};
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
     Binding, Capability, ComparisonOperator, Description, EntityBuildError, Exposure, ExtensionKey,

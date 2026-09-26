@@ -15,6 +15,36 @@ pub enum DigestDomain {
     Fragment,
     /// Finalized EQM v1 semantic graph identity.
     SemanticGraph,
+    /// Exact stored raw object bytes (v2).
+    RawObject,
+    /// Normalized semantic evidence assertion (v2).
+    SemanticEvidence,
+    /// Approved acquisition plan (v2).
+    Plan,
+    /// Authorized campaign (v2).
+    Campaign,
+    /// One immutable execution attempt (v2).
+    Attempt,
+    /// Frozen evaluation context (v2).
+    EvaluationContext,
+    /// Contract projection (v2).
+    Contract,
+    /// Binding projection (v2).
+    Binding,
+    /// Evidence specification projection (v2).
+    EvidenceSpecification,
+    /// Target configuration projection (v2).
+    TargetConfiguration,
+    /// Runner definition and executable projection (v2).
+    Runner,
+    /// Adapter projection (v2).
+    Adapter,
+    /// Policy and profile selection projection (v2).
+    PolicySelection,
+    /// Protected authority projection (v2).
+    Authority,
+    /// Trust configuration projection (v2).
+    TrustConfiguration,
 }
 
 impl DigestDomain {
@@ -24,6 +54,21 @@ impl DigestDomain {
         match self {
             Self::Fragment => b"eqm:v1:fragment",
             Self::SemanticGraph => b"eqm:v1:semantic-graph",
+            Self::RawObject => b"eqm:v2:raw-object",
+            Self::SemanticEvidence => b"eqm:v2:semantic-evidence",
+            Self::Plan => b"eqm:v2:plan",
+            Self::Campaign => b"eqm:v2:campaign",
+            Self::Attempt => b"eqm:v2:attempt",
+            Self::EvaluationContext => b"eqm:v2:evaluation-context",
+            Self::Contract => b"eqm:v2:contract",
+            Self::Binding => b"eqm:v2:binding",
+            Self::EvidenceSpecification => b"eqm:v2:evidence-specification",
+            Self::TargetConfiguration => b"eqm:v2:target-configuration",
+            Self::Runner => b"eqm:v2:runner",
+            Self::Adapter => b"eqm:v2:adapter",
+            Self::PolicySelection => b"eqm:v2:policy-selection",
+            Self::Authority => b"eqm:v2:authority",
+            Self::TrustConfiguration => b"eqm:v2:trust-configuration",
         }
     }
 }
@@ -104,6 +149,116 @@ impl FromStr for Sha256Digest {
     }
 }
 
+/// Defines a domain-specific digest identity.
+///
+/// Each newtype wraps a [`Sha256Digest`] produced only under its documented
+/// domain, so an unrelated digest cannot be passed where a distinct identity
+/// is required. There is deliberately no `Default`, no cross-type conversion
+/// and no public field constructor.
+macro_rules! define_identity_digest {
+    ($(#[$meta:meta])* $name:ident, $domain:expr) => {
+        $(#[$meta])*
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        pub struct $name(Sha256Digest);
+
+        impl $name {
+            /// Hashes content under this identity's documented domain.
+            #[must_use]
+            pub fn hash_content(content: &[u8]) -> Self {
+                Self(Sha256Digest::hash_domain($domain, content))
+            }
+
+            /// Returns the underlying digest for exact wire encoding.
+            #[must_use]
+            pub const fn as_digest(self) -> Sha256Digest {
+                self.0
+            }
+        }
+
+        impl Display for $name {
+            fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+                Display::fmt(&self.0, formatter)
+            }
+        }
+    };
+}
+
+define_identity_digest!(
+    /// Exact stored raw object bytes.
+    RawObjectDigest,
+    DigestDomain::RawObject
+);
+define_identity_digest!(
+    /// Normalized semantic evidence assertion.
+    SemanticEvidenceDigest,
+    DigestDomain::SemanticEvidence
+);
+define_identity_digest!(
+    /// Approved acquisition plan.
+    PlanDigest,
+    DigestDomain::Plan
+);
+define_identity_digest!(
+    /// Authorized campaign.
+    CampaignDigest,
+    DigestDomain::Campaign
+);
+define_identity_digest!(
+    /// One immutable execution attempt.
+    AttemptDigest,
+    DigestDomain::Attempt
+);
+define_identity_digest!(
+    /// Frozen evaluation context.
+    EvaluationContextDigest,
+    DigestDomain::EvaluationContext
+);
+define_identity_digest!(
+    /// Contract projection.
+    ContractDigest,
+    DigestDomain::Contract
+);
+define_identity_digest!(
+    /// Binding projection.
+    BindingDigest,
+    DigestDomain::Binding
+);
+define_identity_digest!(
+    /// Evidence-specification projection.
+    EvidenceSpecificationDigest,
+    DigestDomain::EvidenceSpecification
+);
+define_identity_digest!(
+    /// Target-configuration projection.
+    TargetConfigurationDigest,
+    DigestDomain::TargetConfiguration
+);
+define_identity_digest!(
+    /// Runner definition and executable projection.
+    RunnerDigest,
+    DigestDomain::Runner
+);
+define_identity_digest!(
+    /// Adapter projection.
+    AdapterDigest,
+    DigestDomain::Adapter
+);
+define_identity_digest!(
+    /// Policy and profile selection projection.
+    PolicySelectionDigest,
+    DigestDomain::PolicySelection
+);
+define_identity_digest!(
+    /// Protected authority projection.
+    AuthorityDigest,
+    DigestDomain::Authority
+);
+define_identity_digest!(
+    /// Trust-configuration projection.
+    TrustConfigurationDigest,
+    DigestDomain::TrustConfiguration
+);
+
 fn decode_hex(byte: u8) -> Option<u8> {
     match byte {
         b'0'..=b'9' => Some(byte - b'0'),
@@ -141,6 +296,7 @@ impl Error for DigestParseError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeSet;
 
     const EMPTY_GRAPH: &[u8] = br#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"policies":[],"profiles":[],"runners":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/semantic-graph.schema.json","surfaces":[],"targets":[],"waivers":[]}"#;
 
@@ -211,6 +367,62 @@ mod tests {
         assert_ne!(
             Sha256Digest::hash_domain(DigestDomain::SemanticGraph, EMPTY_GRAPH),
             Sha256Digest::hash_content(EMPTY_GRAPH)
+        );
+    }
+
+    #[test]
+    fn identity_domains_are_documented_and_distinct() {
+        let domains = [
+            DigestDomain::RawObject,
+            DigestDomain::SemanticEvidence,
+            DigestDomain::Plan,
+            DigestDomain::Campaign,
+            DigestDomain::Attempt,
+            DigestDomain::EvaluationContext,
+            DigestDomain::Contract,
+            DigestDomain::Binding,
+            DigestDomain::EvidenceSpecification,
+            DigestDomain::TargetConfiguration,
+            DigestDomain::Runner,
+            DigestDomain::Adapter,
+            DigestDomain::PolicySelection,
+            DigestDomain::Authority,
+            DigestDomain::TrustConfiguration,
+        ];
+        let mut labels = BTreeSet::new();
+        for domain in domains {
+            let label = domain.as_bytes();
+            assert!(label.starts_with(b"eqm:v2:"), "{label:?}");
+            assert!(labels.insert(label), "duplicate domain label {label:?}");
+            assert_ne!(
+                Sha256Digest::hash_domain(domain, EMPTY_GRAPH),
+                Sha256Digest::hash_content(EMPTY_GRAPH)
+            );
+        }
+        assert_eq!(labels.len(), domains.len());
+    }
+
+    #[test]
+    fn identity_digests_are_repeatable_and_domain_separated() {
+        assert_eq!(
+            RunnerDigest::hash_content(b"x"),
+            RunnerDigest::hash_content(b"x")
+        );
+        assert_ne!(
+            RunnerDigest::hash_content(b"x"),
+            RunnerDigest::hash_content(b"y")
+        );
+        assert_ne!(
+            RunnerDigest::hash_content(b"x").as_digest(),
+            ContractDigest::hash_content(b"x").as_digest()
+        );
+        assert_ne!(
+            RawObjectDigest::hash_content(b"x").as_digest(),
+            SemanticEvidenceDigest::hash_content(b"x").as_digest()
+        );
+        assert_eq!(
+            PlanDigest::hash_content(b"plan").to_string(),
+            PlanDigest::hash_content(b"plan").as_digest().to_string()
         );
     }
 }
