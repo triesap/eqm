@@ -279,7 +279,18 @@ impl Display for LoadError {
     }
 }
 
-impl Error for LoadError {}
+impl Error for LoadError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Config(error) => Some(error),
+            Self::Discovery(error) => Some(error),
+            Self::Validation(error) => Some(error),
+            Self::Conversion(error) => Some(error),
+            Self::Lock(error) => Some(error),
+            Self::WorkspaceTarget | Self::DuplicateTargetRoot => None,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

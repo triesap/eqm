@@ -172,6 +172,7 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
     use std::fs;
 
     fn example() -> Result<tempfile::TempDir, Box<dyn Error>> {
@@ -206,6 +207,23 @@ mod tests {
             }
             other => return Err(format!("expected a config cause, got {other:?}").into()),
         }
+        Ok(())
+    }
+
+    #[test]
+    fn load_error_causes_survive_standard_error_chaining() -> Result<(), Box<dyn Error>> {
+        let missing = Path::new("/definitely-not-an-eqm-workspace");
+        let request = SessionRequest::new(None, "2026-01-02T03:04:05Z".parse()?);
+        let error = match prepare(&request, missing) {
+            Err(error) => error,
+            Ok(_) => return Err("expected preparation to fail".into()),
+        };
+        let load = error.source().ok_or("session error lost its cause")?;
+        let config = load.source().ok_or("load error lost its cause")?;
+        assert_eq!(
+            config.downcast_ref::<eqm_manifest::ConfigError>(),
+            Some(&eqm_manifest::ConfigError::StartUnavailable)
+        );
         Ok(())
     }
 
