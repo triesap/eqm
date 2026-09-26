@@ -132,6 +132,28 @@ impl From<&Inventory> for InventoryDto {
     }
 }
 
+impl InventoryDto {
+    /// Parses one external inventory record under its bounded strict boundary.
+    ///
+    /// The 16 MiB bound matches the protocol response bound; duplicate object
+    /// members are rejected before conversion, so nested attribute names cannot
+    /// collapse into a `BTreeMap`.
+    pub fn from_json(bytes: &[u8]) -> Result<Self, AdapterDtoError> {
+        if bytes.len() > 16 * 1024 * 1024 {
+            return Err(AdapterDtoError::InvalidLimits);
+        }
+        let value: Self = crate::strict::from_slice_limited(bytes, 16 * 1024 * 1024)
+            .map_err(|_| AdapterDtoError::Json)?;
+        if value.schema != INVENTORY_SCHEMA.to_string() {
+            return Err(AdapterDtoError::InvalidSchema);
+        }
+        if value.entries.len() > 250_000 {
+            return Err(AdapterDtoError::InvalidLimits);
+        }
+        Ok(value)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AdapterStatusDto {
@@ -166,7 +188,8 @@ impl AdapterRequestDto {
         if bytes.len() > 4 * 1024 * 1024 {
             return Err(AdapterDtoError::InvalidLimits);
         }
-        let value: Self = crate::strict::from_slice(bytes).map_err(|_| AdapterDtoError::Json)?;
+        let value: Self = crate::strict::from_slice_limited(bytes, 4 * 1024 * 1024)
+            .map_err(|_| AdapterDtoError::Json)?;
         if value.schema != ADAPTER_REQUEST_SCHEMA.to_string() {
             return Err(AdapterDtoError::InvalidSchema);
         }
@@ -192,8 +215,8 @@ impl AdapterResponseDto {
         if bytes.len() > 16 * 1024 * 1024 {
             return Err(AdapterDtoError::InvalidLimits);
         }
-        let mut value: Self =
-            crate::strict::from_slice(bytes).map_err(|_| AdapterDtoError::Json)?;
+        let mut value: Self = crate::strict::from_slice_limited(bytes, 16 * 1024 * 1024)
+            .map_err(|_| AdapterDtoError::Json)?;
         if value.schema != ADAPTER_RESPONSE_SCHEMA.to_string() {
             return Err(AdapterDtoError::InvalidSchema);
         }

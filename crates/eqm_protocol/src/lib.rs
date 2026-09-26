@@ -12,7 +12,10 @@ mod sarif;
 mod schema;
 mod strict;
 
-pub use strict::{MAX_JSON_BYTES, StrictJsonError, from_slice as strict_from_slice, parse_strict};
+pub use strict::{
+    MAX_JSON_BYTES, StrictJsonError, from_slice as strict_from_slice,
+    from_slice_limited as strict_from_slice_limited, parse_strict, parse_strict_limited,
+};
 
 pub use adapter::{
     AdapterDtoError, AdapterLimitsDto, AdapterOperationDto, AdapterRequestDto, AdapterResponseDto,

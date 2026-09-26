@@ -48,7 +48,15 @@ impl Error for StrictJsonError {}
 
 /// Parses bounded JSON, rejecting duplicate object member names.
 pub fn parse_strict(bytes: &[u8]) -> Result<Value, StrictJsonError> {
-    if bytes.len() > MAX_JSON_BYTES {
+    parse_strict_limited(bytes, MAX_JSON_BYTES)
+}
+
+/// Parses JSON under an explicit caller limit, rejecting duplicate members.
+///
+/// Callers with an established, larger protocol bound pass that bound explicitly
+/// instead of silently shrinking it. The limit is checked before parsing.
+pub fn parse_strict_limited(bytes: &[u8], limit: usize) -> Result<Value, StrictJsonError> {
+    if bytes.len() > limit {
         return Err(StrictJsonError::TooLarge);
     }
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
@@ -65,7 +73,15 @@ pub fn parse_strict(bytes: &[u8]) -> Result<Value, StrictJsonError> {
 
 /// Parses bounded strict JSON and converts it into a typed protocol record.
 pub fn from_slice<T: for<'de> Deserialize<'de>>(bytes: &[u8]) -> Result<T, StrictJsonError> {
-    let value = parse_strict(bytes)?;
+    from_slice_limited(bytes, MAX_JSON_BYTES)
+}
+
+/// Parses strict JSON under an explicit caller limit and converts it.
+pub fn from_slice_limited<T: for<'de> Deserialize<'de>>(
+    bytes: &[u8],
+    limit: usize,
+) -> Result<T, StrictJsonError> {
+    let value = parse_strict_limited(bytes, limit)?;
     from_value(value)
 }
 

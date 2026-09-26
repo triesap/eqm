@@ -244,12 +244,12 @@ fn read_release_record(
     let relative = RepoPath::new(path)?;
     let absolute = session.repository_root().join(relative.as_str());
     let bytes = confined_bytes(session, &absolute)?;
-    let dto: ReleaseRecordDto = serde_json::from_slice(&bytes)?;
+    let dto: ReleaseRecordDto = eqm_protocol::strict_from_slice(&bytes)?;
     if dto.schema != eqm_protocol::RELEASE_RECORD_SCHEMA.to_string() {
         return Err("release record schema mismatch".into());
     }
     let claimed: Sha256Digest = dto.record_digest.parse()?;
-    let mut value: Value = serde_json::from_slice(&bytes)?;
+    let mut value: Value = eqm_protocol::parse_strict(&bytes)?;
     value
         .as_object_mut()
         .ok_or("release record object")?
@@ -619,6 +619,14 @@ pub(crate) mod tests {
     use crate::cli::{ParseOutcome, parse};
     use serde_json::json;
     use std::fs;
+
+    #[test]
+    fn release_context_preserves_injected_subsecond_instant() -> Result<(), Box<dyn Error>> {
+        let at: UtcInstant = "2026-01-02T03:04:05.000000123Z".parse()?;
+        let value = serde_json::to_value(context(false, at)?)?;
+        assert_eq!(value["evaluated_at"], "2026-01-02T03:04:05.000000123Z");
+        Ok(())
+    }
 
     struct SyntheticSignedTrust;
 

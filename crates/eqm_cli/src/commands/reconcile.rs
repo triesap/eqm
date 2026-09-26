@@ -156,7 +156,7 @@ fn load_inventory(
     if bytes.len() > 16 * 1024 * 1024 {
         return Err("inventory exceeds the protocol bound".into());
     }
-    let inventory: InventoryDto = serde_json::from_slice(&bytes)?;
+    let inventory = InventoryDto::from_json(&bytes)?;
     let adapter = inventory.adapter.parse()?;
     let digest = inventory.adapter_digest.parse()?;
     let matches = session
