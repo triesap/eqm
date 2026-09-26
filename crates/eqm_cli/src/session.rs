@@ -34,7 +34,7 @@ impl SessionRequest {
             .as_ref()
             .map(|path| RepoPath::new(path.to_string_lossy().replace('\\', "/")))
             .transpose()
-            .map_err(|_| SessionError::ConfigPath)?;
+            .map_err(SessionError::ConfigPath)?;
         Ok(eqm_application::SessionRequest::new(config))
     }
 }
