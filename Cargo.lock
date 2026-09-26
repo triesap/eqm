@@ -152,6 +152,7 @@ version = "0.1.0"
 dependencies = [
  "eqm_domain",
  "eqm_manifest",
+ "eqm_test_support",
  "tempfile",
  "toml",
 ]
@@ -212,10 +213,8 @@ name = "eqm_test_support"
 version = "0.1.0"
 dependencies = [
  "eqm_domain",
- "eqm_engine",
  "eqm_manifest",
  "eqm_protocol",
- "eqm_runner",
 ]
 
 [[package]]

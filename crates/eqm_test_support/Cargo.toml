@@ -13,10 +13,8 @@ publish = false
 
 [dependencies]
 eqm_domain.workspace = true
-eqm_engine.workspace = true
 eqm_manifest.workspace = true
 eqm_protocol.workspace = true
-eqm_runner.workspace = true
 
 [lints]
 workspace = true

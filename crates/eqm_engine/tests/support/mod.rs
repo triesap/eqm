@@ -1,5 +1,6 @@
 //! Shared integration-test materialization for the public example.
 
+use eqm_domain::UtcInstant;
 use eqm_manifest::LoadedWorkspace;
 use std::error::Error;
 use std::fs;
@@ -14,6 +15,15 @@ pub(crate) fn loaded_example() -> Result<(tempfile::TempDir, LoadedWorkspace), B
     Ok((repository, loaded))
 }
 
+/// Returns the shared deterministic evaluation instant for fixtures.
+///
+/// Fixtures must never read the wall clock. This delegates to the shared test
+/// support builder so engine regressions and other crates agree on one instant
+/// instead of re-declaring private constants.
+pub(crate) fn evaluation_time() -> Result<UtcInstant, Box<dyn Error>> {
+    Ok(eqm_test_support::evaluation_time()?)
+}
+
 fn copy_directory(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
     fs::create_dir_all(destination)?;
     for entry in fs::read_dir(source)? {
@@ -26,4 +36,17 @@ fn copy_directory(source: &Path, destination: &Path) -> Result<(), Box<dyn Error
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shared_evaluation_time_is_injected_and_repeatable() -> Result<(), Box<dyn Error>> {
+        let first = evaluation_time()?;
+        assert_eq!(first, evaluation_time()?);
+        assert_eq!(first.to_string(), eqm_test_support::FIXED_EVALUATION_TIME);
+        Ok(())
+    }
 }
