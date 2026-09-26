@@ -11,6 +11,24 @@ equivalence. It is not a UI abstraction, source generator, feature-flag
 service, CI platform, test framework, release platform, or proof of application
 security. It never makes Android and iOS source code structurally identical.
 
+## Approved specification and execution plan
+
+The owner-approved revision-2 product plan lives under
+[docs/eqm_product_v1/](eqm_product_v1/README.md). Its
+`implementation/COMMIT_SEQUENCE.md` is the ordered, governing execution
+sequence; `implementation/progress.json` is the live completion ledger; and
+`implementation/DEVIATIONS.md` records evidence-backed, owner-approved
+amendments. Resume from the ledger and Git history, keeping exactly one step
+active. Land one plan step per tested, reviewed commit and report exact
+commands, results, unverified lanes, and next-step safety after each commit.
+
+The plan is intent, not implemented behavior. Symbol, module, DTO,
+wire-version, and native-task names in it are proposed allocations until the
+owning step implements them. Approved directions (for example the wire
+namespace, count units, retry/conflict/campaign rules, and inherited fragment
+risk) may be closed spec-first; missing product repositories, credentials,
+hosts, and policy values remain explicit gates rather than invented defaults.
+
 ## Consumer-owned files
 
 ```text
