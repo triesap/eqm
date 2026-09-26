@@ -1,12 +1,13 @@
 //! Canonical numeric wire forms frozen by ADR-0013.
 //!
-//! Exact integers are JSON integers within `|n| <= 2^53-1`. The `eqm:v2`
-//! namespace additionally carries larger exact quantities as unsigned
-//! (`^(0|[1-9][0-9]*)$`) or signed (`^-?(0|[1-9][0-9]*)$`) decimal strings;
-//! [`WireUint`] and [`WireInt`] implement that canonical pair. The current v1
-//! contract remains integer-only and rejects values beyond the exact range
-//! instead of silently accepting an ambiguous number. Fractional, overflowing
-//! and non-canonical forms are rejected everywhere.
+//! In the `eqm:v2` namespace exact integers are JSON integers within
+//! `|n| <= 2^53-1` and canonical decimal strings outside that interval;
+//! [`WireUint`] and [`WireInt`] implement that canonical pair over the full
+//! `u64`/`i64` domains. Strings are used only outside the safe interval, so a
+//! small-value string, negative zero, a leading zero, a plus sign, a fractional
+//! or exponent token, and overflow are all rejected. The retained v1 contract
+//! keeps its original full-`u64`/`i64` integer acceptance; v1 schemas and bytes
+//! are unchanged and never acquire the v2 string form.
 
 use schemars::JsonSchema;
 use schemars::Schema;
@@ -63,8 +64,106 @@ pub fn exact_signed(value: i64) -> Result<i64, WireFormError> {
     }
 }
 
-fn decimal_schema(pattern: &str) -> Value {
-    json!({"type": "string", "pattern": pattern})
+/// Returns an ECMA regex alternation matching exactly the canonical decimal
+/// spellings of every integer in the inclusive range `low..=high`.
+///
+/// The range is split into digit-length buckets and each bucket is decomposed
+/// into a flat alternation of literal prefixes, bounded character classes and
+/// fixed-width digit runs, so the pattern encodes the numeric range exactly
+/// instead of merely matching decimal syntax.
+fn decimal_range_alternation(low: u128, high: u128) -> String {
+    debug_assert!(low <= high);
+    let low_text = low.to_string();
+    let high_text = high.to_string();
+    let mut parts = Vec::new();
+    for length in low_text.len()..=high_text.len() {
+        let lower = if length == low_text.len() {
+            low
+        } else {
+            10u128.pow(length as u32 - 1)
+        };
+        let upper = if length == high_text.len() {
+            high
+        } else {
+            10u128.pow(length as u32) - 1
+        };
+        parts.extend(range_fragments(&lower.to_string(), &upper.to_string()));
+    }
+    format!("(?:{})", parts.join("|"))
+}
+
+fn range_fragments(low: &str, high: &str) -> Vec<String> {
+    let low_digits: Vec<u8> = low.bytes().map(|byte| byte - b'0').collect();
+    let high_digits: Vec<u8> = high.bytes().map(|byte| byte - b'0').collect();
+    range_fragments_digits(&low_digits, &high_digits)
+}
+
+fn range_fragments_digits(low: &[u8], high: &[u8]) -> Vec<String> {
+    if low.is_empty() {
+        return vec![String::new()];
+    }
+    if low.iter().all(|digit| *digit == 0) && high.iter().all(|digit| *digit == 9) {
+        return vec![digit_run(low.len())];
+    }
+    let (Some((&low_head, low_tail)), Some((&high_head, high_tail))) =
+        (low.split_first(), high.split_first())
+    else {
+        return vec![String::new()];
+    };
+    if low_head == high_head {
+        return range_fragments_digits(low_tail, high_tail)
+            .into_iter()
+            .map(|suffix| format!("{low_head}{suffix}"))
+            .collect();
+    }
+    let rest = low_tail.len();
+    let mut fragments: Vec<String> = range_fragments_digits(low_tail, &vec![9u8; rest])
+        .into_iter()
+        .map(|suffix| format!("{low_head}{suffix}"))
+        .collect();
+    if high_head - low_head >= 2 {
+        fragments.push(format!(
+            "{}{}",
+            digit_class(low_head + 1, high_head - 1),
+            digit_run(rest)
+        ));
+    }
+    fragments.extend(
+        range_fragments_digits(&vec![0u8; rest], high_tail)
+            .into_iter()
+            .map(|suffix| format!("{high_head}{suffix}")),
+    );
+    fragments
+}
+
+fn digit_class(low: u8, high: u8) -> String {
+    if low == high {
+        low.to_string()
+    } else {
+        format!("[{low}-{high}]")
+    }
+}
+
+fn digit_run(count: usize) -> String {
+    if count == 0 {
+        String::new()
+    } else {
+        format!("[0-9]{{{count}}}")
+    }
+}
+
+fn canonical_unsigned_string_pattern() -> String {
+    format!(
+        "^{}$",
+        decimal_range_alternation((MAX_SAFE_INTEGER as u128) + 1, u64::MAX as u128)
+    )
+}
+
+fn canonical_signed_string_pattern() -> String {
+    let positive = decimal_range_alternation((MAX_SAFE_INTEGER as u128) + 1, i64::MAX as u128);
+    let negative =
+        decimal_range_alternation((MAX_SAFE_INTEGER as u128) + 1, (i64::MAX as u128) + 1);
+    format!("^(?:{positive}|-{negative})$")
 }
 
 fn unsigned_schema() -> Schema {
@@ -78,7 +177,10 @@ fn unsigned_schema() -> Schema {
                 "minimum": 0,
                 "maximum": MAX_SAFE_INTEGER,
             }),
-            decimal_schema("^(0|[1-9][0-9]*)$"),
+            json!({
+                "type": "string",
+                "pattern": canonical_unsigned_string_pattern(),
+            }),
         ]),
     );
     Schema::from(object)
@@ -95,7 +197,10 @@ fn signed_schema() -> Schema {
                 "minimum": -(MAX_SAFE_INTEGER as i64),
                 "maximum": MAX_SAFE_INTEGER,
             }),
-            decimal_schema("^-?(0|[1-9][0-9]*)$"),
+            json!({
+                "type": "string",
+                "pattern": canonical_signed_string_pattern(),
+            }),
         ]),
     );
     Schema::from(object)
@@ -155,6 +260,9 @@ impl Visitor<'_> for WireUintVisitor {
 
     fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
         let parsed = parse_unsigned_decimal(value).map_err(E::custom)?;
+        if parsed <= MAX_SAFE_INTEGER {
+            return Err(E::custom(WireFormError::NonCanonical));
+        }
         Ok(WireUint(parsed))
     }
 }
@@ -236,6 +344,9 @@ impl Visitor<'_> for WireIntVisitor {
 
     fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
         let parsed = parse_signed_decimal(value).map_err(E::custom)?;
+        if parsed.unsigned_abs() <= MAX_SAFE_INTEGER {
+            return Err(E::custom(WireFormError::NonCanonical));
+        }
         Ok(WireInt(parsed))
     }
 }
@@ -281,17 +392,25 @@ fn parse_signed_decimal(value: &str) -> Result<i64, WireFormError> {
         Some(digits) => (true, digits),
         None => (false, value),
     };
-    if !is_canonical_digits(digits) {
+    if !is_canonical_digits(digits) || (negative && digits == "0") {
         return Err(WireFormError::NonCanonical);
     }
-    let magnitude: i64 = digits.parse().map_err(|_| WireFormError::Overflow)?;
+    // Parse the magnitude as an unsigned value so the exact `i64::MIN`
+    // endpoint, whose magnitude is `i64::MAX + 1`, round-trips instead of
+    // overflowing before negation.
+    let magnitude: u128 = digits.parse().map_err(|_| WireFormError::Overflow)?;
     if negative {
-        if magnitude == 0 {
-            return Err(WireFormError::NonCanonical);
+        let limit = (i64::MAX as u128) + 1;
+        if magnitude > limit {
+            return Err(WireFormError::Overflow);
         }
-        magnitude.checked_neg().ok_or(WireFormError::Overflow)
+        if magnitude == limit {
+            Ok(i64::MIN)
+        } else {
+            Ok(-(magnitude as i64))
+        }
     } else {
-        Ok(magnitude)
+        i64::try_from(magnitude).map_err(|_| WireFormError::Overflow)
     }
 }
 
@@ -315,14 +434,36 @@ mod tests {
         assert!(from_json::<WireUint>("9007199254740992").is_err());
         assert!(from_json::<WireUint>("-1").is_err());
         assert!(from_json::<WireUint>("1.5").is_err());
+        assert!(from_json::<WireUint>("1e3").is_err());
         assert_eq!(
             from_json::<WireUint>("\"9007199254740992\"")
                 .map(WireUint::get)
                 .ok(),
             Some(9_007_199_254_740_992)
         );
-        assert!(from_json::<WireUint>("\"01\"").is_err());
-        assert!(from_json::<WireUint>("\"+1\"").is_err());
+        assert_eq!(
+            from_json::<WireUint>("\"18446744073709551615\"")
+                .map(WireUint::get)
+                .ok(),
+            Some(u64::MAX)
+        );
+        for rejected in [
+            "\"0\"",
+            "\"5\"",
+            "\"9007199254740991\"",
+            "\"01\"",
+            "\"+1\"",
+            "\"-5\"",
+            "\"1.0\"",
+            "\"1e3\"",
+            "\"0007199254740992\"",
+            "\"18446744073709551616\"",
+        ] {
+            assert!(
+                from_json::<WireUint>(rejected).is_err(),
+                "accepted {rejected}"
+            );
+        }
     }
 
     #[test]
@@ -334,13 +475,99 @@ mod tests {
             Some(-(MAX_SAFE_INTEGER as i64))
         );
         assert!(from_json::<WireInt>("-9007199254740992").is_err());
+        assert!(from_json::<WireInt>("-1e3").is_err());
         assert_eq!(
             from_json::<WireInt>("\"-9007199254740992\"")
                 .map(WireInt::get)
                 .ok(),
             Some(-9_007_199_254_740_992)
         );
-        assert!(from_json::<WireInt>("\"-0\"").is_err());
+        assert_eq!(
+            from_json::<WireInt>("\"-9223372036854775808\"")
+                .map(WireInt::get)
+                .ok(),
+            Some(i64::MIN)
+        );
+        assert_eq!(
+            from_json::<WireInt>("\"9223372036854775807\"")
+                .map(WireInt::get)
+                .ok(),
+            Some(i64::MAX)
+        );
+        for rejected in [
+            "\"-0\"",
+            "\"-5\"",
+            "\"5\"",
+            "\"-9007199254740991\"",
+            "\"9007199254740991\"",
+            "\"+9007199254740992\"",
+            "\"-9223372036854775809\"",
+            "\"9223372036854775808\"",
+        ] {
+            assert!(
+                from_json::<WireInt>(rejected).is_err(),
+                "accepted {rejected}"
+            );
+        }
+    }
+
+    #[test]
+    fn generated_range_patterns_match_small_ranges_exactly() {
+        for (low, high) in [
+            (0u128, 0u128),
+            (1, 9),
+            (9, 11),
+            (97, 105),
+            (90, 110),
+            (995, 1005),
+            (900, 1899),
+        ] {
+            let pattern = format!("^{}$", decimal_range_alternation(low, high));
+            let regex = regex_lite::Regex::new(&pattern);
+            assert!(
+                regex.is_ok(),
+                "range {low}..={high} pattern failed to compile"
+            );
+            let Ok(regex) = regex else {
+                continue;
+            };
+            for value in 0..2000u128 {
+                let text = value.to_string();
+                let expected = value >= low && value <= high;
+                assert_eq!(
+                    regex.is_match(&text),
+                    expected,
+                    "range {low}..={high} disagreed on {text}"
+                );
+            }
+            for probe in ["", "00", "01", "+1", "-1", "1.0"] {
+                assert!(
+                    !regex.is_match(probe),
+                    "range {low}..={high} matched non-canonical {probe}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn numeric_endpoints_round_trip_through_canonical_text() -> Result<(), Box<dyn Error>> {
+        let unsigned = serde_json::to_string(&WireUint::new(u64::MAX))?;
+        assert_eq!(unsigned, "\"18446744073709551615\"");
+        assert_eq!(from_json::<WireUint>(&unsigned)?.get(), u64::MAX);
+        for value in [i64::MIN, i64::MAX, -(MAX_SAFE_INTEGER as i64), 0] {
+            let rendered = serde_json::to_string(&WireInt::new(value))?;
+            assert_eq!(from_json::<WireInt>(&rendered)?.get(), value);
+        }
+        assert_eq!(
+            serde_json::to_string(&WireInt::new(i64::MIN))?,
+            "\"-9223372036854775808\""
+        );
+        assert_eq!(
+            serde_json::to_string(&WireInt::new(i64::MAX))?,
+            "\"9223372036854775807\""
+        );
+        assert_eq!(serde_json::to_string(&WireInt::new(0))?, "0");
+        Ok(())
     }
 
     #[test]
@@ -352,6 +579,10 @@ mod tests {
             "\"9007199254740992\""
         );
         assert_eq!(serde_json::to_string(&WireInt::new(-5))?, "-5");
+        assert_eq!(
+            serde_json::to_string(&WireInt::new(-(MAX_SAFE_INTEGER as i64) - 1))?,
+            "\"-9007199254740992\""
+        );
         Ok(())
     }
 

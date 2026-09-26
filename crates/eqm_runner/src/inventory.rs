@@ -157,10 +157,7 @@ fn validate_inventory(
                 SelectorText::new(name.as_str()).map_err(|_| InventoryValidationError::Entry)?;
             match value {
                 FactValueDto::Boolean(_) => {}
-                FactValueDto::Integer(value) => {
-                    eqm_protocol::exact_signed(*value)
-                        .map_err(|_| InventoryValidationError::Entry)?;
-                }
+                FactValueDto::Integer(_) => {}
                 FactValueDto::Symbol(value) => {
                     let _: SymbolicValueId =
                         value.parse().map_err(|_| InventoryValidationError::Entry)?;
@@ -312,7 +309,7 @@ mod tests {
     use eqm_domain::{AdapterId, AdapterLimits, RepositoryIdentity, Revision, SelectorText};
     use eqm_protocol::{
         ADAPTER_REQUEST_SCHEMA, ADAPTER_RESPONSE_SCHEMA, AdapterLimitsDto, AdapterOperationDto,
-        EvidenceSubjectDto, InventoryEntryDto,
+        EvidenceSubjectDto, FactValueDto, InventoryEntryDto,
     };
     use std::collections::BTreeMap;
     use std::error::Error;
@@ -442,6 +439,28 @@ mod tests {
         let observation = validate_inventory_response(&definition, &request(&definition), error)?;
         assert_eq!(observation.completeness(), InventoryCompleteness::Unknown);
         assert!(!observation.can_prove_absence());
+        Ok(())
+    }
+
+    #[test]
+    fn inventory_integer_attributes_keep_the_full_v1_range() -> Result<(), Box<dyn Error>> {
+        // RF01: v1 inventory facts still accept the full signed integer range.
+        let definition = definition(InventoryCompleteness::Complete)?;
+        let entry = InventoryEntryDto {
+            kind: "runtime".to_owned(),
+            key: "version".to_owned(),
+            attributes: BTreeMap::from([
+                ("build".to_owned(), FactValueDto::Integer(i64::MAX)),
+                ("patch".to_owned(), FactValueDto::Integer(i64::MIN)),
+            ]),
+            source: "src/file.rs".to_owned(),
+        };
+        let observation = validate_inventory_response(
+            &definition,
+            &request(&definition),
+            response(&definition, InventoryCompleteness::Complete, vec![entry])?,
+        )?;
+        assert_eq!(observation.completeness(), InventoryCompleteness::Complete);
         Ok(())
     }
 

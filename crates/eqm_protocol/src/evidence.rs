@@ -477,16 +477,6 @@ impl EvidenceResultDto {
 }
 
 fn validate_counts(value: &CountsDto) -> Result<EvidenceCounts, EvidenceDtoError> {
-    for count in [
-        value.selected,
-        value.passed,
-        value.failed,
-        value.skipped,
-        value.filtered,
-        value.quarantined,
-    ] {
-        crate::exact_unsigned(count).map_err(|_| EvidenceDtoError::InvalidCounts)?;
-    }
     EvidenceCounts::new(
         value.selected,
         value.passed,
@@ -612,8 +602,27 @@ mod tests {
     }
 
     #[test]
-    fn counts_beyond_the_exact_range_are_rejected() {
+    fn counts_accept_the_full_v1_integer_range() {
         let counts = CountsDto {
+            selected: u64::MAX,
+            passed: u64::MAX,
+            failed: 0,
+            skipped: 0,
+            filtered: 0,
+            quarantined: 0,
+        };
+        assert_eq!(
+            validate_counts(&counts).ok(),
+            Some(EvidenceCounts {
+                selected: u64::MAX,
+                passed: u64::MAX,
+                failed: 0,
+                skipped: 0,
+                filtered: 0,
+                quarantined: 0,
+            })
+        );
+        let beyond_safe = CountsDto {
             selected: crate::MAX_SAFE_INTEGER + 1,
             passed: crate::MAX_SAFE_INTEGER + 1,
             failed: 0,
@@ -621,19 +630,7 @@ mod tests {
             filtered: 0,
             quarantined: 0,
         };
-        assert_eq!(
-            validate_counts(&counts),
-            Err(EvidenceDtoError::InvalidCounts)
-        );
-        let exact = CountsDto {
-            selected: crate::MAX_SAFE_INTEGER,
-            passed: crate::MAX_SAFE_INTEGER,
-            failed: 0,
-            skipped: 0,
-            filtered: 0,
-            quarantined: 0,
-        };
-        assert!(validate_counts(&exact).is_ok());
+        assert!(validate_counts(&beyond_safe).is_ok());
     }
 
     #[test]

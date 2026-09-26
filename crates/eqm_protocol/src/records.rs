@@ -191,9 +191,7 @@ fn validate_runtime_facts(value: &RuntimeFactsDto) -> Result<(), RuntimeFactsDto
                 SelectorText::new(item.as_str()).map_err(|_| RuntimeFactsDtoError::InvalidFact)?;
             }
             FactValueDto::Boolean(_) => {}
-            FactValueDto::Integer(value) => {
-                crate::exact_signed(*value).map_err(|_| RuntimeFactsDtoError::InvalidFact)?;
-            }
+            FactValueDto::Integer(_) => {}
         }
     }
     Ok(())
@@ -293,7 +291,10 @@ mod tests {
             "profile_values":[],
             "observed_at":"2026-08-08T00:00:00Z",
             "expires_at":"2026-08-09T00:00:00Z",
-            "facts":[{"surface":"account.create.signup.identifier","dimension":"availability","key":"enabled","value":{"type":"boolean","value":true}}],
+            "facts":[
+                {"surface":"account.create.signup.identifier","dimension":"availability","key":"enabled","value":{"type":"boolean","value":true}},
+                {"surface":"account.create.signup.identifier","dimension":"availability","key":"version","value":{"type":"integer","value":i64::MAX}}
+            ],
             "producer":"producer://runtime/fixture/snapshot-1",
             "claimed_trust":"signed_ci"
         });
@@ -307,6 +308,16 @@ mod tests {
         let bytes = runtime_facts()?;
         let parsed = RuntimeFactsDto::from_json(&bytes);
         assert!(parsed.is_ok(), "{parsed:?}");
+        // RF01: v1 facts retain their full signed integer acceptance, including
+        // values outside the v2 safe JSON interval.
+        assert!(
+            parsed
+                .as_ref()
+                .is_ok_and(|value| value.facts.iter().any(|fact| matches!(
+                    &fact.value,
+                    FactValueDto::Integer(integer) if *integer == i64::MAX
+                )))
+        );
 
         let mut tampered: Value = serde_json::from_slice(&bytes)?;
         tampered["target"] = Value::String("ios".to_owned());
