@@ -53,7 +53,7 @@ pub fn serve_stdio(parsed: ParsedCli, start: &Path) -> Result<(), Box<dyn std::e
         .map(str::to_owned);
     let request = crate::session::SessionRequest::new(parsed.global, parsed.command.name);
     let session = crate::session::prepare(&request, start)?;
-    let mcp = session.mcp_session()?;
+    let mcp = crate::session::mcp_session(&session)?;
     let handler = CliReadToolHandler::new(start);
     let mut audit = audit_path
         .as_deref()
@@ -246,7 +246,7 @@ mod tests {
             crate::cli::CommandName::McpServe,
         );
         let session = crate::session::prepare(&request, root)?;
-        let mcp = session.mcp_session()?;
+        let mcp = crate::session::mcp_session(&session)?;
         let handler = CliReadToolHandler::new(root);
         let frames = [
             json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":eqm_mcp::MCP_PROTOCOL_VERSION}}),
@@ -328,7 +328,7 @@ mod tests {
             crate::cli::CommandName::McpServe,
         );
         let session = crate::session::prepare(&request, root)?;
-        let mcp = session.mcp_session()?;
+        let mcp = crate::session::mcp_session(&session)?;
         let handler = CliReadToolHandler::new(root);
         let input = |id| {
             [

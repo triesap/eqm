@@ -15,6 +15,7 @@ description = "Deterministic product conformance and equivalence CLI"
 
 [dependencies]
 chrono.workspace = true
+eqm_application.workspace = true
 eqm_domain.workspace = true
 eqm_engine.workspace = true
 eqm_manifest.workspace = true

@@ -65,7 +65,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     let workspace = prepare(&request, start);
     let workspace_healthy = workspace
         .as_ref()
-        .is_ok_and(|session| session.mcp_session().is_ok());
+        .is_ok_and(|session| crate::session::mcp_session(session).is_ok());
     checks.insert(check(
         "workspace",
         workspace_healthy,

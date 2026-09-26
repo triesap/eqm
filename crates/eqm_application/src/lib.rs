@@ -27,6 +27,10 @@
 
 #![forbid(unsafe_code)]
 
+pub mod session;
+
+pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
+
 #[cfg(test)]
 mod tests {
     /// The application layer must never depend on a transport crate.
