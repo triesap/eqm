@@ -80,7 +80,8 @@ impl InTotoStatementDto {
     }
 
     pub fn from_json(bytes: &[u8]) -> Result<Self, AttestationDtoError> {
-        let value: Self = serde_json::from_slice(bytes).map_err(|_| AttestationDtoError::Json)?;
+        let value: Self =
+            crate::strict::from_slice(bytes).map_err(|_| AttestationDtoError::Json)?;
         if value.statement_type != IN_TOTO_STATEMENT_V1
             || value.predicate_type != ATTESTATION_SCHEMA.to_string()
         {

@@ -181,7 +181,7 @@ impl TestResultDto {
     }
 
     pub fn from_json(bytes: &[u8]) -> Result<Self, EvidenceDtoError> {
-        let value: Self = serde_json::from_slice(bytes).map_err(|_| EvidenceDtoError::Json)?;
+        let value: Self = crate::strict::from_slice(bytes).map_err(|_| EvidenceDtoError::Json)?;
         if value.schema != TEST_RESULT_SCHEMA.to_string() {
             return Err(EvidenceDtoError::InvalidSchema);
         }
@@ -411,7 +411,7 @@ impl From<&EvidenceResult> for EvidenceResultDto {
 
 impl EvidenceResultDto {
     pub fn from_json(bytes: &[u8]) -> Result<Self, EvidenceDtoError> {
-        let value: Self = serde_json::from_slice(bytes).map_err(|_| EvidenceDtoError::Json)?;
+        let value: Self = crate::strict::from_slice(bytes).map_err(|_| EvidenceDtoError::Json)?;
         if value.schema != EVIDENCE_RESULT_SCHEMA.to_string() {
             return Err(EvidenceDtoError::InvalidSchema);
         }

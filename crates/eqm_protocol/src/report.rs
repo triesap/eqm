@@ -530,7 +530,7 @@ impl<R: CommandResultDto, S, B> ReportEnvelope<R, S, B> {
             diagnostics: Vec<DiagnosticDto>,
         }
         let raw: Raw<R, S, B> =
-            serde_json::from_slice(bytes).map_err(|_| ReportBuildError::Json)?;
+            crate::strict::from_slice(bytes).map_err(|_| ReportBuildError::Json)?;
         let digest = raw
             .workspace_digest
             .as_deref()

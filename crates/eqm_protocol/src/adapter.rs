@@ -166,7 +166,7 @@ impl AdapterRequestDto {
         if bytes.len() > 4 * 1024 * 1024 {
             return Err(AdapterDtoError::InvalidLimits);
         }
-        let value: Self = serde_json::from_slice(bytes).map_err(|_| AdapterDtoError::Json)?;
+        let value: Self = crate::strict::from_slice(bytes).map_err(|_| AdapterDtoError::Json)?;
         if value.schema != ADAPTER_REQUEST_SCHEMA.to_string() {
             return Err(AdapterDtoError::InvalidSchema);
         }
@@ -192,7 +192,8 @@ impl AdapterResponseDto {
         if bytes.len() > 16 * 1024 * 1024 {
             return Err(AdapterDtoError::InvalidLimits);
         }
-        let mut value: Self = serde_json::from_slice(bytes).map_err(|_| AdapterDtoError::Json)?;
+        let mut value: Self =
+            crate::strict::from_slice(bytes).map_err(|_| AdapterDtoError::Json)?;
         if value.schema != ADAPTER_RESPONSE_SCHEMA.to_string() {
             return Err(AdapterDtoError::InvalidSchema);
         }

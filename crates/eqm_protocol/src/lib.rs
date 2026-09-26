@@ -10,6 +10,9 @@ mod report;
 mod results;
 mod sarif;
 mod schema;
+mod strict;
+
+pub use strict::{MAX_JSON_BYTES, StrictJsonError, from_slice as strict_from_slice, parse_strict};
 
 pub use adapter::{
     AdapterDtoError, AdapterLimitsDto, AdapterOperationDto, AdapterRequestDto, AdapterResponseDto,

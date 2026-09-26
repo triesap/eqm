@@ -83,7 +83,8 @@ impl RuntimeFactsDto {
         if bytes.len() > MAX_RUNTIME_FACTS_BYTES {
             return Err(RuntimeFactsDtoError::TooLarge);
         }
-        let value: Self = serde_json::from_slice(bytes).map_err(|_| RuntimeFactsDtoError::Json)?;
+        let value: Self =
+            crate::strict::from_slice(bytes).map_err(|_| RuntimeFactsDtoError::Json)?;
         if value.schema != RUNTIME_FACTS_SCHEMA.to_string() {
             return Err(RuntimeFactsDtoError::InvalidSchema);
         }
@@ -92,7 +93,7 @@ impl RuntimeFactsDto {
             .parse()
             .map_err(|_| RuntimeFactsDtoError::InvalidDigest)?;
         let mut canonical_value: Value =
-            serde_json::from_slice(bytes).map_err(|_| RuntimeFactsDtoError::Json)?;
+            crate::strict::parse_strict(bytes).map_err(|_| RuntimeFactsDtoError::Json)?;
         canonical_value
             .as_object_mut()
             .ok_or(RuntimeFactsDtoError::Json)?
