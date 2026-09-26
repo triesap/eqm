@@ -289,7 +289,7 @@
     {
      "id": "S015-R4",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "799f7aeb2d0c546b79ac0489b232d33a7ea24f14",
      "report": "implementation/reports/S015.md#s015-r4",
      "verification": [
       "cargo test --locked -p eqm -p eqm_application",
@@ -298,15 +298,29 @@
       "cargo xtask check",
       "cargo test --locked -p eqm_application --doc",
       "git diff --check"
-     ],
-     "sha_recorded_externally": true
+     ]
     },
     {
      "id": "S015-R5",
-     "status": "pending",
-     "commit_sha": null
+     "status": "complete",
+     "commit_sha": null,
+     "report": "implementation/reports/S015.md#s015-r5",
+     "verification": [
+      "cargo xtask schemas generate",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain -p eqm_test_support",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "cargo test --locked -p eqm_application --doc",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ],
+     "sha_recorded_externally": true
     }
-   ]
+   ],
+   "implementation_status": "corrective_checkpoints_complete_pending_supervisor_acceptance"
   },
   {
    "id": "S016",
@@ -2531,7 +2545,7 @@
    "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   }
  ],
- "next_checkpoint": "S015-R5",
+ "next_checkpoint": "S016",
  "supervisor_review": {
   "source_commit": "3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b",
   "report": "implementation/reports/CODEX-3da0b50.md",
@@ -2601,15 +2615,18 @@
   },
   {
    "id": "RF09",
-   "status": "open",
+   "status": "addressed",
    "owner": "S015",
-   "report": "implementation/reports/CODEX-3da0b50.md"
+   "report": "implementation/reports/CODEX-3da0b50.md",
+   "checkpoint": "S015-R5"
   },
   {
    "id": "RF10",
-   "status": "open",
+   "status": "addressed",
    "owner": "S015",
-   "report": "implementation/reports/CODEX-3da0b50.md"
+   "report": "implementation/reports/CODEX-3da0b50.md",
+   "checkpoint": "S015-R5"
   }
- ]
+ ],
+ "s015_corrective_status": "complete_pending_supervisor_acceptance"
 }

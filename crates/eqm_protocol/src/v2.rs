@@ -1026,6 +1026,48 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn v2_family_identities_are_exact_and_reject_other_versions() -> Result<(), Box<dyn Error>> {
+        let identities = [
+            (
+                crate::EVIDENCE_RESULT_SCHEMA_V2,
+                eqm_domain::SchemaKind::EvidenceResult,
+            ),
+            (
+                crate::RUNTIME_FACTS_SCHEMA_V2,
+                eqm_domain::SchemaKind::RuntimeFacts,
+            ),
+            (
+                crate::INVENTORY_SCHEMA_V2,
+                eqm_domain::SchemaKind::Inventory,
+            ),
+            (
+                crate::ADAPTER_REQUEST_SCHEMA_V2,
+                eqm_domain::SchemaKind::AdapterRequest,
+            ),
+            (
+                crate::ADAPTER_RESPONSE_SCHEMA_V2,
+                eqm_domain::SchemaKind::AdapterResponse,
+            ),
+        ];
+        assert_eq!(identities.len(), crate::V2_PROTOCOL_SCHEMAS.len());
+        for (uri, kind) in identities {
+            assert_eq!(uri.kind(), kind);
+            assert_eq!(uri.version(), eqm_domain::SchemaVersion::V2);
+            assert!(uri.to_string().contains("/schemas/v2/"));
+            assert_eq!(
+                uri.to_string().parse::<eqm_domain::SchemaUri>().ok(),
+                Some(uri)
+            );
+        }
+        assert!(
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/protocol/evidence-result.schema.json"
+                .parse::<eqm_domain::SchemaUri>()
+                .is_err()
+        );
+        Ok(())
+    }
+
     fn schema_document(name: &str) -> Result<Value, Box<dyn Error>> {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../schemas/v2/protocol")

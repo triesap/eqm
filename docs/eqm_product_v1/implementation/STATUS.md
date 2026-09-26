@@ -10,15 +10,17 @@ inspected. CR04/CR05/CR07 are accepted for their original bounded scope.
 CR01/CR02/CR03/CR06/CR08 retain obligations mapped to DEV-002.
 S015 has an implementation commit but is **reopened, changes required** after
 supervisor findings RF01–RF10. Corrective checkpoints **S015-R1 through
-S015-R4 are complete**: pre-S015 v1 integer acceptance is restored, the 22 v1
-schemas remain byte-identical, schema identity is version-qualified with
-per-version parity, the five concrete v2 protocol families exist with generated
-v2 schemas and canonical numeric/time/absence behavior, and release/adapter
-ingress plus the application result bound now have real regression controls.
-The next action is **S015-R5** (whole representation corpus and evidence
-reconciliation), then S016 in the governing COMMIT_SEQUENCE.md. Checkpoint SHAs
-are recorded externally and backfilled one checkpoint later (R1 = `92f781a`,
-R2 = `0fb6a86`, R3 = `c5547fc`).
+S015-R5 are implementation-complete**: pre-S015 v1 integer acceptance is
+restored, the 22 v1 schemas remain byte-identical, schema identity is
+version-qualified with per-version parity, the five concrete v2 protocol
+families exist with generated v2 schemas, release/adapter ingress and the
+application result bound have real controls, and every applicable
+representation vector is dispatched by its declared discipline. Independent
+supervisor acceptance is **not yet given**; S015 remains `changes_required`
+until Codex reviews. After acceptance the next numbered step is **S016** in the
+governing COMMIT_SEQUENCE.md. Checkpoint SHAs are recorded externally and
+backfilled one checkpoint later (R1 = `92f781a`, R2 = `0fb6a86`,
+R3 = `c5547fc`, R4 = `799f7ae`).
 
 EQM-P01's 12 numbered steps are recorded complete, with remaining regression
 contributions explicitly assigned to the current corrections. EQM-P02 has

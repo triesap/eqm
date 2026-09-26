@@ -35,8 +35,8 @@ pub use subject::{
     target_subject,
 };
 pub use vectors::{
-    REPRESENTATION_VECTORS, REQUIRED_VECTOR_CATEGORIES, RepresentationVector, VectorOutcome,
-    vectors_for,
+    REPRESENTATION_VECTORS, REQUIRED_VECTOR_CATEGORIES, RepresentationVector, VectorDiscipline,
+    VectorOutcome, vectors_for,
 };
 
 #[cfg(test)]
