@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S014",
+ "next_step": "S015",
  "implementation": "in_progress",
  "local_verification": "not_run",
  "platform_verification": "not_run",
@@ -209,10 +209,17 @@
   },
   {
    "id": "S014",
-   "status": "pending",
-   "commit_sha": null,
-   "report": null,
-   "verification": [],
+   "status": "complete",
+   "commit_sha": "e61a28e4047b6ba9be87f0afc5646c055cf22317",
+   "report": "implementation/reports/S014.md",
+   "verification": [
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo test --all-targets --locked -p eqm_protocol",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "git diff --check"
+   ],
    "baseline_exceptions": []
   },
   {
@@ -2124,7 +2131,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S014",
+ "active_step": "S015",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2139,7 +2146,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 1,
+   "completed_steps": 2,
    "total_steps": 15
   },
   {
@@ -2387,5 +2394,55 @@
   },
   "extended_verify": "not_run",
   "product_native_crypto_operational_acceptance": "not_run"
- }
+ },
+ "supervisor_corrections": [
+  {
+   "id": "CR01",
+   "status": "fixed",
+   "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
+   "summary": "strict ingestion honors each caller bound"
+  },
+  {
+   "id": "CR02",
+   "status": "fixed",
+   "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
+   "summary": "external inventory and release ingress use the strict boundary"
+  },
+  {
+   "id": "CR03",
+   "status": "fixed",
+   "commit": "54bf3259cb1dc789b57c610db92320de8410e109",
+   "summary": "concrete v2 representation vectors and synchronized ADR"
+  },
+  {
+   "id": "CR04",
+   "status": "fixed",
+   "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
+   "summary": "subsecond clock precision and corrected S011 claim"
+  },
+  {
+   "id": "CR05",
+   "status": "fixed",
+   "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
+   "summary": "bounded EvidenceReadRequest private state"
+  },
+  {
+   "id": "CR06",
+   "status": "fixed",
+   "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
+   "summary": "narrow ReadCapabilities view and corrected S012 claim"
+  },
+  {
+   "id": "CR07",
+   "status": "fixed",
+   "commit": "cdda196e0da83b23afdbde3fb7ccf8122d729916",
+   "summary": "LoadError causes exposed via Error::source"
+  },
+  {
+   "id": "CR08",
+   "status": "fixed",
+   "commit": null,
+   "summary": "ledger and report reconciliation (this checkpoint)"
+  }
+ ]
 }
