@@ -1,0 +1,21 @@
+[package]
+name = "eqm_application"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+readme.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+description = "Shared effectful use-case orchestration for EquivalenceMatrix"
+
+[dependencies]
+eqm_domain.workspace = true
+eqm_engine.workspace = true
+eqm_manifest.workspace = true
+eqm_protocol.workspace = true
+eqm_runner.workspace = true
+
+[lints]
+workspace = true

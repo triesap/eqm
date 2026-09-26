@@ -138,6 +138,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "eqm_application"
+version = "0.1.0"
+dependencies = [
+ "eqm_domain",
+ "eqm_engine",
+ "eqm_manifest",
+ "eqm_protocol",
+ "eqm_runner",
+]
+
+[[package]]
 name = "eqm_domain"
 version = "0.1.0"
 dependencies = [
