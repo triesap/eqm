@@ -2,6 +2,16 @@
 
 All findings below originate in the conversation's static source review at the pinned baseline. They are review observations, not reproduced exploit/test results. Revalidate at implementation HEAD. A documented current fix can make a planned regression/fix step obsolete, but does not permit silent step skipping. Several release risks are currently masked by fail-closed unconfigured trust; repair them before enabling real verified release acceptance. Severity P1 means fix before relying on the workflow, not necessarily an externally exploitable vulnerability.
 
+## Baseline revalidation at S004
+
+**Revalidated:** 2026-09-26 during S004. **Source HEAD:** `7c8293837c09c627489cdf244a2fbd97b60aa8ed` (the reviewed baseline; S001–S003 changed only repository admission, imported specifications, and agent guidance, so no crate source moved).
+
+- The actual standard gate was run on the reviewed baseline and passed: `cargo xtask check` completed with 265 tests. Step gates for S001–S003 also passed. This is local baseline revalidation, not refactor acceptance.
+- Every F01–F20 source path still exists and every RA01–RA21 `source_anchors` path resolves within its file at HEAD. No anchor drift was introduced by the admission/import/guidance work.
+- Every RA01–RA21 clause has requirements, acceptance cases, owning steps, a precise regression, and a `given`/`when`/`expected` contract. F12, F19, and F20 intentionally carry no dedicated regression clause; their coverage is carried by their mapped owning steps and requirements.
+- F19 (repository gates restrict legitimate integration changes) is partially addressed by S001, which narrowed the documentation and private-marker admission while retaining the `.github`/`scripts`, generated-state, schema-parity and legacy-name protections. Its remaining integration-admission scope stays open until the named owning steps land.
+- This reconciliation is static and documentary. Every AC001–AC064 and RA01–RA21 status remains `not_run`; no finding is closed by a plan edit or by a green build. Runtime reproduction and acceptance evidence remain assigned to the owning implementation steps.
+
 ## F01 — Read-only views do not evaluate stored evidence
 
 **Priority:** P1. **Status:** open / revalidate; not runtime-reproduced. **Contracts:** R04,R44,R46.

@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S003",
+ "next_step": "S004",
  "implementation": "in_progress",
  "local_verification": "not_run",
  "platform_verification": "not_run",
@@ -42,10 +42,17 @@
   },
   {
    "id": "S003",
-   "status": "pending",
-   "commit_sha": null,
-   "report": null,
-   "verification": [],
+   "status": "complete",
+   "commit_sha": "e1e6ce0230b8d5e918dcc46a838dc40440b87741",
+   "report": "implementation/reports/S003.md",
+   "verification": [
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo test --all-targets --locked --workspace",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "git diff --check"
+   ],
    "baseline_exceptions": []
   },
   {
@@ -2045,14 +2052,14 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P01",
- "active_step": "S003",
+ "active_step": "S004",
  "cycles": [
   {
    "id": "EQM-P01",
    "first_step": "S001",
    "last_step": "S012",
    "status": "in_progress",
-   "completed_steps": 2,
+   "completed_steps": 3,
    "total_steps": 12
   },
   {
@@ -2278,22 +2285,34 @@
  "baseline_verification": {
   "commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
   "date": "2026-09-26",
-  "commands": [
-   {
-    "command": "cargo xtask check",
-    "status": "passed",
-    "tests": 258
-   },
-   {
-    "command": "cargo metadata --no-deps --format-version 1 --locked",
-    "status": "passed"
-   },
-   {
-    "command": "cargo xtask help",
-    "status": "passed"
-   }
-  ],
-  "scope": "Previously executed baseline only; no refactor acceptance or supported-platform/operational claims.",
+  "delivered_record": {
+   "commands": [
+    {
+     "command": "cargo xtask check",
+     "status": "passed",
+     "tests": 258
+    },
+    {
+     "command": "cargo metadata --no-deps --format-version 1 --locked",
+     "status": "passed"
+    },
+    {
+     "command": "cargo xtask help",
+     "status": "passed"
+    }
+   ]
+  },
+  "revalidated": {
+   "commands": [
+    {
+     "command": "cargo xtask check",
+     "status": "passed",
+     "tests": 265
+    }
+   ],
+   "source_anchors": "F01-F20 paths and RA01-RA21 anchors present without drift",
+   "scope": "Local standard-gate revalidation at the reviewed source HEAD; S001-S003 changed only admission, imported specs and guidance. Not refactor acceptance or supported-platform evidence."
+  },
   "extended_verify": "not_run",
   "product_native_crypto_operational_acceptance": "not_run"
  }
