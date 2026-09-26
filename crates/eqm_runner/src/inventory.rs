@@ -156,7 +156,11 @@ fn validate_inventory(
             let _ =
                 SelectorText::new(name.as_str()).map_err(|_| InventoryValidationError::Entry)?;
             match value {
-                FactValueDto::Boolean(_) | FactValueDto::Integer(_) => {}
+                FactValueDto::Boolean(_) => {}
+                FactValueDto::Integer(value) => {
+                    eqm_protocol::exact_signed(*value)
+                        .map_err(|_| InventoryValidationError::Entry)?;
+                }
                 FactValueDto::Symbol(value) => {
                     let _: SymbolicValueId =
                         value.parse().map_err(|_| InventoryValidationError::Entry)?;

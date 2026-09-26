@@ -477,6 +477,16 @@ impl EvidenceResultDto {
 }
 
 fn validate_counts(value: &CountsDto) -> Result<EvidenceCounts, EvidenceDtoError> {
+    for count in [
+        value.selected,
+        value.passed,
+        value.failed,
+        value.skipped,
+        value.filtered,
+        value.quarantined,
+    ] {
+        crate::exact_unsigned(count).map_err(|_| EvidenceDtoError::InvalidCounts)?;
+    }
     EvidenceCounts::new(
         value.selected,
         value.passed,
@@ -599,6 +609,31 @@ mod tests {
             r#"{"selected":1,"passed":1,"failed":0,"skipped":0,"filtered":0,"quarantined":0}"#;
         assert!(serde_json::from_str::<CountsDto>(json).is_ok());
         assert!(serde_json::from_str::<CountsDto>(&json.replace('}', ",\"other\":0}")).is_err());
+    }
+
+    #[test]
+    fn counts_beyond_the_exact_range_are_rejected() {
+        let counts = CountsDto {
+            selected: crate::MAX_SAFE_INTEGER + 1,
+            passed: crate::MAX_SAFE_INTEGER + 1,
+            failed: 0,
+            skipped: 0,
+            filtered: 0,
+            quarantined: 0,
+        };
+        assert_eq!(
+            validate_counts(&counts),
+            Err(EvidenceDtoError::InvalidCounts)
+        );
+        let exact = CountsDto {
+            selected: crate::MAX_SAFE_INTEGER,
+            passed: crate::MAX_SAFE_INTEGER,
+            failed: 0,
+            skipped: 0,
+            filtered: 0,
+            quarantined: 0,
+        };
+        assert!(validate_counts(&exact).is_ok());
     }
 
     #[test]

@@ -229,6 +229,7 @@ dependencies = [
  "eqm_domain",
  "eqm_manifest",
  "eqm_protocol",
+ "serde_json",
 ]
 
 [[package]]

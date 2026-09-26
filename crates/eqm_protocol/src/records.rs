@@ -190,7 +190,10 @@ fn validate_runtime_facts(value: &RuntimeFactsDto) -> Result<(), RuntimeFactsDto
             FactValueDto::Symbol(item) | FactValueDto::Text(item) => {
                 SelectorText::new(item.as_str()).map_err(|_| RuntimeFactsDtoError::InvalidFact)?;
             }
-            FactValueDto::Boolean(_) | FactValueDto::Integer(_) => {}
+            FactValueDto::Boolean(_) => {}
+            FactValueDto::Integer(value) => {
+                crate::exact_signed(*value).map_err(|_| RuntimeFactsDtoError::InvalidFact)?;
+            }
         }
     }
     Ok(())

@@ -16,5 +16,8 @@ eqm_domain.workspace = true
 eqm_manifest.workspace = true
 eqm_protocol.workspace = true
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true
