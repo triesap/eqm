@@ -16,6 +16,7 @@ use tempfile::{NamedTempFile, TempDir};
 
 const NIGHTLY: &str = "nightly-2026-07-16";
 const SCHEMA_COUNT: usize = 22;
+const APPROVED_SPEC_SUBTREE: &str = "docs/eqm_product_v1";
 const FUZZ_TARGETS: [&str; 7] = [
     "toml",
     "protocol",
@@ -93,20 +94,6 @@ fn check_public_repository() -> Result<()> {
         }
     }
 
-    let expected_docs = BTreeSet::from([
-        "README.md",
-        "agent-context.md",
-        "cli.md",
-        "concepts.md",
-        "evidence-and-trust.md",
-        "getting-started.md",
-        "integrations/android-ios.md",
-        "manifests.md",
-        "mcp.md",
-    ])
-    .into_iter()
-    .map(str::to_owned)
-    .collect::<BTreeSet<_>>();
     let actual_docs = files_below(&root.join("docs"))?
         .into_iter()
         .map(|path| {
@@ -115,11 +102,7 @@ fn check_public_repository() -> Result<()> {
                 .map_err(|error| Error::message(error.to_string()))
         })
         .collect::<Result<BTreeSet<_>>>()?;
-    if actual_docs != expected_docs {
-        return Err(Error::message(format!(
-            "public documentation inventory differs: {actual_docs:?}"
-        )));
-    }
+    check_docs_inventory(&actual_docs)?;
 
     let tracked = String::from_utf8(capture("git", ["ls-files"])?.stdout)
         .map_err(|error| Error::message(error.to_string()))?;
@@ -136,30 +119,105 @@ fn check_public_repository() -> Result<()> {
         }
     }
 
-    let private_markers = [
-        ["ext", "build"].concat(),
-        ["triesap", "/dev"].concat(),
-        ["hand", "off"].concat(),
-        ["rcl", "d"].concat(),
-        ["be", "ads"].concat(),
-        ["host ", "system"].concat(),
-    ];
     for path in files_below(&root)? {
         let Ok(contents) = fs::read_to_string(&path) else {
             continue;
         };
-        let lower = contents.to_lowercase();
-        if let Some(marker) = private_markers
-            .iter()
-            .find(|marker| lower.contains(marker.as_str()))
-        {
+        if let Some(marker) = private_content_marker(&contents) {
             return Err(Error::message(format!(
                 "private development marker `{marker}` detected in {}",
                 path.display()
             )));
         }
+        let relative = path.strip_prefix(&root).unwrap_or(&path);
+        if let Some(relative) = approved_spec_relative(relative)
+            && let Some(marker) = approved_spec_violation(&contents)
+        {
+            return Err(Error::message(format!(
+                "approved specification content contains `{marker}` in {relative}"
+            )));
+        }
     }
     Ok(())
+}
+
+/// Documentation files permitted outside the approved product specification
+/// subtree. The versioned subtree may add and revise documents freely.
+fn approved_docs_inventory() -> BTreeSet<String> {
+    BTreeSet::from([
+        "README.md",
+        "agent-context.md",
+        "cli.md",
+        "concepts.md",
+        "evidence-and-trust.md",
+        "getting-started.md",
+        "integrations/android-ios.md",
+        "manifests.md",
+        "mcp.md",
+    ])
+    .into_iter()
+    .map(str::to_owned)
+    .collect()
+}
+
+fn check_docs_inventory(actual: &BTreeSet<String>) -> Result<()> {
+    let expected = approved_docs_inventory();
+    for path in &expected {
+        if !actual.contains(path) {
+            return Err(Error::message(format!(
+                "public documentation inventory is missing {path}"
+            )));
+        }
+    }
+    for path in actual {
+        if expected.contains(path) || is_approved_spec_path(path) {
+            continue;
+        }
+        return Err(Error::message(format!(
+            "public documentation inventory differs: unexpected {path}"
+        )));
+    }
+    Ok(())
+}
+
+fn is_approved_spec_path(relative: &str) -> bool {
+    relative.starts_with("eqm_product_v1/")
+}
+
+/// Workspace-private development markers that must never appear in public
+/// repository content. The generic word "handoff" is intentionally excluded:
+/// approved specification prose legitimately uses it, so it is replaced by the
+/// scoped [`approved_spec_violation`] check below.
+fn private_content_marker(contents: &str) -> Option<String> {
+    let lower = contents.to_lowercase();
+    let markers = [
+        ["ext", "build"].concat(),
+        ["triesap", "/dev"].concat(),
+        ["rcl", "d"].concat(),
+        ["be", "ads"].concat(),
+        ["host ", "system"].concat(),
+    ];
+    markers
+        .into_iter()
+        .find(|marker| lower.contains(marker.as_str()))
+}
+
+/// Absolute host paths are meaningful private data inside admitted
+/// specifications; portable public content must not embed a developer home or
+/// build directory.
+fn approved_spec_violation(contents: &str) -> Option<&'static str> {
+    ["/Users/", "/home/", "/private/", "\\Users\\"]
+        .into_iter()
+        .find(|marker| contents.contains(marker))
+}
+
+fn approved_spec_relative(relative: &Path) -> Option<String> {
+    let text = relative.to_string_lossy().replace('\\', "/");
+    if text == APPROVED_SPEC_SUBTREE || text.starts_with(&format!("{APPROVED_SPEC_SUBTREE}/")) {
+        Some(text)
+    } else {
+        None
+    }
 }
 
 fn verify() -> Result<()> {
@@ -1126,5 +1184,65 @@ mod tests {
     #[test]
     fn incomplete_test_lane_is_a_usage_error() {
         assert!(run([OsString::from("test")]).is_err());
+    }
+
+    #[test]
+    fn docs_inventory_admits_the_approved_spec_subtree() {
+        let mut actual = approved_docs_inventory();
+        actual.insert("eqm_product_v1/README.md".to_owned());
+        actual.insert("eqm_product_v1/implementation/COMMIT_SEQUENCE.md".to_owned());
+        actual.insert("eqm_product_v1/specs/PRODUCT_SPEC.md".to_owned());
+        assert!(check_docs_inventory(&actual).is_ok());
+    }
+
+    #[test]
+    fn docs_inventory_rejects_unapproved_and_missing_documents() {
+        let mut extra = approved_docs_inventory();
+        extra.insert("notes.md".to_owned());
+        assert!(check_docs_inventory(&extra).is_err());
+
+        let mut nested = approved_docs_inventory();
+        nested.insert("private/notes.md".to_owned());
+        assert!(check_docs_inventory(&nested).is_err());
+
+        let mut missing = approved_docs_inventory();
+        missing.remove("README.md");
+        assert!(check_docs_inventory(&missing).is_err());
+    }
+
+    #[test]
+    fn approved_spec_subtree_admits_portable_handoff_prose() {
+        let word = ["hand", "off"].concat();
+        let contents = format!("the {word} package records approved intent");
+        assert!(private_content_marker(&contents).is_none());
+        assert!(approved_spec_violation(&contents).is_none());
+    }
+
+    #[test]
+    fn private_markers_reject_workspace_coordination_data() {
+        let build = ["ext", "build"].concat();
+        assert!(private_content_marker(&format!("routed through {build}")).is_some());
+        let parent = ["triesap", "/dev"].concat();
+        assert!(private_content_marker(&parent).is_some());
+        let coordination = ["be", "ads"].concat();
+        assert!(private_content_marker(&coordination).is_some());
+        assert!(private_content_marker("a portable statement about releases").is_none());
+    }
+
+    #[test]
+    fn approved_spec_subtree_rejects_absolute_host_paths() {
+        let absolute = ["/Users", "/", "someone/notes"].concat();
+        assert!(approved_spec_violation(&absolute).is_some());
+        let home = ["/home", "/", "ci/build"].concat();
+        assert!(approved_spec_violation(&home).is_some());
+        assert!(approved_spec_violation("portable public content").is_none());
+    }
+
+    #[test]
+    fn approved_spec_paths_are_scoped_to_the_versioned_subtree() {
+        assert!(approved_spec_relative(Path::new("docs/eqm_product_v1/README.md")).is_some());
+        assert!(approved_spec_relative(Path::new("docs/eqm_product_v1")).is_some());
+        assert!(approved_spec_relative(Path::new("docs/concepts.md")).is_none());
+        assert!(approved_spec_relative(Path::new("docs/eqm_product_v2/README.md")).is_none());
     }
 }
