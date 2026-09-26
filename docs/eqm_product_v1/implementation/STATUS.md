@@ -1,34 +1,48 @@
 # Verification and implementation status
 
-Revision 2, 2026-09-26. Baseline: 7c8293837c09c627489cdf244a2fbd97b60aa8ed.
+Imported plan revision 2; current engineering amendment DEV-002, 2026-09-26.
+Reviewed source HEAD: `3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b`.
 
-## Planning
+## Current implementation
 
-Owner approved all readiness-review recommendations and requested the complete durable execution sequence. ADR-0012 records that approval; DEV-001 amends S049. COMMIT_SEQUENCE.md governs 15 cycles, EQM-P01–EQM-P15, containing 211 ordered individually verified steps. RA01–RA21 refine the original F01–F20 and are mapped to requirements, acceptance and steps. Feasibility, completeness and scope reviews passed for the conditional proposal; unresolved concrete inputs remain explicit.
+S001–S014 are committed; prior review corrections have been independently
+inspected. CR04/CR05/CR07 are accepted for their original bounded scope.
+CR01/CR02/CR03/CR06/CR08 retain obligations mapped to DEV-002.
+S015 has an implementation commit but is **reopened, changes required** after
+supervisor findings RF01–RF10. S016 has not started. The next action is
+**S015-R1**, followed by R2–R5, then S016 in the governing COMMIT_SEQUENCE.md.
 
-Fresh independent feasibility, completeness and scope/alignment reviews also passed for the materialized revision-2 package. Package structure/integrity validation and 13 negative validator probes passed. These are planning checks; no implementation acceptance is inferred.
+EQM-P01's 12 numbered steps are recorded complete, with remaining regression
+contributions explicitly assigned to the current corrections. EQM-P02 has
+S013–S014 complete and S015 in progress. P03–P15 are pending. Preserve all 211
+numbered IDs; the five corrective checkpoints do not renumber the plan.
 
-## Implementation and next action
+The owner delegates scope/representation/sequence decisions to Codex; the
+implementation agent performs code generation and verification within those
+resolved decisions. All dependency-unblocked work toward S211 is authorized;
+S143 is an intermediate checkpoint. Missing concrete external evidence still
+blocks its first dependent step. Optional native work remains unactivated.
 
-Implementation: in_progress. S001 (admit the approved spec subtree) is complete
-at commit `4fdcdb24158ea71bb407e4e99fd55056b160cb94` with its step report under
-`implementation/reports/S001.md`. The governing sequence is the imported
-`implementation/COMMIT_SEQUENCE.md`; the next step is S002 after revalidating
-preflight. S002–S211 remain pending. No source change beyond the repository
-admission gate, implementation commit, signature or live authorization beyond
-that commit is asserted here.
+## Verified evidence and limits
 
-All AC001–AC064 and RA01–RA21 remain not_run except where a later step update
-records acceptance evidence. Local refactor verification and supported-platform
-verification remain not_run. Native embedding remains not_activated.
-Operational authorization remains not_granted and enforcement stays
-shadow/unconfigured.
+Independent `cargo xtask check` and `cargo test --locked -p eqm_application
+--doc` passed at the reviewed source HEAD. The latter separately exercised the
+negative compile test not covered by all-targets testing. Per-commit correction
+and S015 logs report green standard lanes. See the
+[supervisor review](reports/CODEX-3da0b50.md) for source findings and limitations.
 
-Importing the approved package at S002 does not by itself complete S001–S006 or
-any later step.
+The live progress ledger separates these local checks from full acceptance.
+AC001–AC064 and RA01–RA21 remain unclosed unless their complete declared evidence
+is recorded. Extended verification, supported Linux host evidence, real product
+acceptance and operational authorization have not been established. macOS arm64
+and Linux x86_64 remain the approved initial execution/storage target matrix.
+This is not a release candidate and no human release test is required yet.
 
-## Evidence and limits
+## Governing artifacts
 
-The complete follow-up static review covered 132 Rust files plus supporting source/spec assets at the pinned HEAD. The prior package baseline recorded `cargo xtask check` passing 258 tests; metadata/help also passed. At S004 the standard gate was re-run on the reviewed source HEAD (`7c8293837c09c627489cdf244a2fbd97b60aa8ed`, unchanged by the admission/import/guidance steps) and passed with 265 tests, and every F01–F20 path and RA01–RA21 source anchor was confirmed present without drift. No refactor acceptance is inferred from that result. Extended verify, actual product/native/crypto and operational lanes remain unrun. Package validation establishes only document/machine-ledger consistency and integrity; see PACKAGE_VALIDATION.json for the recorded package check, and use the validator's `--structure-only` mode now that the progress ledger has been reconciled.
-
-The initial EQM execution/storage target matrix is owner-approved macOS arm64 and Linux x86_64; actual native verification is outstanding. Product repository/task/business/cohort inputs and real operator authority/limits/CI/owners still need discovery or configuration at the owning gates. Code, local verification, platform evidence and operational activation remain separate completion states.
+COMMIT_SEQUENCE.md remains the single governing implementation sequence;
+steps.json and chapter files are synchronized views; progress.json records live
+state; DEVIATIONS.md records DEV-001 and DEV-002. Original imported hashes and
+package validation describe the historical delivery, not current source
+acceptance. Use the structure-only validator after intentional implementation
+updates; never regenerate original hashes to hide divergence.

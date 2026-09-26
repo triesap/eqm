@@ -1,6 +1,6 @@
 # Deviation register
 
-Revision 2 records one owner-approved planning amendment. No EQM source code has been changed by this package.
+Revision 2 is the imported planning baseline. DEV-001 and DEV-002 record approved amendments; source implementation status is tracked separately in progress.json and STATUS.md.
 
 The commit order and boundaries are mandatory. Do not skip, merge, reorder or broaden a step for convenience. Only inspected repository evidence that a step is obsolete or unsafe may justify a documented deviation; a product-intent/security change additionally needs owner approval.
 
@@ -45,3 +45,11 @@ shrank the established adapter-response limit (CR01) and that two of its DTO
 integration tests used objects the old parser also rejected (CR02). RA13
 relationship closure remains with S025/S059/S061. No product/security intent
 changed and no step was skipped.
+
+## DEV-002 — Reopen S015 and allocate the v2 completion layer
+
+Date/author: 2026-09-26, Codex supervisor under explicit owner delegation. Reviewed HEAD: `3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b`. Status: approved engineering amendment; repairs pending.
+
+The [binding decisions and independently green S015-R1–R5 checkpoints](COMMIT_SEQUENCE.md#dev-002--supervisor-owned-s015-completion-and-continuation) are part of the existing governing sequence. [Review RF01–RF10](reports/CODEX-3da0b50.md) supplies the evidence: v1 acceptance regression, missing v2 schemas/null handling, integer canonicality/endpoints, temporal validation, ingress/read bounds and incomplete proof. S015 already owns these representation and schema obligations; no new product subsystem or renumbering is approved.
+
+Preserve all S001–S211 IDs; reopen S015 and block S016 admission until its five corrective checkpoints pass. S015-R4 also closes outstanding contributions from earlier corrections. All original R/AC/RA links remain in force. Generate schemas from source, preserve v1 and original signed bytes, run the declared targeted/standard/doctest/structure checks, and record each actual corrective SHA. No source repair is asserted by this planning amendment. The owner authorizes Codex to make scope decisions; the implementation agent performs the decided work and reports new decisions to the supervisor. Full continuation is authorized through the dependency-unblocked sequence toward S211; concrete external gates remain binding.

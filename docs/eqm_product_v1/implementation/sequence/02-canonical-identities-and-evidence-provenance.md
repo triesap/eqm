@@ -112,16 +112,23 @@ Enforce approved numeric and temporal wire forms.
 Make cross-runtime digests predictable.
 
 ### 3. Exact scope of code changes
-Implement the representation decision from the preceding ADR for integer ranges or strings, timestamp precision/UTC, null/absence and overflow; update DTO validators and generated schemas atomically.
+Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; implement exact v2 integer ranges, canonical UTC time, null/absence and overflow; establish explicit version-qualified DTO/schema generation and five concrete v2 protocol families; repair bounded ingress/read integration; update generated schemas and conformance tests atomically before S016.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
 - `crates/eqm_domain/src/time.rs`
+- `crates/eqm_domain/src/schema.rs`
+- `crates/eqm_protocol/src/bin/generate_protocol_schemas.rs`
+- `tools/xtask/src/main.rs`
+- `crates/eqm_application/src/`
+- `crates/eqm_cli/src/commands/`
+- `crates/eqm_runner/src/inventory.rs`
+- `crates/eqm_test_support/`
 - `schemas/`
 - `crates/eqm_protocol/tests/`
 
 ### 5. Unit tests or integration tests required
-Boundary values, unsupported precision, overflow and null/absence vectors match the approved contract; schema parity passes.
+All DEV-002 endpoint, canonical token, leap-second/year/precision, null/absence, unsupported-version, runtime/schema, v1 preservation, actual ingress and bounded-provider controls pass. Every applicable frozen vector executes without silent skips; application doctests and schema parity pass.
 
 ### 6. Verification commands
 ```sh
@@ -132,8 +139,11 @@ cargo test --all-targets --locked -p eqm_protocol -p eqm_domain
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 cargo xtask schemas check
+cargo test --locked -p eqm_application --doc
 git diff --check
 ```
+
+**Admission gate:** DEV-002: S015 is reopened; complete S015-R1 through S015-R5 before S016. The supervisor owns scope/representation/dependency decisions; implementation agents do not defer required work or amend these decisions independently.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.

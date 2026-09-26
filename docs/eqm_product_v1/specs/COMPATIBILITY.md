@@ -31,3 +31,16 @@ Native/sidecar consumers negotiate compatibility and fail explicitly when unsupp
 ADR-0012 resolves the direction in Q03: incompatible changes use an explicit new namespace; preserve signed originals, reject unsupported versions and avoid implicit fallback readers. S006 still determines exact namespace/URI spelling, numeric/time/null/set representations and the consumer transition from inspected evidence. No known external consumer obligation may be silently discarded; document a newly discovered conflict before exposure. Wire/evaluator/database/optional-ABI versions remain independent.
 
 The approved initial EQM execution/storage host targets are macOS arm64 and Linux x86_64. They are verification obligations, not completed host certifications. Product participant OS/SDK/cohort promises remain separate unresolved facts. No N/N-1 cohort or Windows support is inferred.
+
+## DEV-002 implementation ownership
+
+The Codex supervisor has resolved the transition engineering allocation:
+S015-R1 preserves the pre-S015 v1 accepted range and corrects v2 primitives;
+S015-R2 introduces version-qualified identities and dual-inventory generator
+plumbing; S015-R3 adds five concrete v2 protocol families and their nested DTOs
+with numeric/time/absence validation. The exact schedule is in the existing
+COMMIT_SEQUENCE.md. v1 signed originals, DTO behavior and schemas stay stable;
+strict duplicate rejection remains the approved security correction. Subsequent
+owning steps add actual v2 shapes and explicit consumers together. No placeholder
+manifest schemas or implicit version conversion is authorized. The staged v2
+contract is not a published release or a promise of indefinite v1/v2 support.

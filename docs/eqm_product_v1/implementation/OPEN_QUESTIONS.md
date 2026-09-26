@@ -1,6 +1,6 @@
 # Decisions, remaining inputs and activation gates
 
-Revision 2 records owner approval of all review recommendations in [ADR-0012](../decisions/ADR-0012-approved-review-closure.md). Approved direction is distinguished from missing concrete inputs below. Do not ask the owner to approve the same recommendation again. Engineering chooses implementation details from evidence; actual product/security authority and access cannot be invented.
+Revision 2 records owner approval of all review recommendations in [ADR-0012](../decisions/ADR-0012-approved-review-closure.md). Approved direction is distinguished from missing concrete inputs below. Do not ask the owner to approve the same recommendation again. The Codex supervisor decides scope and normative engineering contracts; the implementation agent chooses internal mechanics within those decisions. Actual product/security authority and access cannot be invented.
 
 Keep exactly one mandatory step active and preserve order. Generic fail-closed implementation may proceed when unavailable values are explicit; missing inputs block the first affected step when safe implementation or required verification depends on them. Optional embedding remains deliberately inactive. Counts of decision records in the package manifest describe the catalog, not a claim that every direction is unresolved.
 
@@ -34,15 +34,20 @@ The new eqm_application crate initially owns application authority/storage/trust
 
 ## Q03 — Wire-version and compatibility transition
 
-**Kind:** Contract decision. **Status:** direction_approved_engineering_pending.
+**Kind:** Contract decision. **Status:** engineering_decided_implementation_pending.
 
-**Approved direction:** Use an explicit new namespace for incompatible wire changes; preserve originals, reject unsupported versions, no implicit legacy readers.
+**Approved direction:** Explicit v2 namespace; preserve v1 accepted values,
+existing schema bytes and signed originals; no implicit legacy readers.
 
-**Remaining inputs:** S006 exact namespace/URI/representation choice and any newly discovered conflicting external consumer obligation.
+**Remaining inputs:** No engineering decision blocks S015-R1–R5. A newly evidenced
+external compatibility obligation returns to the supervisor with concrete evidence.
 
-**Resolution:** Use an explicit new namespace for incompatible wire changes; preserve originals, reject unsupported versions, no implicit legacy readers. Record concrete evidence at the owning step; do not re-request settled direction.
+**Resolution:** ADR-0013 and supervisor DEV-002 fix exact numeric/time/absence
+forms and allocate explicit v2 identities/generation and five actual protocol
+families to S015. Later shapes remain with their existing owning steps.
 
-**Safe behavior:** Do not silently reuse v1 identities or add legacy readers/aliases; new internal types may be additive.
+**Safe behavior:** Do not change v1 meanings, silently normalize canonical
+values, publish placeholder schemas or claim S015 complete before its checks.
 
 ## Q04 — Production verification and signer authority
 

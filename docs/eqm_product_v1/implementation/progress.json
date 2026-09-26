@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S016",
+ "next_step": "S015",
  "implementation": "in_progress",
  "local_verification": "not_run",
  "platform_verification": "not_run",
@@ -224,8 +224,8 @@
   },
   {
    "id": "S015",
-   "status": "complete",
-   "commit_sha": null,
+   "status": "in_progress",
+   "commit_sha": "3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b",
    "report": "implementation/reports/S015.md",
    "verification": [
     "cargo fmt --all --check",
@@ -236,7 +236,35 @@
     "cargo xtask check",
     "git diff --check"
    ],
-   "baseline_exceptions": []
+   "baseline_exceptions": [],
+   "supervisor_status": "changes_required",
+   "corrective_checkpoints": [
+    {
+     "id": "S015-R1",
+     "status": "pending",
+     "commit_sha": null
+    },
+    {
+     "id": "S015-R2",
+     "status": "pending",
+     "commit_sha": null
+    },
+    {
+     "id": "S015-R3",
+     "status": "pending",
+     "commit_sha": null
+    },
+    {
+     "id": "S015-R4",
+     "status": "pending",
+     "commit_sha": null
+    },
+    {
+     "id": "S015-R5",
+     "status": "pending",
+     "commit_sha": null
+    }
+   ]
   },
   {
    "id": "S016",
@@ -2139,7 +2167,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S016",
+ "active_step": "S015",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2154,7 +2182,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 3,
+   "completed_steps": 2,
    "total_steps": 15
   },
   {
@@ -2408,49 +2436,130 @@
    "id": "CR01",
    "status": "fixed",
    "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
-   "summary": "strict ingestion honors each caller bound"
+   "summary": "strict ingestion honors each caller bound",
+   "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   },
   {
    "id": "CR02",
    "status": "fixed",
    "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
-   "summary": "external inventory and release ingress use the strict boundary"
+   "summary": "external inventory and release ingress use the strict boundary",
+   "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   },
   {
    "id": "CR03",
    "status": "fixed",
    "commit": "54bf3259cb1dc789b57c610db92320de8410e109",
-   "summary": "concrete v2 representation vectors and synchronized ADR"
+   "summary": "concrete v2 representation vectors and synchronized ADR",
+   "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   },
   {
    "id": "CR04",
    "status": "fixed",
    "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
-   "summary": "subsecond clock precision and corrected S011 claim"
+   "summary": "subsecond clock precision and corrected S011 claim",
+   "supervisor_status": "accepted_for_original_scope"
   },
   {
    "id": "CR05",
    "status": "fixed",
    "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
-   "summary": "bounded EvidenceReadRequest private state"
+   "summary": "bounded EvidenceReadRequest private state",
+   "supervisor_status": "accepted_for_original_scope"
   },
   {
    "id": "CR06",
    "status": "fixed",
    "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
-   "summary": "narrow ReadCapabilities view and corrected S012 claim"
+   "summary": "narrow ReadCapabilities view and corrected S012 claim",
+   "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   },
   {
    "id": "CR07",
    "status": "fixed",
    "commit": "cdda196e0da83b23afdbde3fb7ccf8122d729916",
-   "summary": "LoadError causes exposed via Error::source"
+   "summary": "LoadError causes exposed via Error::source",
+   "supervisor_status": "accepted_for_original_scope"
   },
   {
    "id": "CR08",
    "status": "fixed",
-   "commit": null,
-   "summary": "ledger and report reconciliation (this checkpoint)"
+   "commit": "cf9ea806f9408d86700816b4ca463327bb353391",
+   "summary": "ledger and report reconciliation (this checkpoint)",
+   "supervisor_status": "partial_remaining_obligations_in_DEV_002"
+  }
+ ],
+ "next_checkpoint": "S015-R1",
+ "supervisor_review": {
+  "source_commit": "3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b",
+  "report": "implementation/reports/CODEX-3da0b50.md",
+  "status": "changes_required",
+  "amendment": "DEV-002",
+  "standard_check": "passed",
+  "application_doctest": "passed",
+  "release_candidate": false
+ },
+ "execution_target": "S211 subject to predecessor and external evidence gates",
+ "supervisor_findings": [
+  {
+   "id": "RF01",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF02",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF03",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF04",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF05",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF06",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF07",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF08",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF09",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
+  },
+  {
+   "id": "RF10",
+   "status": "open",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-3da0b50.md"
   }
  ]
 }

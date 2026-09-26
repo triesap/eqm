@@ -871,14 +871,21 @@
     {
       "title": "Enforce approved numeric and temporal wire forms",
       "purpose": "Make cross-runtime digests predictable.",
-      "scope": "Implement the representation decision from the preceding ADR for integer ranges or strings, timestamp precision/UTC, null/absence and overflow; update DTO validators and generated schemas atomically.",
+      "scope": "Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; implement exact v2 integer ranges, canonical UTC time, null/absence and overflow; establish explicit version-qualified DTO/schema generation and five concrete v2 protocol families; repair bounded ingress/read integration; update generated schemas and conformance tests atomically before S016.",
       "files": [
         "crates/eqm_protocol/src/",
         "crates/eqm_domain/src/time.rs",
         "schemas/",
-        "crates/eqm_protocol/tests/"
+        "crates/eqm_protocol/tests/",
+        "crates/eqm_domain/src/schema.rs",
+        "crates/eqm_protocol/src/bin/generate_protocol_schemas.rs",
+        "tools/xtask/src/main.rs",
+        "crates/eqm_application/src/",
+        "crates/eqm_cli/src/commands/",
+        "crates/eqm_runner/src/inventory.rs",
+        "crates/eqm_test_support/"
       ],
-      "tests": "Boundary values, unsupported precision, overflow and null/absence vectors match the approved contract; schema parity passes.",
+      "tests": "All DEV-002 endpoint, canonical token, leap-second/year/precision, null/absence, unsupported-version, runtime/schema, v1 preservation, actual ingress and bounded-provider controls pass. Every applicable frozen vector executes without silent skips; application doctests and schema parity pass.",
       "expected": "No consumer silently changes a number or time before hashing.",
       "commit_message": "fix: enforce canonical numeric and time representations",
       "requirements": [
@@ -904,7 +911,10 @@
         "specs/COMPATIBILITY.md",
         "repo/REVIEW_FINDINGS.md",
         "implementation/review_regressions.json",
-        "decisions/ADR-0012-approved-review-closure.md"
+        "decisions/ADR-0012-approved-review-closure.md",
+        "decisions/ADR-0013-wire-namespace-and-representations.md",
+        "implementation/DEVIATIONS.md",
+        "implementation/reports/CODEX-3da0b50.md"
       ],
       "verification_commands": [
         "cargo xtask schemas generate",
@@ -914,13 +924,21 @@
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo xtask check",
         "cargo xtask schemas check",
+        "cargo test --locked -p eqm_application --doc",
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": null,
+      "gate": "DEV-002: S015 is reopened; complete S015-R1 through S015-R5 before S016. The supervisor owns scope/representation/dependency decisions; implementation agents do not defer required work or amend these decisions independently.",
       "initial_status": "pending",
       "review_regressions": [
         "RA13"
+      ],
+      "corrective_checkpoints": [
+        "S015-R1",
+        "S015-R2",
+        "S015-R3",
+        "S015-R4",
+        "S015-R5"
       ]
     },
     {
@@ -13537,5 +13555,13 @@
       ],
       "initial_status": "pending"
     }
-  ]
+  ],
+  "supervision": {
+    "scope_owner": "Codex supervisor under owner delegation",
+    "implementation_owner": "Pi implementation agent",
+    "amendment": "DEV-002",
+    "next_checkpoint": "S015-R1",
+    "execution_target": "S211 subject to explicit predecessor and external evidence gates",
+    "intermediate_checkpoint": "S143 is not a stopping boundary"
+  }
 }

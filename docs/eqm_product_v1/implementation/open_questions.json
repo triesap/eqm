@@ -27,12 +27,12 @@
     "id": "Q03",
     "title": "Wire-version and compatibility transition",
     "kind": "Contract decision",
-    "gap": "S006 exact namespace/URI/representation choice and any newly discovered conflicting external consumer obligation.",
-    "resolution": "Use an explicit new namespace for incompatible wire changes; preserve originals, reject unsupported versions, no implicit legacy readers. Record concrete evidence at the owning step; do not re-request settled direction.",
+    "gap": "Implement the supervisor-decided v2 layer and preserve v1 under DEV-002; report any newly evidenced external compatibility conflict.",
+    "resolution": "ADR-0013 plus supervisor DEV-002 fixes exact representations and allocates v2 identities/generation/five protocol families to S015-R1\u2013R5. Preserve v1 accepted values and original signed bytes; later shapes are added by their existing owning steps.",
     "safe_behavior": "Do not silently reuse v1 identities or add legacy readers/aliases; new internal types may be additive.",
-    "status": "direction_approved_engineering_pending",
+    "status": "engineering_decided_implementation_pending",
     "approved_direction": "Use an explicit new namespace for incompatible wire changes; preserve originals, reject unsupported versions, no implicit legacy readers.",
-    "remaining_inputs": "S006 exact namespace/URI/representation choice and any newly discovered conflicting external consumer obligation.",
+    "remaining_inputs": "No unresolved engineering choice blocks S015-R1\u2013R5. External compatibility conflicts require evidence, not assumed consumers.",
     "approval_reference": "decisions/ADR-0012-approved-review-closure.md"
   },
   {

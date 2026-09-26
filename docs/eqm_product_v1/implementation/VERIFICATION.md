@@ -79,3 +79,16 @@ From the extracted package run `python3 tools/validate_package.py`. After specs/
 The plan revision records approved direction, 15 execution cycles, 211 pending steps and 21 review regression clauses. Validate cycle partition/order, regression/requirement/acceptance/step bidirectional mappings, synchronized Markdown/JSON and reconstruction in addition to existing package checks. Package validation remains distinct from EQM implementation acceptance.
 
 Previous baseline review at the pinned commit ran cargo xtask check successfully (258 tests), cargo metadata --no-deps --format-version 1 --locked and cargo xtask help. This is prior baseline evidence, not a new run or evidence for the refactor. Full extended verify and product/native/crypto/operational acceptance remain unrun; the pinned nightly prerequisite was unavailable during baseline inspection. Revalidate environment and HEAD before S001.
+
+## DEV-002 targeted verification
+
+S015-R1–R5 additionally require application doctests, because all-targets Rust
+tests do not execute compile-fail documentation examples. Validate every
+applicable numeric/time/absence vector, v1 accepted endpoints and unchanged
+artifacts, and the actual versioned schemas/runtime boundaries. Full gate output
+counts can include repeated integration invocations; do not present their sum
+as a count of distinct tests. The standard gate is not release acceptance.
+
+Human release testing begins only after the corresponding implementation and
+external prerequisites exist. The candidate/testing sequence is recorded in
+[the supervisor review](reports/CODEX-3da0b50.md#release-testing-disposition).

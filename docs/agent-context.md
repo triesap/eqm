@@ -104,3 +104,14 @@ unrun command as passing.
   `evidence-and-trust.md`.
 - For agent protocol access, read `mcp.md`.
 - For the mobile integration pattern, read `integrations/android-ios.md`.
+
+## Supervisor-owned decisions
+
+The owner delegates scope, representation, sequencing and acceptance decisions
+between implementation periods to the Codex supervisor. DEV-002 in the existing
+governing COMMIT_SEQUENCE.md is the current binding amendment. The implementation
+agent generates code and records verification/progress; it may select internal
+mechanics within the decided contract but may not defer required work, change
+wire semantics, waive gates, reorder steps or activate new scope. Return newly
+evidenced decision requirements to the supervisor. Routine reports and verified
+commit/status updates do not constitute a change of scope.

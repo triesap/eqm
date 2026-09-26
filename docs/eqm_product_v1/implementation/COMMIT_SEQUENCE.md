@@ -1,5 +1,136 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-002 — Supervisor-owned S015 completion and continuation
+
+**Date/author:** 2026-09-26, Codex supervisor. **Status:** owner-delegated
+engineering decision; implementation pending. **Reviewed HEAD:**
+`3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b`. **Affected steps:** S015 plus
+corrective regression contributions to S006/S011/S012/S014; S016 and all later
+steps retain their IDs and order. **Contracts:** R18/R19/R21/R52/R64 and existing
+step-linked acceptance/regression clauses. No new product subsystem is added.
+
+**Evidence:** the supervisor report `implementation/reports/CODEX-3da0b50.md`
+records RF01–RF10: v1 acceptance changed despite frozen schemas, v2 DTO/schema
+integration and absence enforcement are missing, integer endpoints/canonical
+forms disagree, release ingress repeats the smaller parser bound, and the
+bounded read helper trusts over-returning providers. S015 already requires
+representation enforcement and atomic schema updates. Treating those as
+unallocated future work is unsafe. Null/absence belongs to S015, not S016.
+
+**Authority and responsibility:** the owner delegates decisions needed between
+coding periods to Codex. The supervisor changes scope, sequence and normative
+contracts; the implementation agent performs code generation, verification and
+evidence/status updates. It may choose ordinary internal mechanics that obey
+this contract, but may not change representations, defer required work, invent
+an additional step, reorder dependencies, waive gates or claim acceptance to
+get past a failure. A newly evidenced conflicting obligation returns to the
+supervisor with a concrete decision request. Approved decisions below need no
+reconfirmation.
+
+### Binding engineering decisions
+
+1. Preserve the pre-S015 v1 accepted integer ranges, existing DTO behavior,
+   schema bytes and signed originals. Revert only S015's new v1 numeric-range
+   restrictions. Retain bounded duplicate-rejecting ingestion as the approved
+   security correction. Do not add decimal strings to v1 or use v1 URIs for v2.
+2. v2 unsigned quantities use `u64` (0 through 18446744073709551615); signed
+   facts use `i64` (-9223372036854775808 through 9223372036854775807).
+   JSON integer tokens are used exactly within [-9007199254740991,
+   9007199254740991], intersected with the semantic type's range. Only values
+   outside that interval use decimal strings. Reject small-value strings,
+   leading zeros, plus signs, negative zero, fractional/exponent tokens and
+   overflow. Every supported value must serialize and deserialize identically.
+   Positive counts further require at least one. This policy is not a claim
+   that every integer beyond 2^53-1 is individually unrepresentable as a float;
+   it fixes an interoperable safe interval.
+3. v2 time uses exact nanosecond UTC, a literal Z, four-digit years 0001–9999,
+   and the minimal AutoSi group of 0/3/6/9 fractional digits. Reject leap seconds,
+   offsets, missing Z, out-of-range years, redundant fractions and unsupported
+   precision. A v2 validated wrapper must not silently change the retained v1
+   parser. Absence means omitted members; explicit null rejects recursively
+   for optional v2 members. Preserve original bytes before interpretation.
+4. Establish explicit version-qualified schema/DTO ownership. v1 APIs remain
+   unchanged. v2 protocol DTOs live in `eqm_protocol::v2`; schema identity must
+   include the explicit version, never a fallback or a changed v1 CURRENT alias.
+   `WireUint`/`WireInt` are v2 primitives, not validation adapters for v1.
+5. The first concrete v2 schema inventory, owned by S015, is five protocol
+   families: `evidence-result`, `runtime-facts`, `inventory`, `adapter-request`,
+   `adapter-response`, each at `schemas/v2/protocol/<name>.schema.json` and the
+   matching approved GitHub raw URI. Include their nested DTOs and full existing
+   fields, with v2 numeric/time/absence validation. Do not invent later campaign,
+   relationship, storage or verification semantics in this checkpoint. Raw
+   claims cannot become validated authority merely by parsing a DTO.
+6. `cargo xtask schemas generate` and `schemas check` own both version inventories
+   and deterministic parity. The current 22 v1 schemas remain unchanged.
+   Check unique IDs, explicit version/kind dispatch, exact file inventories,
+   nested schema references, positive/negative runtime/schema conformance and
+   unsupported-version rejection. Do not hardcode a new total that future
+   versioned additions must bypass. Schema constraints must enforce numeric
+   encoding and representable string ranges; classify cross-field semantic
+   validations separately rather than claiming the schema proves them.
+7. Do not clone all remaining schemas or add placeholder v2 manifests now.
+   The existing step that first changes an authored or protocol shape owns its
+   real v2 DTO, generator registration, fixtures and explicit consumer update
+   in the same commit. This is a standing requirement for S016–S211, including
+   P03/P04 authority, P09 decisions, P10/P11 reports and P12 release records.
+   No new wire meaning may ship under v1. Existing CLI/MCP v1 operations remain
+   stable until their owning integration steps deliberately select v2. No
+   implicit conversion reader or indefinite dual-version support is added.
+8. Keep the established 16 MiB release-record boundary at every parse. A bounded
+   application read rejects an oversized provider result with `LimitExceeded`;
+   it never silently truncates. Future concrete providers must enforce bounds
+   during reading/allocation, since checking an already returned Vec is not an
+   allocation bound. A read-only trait name cannot establish absence of effects:
+   actual implementations and integrated call paths require later audit/spies.
+
+### Corrective checkpoint order before S016
+
+These are supervisor-approved independently green corrections under the
+original S015 traceability anchor, not additional renumbered mandatory steps.
+Complete each in its own commit and record its SHA/report. Only one is active.
+
+| Checkpoint | Scope | Definition of green and dominant verification |
+| --- | --- | --- |
+| S015-R1 | Restore v1 acceptance; correct v2 integer endpoints, canonical input and generated primitive constraints (RF01/RF03/RF04/RF05). | Existing v1 accepted endpoint fixtures still pass with identical schemas/bytes; all i64/u64 endpoints, safe-boundary neighbors, negative zero, fractional/exponent, small-string and overflow controls agree with v2 parser/serializer/primitive schema. Protocol/domain/runner tests plus full standard gate. |
+| S015-R2 | Implement explicit version identity and multi-inventory generation/parity plumbing (RF02). | Existing v1 generation remains byte-identical; explicit v2 identities parse/render, unsupported versions reject, known inventories remain exact. Do not publish invented empty DTO schemas. Generator/domain/xtask tests plus full standard gate. |
+| S015-R3 | Add the five actual v2 protocol families with canonical numeric/time/absence behavior and generated schemas atomically (RF02/RF05/RF06). | Real valid records and one-field negative mutations agree with their generated schema constraints and runtime validation; missing optional is omitted, explicit null rejects, leap second rejects, endpoints round-trip, and no v1 path/schema changes. Schema generate/check and protocol/domain/vector tests plus full standard gate. |
+| S015-R4 | Finish release/adapter bounded ingress and application result-bound/integration regressions (RF07/RF08/RF09; CR01/CR02/CR06). | Valid actual command-ingress controls pass; duplicate inventory attributes fail through a locked-adapter reconcile fixture; release records immediately below/at/above 16 MiB behave as specified; provider over-return fails, exact limit succeeds, missing ports fail; meaningful command time-injection evidence; application/CLI/protocol tests and application doctests plus full standard gate. |
+| S015-R5 | Execute the whole applicable representation corpus and reconcile evidence/ledger/schema ownership (RF09/RF10). | Dispatch all numeric/time/absence vectors by declared semantic category/type, fail on unhandled applicable vectors (no ID allow-list or minimum-count proxy), validate raw bytes/unsupported versions and five-family schema parity, run application doctests, all S015 commands and package structure checks, review reports and mark S015 complete only with recorded evidence. |
+
+Full standard gate means `cargo xtask check` and `git diff --check`; run each
+checkpoint's meaningful targeted tests in addition. Do not add intentionally
+red commits, amend the reviewed history or weaken tests. S016 retains its
+set/sequence/authored-NFC/opaque-byte responsibilities; S027 retains full
+cross-domain hash/provenance corpus closure; S069 retains evaluator freshness
+arithmetic. RA13 relationship acceptance remains pending S025/S059/S061.
+
+### Continued execution and external gates
+
+The approved next run executes S015-R1–R5, then S016–S211 in order for as long
+as the work is dependency-unblocked. S143 is an intermediate checkpoint, not a
+stop instruction. The final definition of done remains the full MVP, not a
+successful partial batch. Preserve one active step and the original predecessor
+chain; there is no authorization to skip an externally blocked prerequisite.
+
+Missing live configuration does not block generic fail-closed code, synthetic
+cryptographic fixtures or validated configurable policies. It does block a
+step's required real-product/host/authority evidence when that evidence is
+actually necessary. At that first boundary, finish already authorized work in
+the current slice, record the exact unavailable fact and return to the
+supervisor. Do not assume similarly named local projects are the approved
+product, invent business/cohort/retention values, or promote synthetic checks
+to live acceptance. Q01–Q15 remain explicit where evidence is missing.
+
+A context limit is an interruption, not a product blocker. Compact and resume
+where supported; otherwise provide a precise clean checkpoint handback. The
+supervisor reviews between sessions and owns any changed decision. Production
+release/enforcement, publication, credentials and optional-native activation
+remain outside this authorization.
+
+**Verification of this amendment:** standard source gate and application
+doctest passed at the reviewed source HEAD; document structure/diff validation
+is required after plan synchronization. No repair implementation is claimed.
+
 ## Commit convention — inferred from the existing repository
 
 Use **`type: imperative subject`**, lowercase type, no mandatory scope. The checked history includes build/chore/docs subjects in this form. Use the exact supplied subject unless repository evidence requires a documented adjustment; an optional body explains rationale, validation and breaking compatibility. Do not substitute a different convention based on personal preference.
@@ -711,16 +842,23 @@ Enforce approved numeric and temporal wire forms.
 Make cross-runtime digests predictable.
 
 ### 3. Exact scope of code changes
-Implement the representation decision from the preceding ADR for integer ranges or strings, timestamp precision/UTC, null/absence and overflow; update DTO validators and generated schemas atomically.
+Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; implement exact v2 integer ranges, canonical UTC time, null/absence and overflow; establish explicit version-qualified DTO/schema generation and five concrete v2 protocol families; repair bounded ingress/read integration; update generated schemas and conformance tests atomically before S016.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
 - `crates/eqm_domain/src/time.rs`
+- `crates/eqm_domain/src/schema.rs`
+- `crates/eqm_protocol/src/bin/generate_protocol_schemas.rs`
+- `tools/xtask/src/main.rs`
+- `crates/eqm_application/src/`
+- `crates/eqm_cli/src/commands/`
+- `crates/eqm_runner/src/inventory.rs`
+- `crates/eqm_test_support/`
 - `schemas/`
 - `crates/eqm_protocol/tests/`
 
 ### 5. Unit tests or integration tests required
-Boundary values, unsupported precision, overflow and null/absence vectors match the approved contract; schema parity passes.
+All DEV-002 endpoint, canonical token, leap-second/year/precision, null/absence, unsupported-version, runtime/schema, v1 preservation, actual ingress and bounded-provider controls pass. Every applicable frozen vector executes without silent skips; application doctests and schema parity pass.
 
 ### 6. Verification commands
 ```sh
@@ -731,8 +869,11 @@ cargo test --all-targets --locked -p eqm_protocol -p eqm_domain
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 cargo xtask schemas check
+cargo test --locked -p eqm_application --doc
 git diff --check
 ```
+
+**Admission gate:** DEV-002: S015 is reopened; complete S015-R1 through S015-R5 before S016. The supervisor owns scope/representation/dependency decisions; implementation agents do not defer required work or amend these decisions independently.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.

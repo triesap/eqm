@@ -43,29 +43,24 @@ a coordinated, additive namespace rather than an in-place reinterpretation.
    binding, evidence-specification, policy, runner, adapter and record kinds
    receive distinct labels when their owning steps introduce them. Existing v1
    labels and any already-signed bytes are never rewritten.
-3. **Numbers.** JSON integrals are exact only within the IEEE-754 range
-   `|n| <= 9007199254740991` (`2^53 - 1`). Integral values outside that range,
-   and any quantity that must remain exact through foreign runtimes, are encoded
-   as decimal strings. Unsigned quantities use `^(0|[1-9][0-9]*)$`; signed
-   quantities use `^-?(0|[1-9][0-9]*)$`. There is no `+` sign and no leading
-   zero. Per semantic type: counts, lengths and other non-negative quantities
-   are unsigned decimal strings when out of range; signed runtime facts and
-   similar integers are signed decimal strings when out of range. Within range
-   they are plain JSON integers. Counts are never floating point, never
-   negative, and never fractional; fractional, `NaN` and infinite JSON numbers
-   are rejected. `PositiveCount` is `>= 1`; a zero-match observation is expressed
-   by counts, not by a positive count of zero. Unsigned and signed overflow are
-   rejected, never wrapped.
-4. **Time.** Timestamps are canonical UTC RFC 3339 instants with a literal `Z`.
-   The fractional component uses Chrono's `AutoSi` shape: absent when the
-   subsecond value is zero, otherwise exactly 3, 6, or 9 digits (milliseconds,
-   microseconds, or nanoseconds). A shortened fraction such as `.1Z` and a zero
-   fraction such as `.000Z` are non-canonical and rejected; `.100Z`,
-   `.000001Z`, and `.000000001Z` are canonical. Offsets, a missing `Z`, leap
-   seconds, and non-canonical encodings are rejected. Equality, freshness, age
-   and expiry arithmetic operate on exact nanoseconds and never floor to
-   milliseconds. An explicit policy instant supplies age and skew; there is no
-   hidden default skew.
+3. **Numbers (DEV-002 closure).** v2 unsigned quantities use the full u64
+   range 0..18446744073709551615; signed quantities use the full i64 range
+   -9223372036854775808..9223372036854775807. Within the safe interoperable
+   interval `|n| <= 9007199254740991`, use a JSON integer token. Only outside
+   that interval use a canonical unsigned/signed decimal string. Reject strings
+   for in-range values, `+`, leading zeros, negative zero, fractional/exponent
+   tokens and overflow. Positive counts additionally require at least one.
+   Every supported endpoint must round-trip. Numeric schemas constrain both
+   encoding and representable string ranges; regex syntax alone is insufficient.
+   These rules apply to v2 only. Preserve v1's pre-S015 acceptance and bytes;
+   its old schema identity does not acquire narrower numeric semantics.
+4. **Time (DEV-002 closure).** v2 timestamps are canonical UTC RFC 3339,
+   literal `Z`, four-digit years 0001–9999, exact nanoseconds, and the minimal
+   AutoSi fractional group: absent at zero, otherwise 3, 6 or 9 digits.
+   `.1Z`, `.000Z`, redundant groups, offsets, missing Z, leap seconds and
+   unsupported precision reject. `.100Z`, `.000001Z`, `.000000001Z` are canonical.
+   Use a validated v2 boundary without altering retained v1 parser acceptance.
+   Freshness arithmetic must preserve exact nanoseconds at S069; no hidden skew.
 5. **Null and absence.** Optional members are omitted when absent; they are
    never encoded as a present `null`. Explicit `null` is rejected for members
    with absence semantics. Distinguishing absent from present-but-null is
@@ -121,3 +116,12 @@ wire-form vectors; semantic enforcement is implemented by the owning steps
 (S013–S076) and tested there. This ADR records the decision, not its
 enforcement. Fixture thresholds and instants are synthetic; real policy
 minimums, ages and skews remain gated by Q05/Q15.
+
+## Supervisor allocation
+
+DEV-002 in [COMMIT_SEQUENCE](../implementation/COMMIT_SEQUENCE.md) assigns
+explicit version identity/generation to S015-R2 and the first five actual v2
+protocol families to S015-R3. S015 owns null/absence enforcement. Later steps
+own each additional concrete v2 shape atomically with generated schemas and
+consumer updates. No placeholder schemas, fallback readers or v1 reinterpretation
+are permitted. The supervisor owns changes to these decisions.

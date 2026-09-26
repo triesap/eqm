@@ -66,3 +66,14 @@ waived, stale, or untrusted evidence is success. Unsupported platforms, missing
 product repositories, unavailable credentials, and unresolved policy values
 remain explicit gates, not guessed defaults; synthetic fixtures cannot prove
 live product readiness.
+
+## Supervisor-owned decisions
+
+The owner delegates scope, representation, sequencing and acceptance decisions
+between implementation periods to the Codex supervisor. DEV-002 in the existing
+governing COMMIT_SEQUENCE.md is the current binding amendment. The implementation
+agent generates code and records verification/progress; it may select internal
+mechanics within the decided contract but may not defer required work, change
+wire semantics, waive gates, reorder steps or activate new scope. Return newly
+evidenced decision requirements to the supervisor. Routine reports and verified
+commit/status updates do not constitute a change of scope.

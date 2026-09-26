@@ -65,8 +65,8 @@ implicit v1/v2 reader.
 | Boundary | Frozen rule |
 | --- | --- |
 | Namespace | `eqm:v2`; new digests use `eqm:v2:<kind>` with the zero-byte delimiter and SHA-256 |
-| Integers | Exact only within `\|n\| <= 2^53-1`; larger exact values use unsigned `^(0\|[1-9][0-9]*)$` or signed `^-?(0\|[1-9][0-9]*)$` decimal strings per semantic type; floats, `NaN`, infinity, negatives-as-counts, fractional counts and overflow rejected |
-| Time | Canonical UTC RFC 3339 with literal `Z`; `AutoSi` subseconds (0/3/6/9 digits), so `.1Z` and `.000Z` are rejected while `.100Z` and `.000000001Z` are canonical; exact nanosecond arithmetic; no offsets/leap seconds; no hidden skew |
+| Integers | v2 full u64/i64 ranges; integer tokens iff within the safe interval; strings iff outside it; reject noncanonical strings, negative zero, overflow, fractions and exponent tokens. Preserve v1 acceptance. |
+| Time | v2 years 0001–9999, literal Z, minimal AutoSi fractions, exact nanoseconds; reject leap seconds/offsets/redundant precision. Preserve v1 parser behavior. |
 | Absence | Optional members are omitted, never `null`; explicit `null` rejected where absence applies |
 | Sets/sequences | Sets are canonically ordered duplicate-free arrays; sequences preserve order |
 | Text | Authored text is exact NFC (rejected if not NFC); opaque payload/attachment bytes are neither normalized nor NFC-validated and are hashed exactly |
@@ -75,3 +75,9 @@ implicit v1/v2 reader.
 Public member spellings, command flags, and Kotlin/RPC names remain closed at
 their owning steps; this ADR fixes namespace and representation only. The
 normative machine-readable vectors live in `eqm_test_support::representation_vectors`.
+
+DEV-002 assigns the initial five real v2 protocol families and their nested
+DTOs to S015; explicit null rejection and omitted-optional serialization belong
+to that step. Later incompatible shapes receive their own explicit v2 schemas
+in their existing owning steps. Generated representational constraints and
+runtime validators must be checked against the same positive/negative corpus.
