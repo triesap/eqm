@@ -65,11 +65,11 @@ implicit v1/v2 reader.
 | Boundary | Frozen rule |
 | --- | --- |
 | Namespace | `eqm:v2`; new digests use `eqm:v2:<kind>` with the zero-byte delimiter and SHA-256 |
-| Integers | Non-negative counts or `\|n\| <= 2^53-1`; larger/exact quantities use decimal strings `^(0\|[1-9][0-9]*)$`; floats, `NaN`, infinity, negatives and fractional counts rejected |
-| Time | Canonical UTC RFC 3339 with literal `Z`; `AutoSi` subseconds; exact nanosecond arithmetic; no offsets/leap seconds; no hidden skew |
+| Integers | Exact only within `\|n\| <= 2^53-1`; larger exact values use unsigned `^(0\|[1-9][0-9]*)$` or signed `^-?(0\|[1-9][0-9]*)$` decimal strings per semantic type; floats, `NaN`, infinity, negatives-as-counts, fractional counts and overflow rejected |
+| Time | Canonical UTC RFC 3339 with literal `Z`; `AutoSi` subseconds (0/3/6/9 digits), so `.1Z` and `.000Z` are rejected while `.100Z` and `.000000001Z` are canonical; exact nanosecond arithmetic; no offsets/leap seconds; no hidden skew |
 | Absence | Optional members are omitted, never `null`; explicit `null` rejected where absence applies |
 | Sets/sequences | Sets are canonically ordered duplicate-free arrays; sequences preserve order |
-| Text | Exact NFC required; non-NFC rejected rather than normalized |
+| Text | Authored text is exact NFC (rejected if not NFC); opaque payload/attachment bytes are neither normalized nor NFC-validated and are hashed exactly |
 | Digests | `sha256:` plus 64 lowercase hex; domain-separated |
 
 Public member spellings, command flags, and Kotlin/RPC names remain closed at

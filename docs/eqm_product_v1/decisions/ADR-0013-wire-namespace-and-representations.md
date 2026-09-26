@@ -43,21 +43,29 @@ a coordinated, additive namespace rather than an in-place reinterpretation.
    binding, evidence-specification, policy, runner, adapter and record kinds
    receive distinct labels when their owning steps introduce them. Existing v1
    labels and any already-signed bytes are never rewritten.
-3. **Numbers.** JSON integral values are non-negative counts or signed values
-   within the exact IEEE-754 range `|n| <= 9007199254740991` (`2^53 - 1`).
-   Integral values outside that range, and any quantity that must remain exact
-   through foreign runtimes, are encoded as decimal strings matching
-   `^(0|[1-9][0-9]*)$`. Counts are never floating point, never negative, and
-   never fractional; fractional, `NaN` and infinite JSON numbers are rejected.
-   `PositiveCount` is `>= 1`; a zero-match observation is expressed by counts,
-   not by a positive count of zero.
-4. **Time.** Timestamps are canonical UTC RFC 3339 instants with a literal `Z`,
-   second precision when no subsecond component exists, and otherwise one to
-   nine fractional digits with trailing zeros omitted (`AutoSi`). Offsets,
-   missing `Z`, leap seconds, and non-canonical encodings are rejected. Equality,
-   freshness, age and expiry arithmetic operate on exact nanoseconds and never
-   floor to milliseconds. An explicit policy instant supplies age and skew;
-   there is no hidden default skew.
+3. **Numbers.** JSON integrals are exact only within the IEEE-754 range
+   `|n| <= 9007199254740991` (`2^53 - 1`). Integral values outside that range,
+   and any quantity that must remain exact through foreign runtimes, are encoded
+   as decimal strings. Unsigned quantities use `^(0|[1-9][0-9]*)$`; signed
+   quantities use `^-?(0|[1-9][0-9]*)$`. There is no `+` sign and no leading
+   zero. Per semantic type: counts, lengths and other non-negative quantities
+   are unsigned decimal strings when out of range; signed runtime facts and
+   similar integers are signed decimal strings when out of range. Within range
+   they are plain JSON integers. Counts are never floating point, never
+   negative, and never fractional; fractional, `NaN` and infinite JSON numbers
+   are rejected. `PositiveCount` is `>= 1`; a zero-match observation is expressed
+   by counts, not by a positive count of zero. Unsigned and signed overflow are
+   rejected, never wrapped.
+4. **Time.** Timestamps are canonical UTC RFC 3339 instants with a literal `Z`.
+   The fractional component uses Chrono's `AutoSi` shape: absent when the
+   subsecond value is zero, otherwise exactly 3, 6, or 9 digits (milliseconds,
+   microseconds, or nanoseconds). A shortened fraction such as `.1Z` and a zero
+   fraction such as `.000Z` are non-canonical and rejected; `.100Z`,
+   `.000001Z`, and `.000000001Z` are canonical. Offsets, a missing `Z`, leap
+   seconds, and non-canonical encodings are rejected. Equality, freshness, age
+   and expiry arithmetic operate on exact nanoseconds and never floor to
+   milliseconds. An explicit policy instant supplies age and skew; there is no
+   hidden default skew.
 5. **Null and absence.** Optional members are omitted when absent; they are
    never encoded as a present `null`. Explicit `null` is rejected for members
    with absence semantics. Distinguishing absent from present-but-null is
@@ -66,9 +74,12 @@ a coordinated, additive namespace rather than an in-place reinterpretation.
    canonical byte order of each member's canonical encoding; duplicate members
    are rejected. Ordered sequences preserve declared order and treat order as
    significant. Iteration order is never implementation-defined.
-7. **Unicode and text.** Authored text is exact NFC; non-NFC input is rejected
-   rather than silently normalized. Canonical JSON preserves Unicode data
-   exactly and digests the exact UTF-8 bytes of the accepted form.
+7. **Text.** Authored text fields (IDs, titles, statements, reviewer names,
+   symbolic values) are exact NFC; non-NFC input is rejected rather than
+   silently normalized, and their canonical digest is the exact UTF-8 bytes of
+   the accepted NFC form. Opaque payload bytes (attachments, exported source
+   content, media) are never NFC-validated or normalized; they are hashed and
+   preserved exactly as received.
 8. **Count units.** Counts are declared per evidence kind: expected logical test
    cases; independently checked structural/inventory/runtime facts; explicit
    review slots and independently authorized principals where independence is
@@ -101,9 +112,12 @@ continues to enforce exactly the v1 inventory.
 ## Verification and implementation
 
 `crates/eqm_test_support` exposes the normative frozen vector set
-(`representation_vectors`) covering every rule above. Its unit test proves the
-set covers each representation boundary and each approved outcome/count/risk
-rule, with nonempty `given`/`when`/`expected` clauses. Semantic enforcement is
-implemented by the owning steps (S013–S076) and tested there; this ADR records
-the decision, not its enforcement. Fixture thresholds and instants are
-synthetic; real policy minimums, ages and skews remain gated by Q05/Q15.
+(`representation_vectors`) with a literal input, an exact accept output or
+rejection, a rule note, and expected digest text where applicable. Its unit
+tests prove the set covers each representation boundary and each approved
+outcome/count/risk rule, and execute the timestamp and digest vectors against
+`eqm_domain` so those vectors are real controls. S015 consumes the concrete
+wire-form vectors; semantic enforcement is implemented by the owning steps
+(S013–S076) and tested there. This ADR records the decision, not its
+enforcement. Fixture thresholds and instants are synthetic; real policy
+minimums, ages and skews remain gated by Q05/Q15.

@@ -63,8 +63,10 @@ Freshness uses explicit evaluation time and policy, preserving exact nanosecond 
 ## Frozen count, outcome and risk vectors (S006)
 
 ADR-0013 freezes these rules together with the representation boundaries; the
-machine-readable set is `eqm_test_support::representation_vectors`, and its unit
-test proves each rule has a nonempty vector. Enforcement and semantic
+machine-readable set is `eqm_test_support::{REPRESENTATION_VECTORS, vectors_for}`,
+and its unit tests execute the timestamp and digest vectors against `eqm_domain`
+and prove every rule has a literal input with an exact accept output or
+rejection. Enforcement and semantic
 regressions land in the owning steps S013–S076.
 
 - Required expected selections compose with AND; alternatives need explicit

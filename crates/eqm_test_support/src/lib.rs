@@ -34,7 +34,10 @@ pub use subject::{
     FIXTURE_COMMIT, FIXTURE_REPOSITORY, SubjectBuilder, provider_subject, target_set_subject,
     target_subject,
 };
-pub use vectors::{REPRESENTATION_VECTORS, REQUIRED_VECTOR_CATEGORIES, RepresentationVector};
+pub use vectors::{
+    REPRESENTATION_VECTORS, REQUIRED_VECTOR_CATEGORIES, RepresentationVector, VectorOutcome,
+    vectors_for,
+};
 
 #[cfg(test)]
 mod tests {
