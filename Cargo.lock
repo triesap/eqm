@@ -142,6 +142,7 @@ dependencies = [
 name = "eqm_application"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "eqm_domain",
  "eqm_engine",
  "eqm_manifest",

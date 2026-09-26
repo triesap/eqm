@@ -6,7 +6,7 @@
 //! never re-derives conformance or reloads the workspace.
 
 use crate::cli::{CommandName, GlobalOptions};
-use eqm_domain::RepoPath;
+use eqm_domain::{RepoPath, UtcInstant};
 use std::path::Path;
 
 pub use eqm_application::session::{PreparedSession, SessionError};
@@ -18,13 +18,32 @@ pub struct SessionRequest {
     pub global: GlobalOptions,
     /// Exact command identity requesting the session.
     pub command: CommandName,
+    evaluation_time: Option<UtcInstant>,
 }
 
 impl SessionRequest {
-    /// Captures loading inputs without reading or mutating the workspace.
+    /// Captures loading inputs; the host evaluation instant is captured once at preparation.
     #[must_use]
     pub const fn new(global: GlobalOptions, command: CommandName) -> Self {
-        Self { global, command }
+        Self {
+            global,
+            command,
+            evaluation_time: None,
+        }
+    }
+
+    /// Captures loading inputs with an explicit, already-captured evaluation instant.
+    #[must_use]
+    pub const fn at(
+        global: GlobalOptions,
+        command: CommandName,
+        evaluation_time: UtcInstant,
+    ) -> Self {
+        Self {
+            global,
+            command,
+            evaluation_time: Some(evaluation_time),
+        }
     }
 
     fn application(&self) -> Result<eqm_application::SessionRequest, SessionError> {
@@ -35,7 +54,14 @@ impl SessionRequest {
             .map(|path| RepoPath::new(path.to_string_lossy().replace('\\', "/")))
             .transpose()
             .map_err(SessionError::ConfigPath)?;
-        Ok(eqm_application::SessionRequest::new(config))
+        let evaluation_time = match self.evaluation_time {
+            Some(instant) => instant,
+            None => eqm_application::clock::host_evaluation_time().map_err(SessionError::Clock)?,
+        };
+        Ok(eqm_application::SessionRequest::new(
+            config,
+            evaluation_time,
+        ))
     }
 }
 

@@ -4,7 +4,6 @@ use super::{CommandExecution, evaluation};
 use crate::cli::ParsedCli;
 use crate::renderer::OutputPayload;
 use crate::session::{SessionRequest, prepare};
-use chrono::{DateTime, SecondsFormat, Utc};
 use eqm_domain::{DiagnosticCode, TargetId, UtcInstant};
 use eqm_engine::{
     MatrixAxisKey, MatrixKind, MatrixStatus, MatrixValue, ScopeSubject, generate_matrix,
@@ -16,7 +15,6 @@ use eqm_protocol::{
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::path::Path;
-use std::time::SystemTime;
 
 /// Generates one complete non-executing matrix view.
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
@@ -181,7 +179,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     let envelope = ReportEnvelope::new(
         CommandIdentity::Matrix,
         Some(session.workspace_digest()),
-        context(offline)?,
+        context(offline, session.evaluation_time())?,
         Some(result),
         Vec::new(),
     )?;
@@ -240,16 +238,14 @@ fn option_value<'a>(parsed: &'a ParsedCli, name: &str) -> Option<&'a str> {
     parsed.command.options.get(name)?.first()?.as_deref()
 }
 
-fn context(offline: bool) -> Result<InvocationContextDto<(), ()>, Box<dyn Error>> {
-    let value: DateTime<Utc> = SystemTime::now().into();
-    let instant: UtcInstant = value.to_rfc3339_opts(SecondsFormat::Secs, true).parse()?;
+fn context(offline: bool, at: UtcInstant) -> Result<InvocationContextDto<(), ()>, Box<dyn Error>> {
     Ok(InvocationContextDto::new(
         EvaluationModeDto::Development,
         Vec::new(),
         None,
         None,
         offline,
-        instant,
+        at,
     )?)
 }
 

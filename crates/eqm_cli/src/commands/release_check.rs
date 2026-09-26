@@ -4,7 +4,6 @@ use super::{CommandExecution, attest, evaluation};
 use crate::cli::ParsedCli;
 use crate::renderer::OutputPayload;
 use crate::session::{PreparedSession, SessionRequest, prepare};
-use chrono::{DateTime, SecondsFormat, Utc};
 use eqm_domain::{
     AppVersion, BuildNumber, DurationMillis, ProducerRef, ReleaseChannel, ReleaseRecord, RepoPath,
     Sha256Digest, SourceCommit, TargetId, TrustLevel, UtcInstant,
@@ -24,11 +23,11 @@ use std::error::Error;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use std::time::SystemTime;
 
 /// Evaluates one exact release record against current policy and prepared evidence.
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
-    execute_with_authority(parsed, start, evaluated_at()?, &UnconfiguredTrust)
+    let now = eqm_application::clock::host_evaluation_time()?;
+    execute_with_authority(parsed, start, now, &UnconfiguredTrust)
 }
 
 fn execute_with_authority(
@@ -45,7 +44,7 @@ fn execute_with_authority(
     let record_path = option(&parsed, "--release-record")
         .ok_or("release record required")?
         .to_owned();
-    let request = SessionRequest::new(parsed.global, parsed.command.name);
+    let request = SessionRequest::at(parsed.global, parsed.command.name, now);
     let session = prepare(&request, start)?;
     let (selection, obligations) = evaluation::derive(&session, &profiles)?;
     let (record_dto, record) = read_release_record(&session, &record_path)?;
@@ -601,11 +600,6 @@ fn option<'a>(parsed: &'a ParsedCli, name: &str) -> Option<&'a str> {
         .get(name)
         .and_then(|values| values.first())
         .and_then(Option::as_deref)
-}
-
-fn evaluated_at() -> Result<UtcInstant, Box<dyn Error>> {
-    let value: DateTime<Utc> = SystemTime::now().into();
-    Ok(value.to_rfc3339_opts(SecondsFormat::Secs, true).parse()?)
 }
 
 fn context(offline: bool, at: UtcInstant) -> Result<InvocationContextDto<(), ()>, Box<dyn Error>> {

@@ -5,7 +5,8 @@
 //! adapters read the same finalized graph and source map without reloading the
 //! workspace or re-deriving conformance.
 
-use eqm_domain::{FinalizedWorkspaceGraph, RepoPath, RepoPathError, Sha256Digest};
+use crate::clock::ClockError;
+use eqm_domain::{FinalizedWorkspaceGraph, RepoPath, RepoPathError, Sha256Digest, UtcInstant};
 use eqm_engine::{FragmentDigestMap, ResolutionError, expand_fragments, resolve_graph};
 use eqm_manifest::{
     CanonicalizationError, LoadError, canonicalize_fragment, canonicalize_graph, load_workspace,
@@ -19,19 +20,29 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SessionRequest {
     config: Option<RepoPath>,
+    evaluation_time: UtcInstant,
 }
 
 impl SessionRequest {
-    /// Captures loading inputs without reading or mutating the workspace.
+    /// Captures loading inputs and one explicit evaluation instant.
     #[must_use]
-    pub const fn new(config: Option<RepoPath>) -> Self {
-        Self { config }
+    pub const fn new(config: Option<RepoPath>, evaluation_time: UtcInstant) -> Self {
+        Self {
+            config,
+            evaluation_time,
+        }
     }
 
     /// Returns the explicit configuration path, if any.
     #[must_use]
     pub const fn config(&self) -> Option<&RepoPath> {
         self.config.as_ref()
+    }
+
+    /// Returns the explicit evaluation instant for this request.
+    #[must_use]
+    pub const fn evaluation_time(&self) -> UtcInstant {
+        self.evaluation_time
     }
 }
 
@@ -42,6 +53,7 @@ pub struct PreparedSession {
     finalized: FinalizedWorkspaceGraph,
     source_map: BTreeMap<Box<str>, RepoPath>,
     workspace_digest: Sha256Digest,
+    evaluation_time: UtcInstant,
 }
 
 impl PreparedSession {
@@ -68,11 +80,19 @@ impl PreparedSession {
     pub const fn workspace_digest(&self) -> Sha256Digest {
         self.workspace_digest
     }
+
+    /// Returns the explicit evaluation instant captured for this session.
+    #[must_use]
+    pub const fn evaluation_time(&self) -> UtcInstant {
+        self.evaluation_time
+    }
 }
 
 /// Stable prepared-session stage failure retaining its causal error.
 #[derive(Debug)]
 pub enum SessionError {
+    /// The host evaluation instant was unavailable.
+    Clock(ClockError),
     /// The explicit configuration path was not repository-relative.
     ConfigPath(RepoPathError),
     /// The workspace could not be loaded.
@@ -90,6 +110,7 @@ pub enum SessionError {
 impl Display for SessionError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Clock(error) => write!(formatter, "session evaluation time failed: {error}"),
             Self::ConfigPath(error) => {
                 write!(formatter, "session configuration path is invalid: {error}")
             }
@@ -109,6 +130,7 @@ impl Display for SessionError {
 impl Error for SessionError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Clock(error) => Some(error),
             Self::ConfigPath(error) => Some(error),
             Self::Load(error) => Some(error),
             Self::Resolve(error) | Self::Expand(error) => Some(error),
@@ -143,6 +165,7 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
         finalized,
         source_map,
         workspace_digest,
+        evaluation_time: request.evaluation_time(),
     })
 }
 
@@ -176,7 +199,8 @@ mod tests {
     #[test]
     fn unavailable_start_retains_the_config_cause() -> Result<(), Box<dyn Error>> {
         let missing = Path::new("/definitely-not-an-eqm-workspace");
-        match prepare(&SessionRequest::new(None), missing) {
+        let request = SessionRequest::new(None, "2026-01-02T03:04:05Z".parse()?);
+        match prepare(&request, missing) {
             Err(SessionError::Load(LoadError::Config(error))) => {
                 assert_eq!(error, eqm_manifest::ConfigError::StartUnavailable);
             }
@@ -194,12 +218,30 @@ mod tests {
             "capability = \"account.missing\"",
         );
         fs::write(&journey, text)?;
-        match prepare(&SessionRequest::new(None), repository.path()) {
+        let request = SessionRequest::new(None, "2026-01-02T03:04:05Z".parse()?);
+        match prepare(&request, repository.path()) {
             Err(SessionError::Resolve(ResolutionError::Findings(findings))) => {
                 assert!(!findings.is_empty());
             }
             other => return Err(format!("expected a resolution cause, got {other:?}").into()),
         }
+        Ok(())
+    }
+
+    #[test]
+    fn injected_evaluation_time_is_repeatable_and_does_not_move_identity()
+    -> Result<(), Box<dyn Error>> {
+        let repository = example()?;
+        let first_at: UtcInstant = "2026-01-02T03:04:05Z".parse()?;
+        let later_at: UtcInstant = "2026-02-03T04:05:06Z".parse()?;
+        let first = prepare(&SessionRequest::new(None, first_at), repository.path())?;
+        let repeat = prepare(&SessionRequest::new(None, first_at), repository.path())?;
+        let moved = prepare(&SessionRequest::new(None, later_at), repository.path())?;
+        assert_eq!(first, repeat);
+        assert_eq!(first.evaluation_time(), first_at);
+        assert_eq!(moved.evaluation_time(), later_at);
+        assert_eq!(first.workspace_digest(), moved.workspace_digest());
+        assert_eq!(first.finalized(), moved.finalized());
         Ok(())
     }
 }

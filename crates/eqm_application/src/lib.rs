@@ -27,8 +27,10 @@
 
 #![forbid(unsafe_code)]
 
+pub mod clock;
 pub mod session;
 
+pub use clock::{ClockError, host_evaluation_time};
 pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
 
 #[cfg(test)]

@@ -11,6 +11,7 @@ rust-version.workspace = true
 description = "Shared effectful use-case orchestration for EquivalenceMatrix"
 
 [dependencies]
+chrono.workspace = true
 eqm_domain.workspace = true
 eqm_engine.workspace = true
 eqm_manifest.workspace = true
