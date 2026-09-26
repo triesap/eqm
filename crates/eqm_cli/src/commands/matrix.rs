@@ -255,6 +255,14 @@ mod tests {
     use crate::cli::{ParseOutcome, parse};
 
     #[test]
+    fn matrix_context_preserves_injected_subsecond_instant() -> Result<(), Box<dyn Error>> {
+        let at: UtcInstant = "2026-01-02T03:04:05.000000123Z".parse()?;
+        let value = serde_json::to_value(context(false, at)?)?;
+        assert_eq!(value["evaluated_at"], "2026-01-02T03:04:05.000000123Z");
+        Ok(())
+    }
+
+    #[test]
     fn all_matrix_views_are_complete_and_filters_are_exact() -> Result<(), Box<dyn Error>> {
         let repository = crate::test_support::example_repository()?;
         let root = repository.path();

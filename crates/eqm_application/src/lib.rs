@@ -155,6 +155,68 @@ impl<'a> Capabilities<'a> {
             capability: Capability::Execution,
         })
     }
+
+    /// Restricts the aggregate to its read-facing ports at a use-case boundary.
+    ///
+    /// The returned view exposes only authority and evidence access, so a read
+    /// or evaluation use case cannot reach privileged execution or verification.
+    #[must_use]
+    pub fn read_view(&self) -> ReadCapabilities<'a> {
+        ReadCapabilities {
+            authority: self.authority,
+            evidence: self.evidence,
+        }
+    }
+}
+
+/// Read-facing capability view: protected authority and evidence access only.
+///
+/// A read or evaluation use case accepts this view rather than the full
+/// [`Capabilities`] aggregate, so it has no method that can launch a runner,
+/// verify evidence, or fetch network content. The aggregate remains the
+/// composition boundary that decides which privileged ports exist.
+///
+/// ```compile_fail
+/// # let view = eqm_application::ReadCapabilities::new();
+/// // The read view has no execution capability.
+/// let _ = view.executor();
+/// ```
+#[derive(Default)]
+pub struct ReadCapabilities<'a> {
+    authority: Option<&'a dyn AuthorityProvider>,
+    evidence: Option<&'a dyn EvidenceReader>,
+}
+
+impl<'a> ReadCapabilities<'a> {
+    /// Creates an empty read-facing view.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Adds a protected authority provider.
+    #[must_use]
+    pub fn with_authority(mut self, value: &'a dyn AuthorityProvider) -> Self {
+        self.authority = Some(value);
+        self
+    }
+
+    /// Adds a read-only evidence reader.
+    #[must_use]
+    pub fn with_evidence(mut self, value: &'a dyn EvidenceReader) -> Self {
+        self.evidence = Some(value);
+        self
+    }
+
+    /// Requires the protected authority provider.
+    pub fn authority(&self) -> Result<&'a dyn AuthorityProvider, AuthorityError> {
+        self.authority.ok_or(AuthorityError::MissingProvider)
+    }
+
+    /// Requires the read-only evidence reader.
+    pub fn evidence(&self) -> Result<&'a dyn EvidenceReader, EvidenceReadError> {
+        self.evidence.ok_or(EvidenceReadError::MissingReader)
+    }
 }
 
 #[cfg(test)]
@@ -234,20 +296,34 @@ mod tests {
     }
 
     #[test]
-    fn read_path_never_reaches_execution_or_verification() -> Result<(), Box<dyn Error>> {
+    fn read_view_never_reaches_execution_or_verification() -> Result<(), Box<dyn Error>> {
         let executor = SpyExecutor::default();
         let verifier = SpyVerifier::default();
         let reader = SpyReader;
-        let capabilities = Capabilities::new()
+        let aggregate = Capabilities::new()
             .with_evidence(&reader)
             .with_executor(&executor)
             .with_verifier(&verifier);
+        let view = aggregate.read_view();
         let request = EvidenceReadRequest::new(16)?;
-        let records = capabilities.evidence()?.read_evidence(&request)?;
+        let records = evaluation::read_evidence(&view, &request)?;
         assert!(records.is_empty());
         assert_eq!(executor.calls.get(), 0);
         assert_eq!(verifier.calls.get(), 0);
         Ok(())
+    }
+
+    #[test]
+    fn read_view_reports_missing_ports_explicitly() {
+        let view = ReadCapabilities::new();
+        assert_eq!(
+            view.evidence().err(),
+            Some(EvidenceReadError::MissingReader)
+        );
+        assert_eq!(
+            view.authority().err(),
+            Some(AuthorityError::MissingProvider)
+        );
     }
 
     #[test]

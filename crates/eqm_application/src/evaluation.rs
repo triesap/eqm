@@ -12,10 +12,14 @@ use std::fmt::{self, Display, Formatter};
 pub const MAX_EVIDENCE_READ: usize = 10_000;
 
 /// Explicit bounded request to read already-acquired evidence.
+///
+/// The bound is private validated state: callers construct through [`new`],
+/// which rejects zero and over-bound limits, so no public field can bypass it.
+///
+/// [`new`]: EvidenceReadRequest::new
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct EvidenceReadRequest {
-    /// Maximum records to return; zero is rejected.
-    pub limit: usize,
+    limit: usize,
 }
 
 impl EvidenceReadRequest {
@@ -25,6 +29,12 @@ impl EvidenceReadRequest {
             return Err(EvidenceReadError::InvalidLimit);
         }
         Ok(Self { limit })
+    }
+
+    /// Returns the validated read bound.
+    #[must_use]
+    pub const fn limit(&self) -> usize {
+        self.limit
     }
 }
 
@@ -82,6 +92,17 @@ impl EvaluationRequest {
     }
 }
 
+/// Reads bounded evidence through the read-facing view.
+///
+/// The view exposes only authority and evidence access, so this path cannot
+/// launch a runner, verify evidence, or fetch network content.
+pub fn read_evidence(
+    view: &crate::ReadCapabilities<'_>,
+    request: &EvidenceReadRequest,
+) -> Result<Vec<EvidenceResult>, EvidenceReadError> {
+    view.evidence()?.read_evidence(request)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -89,8 +110,11 @@ mod tests {
     #[test]
     fn evidence_read_limits_are_bounded() {
         assert!(EvidenceReadRequest::new(0).is_err());
-        assert!(EvidenceReadRequest::new(1).is_ok());
-        assert!(EvidenceReadRequest::new(MAX_EVIDENCE_READ).is_ok());
+        assert_eq!(EvidenceReadRequest::new(1).map(|r| r.limit()), Ok(1));
+        assert_eq!(
+            EvidenceReadRequest::new(MAX_EVIDENCE_READ).map(|r| r.limit()),
+            Ok(MAX_EVIDENCE_READ)
+        );
         assert!(EvidenceReadRequest::new(MAX_EVIDENCE_READ + 1).is_err());
     }
 }
