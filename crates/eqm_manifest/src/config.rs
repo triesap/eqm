@@ -150,7 +150,7 @@ fn validate_declarations(dto: &WorkspaceDto) -> Result<(), ConfigError> {
 }
 
 /// Workspace selection or decoding failure.
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ConfigError {
     /// Start path was unavailable.
     StartUnavailable,

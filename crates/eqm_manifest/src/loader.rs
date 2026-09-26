@@ -2,7 +2,8 @@
 
 use crate::conversion::extensions;
 use crate::{
-    ContractEntity, DocumentDto, WorkspaceLock, convert_binding, convert_contract, convert_policy,
+    ConfigError, ContractEntity, ConversionError, DiscoveryError, DocumentDto, LockError,
+    ValidationError, WorkspaceLock, convert_binding, convert_contract, convert_policy,
     convert_profile, convert_runner, convert_waiver, decode_sources, discover_sources,
     load_lockfile, select_workspace_config,
 };
@@ -51,11 +52,11 @@ pub fn load_workspace(
     start: &Path,
     explicit: Option<&RepoPath>,
 ) -> Result<LoadedWorkspace, LoadError> {
-    let config = select_workspace_config(start, explicit).map_err(|_| LoadError::Config)?;
-    let sources = discover_sources(&config).map_err(|_| LoadError::Discovery)?;
-    let documents = decode_sources(config.repository_root(), &sources)
-        .map_err(|error| LoadError::Validation(error.source().cloned()))?;
-    let lock = load_lockfile(&config).map_err(|_| LoadError::Lock)?;
+    let config = select_workspace_config(start, explicit).map_err(LoadError::Config)?;
+    let sources = discover_sources(&config).map_err(LoadError::Discovery)?;
+    let documents =
+        decode_sources(config.repository_root(), &sources).map_err(LoadError::Validation)?;
+    let lock = load_lockfile(&config).map_err(LoadError::Lock)?;
 
     let mut input = WorkspaceGraphInput {
         extensions: extensions(&config.dto().extensions, "eqm.toml")
@@ -67,9 +68,9 @@ pub fn load_workspace(
         .strip_prefix(config.repository_root())
         .ok()
         .and_then(|path| RepoPath::new(path.to_string_lossy().replace('\\', "/")).ok())
-        .ok_or(LoadError::Config)?;
+        .ok_or(LoadError::Config(ConfigError::OutsideRepository))?;
     let lock_source = RepoPath::new(config.dto().lockfile.as_deref().unwrap_or("eqm.lock"))
-        .map_err(|_| LoadError::Lock)?;
+        .map_err(|_| LoadError::Lock(LockError::InvalidPath))?;
     let mut source_map = BTreeMap::new();
     let mut target_roots = BTreeMap::new();
     let mut portable_roots = BTreeSet::new();
@@ -239,40 +240,42 @@ fn apply_lock(input: &mut WorkspaceGraphInput, lock: WorkspaceLock) {
         .collect();
 }
 
-fn conversion_error(error: crate::ConversionError) -> LoadError {
-    LoadError::Conversion {
-        source: error.source().into(),
-        field: error.field(),
-    }
+fn conversion_error(error: ConversionError) -> LoadError {
+    LoadError::Conversion(error)
 }
 
-/// Stable workspace-loading stage failure.
+/// Stable workspace-loading stage failure retaining its causal error.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LoadError {
     /// Config selection or decoding failed.
-    Config,
+    Config(ConfigError),
     /// Source discovery failed.
-    Discovery,
-    /// Strict source validation failed.
-    Validation(Option<RepoPath>),
+    Discovery(DiscoveryError),
+    /// Strict source validation failed, retaining source and classification.
+    Validation(ValidationError),
     /// Workspace target authority was invalid.
     WorkspaceTarget,
     /// Target roots collided portably.
     DuplicateTargetRoot,
-    /// Domain conversion failed.
-    Conversion {
-        /// Stable repository-relative source.
-        source: Box<str>,
-        /// Nearest invalid field path.
-        field: &'static str,
-    },
+    /// Domain conversion failed, retaining source and invalid field path.
+    Conversion(ConversionError),
     /// Exact lockfile loading failed.
-    Lock,
+    Lock(LockError),
 }
 
 impl Display for LoadError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{self:?}")
+        match self {
+            Self::Config(error) => write!(formatter, "workspace configuration failed: {error}"),
+            Self::Discovery(error) => write!(formatter, "source discovery failed: {error}"),
+            Self::Validation(error) => write!(formatter, "source validation failed: {error}"),
+            Self::Conversion(error) => write!(formatter, "contract conversion failed: {error}"),
+            Self::Lock(error) => write!(formatter, "lockfile loading failed: {error}"),
+            Self::WorkspaceTarget => formatter.write_str("workspace target authority was invalid"),
+            Self::DuplicateTargetRoot => {
+                formatter.write_str("workspace target roots collided portably")
+            }
+        }
     }
 }
 

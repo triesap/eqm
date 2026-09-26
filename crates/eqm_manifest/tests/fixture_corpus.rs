@@ -1,6 +1,6 @@
 //! End-to-end coverage for the checked-in manifest fixture corpus.
 
-use eqm_manifest::{LoadError, load_workspace};
+use eqm_manifest::{LoadError, LockError, load_workspace};
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -75,7 +75,7 @@ fn schema_field_unicode_and_duplicate_fixtures_fail_closed() -> Result<(), Box<d
     )?;
     assert!(matches!(
         load_workspace(repository.path(), None),
-        Err(LoadError::Validation(Some(_)))
+        Err(LoadError::Validation(_))
     ));
     Ok(())
 }
@@ -109,8 +109,86 @@ fn path_collision_and_lock_fixtures_fail_at_their_stage() -> Result<(), Box<dyn 
     )?;
     assert_eq!(
         load_workspace(repository.path(), None),
-        Err(LoadError::Lock)
+        Err(LoadError::Lock(LockError::InvalidImport))
     );
+    Ok(())
+}
+
+#[test]
+fn load_failures_retain_typed_causes_without_leaking_content() -> Result<(), Box<dyn Error>> {
+    use eqm_manifest::ValidationErrorKind;
+
+    let repository = workspace()?;
+    fs::write(
+        repository.path().join("eqm/contracts/capability.toml"),
+        "schema = \"unterminated\n",
+    )?;
+    match load_workspace(repository.path(), None) {
+        Err(LoadError::Validation(error)) => {
+            assert_eq!(error.kind(), ValidationErrorKind::InvalidToml);
+            assert_eq!(
+                error.source().map(eqm_domain::RepoPath::as_str),
+                Some("eqm/contracts/capability.toml")
+            );
+        }
+        other => return Err(format!("expected invalid-TOML cause, got {other:?}").into()),
+    }
+
+    let repository = workspace()?;
+    fs::copy(
+        negative("wrong-schema.toml"),
+        repository.path().join("eqm/contracts/capability.toml"),
+    )?;
+    match load_workspace(repository.path(), None) {
+        Err(LoadError::Validation(error)) => {
+            assert_eq!(error.kind(), ValidationErrorKind::WrongSourceClass);
+            assert_eq!(
+                error.source().map(eqm_domain::RepoPath::as_str),
+                Some("eqm/contracts/capability.toml")
+            );
+            assert!(error.to_string().contains("eqm/contracts/capability.toml"));
+        }
+        other => return Err(format!("expected validation cause, got {other:?}").into()),
+    }
+
+    let repository = workspace()?;
+    fs::copy(
+        negative("decomposed-unicode.toml"),
+        repository.path().join("eqm/contracts/capability.toml"),
+    )?;
+    match load_workspace(repository.path(), None) {
+        Err(LoadError::Conversion(error)) => {
+            assert_eq!(error.source(), "eqm/contracts/capability.toml");
+            assert_eq!(error.field(), "id");
+            assert!(error.to_string().contains("eqm/contracts/capability.toml"));
+        }
+        other => return Err(format!("expected conversion cause, got {other:?}").into()),
+    }
+
+    let repository = workspace()?;
+    fs::copy(
+        negative("floating-lock.toml"),
+        repository.path().join("eqm.lock"),
+    )?;
+    match load_workspace(repository.path(), None) {
+        Err(LoadError::Lock(error)) => {
+            assert_eq!(error, LockError::InvalidImport);
+        }
+        other => return Err(format!("expected lock cause, got {other:?}").into()),
+    }
+
+    let repository = workspace()?;
+    let original = fs::read(repository.path().join("eqm/contracts/capability.toml"))?;
+    fs::write(
+        repository.path().join("eqm/contracts/Capability.toml"),
+        &original,
+    )?;
+    if fs::read_dir(repository.path().join("eqm/contracts"))?.count() == 2 {
+        match load_workspace(repository.path(), None) {
+            Err(LoadError::Discovery(_)) => {}
+            other => return Err(format!("expected discovery cause, got {other:?}").into()),
+        }
+    }
     Ok(())
 }
 
@@ -127,7 +205,7 @@ fn materialized_limit_collision_and_symlink_cases_fail_closed() -> Result<(), Bo
     )?;
     assert!(matches!(
         load_workspace(repository.path(), None),
-        Err(LoadError::Validation(Some(_)))
+        Err(LoadError::Validation(_))
     ));
 
     let repository = workspace()?;
@@ -137,10 +215,10 @@ fn materialized_limit_collision_and_symlink_cases_fail_closed() -> Result<(), Bo
         &original,
     )?;
     if fs::read_dir(repository.path().join("eqm/contracts"))?.count() == 2 {
-        assert_eq!(
+        assert!(matches!(
             load_workspace(repository.path(), None),
-            Err(LoadError::Discovery)
-        );
+            Err(LoadError::Discovery(_))
+        ));
     } else {
         assert!(load_workspace(repository.path(), None).is_ok());
     }
@@ -153,10 +231,10 @@ fn materialized_limit_collision_and_symlink_cases_fail_closed() -> Result<(), Bo
             "capability.toml",
             repository.path().join("eqm/contracts/link.toml"),
         )?;
-        assert_eq!(
+        assert!(matches!(
             load_workspace(repository.path(), None),
-            Err(LoadError::Discovery)
-        );
+            Err(LoadError::Discovery(_))
+        ));
     }
     Ok(())
 }
