@@ -100,7 +100,21 @@ pub fn read_evidence(
     view: &crate::ReadCapabilities<'_>,
     request: &EvidenceReadRequest,
 ) -> Result<Vec<EvidenceResult>, EvidenceReadError> {
-    view.evidence()?.read_evidence(request)
+    let records = view.evidence()?.read_evidence(request)?;
+    // RF08: an application read is bounded by its declared limit, so an
+    // over-returning provider cannot exceed the advertised result bound.
+    if !within_read_limit(records.len(), request.limit()) {
+        return Err(EvidenceReadError::LimitExceeded);
+    }
+    Ok(records)
+}
+
+/// Returns whether a provider result of `count` records is within `limit`.
+///
+/// The application bound is a length check; a concrete store additionally owns
+/// its allocation bound while reading (DEV-002 decision 8).
+fn within_read_limit(count: usize, limit: usize) -> bool {
+    count <= limit
 }
 
 #[cfg(test)]
@@ -116,5 +130,15 @@ mod tests {
             Ok(MAX_EVIDENCE_READ)
         );
         assert!(EvidenceReadRequest::new(MAX_EVIDENCE_READ + 1).is_err());
+    }
+
+    #[test]
+    fn provider_over_return_exceeds_the_declared_bound() {
+        // RF08: exact limit succeeds; one past the limit fails without truncation.
+        assert!(within_read_limit(0, 1));
+        assert!(within_read_limit(1, 1));
+        assert!(!within_read_limit(2, 1));
+        assert!(within_read_limit(MAX_EVIDENCE_READ, MAX_EVIDENCE_READ));
+        assert!(!within_read_limit(MAX_EVIDENCE_READ + 1, MAX_EVIDENCE_READ));
     }
 }

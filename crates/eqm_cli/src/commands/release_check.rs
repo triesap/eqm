@@ -24,6 +24,9 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+/// Established release-record ingress bound; every strict parse uses it.
+const RELEASE_RECORD_MAX_BYTES: usize = 16 * 1024 * 1024;
+
 /// Evaluates one exact release record against current policy and prepared evidence.
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let now = eqm_application::clock::host_evaluation_time()?;
@@ -244,12 +247,15 @@ fn read_release_record(
     let relative = RepoPath::new(path)?;
     let absolute = session.repository_root().join(relative.as_str());
     let bytes = confined_bytes(session, &absolute)?;
-    let dto: ReleaseRecordDto = eqm_protocol::strict_from_slice(&bytes)?;
+    // RF07: the strict parse must honor the same established 16 MiB bound as the
+    // confined read, not the smaller default protocol bound.
+    let dto: ReleaseRecordDto =
+        eqm_protocol::strict_from_slice_limited(&bytes, RELEASE_RECORD_MAX_BYTES)?;
     if dto.schema != eqm_protocol::RELEASE_RECORD_SCHEMA.to_string() {
         return Err("release record schema mismatch".into());
     }
     let claimed: Sha256Digest = dto.record_digest.parse()?;
-    let mut value: Value = eqm_protocol::parse_strict(&bytes)?;
+    let mut value: Value = eqm_protocol::parse_strict_limited(&bytes, RELEASE_RECORD_MAX_BYTES)?;
     value
         .as_object_mut()
         .ok_or("release record object")?
@@ -565,7 +571,9 @@ fn common_runtime_digest(evidence: &[&EvidenceResultDto]) -> Option<Sha256Digest
 
 fn confined_bytes(session: &PreparedSession, path: &Path) -> Result<Vec<u8>, Box<dyn Error>> {
     let metadata = fs::symlink_metadata(path)?;
-    if metadata.file_type().is_symlink() || !metadata.is_file() || metadata.len() > 16 * 1024 * 1024
+    if metadata.file_type().is_symlink()
+        || !metadata.is_file()
+        || metadata.len() > RELEASE_RECORD_MAX_BYTES as u64
     {
         return Err("input must be a bounded regular file".into());
     }
@@ -625,6 +633,51 @@ pub(crate) mod tests {
         let at: UtcInstant = "2026-01-02T03:04:05.000000123Z".parse()?;
         let value = serde_json::to_value(context(false, at)?)?;
         assert_eq!(value["evaluated_at"], "2026-01-02T03:04:05.000000123Z");
+        Ok(())
+    }
+
+    #[test]
+    fn release_command_uses_the_injected_instant() -> Result<(), Box<dyn Error>> {
+        // S011/RF09: the actual release check command carries the injected
+        // subsecond instant through to its result envelope, not only a helper.
+        let repository = release_fixture("pass", false, "signed_ci")?;
+        let at: UtcInstant = "2026-08-08T12:00:00.000000123Z".parse()?;
+        let execution = execute_with_authority(
+            release_invocation("pass")?,
+            repository.path(),
+            at,
+            &SyntheticSignedTrust,
+        )?;
+        assert_eq!(
+            execution.payload.json["context"]["evaluated_at"],
+            "2026-08-08T12:00:00.000000123Z"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn release_record_ingress_honors_the_established_bound() -> Result<(), Box<dyn Error>> {
+        // RF07: a valid record padded with JSON whitespace behaves as specified
+        // immediately below, at and above the 16 MiB release-record bound.
+        const LIMIT: usize = 16 * 1024 * 1024;
+        let repository = release_fixture("pass", false, "signed_ci")?;
+        let root = repository.path();
+        let request =
+            SessionRequest::new(Default::default(), crate::cli::CommandName::ReleaseCheck);
+        let session = prepare(&request, root)?;
+        let relative = "releases/pass.generated.json";
+        let path = root.join(relative);
+        let base = fs::read(&path)?;
+        for (size, expected_ok) in [(LIMIT - 1, true), (LIMIT, true), (LIMIT + 1, false)] {
+            let mut padded = base.clone();
+            padded.resize(size, b' ');
+            fs::write(&path, &padded)?;
+            assert_eq!(
+                read_release_record(&session, relative).is_ok(),
+                expected_ok,
+                "release record of {size} bytes"
+            );
+        }
         Ok(())
     }
 

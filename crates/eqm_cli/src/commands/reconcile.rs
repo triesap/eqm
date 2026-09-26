@@ -388,4 +388,52 @@ mod tests {
         assert_eq!(before, after);
         Ok(())
     }
+
+    #[test]
+    fn duplicate_inventory_attributes_fail_at_locked_adapter_reconcile_ingress()
+    -> Result<(), Box<dyn Error>> {
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
+        let digest = eqm_domain::Sha256Digest::hash_content(b"adapter-fixture").to_string();
+        let mut lock = fs::read_to_string(root.join("eqm.lock"))?;
+        lock.push_str(&format!(
+            "\n[[adapters]]\nid = \"adapter.test\"\nversion = \"1.0.0\"\nsource = \"https://example.com/adapters/test\"\nresolved = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\ndigest = \"{digest}\"\nprotocol = 1\n"
+        ));
+        fs::write(root.join("eqm.lock"), lock)?;
+        let request = SessionRequest::new(Default::default(), crate::cli::CommandName::Reconcile);
+        let session = prepare(&request, root)?;
+        let target = TargetId::new("android")?;
+
+        let inventory = |attributes: &str| {
+            format!(
+                "{{\"schema\":\"{}\",\"adapter\":\"adapter.test\",\"adapter_digest\":\"{digest}\",\"subject\":{{\"repository\":\"https://example.com/product/android\",\"repository_id_digest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"scope\":{{\"kind\":\"target\",\"target\":\"android\"}},\"source_commit\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"build_id\":null,\"artifact_digest\":null,\"target_configuration_digest\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}},\"target\":\"android\",\"generated_at\":\"2026-08-07T12:00:00Z\",\"completeness\":\"complete\",\"entries\":[{{\"kind\":\"route\",\"key\":\"home\",\"attributes\":{{{attributes}}},\"source\":\"src/home.ts\"}}],\"diagnostics\":[],\"inventory_digest\":\"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"}}",
+                eqm_protocol::INVENTORY_SCHEMA
+            )
+        };
+        fs::write(
+            root.join("inventory.duplicate.json"),
+            inventory(
+                "\"enabled\":{\"type\":\"boolean\",\"value\":true},\"enabled\":{\"type\":\"boolean\",\"value\":false}",
+            ),
+        )?;
+        let duplicate = load_inventory(&session, "inventory.duplicate.json", &target);
+        assert!(duplicate.is_err());
+        assert_eq!(
+            duplicate.err().map(|error| error.to_string()).as_deref(),
+            Some("Json")
+        );
+
+        fs::write(
+            root.join("inventory.valid.json"),
+            inventory("\"enabled\":{\"type\":\"boolean\",\"value\":true}"),
+        )?;
+        let valid = load_inventory(&session, "inventory.valid.json", &target);
+        // The distinct-member control parses and reaches lock/digest validation;
+        // it is never rejected as an ambiguous duplicate.
+        assert_ne!(
+            valid.err().map(|error| error.to_string()).as_deref(),
+            Some("Json")
+        );
+        Ok(())
+    }
 }
