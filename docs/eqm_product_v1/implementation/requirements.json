@@ -1,0 +1,386 @@
+[
+  {
+    "id": "R01",
+    "title": "Product boundary",
+    "requirement": "EQM verifies product conformance; it does not implement accounts, tasks, business media storage, synchronization, UI frameworks, or deployment infrastructure.",
+    "contract": "specs/PRODUCT_SPEC.md"
+  },
+  {
+    "id": "R02",
+    "title": "Runtime roles",
+    "requirement": "Treat the Rust product CLI, KMP desktop control tower, KMP mobile edge, and relevant providers as distinct participants; the EQM CLI is a separate developer tool.",
+    "contract": "specs/PRODUCT_SPEC.md"
+  },
+  {
+    "id": "R03",
+    "title": "Deployment scope",
+    "requirement": "Start with developer tooling and CI plus native test/runtime adapters; embedded mobile evaluation, a desktop daemon, and native bindings are optional, not automatic v1 deliverables.",
+    "contract": "specs/RUNTIME_INTEGRATION.md"
+  },
+  {
+    "id": "R04",
+    "title": "Shared engine",
+    "requirement": "A single normative pure Rust evaluator serves CLI, matrices, MCP, release checks, and attestations through a thin shared application layer.",
+    "contract": "specs/ARCHITECTURE.md"
+  },
+  {
+    "id": "R05",
+    "title": "Effect separation",
+    "requirement": "Acquisition may perform explicitly authorized I/O and execution; evaluation consumes frozen inputs without ambient filesystem, network, environment, or clock discovery.",
+    "contract": "specs/ARCHITECTURE.md"
+  },
+  {
+    "id": "R06",
+    "title": "Layering",
+    "requirement": "Preserve domain, manifest, engine, protocol, runner, and MCP boundaries; avoid dependency cycles, duplicate semantics, gratuitous microcrates, or microservices.",
+    "contract": "specs/ARCHITECTURE.md"
+  },
+  {
+    "id": "R07",
+    "title": "Target model",
+    "requirement": "Separate product role, independently shipped target/build output, source ownership, shared dependencies, and scenario participant identity.",
+    "contract": "specs/DATA_MODEL.md"
+  },
+  {
+    "id": "R08",
+    "title": "Participation",
+    "requirement": "Declare approved requirement/target/profile participation; intentional role differences are not waivers; unknown applicability remains visible.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R09",
+    "title": "Comparability",
+    "requirement": "Shared comparison context must be separate from exact per-participant build/artifact/configuration identity; support approved mixed-version combinations.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R10",
+    "title": "Claim limits",
+    "requirement": "Conformance is scoped to authored contracts and evidence; equivalence is contract-relative, with explicit relational checks where actual cross-target agreement is required.",
+    "contract": "specs/PRODUCT_SPEC.md"
+  },
+  {
+    "id": "R11",
+    "title": "Completeness",
+    "requirement": "Every required coordinate is evaluated, explicitly non-applicable, or unresolved; completeness is validated and cannot be asserted by an untrusted boolean.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R12",
+    "title": "Empty scope",
+    "requirement": "Empty required release scope cannot authorize by vacuous truth; singleton comparisons are not a meaningful cross-target equivalence claim.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R13",
+    "title": "All scopes",
+    "requirement": "Evaluate target, shared-provider, and end-to-end obligations, including role-specific repeated participants and dependency effects.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R14",
+    "title": "Normative semantics",
+    "requirement": "Document and test applicability, coverage, freshness, trust, attempts, counts, status precedence, and per-facet policy composition independently of implementation.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R15",
+    "title": "No false success",
+    "requirement": "Unknown, missing, stale, unstable, failed, skipped, filtered, quarantined, insufficiently trusted, and waived states are not satisfied evidence.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R16",
+    "title": "Count integrity",
+    "requirement": "Count explicit distinct selected observations/cases rather than files or retries; bind expected selection inventory to execution.",
+    "contract": "specs/EVIDENCE_AND_IDENTITY.md"
+  },
+  {
+    "id": "R17",
+    "title": "Campaign history",
+    "requirement": "Preserve immutable attempts within an authorized campaign; select campaigns by explicit policy, retain history, prohibit cherry-picking and permanent poisoning by unrelated old campaigns.",
+    "contract": "specs/EVIDENCE_AND_IDENTITY.md"
+  },
+  {
+    "id": "R18",
+    "title": "Three identities",
+    "requirement": "Distinguish raw bytes, normalized semantic evidence, and execution/attempt identity; identical imports are idempotent and conflicting immutable attempts are visible.",
+    "contract": "specs/EVIDENCE_AND_IDENTITY.md"
+  },
+  {
+    "id": "R19",
+    "title": "Precise digests",
+    "requirement": "Use domain-separated versioned semantic projections and executable/toolchain/source provenance; do not hash only display coordinates or reuse workspace digest for unrelated fields.",
+    "contract": "specs/EVIDENCE_AND_IDENTITY.md"
+  },
+  {
+    "id": "R20",
+    "title": "Acyclic records",
+    "requirement": "Candidate subject precedes plan, evidence, frozen inputs, decision, statement, authorization, and deployment receipt; prevent digest self-reference.",
+    "contract": "specs/EVIDENCE_AND_IDENTITY.md"
+  },
+  {
+    "id": "R21",
+    "title": "Canonical protocol",
+    "requirement": "Specify canonical JSON, duplicates, numeric bounds, Unicode preservation, set/sequence ordering, null/absence, and time precision; preserve original signed bytes.",
+    "contract": "specs/API_CONTRACTS.md"
+  },
+  {
+    "id": "R22",
+    "title": "Frozen provenance",
+    "requirement": "Trusted runs use immutable approved inputs; local dirty state is explicit; evaluation cannot mix generations of live reads.",
+    "contract": "specs/EVIDENCE_AND_IDENTITY.md"
+  },
+  {
+    "id": "R23",
+    "title": "Protected authority",
+    "requirement": "Protected release authority covers policy, contracts, participation, evidence mappings, selections, waivers, trust configuration, and the evaluator itself; candidates cannot grade themselves.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R24",
+    "title": "Trust acceptance",
+    "requirement": "Cryptographic validity, identity/issuer, authorization, producer/build, exact subject, and temporal/revocation constraints are independently checked; claims cannot raise trust.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R25",
+    "title": "Verification integration",
+    "requirement": "Use reviewed cryptography and a real verifier integration; Sigstore bundles are the approved default CI direction, with provider-neutral internal boundaries and explicit configuration.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R26",
+    "title": "Receipt integrity",
+    "requirement": "Persist exact verification context; imported verified flags, public constructors, or test-only synthetic trust cannot manufacture production authority.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R27",
+    "title": "Release separation",
+    "requirement": "Evaluation, signing, release authorization, and deployment are distinct; signed failures remain failures and unknown never authorizes.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R28",
+    "title": "Exposure and timing",
+    "requirement": "Compare actual runtime facts to expectations; distinguish pre-release readiness from post-deployment conformance; observations cannot be required before they can exist.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R29",
+    "title": "Waivers",
+    "requirement": "Only approved scoped time-bounded exceptions contribute to conditional conclusions; no fabricated evidence, implicit approvals, automatic renewal, or blanket waiver inclusion.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R30",
+    "title": "Concrete execution plan",
+    "requirement": "Dry-run resolves and reports exact executable, argv, cwd, selector, environment references, limits, capabilities, and outputs without executing; bind execution to approval.",
+    "contract": "specs/EXECUTION_SECURITY.md"
+  },
+  {
+    "id": "R31",
+    "title": "Worker isolation",
+    "requirement": "Workers and executable discovery adapters cannot write authority, evaluator, durable evidence store, or signing credentials; choose isolation matching the host threat model.",
+    "contract": "specs/EXECUTION_SECURITY.md"
+  },
+  {
+    "id": "R32",
+    "title": "Whole lifecycle bounds",
+    "requirement": "Timeout, cancellation, overflow, descendant cleanup, output drainage, and errors are supervised for the entire invocation, with explicit supported-host guarantees.",
+    "contract": "specs/EXECUTION_SECURITY.md"
+  },
+  {
+    "id": "R33",
+    "title": "Bounded filesystem",
+    "requirement": "Use confined handle-based access, bounded preallocation/read limits, post-execution result checks, and race-aware writes; claimed artifact roles are not observations.",
+    "contract": "specs/EXECUTION_SECURITY.md"
+  },
+  {
+    "id": "R34",
+    "title": "Secrets and environment",
+    "requirement": "No implicit network or inherited environment; resolve authorized secret references, redact retained output, and never render secrets or assume redaction prevents exfiltration.",
+    "contract": "specs/EXECUTION_SECURITY.md"
+  },
+  {
+    "id": "R35",
+    "title": "Persistence",
+    "requirement": "Immutable content-addressed objects plus a transactional local index; publish objects durably before committing references and recover orphans without phantom completed records.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R36",
+    "title": "SQLite operations",
+    "requirement": "Use an audited SQLite build with the WAL-reset fix, local-host WAL, short transactions, bounded writer contention, explicit checkpoint ownership, and tested durability.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R37",
+    "title": "Retention and privacy",
+    "requirement": "Define retention classes, reader/run leases, GC reachability, archived release protection, and sensitive attachment handling; immutability does not require infinite retention.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R38",
+    "title": "Replay versus current acceptance",
+    "requirement": "Historical decisions remain replayable; current acceptance reevaluates freshness, authority, revocation, and deployment conditions without rewriting history.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R39",
+    "title": "Safe caching",
+    "requirement": "Stage caches with complete identities, trust/evaluator versions, validity boundaries, and event invalidation; no stale pass reuse.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R40",
+    "title": "Affected analysis",
+    "requirement": "Reverse dependencies include shared sources, contract/profile/runner/adapter/trust changes; unknown or deleted paths widen impact conservatively; wire verify --affected.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R41",
+    "title": "Batching and concurrency",
+    "requirement": "Batch test invocations by runner/target/device/selection; bounded queues, device exclusivity, deterministic aggregation, and explicit cancellation precede concurrency optimization.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R42",
+    "title": "Global resource limits",
+    "requirement": "Bound parsing depth/bytes, graph expansion, profile combinations, candidate evidence, attachment sizes, queues, and requests; limits never silently remove obligations.",
+    "contract": "specs/EXECUTION_SECURITY.md"
+  },
+  {
+    "id": "R43",
+    "title": "Reference equivalence",
+    "requirement": "Compare optimized results to a simple reference path and realistic end-to-end benchmarks; declared budgets are not measured results.",
+    "contract": "specs/STORAGE_AND_PERFORMANCE.md"
+  },
+  {
+    "id": "R44",
+    "title": "Coherent interfaces",
+    "requirement": "CLI check/matrix/context/MCP/report/attestation views derive from the same snapshot and explanation records; filters do not recompute scope or completeness.",
+    "contract": "specs/API_CONTRACTS.md"
+  },
+  {
+    "id": "R45",
+    "title": "Protocol errors",
+    "requirement": "Stable machine errors with context and source locations across CLI/MCP/optional SDK; errors under JSON output remain machine-readable where parsing permits.",
+    "contract": "specs/API_CONTRACTS.md"
+  },
+  {
+    "id": "R46",
+    "title": "Safe reports",
+    "requirement": "Expose snapshot identity, scope, freshness, trust, reasons, waivers, and truncation; snapshot-bound pagination/incremental updates must not overstate assurance.",
+    "contract": "specs/API_CONTRACTS.md"
+  },
+  {
+    "id": "R47",
+    "title": "MCP permissions",
+    "requirement": "Read-only by default, private stdio or restricted IPC, bounded requests, untrusted text labeling, and separate explicit authorization for any mutating/executing capability.",
+    "contract": "specs/EXECUTION_SECURITY.md"
+  },
+  {
+    "id": "R48",
+    "title": "Cross-runtime fixtures",
+    "requirement": "Verify mobile offline capture/edit/restart/sync, desktop correct revision, and CLI inspect/export with no duplicates or cross-account disclosure; include failure and compatibility cases.",
+    "contract": "specs/RUNTIME_INTEGRATION.md"
+  },
+  {
+    "id": "R49",
+    "title": "Optional SDK safety",
+    "requirement": "When explicitly activated, choose one proven bridge; define ownership, handles, cancellation, threading, numeric mappings, version negotiation, and target packaging; JNA Kotlin is not Kotlin/Native.",
+    "contract": "specs/RUNTIME_INTEGRATION.md"
+  },
+  {
+    "id": "R50",
+    "title": "Code conventions",
+    "requirement": "Typed contextual errors/newtypes, private validation boundaries, immutable inputs, narrow traits, explicit lifecycle state, no ambient globals, and no production panic/synthetic trust shortcuts.",
+    "contract": "specs/ARCHITECTURE.md"
+  },
+  {
+    "id": "R51",
+    "title": "Unsafe boundaries",
+    "requirement": "Keep pure core unsafe-free; any unavoidable native/OS boundary requires a narrow documented reviewed exception rather than blanket relaxation of repository rules.",
+    "contract": "specs/ARCHITECTURE.md"
+  },
+  {
+    "id": "R52",
+    "title": "Compatibility",
+    "requirement": "Version wire semantics, evaluator, ABI, and database independently; do not silently change current v1 identities or add implicit legacy readers; preserve signed originals during explicit migration.",
+    "contract": "specs/COMPATIBILITY.md"
+  },
+  {
+    "id": "R53",
+    "title": "Verification",
+    "requirement": "Every commit is tested, self-reviewed, independently reviewable, and known-good relative to an explicit baseline; maintain schema parity, formatting, linting, docs, security, fuzz, and package gates.",
+    "contract": "implementation/VERIFICATION.md"
+  },
+  {
+    "id": "R54",
+    "title": "Operational rollout",
+    "requirement": "Shadow release gating first, independent review, then explicit enforcement; rollback to known-good evaluator or pause promotion, never permissive fallback.",
+    "contract": "runbooks/RELEASE_OPERATIONS.md"
+  },
+  {
+    "id": "R55",
+    "title": "Ownership",
+    "requirement": "Assign semantic, trust, execution, storage, platform, and release owners; document supported-host capabilities, incident response, and dependency governance.",
+    "contract": "runbooks/OPERATIONS.md"
+  },
+  {
+    "id": "R56",
+    "title": "Spec-first workflow",
+    "requirement": "Durable approved specs anchor incremental code changes; follow ordered commits and preserve unrelated work; record deviations and unresolved decisions rather than inventing product rules.",
+    "contract": "PROMPT.md"
+  },
+  {
+    "id": "R57",
+    "title": "No premature readiness",
+    "requirement": "The approved design and this package are not implemented functionality, successful tests, or certification; report verification honestly and keep release authority disabled until gates pass.",
+    "contract": "implementation/STATUS.md"
+  },
+  {
+    "id": "R58",
+    "title": "Policy/profile selection",
+    "requirement": "Select exact policy/profile revisions with explicit known values and duplicate rejection; protected modes cannot fall back to development defaults.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R59",
+    "title": "Structured inspections",
+    "requirement": "Structural checks and trusted inventory establish actual artifact roles/exposure; incomplete or untrusted inventory cannot prove absence.",
+    "contract": "specs/EVALUATION_SEMANTICS.md"
+  },
+  {
+    "id": "R60",
+    "title": "Acquisition versus conformance",
+    "requirement": "A successful runner exit or completed selection is not conformance; empty accidental selections fail visibly and policy minimums govern evaluation.",
+    "contract": "specs/API_CONTRACTS.md"
+  },
+  {
+    "id": "R61",
+    "title": "Repo governance",
+    "requirement": "Preserve useful xtask constraints while admitting approved spec/docs and necessary platform work; use native Rust automation, exact pins, and no generated state or credentials in Git.",
+    "contract": "repo/BASELINE.md"
+  },
+  {
+    "id": "R62",
+    "title": "Agent output contract",
+    "requirement": "After each step report files, commands/results, review, commit SHA, baseline exceptions, risks, and whether the next step is safe; do not silently skip/merge/reorder/broaden steps.",
+    "contract": "implementation/STEP_REPORT_TEMPLATE.md"
+  },
+  {
+    "id": "R63",
+    "title": "Deployment verification",
+    "requirement": "Authorization binds exact artifacts, destination/channel, policy, deviations and validity; deployment checks it, and transformed artifacts need explicit provenance or reevaluation.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  },
+  {
+    "id": "R64",
+    "title": "Transport versus trust",
+    "requirement": "Schema parsing, storage lookup, local process privilege, and imported signatures are distinct boundaries; payload claims never become trusted capabilities.",
+    "contract": "specs/TRUST_AND_RELEASE.md"
+  }
+]

@@ -1,0 +1,454 @@
+[
+  {
+    "id": "F01",
+    "priority": "P1",
+    "title": "Read-only views do not evaluate stored evidence",
+    "observation": "check unconditionally reports derived obligations missing; conformance/evidence matrices hardcode missing; MCP context/findings resources are incomplete placeholders. Build a shared evaluated snapshot and make every view render it.",
+    "paths": [
+      "crates/eqm_cli/src/commands/check.rs",
+      "crates/eqm_cli/src/commands/matrix.rs",
+      "crates/eqm_mcp/src/resources.rs"
+    ],
+    "requirements": [
+      "R04",
+      "R44",
+      "R46"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA14",
+      "RA17",
+      "RA18",
+      "RA19"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F02",
+    "priority": "P1",
+    "title": "Production trust and signing are not wired",
+    "observation": "Release execution uses UnconfiguredTrust while the engine requires signed CI trust; attest rejects a signer and deliberately reports unknown conformance. Safe failure is not implemented trusted release capability. Connect a real configured verifier and explicit signer only after the other release defects are fixed.",
+    "paths": [
+      "crates/eqm_cli/src/commands/release_check.rs",
+      "crates/eqm_cli/src/commands/attest.rs",
+      "crates/eqm_runner/src/ci.rs"
+    ],
+    "requirements": [
+      "R24",
+      "R25",
+      "R26",
+      "R27"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA06"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F03",
+    "priority": "P1",
+    "title": "Release selection uses development authority",
+    "observation": "The release command invokes development derive, selecting CandidateLocal/Development and no exact release context instead of protected release authority. Preserve the engine selection boundary and protected explicit profiles.",
+    "paths": [
+      "crates/eqm_cli/src/commands/evaluation.rs",
+      "crates/eqm_cli/src/commands/release_check.rs",
+      "crates/eqm_engine/src/selection.rs"
+    ],
+    "requirements": [
+      "R23",
+      "R58"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA04",
+      "RA05",
+      "RA16"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F04",
+    "priority": "P1",
+    "title": "Release scope drops provider and end-to-end obligations",
+    "observation": "obligation_statuses filters only Target scope and then supplies completeness true. Evaluate all required scope types and unknown applicability using a validated universe. Empty input and singleton equivalence must not be mistaken for meaningful assurance.",
+    "paths": [
+      "crates/eqm_cli/src/commands/release_check.rs",
+      "crates/eqm_engine/src/conformance.rs",
+      "crates/eqm_engine/src/obligations.rs"
+    ],
+    "requirements": [
+      "R11",
+      "R12",
+      "R13"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA01",
+      "RA06"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F05",
+    "priority": "P1",
+    "title": "Release reimplements inconsistent evidence semantics",
+    "observation": "Release status code checks limited counts, can fall through to satisfied for non-executable payloads, ignores important retry/skip states and counts records rather than canonical observations. Canonical engine ordering differs. Delete duplicate semantics after a normative regression-tested replacement.",
+    "paths": [
+      "crates/eqm_cli/src/commands/release_check.rs",
+      "crates/eqm_engine/src/outcomes.rs"
+    ],
+    "requirements": [
+      "R14",
+      "R15",
+      "R16"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA02",
+      "RA03",
+      "RA04",
+      "RA07",
+      "RA08",
+      "RA13"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F06",
+    "priority": "P1",
+    "title": "Release exposure and trust completeness are overstated",
+    "observation": "Presence of an exact runtime document is treated as exposure match; optional verification values can be discarded by aggregation; waivers are empty and equivalence hardcoded unknown. Compare actual facts, require every mandatory receipt and evaluate only contributing waivers/comparison inputs.",
+    "paths": [
+      "crates/eqm_cli/src/commands/release_check.rs"
+    ],
+    "requirements": [
+      "R24",
+      "R28",
+      "R29",
+      "R44"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA09",
+      "RA21"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F07",
+    "priority": "P1",
+    "title": "Runner timeout does not cover whole invocation",
+    "observation": "After the immediate child exits, blocking reader joins can outlive the deadline while descendants hold pipes open. Local output overflow is not signaled promptly; non-Unix tree termination is not equivalent. Supervise descendants/drainage/cancellation/overflow under the entire lifecycle budget.",
+    "paths": [
+      "crates/eqm_runner/src/execution.rs"
+    ],
+    "requirements": [
+      "R31",
+      "R32"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA11"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F08",
+    "priority": "P1",
+    "title": "Filesystem bounds and observed roles are inconsistent",
+    "observation": "verify reads a result file before bounding it, persistence reads an existing collision file without a prior cap, and structural leaf metadata can miss ancestor symlinks. The CLI copies authored artifact roles into observed roles. Centralize confined bounded access and independent observations.",
+    "paths": [
+      "crates/eqm_cli/src/commands/verify.rs",
+      "crates/eqm_cli/src/commands/check.rs",
+      "crates/eqm_runner/src/persistence.rs",
+      "crates/eqm_engine/src/structure.rs"
+    ],
+    "requirements": [
+      "R33",
+      "R59"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA12",
+      "RA21"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F09",
+    "priority": "P1",
+    "title": "Evidence provenance uses incomplete digests",
+    "observation": "Specification and binding fields use an ID-pair hash, several semantic fields reuse workspace digest, and resolved runner evidence identity omits executable bytes. Local HEAD provenance does not bind dirty working content. Global workspace hashing catches many edits but does not repair imprecise component identity.",
+    "paths": [
+      "crates/eqm_cli/src/commands/verify.rs",
+      "crates/eqm_runner/src/resolution.rs"
+    ],
+    "requirements": [
+      "R19",
+      "R22"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA13",
+      "RA15"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F10",
+    "priority": "High product fit",
+    "title": "Single roots and policy-wide target fan-out constrain KMP roles",
+    "observation": "Duplicate roots are rejected, artifacts are tied to one target root, and each_target fans out over a policy-wide target set. Separate shipped outputs from shared-source ownership and model role-aware participation/cohorts. Intentional asymmetry is not a waiver.",
+    "paths": [
+      "crates/eqm_manifest/src/loader.rs",
+      "crates/eqm_engine/src/structure.rs",
+      "crates/eqm_engine/src/obligations.rs"
+    ],
+    "requirements": [
+      "R07",
+      "R08",
+      "R09"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA05"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F11",
+    "priority": "Completion",
+    "title": "verify --affected does not filter actual work",
+    "observation": "A baseline is prepared and its digest discarded; the ordinary plan is then executed. Wire conservative reverse dependency impact into plan selection and approval.",
+    "paths": [
+      "crates/eqm_cli/src/commands/verify.rs",
+      "crates/eqm_engine/src/affected.rs"
+    ],
+    "requirements": [
+      "R40"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA10"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F12",
+    "priority": "Safety/completion",
+    "title": "Dry-run is not the promised concrete execution plan",
+    "observation": "Dry-run reports selected binding/specification identifiers before full resolution. It must show safe exact executable/argv/cwd/environment-reference/limit/output details without running anything.",
+    "paths": [
+      "crates/eqm_cli/src/commands/verify.rs",
+      "docs/evidence-and-trust.md"
+    ],
+    "requirements": [
+      "R30"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F13",
+    "priority": "Correctness",
+    "title": "Verification acquisition success can overstate conformance",
+    "observation": "verify uses specification minimum counts rather than necessarily stronger policy thresholds, and empty plans may succeed. Separate selected-run completion from complete policy acceptance and reject accidental no-op selection.",
+    "paths": [
+      "crates/eqm_cli/src/commands/verify.rs"
+    ],
+    "requirements": [
+      "R16",
+      "R60"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA01",
+      "RA02",
+      "RA03",
+      "RA20"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F14",
+    "priority": "Identity/API",
+    "title": "Public obligation IDs omit profiles and release context",
+    "observation": "Displayed IDs omit context included in internal keys. Selection also assumes one development policy and duplicate profile requests can overwrite each other. Bind complete public coordinates and exact explicit revision requests with duplicate rejection.",
+    "paths": [
+      "crates/eqm_cli/src/commands/evaluation.rs",
+      "crates/eqm_engine/src/obligations.rs"
+    ],
+    "requirements": [
+      "R19",
+      "R58"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA16"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F15",
+    "priority": "API/code health",
+    "title": "Error propagation discards useful context",
+    "observation": "Session loading replaces detailed errors with stage-only variants; main routes failures to stderr rather than requested machine envelopes. Preserve typed causal/source information and documented machine error behavior.",
+    "paths": [
+      "crates/eqm_cli/src/session.rs",
+      "crates/eqm_manifest/src/loader.rs",
+      "crates/eqm_cli/src/main.rs"
+    ],
+    "requirements": [
+      "R45",
+      "R50"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA14",
+      "RA20"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F16",
+    "priority": "Replay/storage",
+    "title": "CI replay guard is ephemeral and keyed too coarsely",
+    "observation": "Invocation-local CI-run identity both forgets history across restarts and rejects multiple legitimate evidence results from one run. Persist precise result/attempt identities with idempotent imports and explicit conflicts.",
+    "paths": [
+      "crates/eqm_runner/src/ci.rs"
+    ],
+    "requirements": [
+      "R17",
+      "R18",
+      "R35"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA03",
+      "RA08",
+      "RA15"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F17",
+    "priority": "Portability/completion",
+    "title": "Host execution integration is incomplete",
+    "observation": "CLI selects local execution, hardcodes a Unix PATH, supplies no secrets, lacks caller cancellation wiring and runs sequentially. Add explicit host capability/configuration and bounded scheduling without assuming every backend or host is supported.",
+    "paths": [
+      "crates/eqm_cli/src/commands/verify.rs",
+      "crates/eqm_runner/src/execution.rs"
+    ],
+    "requirements": [
+      "R30",
+      "R31",
+      "R32",
+      "R34",
+      "R41"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA11",
+      "RA18"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F18",
+    "priority": "Storage",
+    "title": "Concurrent store initialization and host durability need work",
+    "observation": "Check-then-create directory initialization can fail under concurrent first writers; platform permission/sync behavior needs native validation. Add revalidation, durable object/index publication and crash/concurrency tests.",
+    "paths": [
+      "crates/eqm_runner/src/persistence.rs"
+    ],
+    "requirements": [
+      "R35",
+      "R36"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [
+      "RA12",
+      "RA15"
+    ],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F19",
+    "priority": "Governance",
+    "title": "Repository gates restrict legitimate integration changes",
+    "observation": "xtask prohibits .github/scripts, exact docs inventory and generic private words. Narrowly admit approved docs/platform work while retaining safety and explicit CI selection. No observed GitHub Actions run is not proof there is no external CI.",
+    "paths": [
+      "tools/xtask/src/main.rs",
+      "CONTRIBUTING.md",
+      "AGENTS.md"
+    ],
+    "requirements": [
+      "R53",
+      "R61"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  },
+  {
+    "id": "F20",
+    "priority": "Performance/testing",
+    "title": "Benchmarks and some tests validate incomplete paths",
+    "observation": "Warm context uses largely empty resources; cold validation excludes canonicalization; evidence/trust/history/profile/matrix workloads are incomplete. Some command tests assert missing/nonempty placeholders. Benchmark real completed work and test the full lifecycle with a reference oracle.",
+    "paths": [
+      "tools/benchmarks/src/main.rs",
+      "crates/eqm_mcp/src/resources.rs",
+      "crates/eqm_cli/src/commands/check.rs",
+      "crates/eqm_cli/src/commands/matrix.rs"
+    ],
+    "requirements": [
+      "R43",
+      "R53"
+    ],
+    "status": "open_revalidate",
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_regressions": [],
+    "revalidated_at_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "review_method": "Full-source static review; runtime regression reproduction remains assigned to implementation steps."
+  }
+]

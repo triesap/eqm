@@ -1,0 +1,939 @@
+[
+  {
+    "id": "AC001",
+    "requirements": [
+      "R01"
+    ],
+    "title": "Business-domain separation",
+    "given": "Product account/task/media fixtures exist.",
+    "when": "Review dependencies and public domain models.",
+    "expected": "EQM evaluates requirements without becoming a business database, sync implementation or UI framework.",
+    "lane": "Architecture review",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC002",
+    "requirements": [
+      "R02"
+    ],
+    "title": "Distinct runtime roles",
+    "given": "CLI, desktop, mobile and provider participants are declared.",
+    "when": "Generate a target/scenario view.",
+    "expected": "Roles and participant occurrences remain distinct from the EQM developer CLI.",
+    "lane": "Unit/integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC003",
+    "requirements": [
+      "R03"
+    ],
+    "title": "No implicit embedding",
+    "given": "Default build/tooling is configured.",
+    "when": "Inspect artifacts and dependencies.",
+    "expected": "No mobile evaluator, bridge or daemon is introduced without optional activation.",
+    "lane": "Package/architecture",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC004",
+    "requirements": [
+      "R04"
+    ],
+    "title": "One decision everywhere",
+    "given": "One frozen input produces a decision.",
+    "when": "Render CLI, matrix, MCP and statement views.",
+    "expected": "Statuses and contributing reasons agree on the same snapshot.",
+    "lane": "Cross-interface integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA17"
+    ]
+  },
+  {
+    "id": "AC005",
+    "requirements": [
+      "R05"
+    ],
+    "title": "Pure evaluation",
+    "given": "Inputs and explicit time are supplied with execution/network spies.",
+    "when": "Evaluate and query missing inputs.",
+    "expected": "No process/network/ambient read is attempted; missing facts remain explicit.",
+    "lane": "Unit/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA20"
+    ]
+  },
+  {
+    "id": "AC006",
+    "requirements": [
+      "R06"
+    ],
+    "title": "Acyclic layering",
+    "given": "All crate/module dependencies are available.",
+    "when": "Run dependency/architecture tests.",
+    "expected": "No domain/engine I/O dependency or CLI/MCP-to-application cycle appears.",
+    "lane": "Build/architecture",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC007",
+    "requirements": [
+      "R07"
+    ],
+    "title": "Shared KMP sources",
+    "given": "Two output targets use one common source component.",
+    "when": "Load bindings and change the shared source.",
+    "expected": "Both outputs remain valid and both are affected without relaxed confinement.",
+    "lane": "Unit/integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC008",
+    "requirements": [
+      "R08"
+    ],
+    "title": "Role-specific applicability",
+    "given": "Mobile-only capture and an unresolved profile coordinate exist.",
+    "when": "Derive the universe.",
+    "expected": "Intentional exclusions are justified and unknown coordinates are retained.",
+    "lane": "Property",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC009",
+    "requirements": [
+      "R09"
+    ],
+    "title": "Different exact builds",
+    "given": "Desktop N+1 and mobile N are an approved cohort.",
+    "when": "Compare them, then substitute one artifact.",
+    "expected": "Legitimate distinct builds compare; unauthorized substitution fails exact binding.",
+    "lane": "Integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC010",
+    "requirements": [
+      "R10"
+    ],
+    "title": "Contract-relative equivalence",
+    "given": "Independent target passes exist without required relational evidence.",
+    "when": "Request cross-runtime assurance.",
+    "expected": "The relational obligation remains blocking and the claim is explicitly scoped.",
+    "lane": "Unit/integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC011",
+    "requirements": [
+      "R11"
+    ],
+    "title": "Completeness coverage",
+    "given": "An expected provider/target/profile coordinate is omitted.",
+    "when": "Construct a prepared decision.",
+    "expected": "Completeness cannot be asserted; omission is visible and non-authorizing.",
+    "lane": "Unit/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA01",
+      "RA06"
+    ]
+  },
+  {
+    "id": "AC012",
+    "requirements": [
+      "R12"
+    ],
+    "title": "Empty/singleton scope",
+    "given": "An empty release scope or one-target comparison is requested.",
+    "when": "Evaluate without explicit protected empty-scope permission.",
+    "expected": "No vacuous release authorization or meaningful cross-target equivalence claim.",
+    "lane": "Unit",
+    "status": "not_run",
+    "review_regressions": [
+      "RA01"
+    ]
+  },
+  {
+    "id": "AC013",
+    "requirements": [
+      "R13"
+    ],
+    "title": "All scope types",
+    "given": "Target, provider and repeated-role scenario obligations exist.",
+    "when": "Omit end-to-end evidence while target evidence passes.",
+    "expected": "No full release authorization; missing dependencies are explained.",
+    "lane": "Integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC014",
+    "requirements": [
+      "R14"
+    ],
+    "title": "Facet policy composition",
+    "given": "Two facets have different matching policy strengths.",
+    "when": "Derive and evaluate constraints.",
+    "expected": "Only relevant rules compose and canonical precedence is stable.",
+    "lane": "Table/property",
+    "status": "not_run",
+    "review_regressions": [
+      "RA02",
+      "RA03",
+      "RA04",
+      "RA05",
+      "RA07"
+    ]
+  },
+  {
+    "id": "AC015",
+    "requirements": [
+      "R15"
+    ],
+    "title": "Non-success payloads",
+    "given": "Failed manual review, skipped/quarantined tests and unknown verification are valid inputs.",
+    "when": "Evaluate each supported payload.",
+    "expected": "No catch-all success; each remains its normative blocking/conditional state.",
+    "lane": "Table/property",
+    "status": "not_run",
+    "review_regressions": [
+      "RA02",
+      "RA03"
+    ]
+  },
+  {
+    "id": "AC016",
+    "requirements": [
+      "R16"
+    ],
+    "title": "Count integrity",
+    "given": "A report is split, duplicated and retried while expected cases are unchanged.",
+    "when": "Import and evaluate minimum count.",
+    "expected": "Only defined distinct observations count; missing expected cases remain missing.",
+    "lane": "Property/integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA02",
+      "RA03"
+    ]
+  },
+  {
+    "id": "AC017",
+    "requirements": [
+      "R17"
+    ],
+    "title": "Campaign selection",
+    "given": "One campaign has a fail/pass retry and a later approved campaign exists.",
+    "when": "Select under explicit policy.",
+    "expected": "Retries remain visible; selection is authorized and old unrelated history is not permanent poison.",
+    "lane": "Unit/integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA03",
+      "RA08"
+    ]
+  },
+  {
+    "id": "AC018",
+    "requirements": [
+      "R18"
+    ],
+    "title": "Transport and attempt identity",
+    "given": "Equivalent JSON transports and contradictory same-attempt assertions arrive.",
+    "when": "Import repeatedly.",
+    "expected": "Duplicates are idempotent; conflicting attempts persist and block affected acceptance.",
+    "lane": "Storage/property",
+    "status": "not_run",
+    "review_regressions": [
+      "RA03",
+      "RA08",
+      "RA13",
+      "RA15"
+    ]
+  },
+  {
+    "id": "AC019",
+    "requirements": [
+      "R19"
+    ],
+    "title": "Digest binding",
+    "given": "Runner executable or a binding's semantics change without its ID changing.",
+    "when": "Compare resulting identities and cache eligibility.",
+    "expected": "Appropriate component digest changes and incompatible evidence is rejected.",
+    "lane": "Property",
+    "status": "not_run",
+    "review_regressions": [
+      "RA09",
+      "RA13"
+    ]
+  },
+  {
+    "id": "AC020",
+    "requirements": [
+      "R20"
+    ],
+    "title": "Acyclic lifecycle",
+    "given": "A candidate plan precedes its evidence and decision.",
+    "when": "Validate references including a synthetic cycle.",
+    "expected": "Valid flow works; future/self-referential input identities are rejected.",
+    "lane": "Unit",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC021",
+    "requirements": [
+      "R21"
+    ],
+    "title": "Canonical wire vectors",
+    "given": "Duplicate keys, large integers, Unicode and set/sequence fixtures exist.",
+    "when": "Round-trip each permitted representation.",
+    "expected": "Rejection/encoding is specified and digests agree across supported consumers.",
+    "lane": "Protocol/property",
+    "status": "not_run",
+    "review_regressions": [
+      "RA13",
+      "RA14"
+    ]
+  },
+  {
+    "id": "AC022",
+    "requirements": [
+      "R22"
+    ],
+    "title": "Frozen provenance",
+    "given": "Sources/index entries change during preparation or a local tree is dirty.",
+    "when": "Acquire/evaluate a snapshot.",
+    "expected": "One consistent generation is bound; dirty bytes never masquerade as clean HEAD.",
+    "lane": "Integration/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA15"
+    ]
+  },
+  {
+    "id": "AC023",
+    "requirements": [
+      "R23"
+    ],
+    "title": "Protected authority",
+    "given": "Candidate deletes a critical requirement/test or changes grader/policy.",
+    "when": "Run protected evaluation.",
+    "expected": "Protected expectations and evaluator remain authoritative; weakening cannot self-authorize.",
+    "lane": "Security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA04",
+      "RA05"
+    ]
+  },
+  {
+    "id": "AC024",
+    "requirements": [
+      "R24"
+    ],
+    "title": "Independent trust dimensions",
+    "given": "Signature is valid but subject, issuer, builder or authority is wrong.",
+    "when": "Verify mandatory records.",
+    "expected": "Each incorrect dimension rejects acceptance; absent receipts are not discarded.",
+    "lane": "Crypto/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA06",
+      "RA21"
+    ]
+  },
+  {
+    "id": "AC025",
+    "requirements": [
+      "R25"
+    ],
+    "title": "Real cryptographic path",
+    "given": "Reviewed verifier and test-only signed fixtures are configured.",
+    "when": "Verify positive and tampered bundles.",
+    "expected": "Cryptography actually runs; no synthetic production trust or disabled claim checks.",
+    "lane": "Crypto integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC026",
+    "requirements": [
+      "R26"
+    ],
+    "title": "Receipt import boundary",
+    "given": "Input contains a serialized verified flag or test-only authority marker.",
+    "when": "Import/replay through production APIs.",
+    "expected": "Verification boundary is reestablished; flags cannot create authority.",
+    "lane": "Security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA06"
+    ]
+  },
+  {
+    "id": "AC027",
+    "requirements": [
+      "R27"
+    ],
+    "title": "Signing is not approval",
+    "given": "A failed/unknown decision is accurately signed.",
+    "when": "Attempt release authorization.",
+    "expected": "Statement remains valid as a failure record but cannot authorize promotion.",
+    "lane": "Integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC028",
+    "requirements": [
+      "R28"
+    ],
+    "title": "Readiness versus deployment",
+    "given": "A runtime snapshot is present but facts mismatch, or post-deploy data does not yet exist.",
+    "when": "Evaluate readiness/post-deploy use cases.",
+    "expected": "Actual facts are compared; no presence-as-match or circular prerequisite.",
+    "lane": "Integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA21"
+    ]
+  },
+  {
+    "id": "AC029",
+    "requirements": [
+      "R29"
+    ],
+    "title": "Precise waivers",
+    "given": "Expired, unrelated, and valid scoped waivers are provided.",
+    "when": "Evaluate affected obligations and reports.",
+    "expected": "Only authorized contributing waivers apply and none becomes satisfied evidence.",
+    "lane": "Table/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA09"
+    ]
+  },
+  {
+    "id": "AC030",
+    "requirements": [
+      "R30"
+    ],
+    "title": "Concrete dry-run",
+    "given": "Manifest declares a runner with explicit inputs.",
+    "when": "Plan, then change executable/argv before execution.",
+    "expected": "Plan is complete and non-executing; changed plan invalidates approval.",
+    "lane": "Runner integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC031",
+    "requirements": [
+      "R31"
+    ],
+    "title": "Host isolation",
+    "given": "Untrusted worker attempts to modify authority/store or access signer material.",
+    "when": "Execute under approved host policy.",
+    "expected": "Access is denied or unsupported isolation rejects execution before launch.",
+    "lane": "Native security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA11"
+    ]
+  },
+  {
+    "id": "AC032",
+    "requirements": [
+      "R32"
+    ],
+    "title": "Whole invocation bounds",
+    "given": "Parent exits with descendant pipes open or streams flood during cancellation.",
+    "when": "Supervise through deadline/shutdown.",
+    "expected": "Owned work and drainage terminate within declared bounds with explicit outcome.",
+    "lane": "Native adversarial",
+    "status": "not_run",
+    "review_regressions": [
+      "RA11"
+    ]
+  },
+  {
+    "id": "AC033",
+    "requirements": [
+      "R33"
+    ],
+    "title": "Filesystem safety",
+    "given": "Parent symlink, replaced result path or oversized collision file is supplied.",
+    "when": "Inspect/read/persist using bounded handles.",
+    "expected": "No escape, unbounded read or false structural role confirmation.",
+    "lane": "Security/storage",
+    "status": "not_run",
+    "review_regressions": [
+      "RA12"
+    ]
+  },
+  {
+    "id": "AC034",
+    "requirements": [
+      "R34"
+    ],
+    "title": "Secrets/environment",
+    "given": "Ambient environment contains a marker and approved secret is used in fixture output.",
+    "when": "Run and inspect plan/log/error retention.",
+    "expected": "Only declared inputs exist; secrets are absent/redacted from retained views.",
+    "lane": "Security",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC035",
+    "requirements": [
+      "R35"
+    ],
+    "title": "Crash-safe publication",
+    "given": "Fault injection stops each object/index publication boundary.",
+    "when": "Reopen/recover.",
+    "expected": "No visible completed record lacks installed bytes; orphans are safely recoverable.",
+    "lane": "Storage fault injection",
+    "status": "not_run",
+    "review_regressions": [
+      "RA08",
+      "RA12",
+      "RA15"
+    ]
+  },
+  {
+    "id": "AC036",
+    "requirements": [
+      "R36"
+    ],
+    "title": "SQLite runtime and contention",
+    "given": "Multiple readers/writers/checkpoint attempts use the linked runtime.",
+    "when": "Inspect fix/runtime and stress transactions.",
+    "expected": "Audited fixed runtime, bounded contention and coherent local-host WAL semantics.",
+    "lane": "Native/storage",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC037",
+    "requirements": [
+      "R37"
+    ],
+    "title": "Retention and GC leases",
+    "given": "An object is live in a reader/run/archive while cleanup runs.",
+    "when": "Apply configured retention/GC.",
+    "expected": "Live/release references survive; only eligible unreachable objects are removed.",
+    "lane": "Storage/property",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC038",
+    "requirements": [
+      "R38"
+    ],
+    "title": "Historical/current split",
+    "given": "Evidence expires or trust changes after an accepted decision.",
+    "when": "Replay history and check current acceptance.",
+    "expected": "History reproduces; present authorization reevaluates and may reject.",
+    "lane": "Integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC039",
+    "requirements": [
+      "R39"
+    ],
+    "title": "Cache validity",
+    "given": "A bound component or validity boundary changes.",
+    "when": "Reuse a staged cache entry.",
+    "expected": "Invalid or expired acceptance is not reused; exact unchanged work may be reused.",
+    "lane": "Property",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC040",
+    "requirements": [
+      "R40"
+    ],
+    "title": "Affected selection",
+    "given": "Shared source, deletion, rename and unmapped path changes exist.",
+    "when": "Run affected analysis and verify --affected planning.",
+    "expected": "Dependent work is selected and uncertainty widens rather than drops scope.",
+    "lane": "Integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA10"
+    ]
+  },
+  {
+    "id": "AC041",
+    "requirements": [
+      "R41"
+    ],
+    "title": "Batch scheduling",
+    "given": "Multiple requirements share cases/devices with bounded capacity.",
+    "when": "Schedule and cancel batched acquisition.",
+    "expected": "No duplicate count credit/device conflict; deterministic results and bounded work.",
+    "lane": "Concurrency integration",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC042",
+    "requirements": [
+      "R42"
+    ],
+    "title": "Resource ceilings",
+    "given": "Inputs exceed configured parser/graph/profile/evidence/request budgets.",
+    "when": "Prepare/evaluate/query.",
+    "expected": "Explicit non-authorizing limit failure; no silent obligation truncation.",
+    "lane": "Fuzz/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA12",
+      "RA18"
+    ]
+  },
+  {
+    "id": "AC043",
+    "requirements": [
+      "R43"
+    ],
+    "title": "Reference parity",
+    "given": "Representative random/fixed workloads use reference and optimized paths.",
+    "when": "Compare decisions and record performance.",
+    "expected": "Semantics match; measurements include full workloads and actual host evidence.",
+    "lane": "Differential/benchmark",
+    "status": "not_run",
+    "review_regressions": [
+      "RA10"
+    ]
+  },
+  {
+    "id": "AC044",
+    "requirements": [
+      "R44"
+    ],
+    "title": "Real stored evidence in views",
+    "given": "Fresh passing evidence is persisted, then made stale/failed.",
+    "when": "Run check/matrix/context/MCP/release views.",
+    "expected": "Views move coherently; no hardcoded missing/empty-success placeholders.",
+    "lane": "Cross-interface integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA14",
+      "RA17",
+      "RA18",
+      "RA19",
+      "RA20"
+    ]
+  },
+  {
+    "id": "AC045",
+    "requirements": [
+      "R45"
+    ],
+    "title": "Structured errors",
+    "given": "Invalid manifests/evidence and I/O failures occur under JSON/MCP mode.",
+    "when": "Run relevant operations.",
+    "expected": "Machine-readable errors preserve safe detail/source context and correct exit semantics.",
+    "lane": "CLI/MCP integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA14",
+      "RA20"
+    ]
+  },
+  {
+    "id": "AC046",
+    "requirements": [
+      "R46"
+    ],
+    "title": "Snapshot-bound presentation",
+    "given": "Filter/page/truncate a large decision while a new snapshot appears.",
+    "when": "Continue reading.",
+    "expected": "Cursor binds the original view; completeness/authorization do not change.",
+    "lane": "Protocol/integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA18"
+    ]
+  },
+  {
+    "id": "AC047",
+    "requirements": [
+      "R47"
+    ],
+    "title": "MCP least privilege",
+    "given": "Read-only session receives execution/signing or untrusted textual instructions.",
+    "when": "Process requests.",
+    "expected": "No privilege escalation, implicit execution or unauthenticated server default.",
+    "lane": "MCP security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA17",
+      "RA18"
+    ]
+  },
+  {
+    "id": "AC048",
+    "requirements": [
+      "R48"
+    ],
+    "title": "Product lifecycle scenario",
+    "given": "Authorized synthetic or real product fixtures support capture/edit/restart/sync/review/export.",
+    "when": "Run full cross-runtime workflow.",
+    "expected": "Correct revision exactly once under correct task; no loss/disclosure; real acceptance distinguished from fixtures.",
+    "lane": "Native/product integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA19"
+    ]
+  },
+  {
+    "id": "AC049",
+    "requirements": [
+      "R49"
+    ],
+    "title": "Optional native boundary",
+    "given": "Embedding is explicitly activated with a declared platform matrix.",
+    "when": "Test handles/cancellation/errors/packaging on each target.",
+    "expected": "Ownership and compatibility are correct; unsupported JNA-on-Native assumptions fail explicitly.",
+    "lane": "Optional native",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC050",
+    "requirements": [
+      "R50"
+    ],
+    "title": "Code-health invariants",
+    "given": "New types and public APIs are implemented.",
+    "when": "Review constructors/errors/globals/dependencies and run lints.",
+    "expected": "No unchecked success factories, production panic shortcuts or ambient evaluation inputs.",
+    "lane": "Build/review",
+    "status": "not_run",
+    "review_regressions": [
+      "RA05",
+      "RA06"
+    ]
+  },
+  {
+    "id": "AC051",
+    "requirements": [
+      "R51"
+    ],
+    "title": "Unsafe isolation",
+    "given": "Host/FFI implementation needs platform APIs.",
+    "when": "Inspect lint scopes and safety review.",
+    "expected": "Core remains unsafe-free; any exception is narrow, documented and tested.",
+    "lane": "Build/security review",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC052",
+    "requirements": [
+      "R52"
+    ],
+    "title": "Versioned migration",
+    "given": "Unsupported schema/ABI or interrupted DB migration occurs.",
+    "when": "Read/migrate/recover/replay.",
+    "expected": "No silent alias/reinterpretation or signed-byte rewrite; compatibility fails explicitly.",
+    "lane": "Migration/package",
+    "status": "not_run",
+    "review_regressions": [
+      "RA14"
+    ]
+  },
+  {
+    "id": "AC053",
+    "requirements": [
+      "R53"
+    ],
+    "title": "Known-good commits",
+    "given": "A proposed step changes behavior/schema/dependencies.",
+    "when": "Run tests/gates and review before committing.",
+    "expected": "Step is green relative to reproduced baseline; introduced failures block advancement.",
+    "lane": "Verification process",
+    "status": "not_run",
+    "review_regressions": [
+      "RA19"
+    ]
+  },
+  {
+    "id": "AC054",
+    "requirements": [
+      "R54"
+    ],
+    "title": "Shadow rollout and rollback",
+    "given": "Candidate evaluator runs before enforcement or must be rolled back.",
+    "when": "Compare decisions and switch under authorized procedure.",
+    "expected": "Independent review precedes enforcement; rollback never becomes permissive.",
+    "lane": "Operational drill",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC055",
+    "requirements": [
+      "R55"
+    ],
+    "title": "Owned guarantees",
+    "given": "Release support and incident procedures are proposed.",
+    "when": "Review owner/matrix/runbook evidence.",
+    "expected": "Named owners and tested supported guarantees exist before operational approval.",
+    "lane": "Operational review",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC056",
+    "requirements": [
+      "R56"
+    ],
+    "title": "Spec-anchored sequencing",
+    "given": "An agent resumes at a pending step with an apparent shortcut.",
+    "when": "Inspect plan/spec and repo evidence.",
+    "expected": "No silent skip/merge/reorder/scope invention; deviations documented only when justified.",
+    "lane": "Handoff/process validation",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC057",
+    "requirements": [
+      "R57"
+    ],
+    "title": "Honest readiness",
+    "given": "A native/crypto/external lane was not run.",
+    "when": "Prepare completion report.",
+    "expected": "Unverified gates remain explicit; no production-ready or passing claim is fabricated.",
+    "lane": "Review",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC058",
+    "requirements": [
+      "R58"
+    ],
+    "title": "Exact selection",
+    "given": "Duplicate profile requests or candidate-local release defaults are supplied.",
+    "when": "Select policy/profiles.",
+    "expected": "Duplicates reject; protected mode uses explicit exact authority without fallback.",
+    "lane": "Unit/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA01",
+      "RA04",
+      "RA07",
+      "RA09",
+      "RA16",
+      "RA17"
+    ]
+  },
+  {
+    "id": "AC059",
+    "requirements": [
+      "R59"
+    ],
+    "title": "Inventory authority",
+    "given": "Partial/untrusted inventory or self-declared artifact roles are supplied.",
+    "when": "Perform structure/exposure evaluation.",
+    "expected": "Absence/roles are not falsely proven; incomplete observation stays unknown.",
+    "lane": "Unit/security",
+    "status": "not_run",
+    "review_regressions": [
+      "RA21"
+    ]
+  },
+  {
+    "id": "AC060",
+    "requirements": [
+      "R60"
+    ],
+    "title": "Acquisition outcome",
+    "given": "Runner exits zero with an empty plan or inadequate policy count.",
+    "when": "Render verify and evaluate.",
+    "expected": "Acquisition and conformance remain distinct; accidental empty work is visible failure.",
+    "lane": "CLI integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA01",
+      "RA20"
+    ]
+  },
+  {
+    "id": "AC061",
+    "requirements": [
+      "R61"
+    ],
+    "title": "Repository gates preserved",
+    "given": "Approved spec docs/platform changes coexist with private/unsafe artifacts.",
+    "when": "Run public-repository/xtask checks.",
+    "expected": "Legitimate contract files are admitted without discarding meaningful safety checks.",
+    "lane": "Xtask/package",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC062",
+    "requirements": [
+      "R62"
+    ],
+    "title": "Per-step evidence",
+    "given": "A commit-sized change has been reviewed.",
+    "when": "Record its report and commit.",
+    "expected": "Files, exact checks/results, risks, SHA and next-step safety are available without circular self-SHA edits.",
+    "lane": "Process validation",
+    "status": "not_run",
+    "review_regressions": []
+  },
+  {
+    "id": "AC063",
+    "requirements": [
+      "R63"
+    ],
+    "title": "Deployment consumes exact authorization",
+    "given": "Artifact/destination or validity differs after readiness/signing.",
+    "when": "Validate authorization at promotion boundary.",
+    "expected": "Substitution/expiry rejects; transformed artifacts require provenance or reevaluation.",
+    "lane": "Release integration",
+    "status": "not_run",
+    "review_regressions": [
+      "RA06"
+    ]
+  },
+  {
+    "id": "AC064",
+    "requirements": [
+      "R64"
+    ],
+    "title": "Boundary distinctions",
+    "given": "Valid JSON from storage claims trusted complete release state.",
+    "when": "Send through public input APIs.",
+    "expected": "Local validation, verification, completeness and authorization remain independent checks.",
+    "lane": "Security/property",
+    "status": "not_run",
+    "review_regressions": [
+      "RA13"
+    ]
+  }
+]

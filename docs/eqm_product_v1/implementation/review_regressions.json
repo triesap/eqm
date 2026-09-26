@@ -1,0 +1,922 @@
+[
+  {
+    "id": "RA01",
+    "title": "Validate filters and empty selections",
+    "findings": [
+      "F04",
+      "F13"
+    ],
+    "requirements": [
+      "R11",
+      "R12",
+      "R58",
+      "R60"
+    ],
+    "acceptance": [
+      "AC011",
+      "AC012",
+      "AC058",
+      "AC060"
+    ],
+    "steps": [
+      "S047",
+      "S048",
+      "S049",
+      "S050",
+      "S145",
+      "S149",
+      "S151",
+      "S155"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_cli/src/commands/check.rs",
+        "line": 37
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/verify.rs",
+        "line": 54
+      }
+    ],
+    "given": "An exact scope with known targets/units and unresolved applicability.",
+    "when": "Select a misspelled target/unit, an accidental empty execution scope, or filter a complete decision.",
+    "expected": "Reject invalid selectors before effects; retain unresolved coordinates and the protected denominator. Empty release scopes need protected explicit permission and do not establish cross-target equivalence.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA02",
+    "title": "Validate counts against outcomes",
+    "findings": [
+      "F05",
+      "F13"
+    ],
+    "requirements": [
+      "R14",
+      "R15",
+      "R16"
+    ],
+    "acceptance": [
+      "AC014",
+      "AC015",
+      "AC016"
+    ],
+    "steps": [
+      "S025",
+      "S059",
+      "S062",
+      "S063",
+      "S064",
+      "S065",
+      "S066"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_domain/src/evidence_result.rs",
+        "line": 405
+      },
+      {
+        "path": "crates/eqm_domain/src/evidence_result.rs",
+        "line": 432
+      }
+    ],
+    "given": "Arithmetically valid totals containing failed cases or a skipped attempt claiming passing cases.",
+    "when": "Convert and aggregate each supported execution payload.",
+    "expected": "Reject contradictory totals/outcomes; failed required cases cannot satisfy a minimum merely because another case passed. Invalid required evidence remains unresolved/non-authorizing.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA03",
+    "title": "Separate conjunction, failures, retries and conflicts",
+    "findings": [
+      "F05",
+      "F13",
+      "F16"
+    ],
+    "requirements": [
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18"
+    ],
+    "acceptance": [
+      "AC014",
+      "AC015",
+      "AC016",
+      "AC017",
+      "AC018"
+    ],
+    "steps": [
+      "S053",
+      "S060",
+      "S061",
+      "S062",
+      "S063",
+      "S064",
+      "S065",
+      "S066",
+      "S067",
+      "S068",
+      "S072",
+      "S075",
+      "S076"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_engine/src/outcomes.rs",
+        "line": 35
+      },
+      {
+        "path": "crates/eqm_engine/src/outcomes.rs",
+        "line": 74
+      }
+    ],
+    "given": "A frozen required selection, explicit alternative groups, multiple cases, and immutable attempt history.",
+    "when": "Combine passing/missing cases, separate failing/passing cases, retries, or same-attempt contradictory assertions.",
+    "expected": "Required selections are conjunctive; only protected explicit alternatives may substitute. Distinct required fail/pass cases yield Failed; same-case fail/pass retries yield Unstable; same immutable attempt conflicts yield Unknown. Skips/filter/quarantine/missing never satisfy; cancellation/timeout is Unknown. Copies and retries add no count credit; selected campaign identity is explicit.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA04",
+    "title": "Preserve the protected universe when strengthening policy",
+    "findings": [
+      "F03",
+      "F05"
+    ],
+    "requirements": [
+      "R14",
+      "R23",
+      "R58"
+    ],
+    "acceptance": [
+      "AC014",
+      "AC023",
+      "AC058"
+    ],
+    "steps": [
+      "S051",
+      "S057",
+      "S118"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_domain/src/policy.rs",
+        "line": 297
+      },
+      {
+        "path": "crates/eqm_engine/src/obligations.rs",
+        "line": 120
+      }
+    ],
+    "given": "A protected policy selecting Recommended and Required obligations.",
+    "when": "Raise the minimum-level selection floor or otherwise change matching rules.",
+    "expected": "Compare derived protected obligation inclusion and same-coordinate constraints. Removing a protected obligation is weakening even if an enum comparison says stronger.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA05",
+    "title": "Preserve fragment risk through validated expansion",
+    "findings": [
+      "F03",
+      "F10"
+    ],
+    "requirements": [
+      "R14",
+      "R23",
+      "R50"
+    ],
+    "acceptance": [
+      "AC014",
+      "AC023",
+      "AC050"
+    ],
+    "steps": [
+      "S004",
+      "S006",
+      "S049",
+      "S057",
+      "S076"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_engine/src/expand.rs",
+        "line": 20
+      },
+      {
+        "path": "crates/eqm_engine/src/expand.rs",
+        "line": 132
+      },
+      {
+        "path": "crates/eqm_engine/src/expand.rs",
+        "line": 158
+      }
+    ],
+    "given": "A fragment and destination journey with different default risks, with absent or explicit requirement risk.",
+    "when": "Expand a pinned fragment and prepare obligations.",
+    "expected": "Inherited risk is the stronger fragment/journey default; absence inherits it, explicit lower risk rejects, and the expanded graph is revalidated before finalization. DEV-001 explicitly amends S049; S004/S006 record/freeze this contract, not its runtime implementation.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA06",
+    "title": "Enforce validated construction boundaries",
+    "findings": [
+      "F02",
+      "F04"
+    ],
+    "requirements": [
+      "R11",
+      "R24",
+      "R26",
+      "R50",
+      "R63"
+    ],
+    "acceptance": [
+      "AC011",
+      "AC024",
+      "AC026",
+      "AC050",
+      "AC063"
+    ],
+    "steps": [
+      "S049",
+      "S070",
+      "S120",
+      "S133",
+      "S172"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_domain/src/graph.rs",
+        "line": 302
+      },
+      {
+        "path": "crates/eqm_engine/src/conformance.rs",
+        "line": 141
+      }
+    ],
+    "given": "Public graph/preparation/verification/authorization APIs and serialized inputs.",
+    "when": "Attempt unchecked construction, deserialization, omitted coordinates or manually asserted verified/completeness flags.",
+    "expected": "Only the appropriate checked boundary constructs these states. Complete failing/unknown decisions remain representable. API/compile-fail and runtime tests cover bypasses without claiming protection against malicious same-privilege code.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA07",
+    "title": "Compose only facet-relevant constraints",
+    "findings": [
+      "F05"
+    ],
+    "requirements": [
+      "R14",
+      "R58"
+    ],
+    "acceptance": [
+      "AC014",
+      "AC058"
+    ],
+    "steps": [
+      "S051",
+      "S057"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_engine/src/obligations.rs",
+        "line": 130
+      }
+    ],
+    "given": "Behavior and accessibility rules with different trust/count/age constraints.",
+    "when": "Derive each facet obligation.",
+    "expected": "Each facet combines only its matching rules; unrelated facet strength does not leak across obligations.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA08",
+    "title": "Make duplicate transport idempotent and conflicts relevant",
+    "findings": [
+      "F05",
+      "F16"
+    ],
+    "requirements": [
+      "R17",
+      "R18",
+      "R35"
+    ],
+    "acceptance": [
+      "AC017",
+      "AC018",
+      "AC035"
+    ],
+    "steps": [
+      "S060",
+      "S061",
+      "S076",
+      "S084"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_engine/src/coverage.rs",
+        "line": 121
+      },
+      {
+        "path": "crates/eqm_runner/src/ci.rs",
+        "line": 63
+      }
+    ],
+    "given": "Identical delivery, irrelevant rejected duplicates, independent results from one CI run, and conflicting same-attempt assertions.",
+    "when": "Normalize/import repeatedly and reopen the store.",
+    "expected": "Identical delivery changes neither counts nor conclusions; unrelated rejected duplicates do not poison coverage; independent results from one run remain valid; relevant authenticated immutable conflicts persist across restart.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA09",
+    "title": "Bind exact contributing waivers",
+    "findings": [
+      "F06"
+    ],
+    "requirements": [
+      "R19",
+      "R29",
+      "R58"
+    ],
+    "acceptance": [
+      "AC019",
+      "AC029",
+      "AC058"
+    ],
+    "steps": [
+      "S071",
+      "S128",
+      "S166",
+      "S170"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_engine/src/waivers.rs",
+        "line": 119
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/attest.rs",
+        "line": 127
+      }
+    ],
+    "given": "A waiver and obligations sharing names but differing in policy/profile revision, subject or release context.",
+    "when": "Evaluate and emit a decision/statement.",
+    "expected": "Only exact authorized scope/context matches apply; list only contributing waivers. Unknown and unstable remain non-waivable; expired or wrong-authority waivers do not contribute.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA10",
+    "title": "Fall back conservatively from incomplete impact indexes",
+    "findings": [
+      "F11"
+    ],
+    "requirements": [
+      "R40",
+      "R43"
+    ],
+    "acceptance": [
+      "AC040",
+      "AC043"
+    ],
+    "steps": [
+      "S179",
+      "S180",
+      "S181",
+      "S189"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_engine/src/affected.rs",
+        "line": 60
+      },
+      {
+        "path": "crates/eqm_engine/src/affected.rs",
+        "line": 91
+      }
+    ],
+    "given": "Missing/partial dependency indexes, removed/renamed paths, new targets and unclassified changes.",
+    "when": "Compute affected plans and optimized decisions.",
+    "expected": "Select the conservatively complete fallback instead of returning no work; optimized evaluation equals reference evaluation for the same frozen input.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA11",
+    "title": "Supervise input, output and descendants through cleanup",
+    "findings": [
+      "F07",
+      "F17"
+    ],
+    "requirements": [
+      "R31",
+      "R32"
+    ],
+    "acceptance": [
+      "AC031",
+      "AC032"
+    ],
+    "steps": [
+      "S104",
+      "S105",
+      "S106",
+      "S107",
+      "S115"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_runner/src/adapter.rs",
+        "line": 78
+      },
+      {
+        "path": "crates/eqm_runner/src/adapter.rs",
+        "line": 125
+      },
+      {
+        "path": "crates/eqm_runner/src/execution.rs",
+        "line": 169
+      }
+    ],
+    "given": "A request above pipe capacity; workers refusing input, writing before reading, breaking stdin, flooding output or exiting while descendants retain pipes.",
+    "when": "Execute, cancel or reach a deadline during input/drain/cleanup.",
+    "expected": "Supervision starts before potentially blocking input; all owned input/output/tasks/descendants terminate and join within the declared deadline/shutdown budget. Broken-pipe and every error path clean up; overflow signals prompt termination.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA12",
+    "title": "Bound and confine every file ingress",
+    "findings": [
+      "F08",
+      "F18"
+    ],
+    "requirements": [
+      "R33",
+      "R35",
+      "R42"
+    ],
+    "acceptance": [
+      "AC033",
+      "AC035",
+      "AC042"
+    ],
+    "steps": [
+      "S079",
+      "S080",
+      "S081",
+      "S100",
+      "S101",
+      "S114",
+      "S115"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_manifest/src/config.rs",
+        "line": 76
+      },
+      {
+        "path": "crates/eqm_manifest/src/lockfile.rs",
+        "line": 82
+      },
+      {
+        "path": "crates/eqm_manifest/src/validation.rs",
+        "line": 105
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/verify.rs",
+        "line": 135
+      }
+    ],
+    "given": "Config/lock/source/executable/result/import/collision inputs including oversized regular files, FIFO/devices, ancestor symlinks, replacement and growth races.",
+    "when": "Read through every ingestion path on supported hosts.",
+    "expected": "Bound allocation and reads using the validated opened handle and host confinement rules; reject unsupported file types/races before unsafe use. Path metadata followed by unbounded reopen is insufficient; no mutation before confinement validation.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA13",
+    "title": "Validate evidence relationships at a single boundary",
+    "findings": [
+      "F05",
+      "F09"
+    ],
+    "requirements": [
+      "R18",
+      "R19",
+      "R21",
+      "R64"
+    ],
+    "acceptance": [
+      "AC018",
+      "AC019",
+      "AC021",
+      "AC064"
+    ],
+    "steps": [
+      "S014",
+      "S015",
+      "S016",
+      "S025",
+      "S059",
+      "S061"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_protocol/src/evidence.rs",
+        "line": 413
+      },
+      {
+        "path": "crates/eqm_runner/src/persistence.rs",
+        "line": 74
+      }
+    ],
+    "given": "Payloads with one-axis mismatches in kind/subject/target/unit/requirement/facet/reference digests or temporal lineage.",
+    "when": "Ingest through import, persistence and evaluation entry points.",
+    "expected": "All entry points use the same checked conversion and reject contradictions before admission. Parsing or a self-consistent transport hash never creates verification authority.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA14",
+    "title": "Validate real command outputs against schemas",
+    "findings": [
+      "F01",
+      "F15"
+    ],
+    "requirements": [
+      "R21",
+      "R44",
+      "R45",
+      "R52"
+    ],
+    "acceptance": [
+      "AC021",
+      "AC044",
+      "AC045",
+      "AC052"
+    ],
+    "steps": [
+      "S058",
+      "S143",
+      "S152",
+      "S155",
+      "S163",
+      "S204"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_protocol/src/bin/generate_protocol_schemas.rs",
+        "line": 74
+      },
+      {
+        "path": "schemas/v1/protocol/result.schema.json",
+        "line": 496
+      }
+    ],
+    "given": "Representative actual success and failure outputs for every public command family and MCP response shape.",
+    "when": "Generate public schemas and validate those outputs against the correct schema.",
+    "expected": "Every advertised result/error shape validates; a validate-only generic result schema cannot stand in for all commands. DTOs, generators, URI/version checks, fixtures and consumers change together.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA15",
+    "title": "Separate exact bytes from semantic persistence identity",
+    "findings": [
+      "F09",
+      "F16",
+      "F18"
+    ],
+    "requirements": [
+      "R18",
+      "R22",
+      "R35"
+    ],
+    "acceptance": [
+      "AC018",
+      "AC022",
+      "AC035"
+    ],
+    "steps": [
+      "S023",
+      "S060",
+      "S080",
+      "S081",
+      "S082",
+      "S083",
+      "S084"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_runner/src/persistence.rs",
+        "line": 85
+      },
+      {
+        "path": "crates/eqm_runner/src/persistence.rs",
+        "line": 129
+      }
+    ],
+    "given": "Equivalent assertions encoded with distinct JSON whitespace/member order and identical logical attempts.",
+    "when": "Persist both byte representations and reopen/import again.",
+    "expected": "Preserve both original raw identities/material while sharing semantic/attempt identity; no false immutable-byte collision, duplicated observation or lost provenance.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA16",
+    "title": "Load and select exact authority revisions",
+    "findings": [
+      "F03",
+      "F14"
+    ],
+    "requirements": [
+      "R58"
+    ],
+    "acceptance": [
+      "AC058"
+    ],
+    "steps": [
+      "S046"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_manifest/src/validation.rs",
+        "line": 55
+      },
+      {
+        "path": "crates/eqm_manifest/src/validation.rs",
+        "line": 129
+      }
+    ],
+    "given": "Two authored revisions for one policy/profile ID, and a duplicate definition of one exact revision.",
+    "when": "Load through the real manifest loader and select an exact revision.",
+    "expected": "Distinct revisions load and resolve exactly; duplicate authority for the same revision rejects. A constructed-graph-only test is insufficient.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA17",
+    "title": "Preserve one MCP session authority and snapshot",
+    "findings": [
+      "F01"
+    ],
+    "requirements": [
+      "R04",
+      "R44",
+      "R47",
+      "R58"
+    ],
+    "acceptance": [
+      "AC004",
+      "AC044",
+      "AC047",
+      "AC058"
+    ],
+    "steps": [
+      "S158",
+      "S159",
+      "S160",
+      "S164"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_cli/src/commands/mcp.rs",
+        "line": 12
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/mcp.rs",
+        "line": 54
+      }
+    ],
+    "given": "Nondefault startup config/profiles/authority and a workspace modified after session preparation.",
+    "when": "Read tools/resources and explicitly refresh.",
+    "expected": "Tools and resources refer to the same selected snapshot and authority; startup globals are retained; generation changes are explicit and stale cursors reject.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA18",
+    "title": "Bound complete transport envelopes and queues",
+    "findings": [
+      "F01",
+      "F17"
+    ],
+    "requirements": [
+      "R42",
+      "R44",
+      "R46",
+      "R47"
+    ],
+    "acceptance": [
+      "AC042",
+      "AC044",
+      "AC046",
+      "AC047"
+    ],
+    "steps": [
+      "S114",
+      "S141",
+      "S148",
+      "S162"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_mcp/src/server.rs",
+        "line": 283
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/context.rs",
+        "line": 162
+      }
+    ],
+    "given": "Outputs near byte limits plus envelope overhead, large resources and queued requests.",
+    "when": "Serialize CLI/MCP responses and paginate snapshots.",
+    "expected": "Limits cover the full serialized envelope and queues; pagination/truncation is explicit and snapshot-bound. Required scope/conclusions never shrink to fit; even limit errors obey a validated minimum response budget.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA19",
+    "title": "Diagnose consumer requirements and valid store states",
+    "findings": [
+      "F01"
+    ],
+    "requirements": [
+      "R44",
+      "R48",
+      "R53"
+    ],
+    "acceptance": [
+      "AC044",
+      "AC048",
+      "AC053"
+    ],
+    "steps": [
+      "S154",
+      "S155",
+      "S157",
+      "S200",
+      "S206"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_cli/src/commands/doctor.rs",
+        "line": 142
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/doctor.rs",
+        "line": 191
+      },
+      {
+        "path": "crates/eqm_cli/src/test_support.rs",
+        "line": 11
+      }
+    ],
+    "given": "An unmodified non-Rust consumer and generated store/work directories produced by supported operations.",
+    "when": "Run consumer doctor without copying EQM contributor toolchain files into the fixture.",
+    "expected": "Validate actual consumer prerequisites and legitimate generated states; contributor Rust version/components are not consumer requirements.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA20",
+    "title": "Validate formats before effects and preserve receipts on output failure",
+    "findings": [
+      "F13",
+      "F15"
+    ],
+    "requirements": [
+      "R05",
+      "R44",
+      "R45",
+      "R60"
+    ],
+    "acceptance": [
+      "AC005",
+      "AC044",
+      "AC045",
+      "AC060"
+    ],
+    "steps": [
+      "S152",
+      "S154",
+      "S155"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_cli/src/cli.rs",
+        "line": 605
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/verify.rs",
+        "line": 403
+      },
+      {
+        "path": "crates/eqm_cli/src/main.rs",
+        "line": 48
+      }
+    ],
+    "given": "Every accepted command/output-format combination, invalid usage and an output sink failing after durable acquisition.",
+    "when": "Parse, execute and render with effect spies and receipt lookup.",
+    "expected": "Unsupported formats reject before execution/storage; accepted formats have renderers; requested machine errors use documented envelopes. Post-commit output failure truthfully reports the failure and leaves the committed operation discoverable without pretending rollback.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  },
+  {
+    "id": "RA21",
+    "title": "Require independently verified current observations",
+    "findings": [
+      "F06",
+      "F08"
+    ],
+    "requirements": [
+      "R24",
+      "R28",
+      "R59"
+    ],
+    "acceptance": [
+      "AC024",
+      "AC028",
+      "AC059"
+    ],
+    "steps": [
+      "S055",
+      "S056",
+      "S126",
+      "S153",
+      "S196"
+    ],
+    "source_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "source_anchors": [
+      {
+        "path": "crates/eqm_runner/src/inventory.rs",
+        "line": 79
+      },
+      {
+        "path": "crates/eqm_runner/src/reconciliation.rs",
+        "line": 41
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/reconcile.rs",
+        "line": 174
+      },
+      {
+        "path": "crates/eqm_cli/src/commands/check.rs",
+        "line": 158
+      }
+    ],
+    "given": "Complete but stale/unsigned/wrong-subject/revoked inventory and authored role declarations.",
+    "when": "Reconcile absence and compare runtime/structural expectations.",
+    "expected": "Only current independently verified complete inventory for an independently expected subject proves absence. Partial/missing/untrusted inventory is Unknown. Roles and exposure facts require independent observation/comparison, not document presence or copied declarations.",
+    "lane": "Owning package regressions and integration checks; full cargo xtask check before each implementation commit",
+    "status": "not_run",
+    "evidence": []
+  }
+]

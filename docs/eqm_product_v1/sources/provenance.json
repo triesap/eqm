@@ -1,0 +1,66 @@
+{
+  "prepared": "2026-09-26",
+  "repository": "triesap/eqm",
+  "branch": "master",
+  "commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+  "commit_date": "2026-08-09T17:30:53Z",
+  "inspection": "Static source/metadata and primary documentation; no Rust/native tests run by handoff preparation",
+  "external": [
+    {
+      "id": "E01",
+      "title": "OpenAI: Harness engineering",
+      "url": "https://openai.com/index/harness-engineering/"
+    },
+    {
+      "id": "E02",
+      "title": "OpenAI: Unrolling the Codex agent loop",
+      "url": "https://openai.com/index/unrolling-the-codex-agent-loop/"
+    },
+    {
+      "id": "E03",
+      "title": "RFC 8785: JSON Canonicalization Scheme",
+      "url": "https://www.rfc-editor.org/rfc/rfc8785.html"
+    },
+    {
+      "id": "E04",
+      "title": "SQLite: Write-Ahead Logging",
+      "url": "https://www.sqlite.org/wal.html"
+    },
+    {
+      "id": "E05",
+      "title": "UniFFI: Integrating with Gradle",
+      "url": "https://mozilla.github.io/uniffi-rs/latest/kotlin/gradle.html"
+    },
+    {
+      "id": "E06",
+      "title": "Kotlin: Interoperability with C",
+      "url": "https://kotlinlang.org/docs/native-c-interop.html"
+    },
+    {
+      "id": "E07",
+      "title": "Rust: catch_unwind",
+      "url": "https://doc.rust-lang.org/std/panic/fn.catch_unwind.html"
+    },
+    {
+      "id": "E08",
+      "title": "Microsoft: Job Objects",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects"
+    },
+    {
+      "id": "E09",
+      "title": "SLSA v1.2: Verifying artifacts",
+      "url": "https://slsa.dev/spec/v1.2/verifying-artifacts"
+    },
+    {
+      "id": "E10",
+      "title": "Sigstore: Verifying signatures",
+      "url": "https://docs.sigstore.dev/cosign/verifying/verify/"
+    },
+    {
+      "id": "E11",
+      "title": "MCP: Security best practices",
+      "url": "https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices"
+    }
+  ],
+  "permissions": "Read-only repository access; no remote writes or live signing/deployment"
+}

@@ -206,7 +206,7 @@ fn private_content_marker(contents: &str) -> Option<String> {
 /// specifications; portable public content must not embed a developer home or
 /// build directory.
 fn approved_spec_violation(contents: &str) -> Option<&'static str> {
-    ["/Users/", "/home/", "/private/", "\\Users\\"]
+    ["/Users/", "/home/", "/Volumes/", "C:\\Users\\"]
         .into_iter()
         .find(|marker| contents.contains(marker))
 }
@@ -1236,6 +1236,10 @@ mod tests {
         let home = ["/home", "/", "ci/build"].concat();
         assert!(approved_spec_violation(&home).is_some());
         assert!(approved_spec_violation("portable public content").is_none());
+        // Slashed prose is not an absolute host path.
+        assert!(
+            approved_spec_violation("arbitrary top-level/private/generated material").is_none()
+        );
     }
 
     #[test]

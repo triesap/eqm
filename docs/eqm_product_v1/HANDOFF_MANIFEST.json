@@ -1,0 +1,53 @@
+{
+  "package": "eqm_product_v1",
+  "package_revision": 2,
+  "prepared_on": "2026-09-26",
+  "repository": {
+    "url": "https://github.com/triesap/eqm",
+    "branch": "master",
+    "reviewed_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+    "commit_date": "2026-08-09T17:30:53Z"
+  },
+  "scope": "Approved product and architectural specification plus executable ordered implementation plan; not a source checkout or implemented software.",
+  "counts": {
+    "mandatory_steps": 211,
+    "mandatory_chapters": 15,
+    "optional_native_steps": 16,
+    "requirements": 64,
+    "acceptance_cases": 64,
+    "review_findings": 20,
+    "open_decision_gates": 15,
+    "architecture_decision_records": 12,
+    "review_regression_clauses": 21,
+    "execution_cycles": 15
+  },
+  "entrypoint": "PROMPT.md",
+  "standalone_reconstruction": "summary.txt",
+  "execution_plan": "implementation/COMMIT_SEQUENCE.md",
+  "machine_plan": "implementation/steps.json",
+  "initial_state": {
+    "implementation": "not_started",
+    "product_tests": "not_run",
+    "optional_native": "not_activated",
+    "operational_authorization": "not_granted"
+  },
+  "integrity": {
+    "payload_checksums": "SHA256SUMS",
+    "algorithm": "SHA-256",
+    "excludes": [
+      "SHA256SUMS"
+    ],
+    "archive_checksum": "No new archive is produced by this revision; payload checksums cover the directory."
+  },
+  "validator": "tools/validate_package.py",
+  "source_policy": "Primary repository paths are pinned. Other primary references are attributed and summarized; no source checkout, third-party articles, credentials or binaries included.",
+  "editing_policy": "The checksum list describes this delivered revision. Use --structure-only during implementation; a later reissued package must identify a new revision.",
+  "revised_on": "2026-09-26",
+  "revision_scope": "Owner-approved review closure, explicit execution cycles, regression traceability and S049 amendment; no EQM implementation.",
+  "approval_record": "decisions/ADR-0012-approved-review-closure.md",
+  "previous_revision": {
+    "package_revision": 1,
+    "sha256sums_digest": "eb46bf744969fb00b84376857d973088f7523dcbf211a73b2e8f06762407e041",
+    "policy": "Original checksum-list digest retained; this is an explicit reissue with new integrity metadata."
+  }
+}

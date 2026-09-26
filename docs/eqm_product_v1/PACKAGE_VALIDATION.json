@@ -1,0 +1,165 @@
+{
+  "package": "eqm_product_v1",
+  "package_revision": 2,
+  "validated_on": "2026-09-26",
+  "validation_scope": "Owner-approved plan materialization, document/machine consistency, traceability and directory integrity only; not EQM implementation.",
+  "structural_validation": {
+    "ok": true,
+    "scope": "handoff_document_structure_and_integrity_only",
+    "mode": "structure_only",
+    "package_revision": 2,
+    "files": 75,
+    "json_files": 12,
+    "internal_markdown_links": 2877,
+    "hashed_payloads": 0,
+    "counts": {
+      "mandatory_steps": 211,
+      "mandatory_chapters": 15,
+      "optional_native_steps": 16,
+      "requirements": 64,
+      "acceptance_cases": 64,
+      "review_findings": 20,
+      "open_decision_gates": 15,
+      "architecture_decision_records": 12,
+      "review_regression_clauses": 21,
+      "execution_cycles": 15
+    },
+    "rust_tests_executed": false,
+    "native_tests_executed": false,
+    "signature_or_deployment_authority_established": false,
+    "errors": []
+  },
+  "validator_negative_tests": [
+    {
+      "case": "missing_required_contract",
+      "result": "rejected_as_expected",
+      "errors": [
+        "Missing required file: specs/PRODUCT_SPEC.md"
+      ]
+    },
+    {
+      "case": "missing_commit_scope",
+      "result": "rejected_as_expected",
+      "errors": [
+        "S001: missing required step field scope"
+      ]
+    },
+    {
+      "case": "traceability_mismatch",
+      "result": "rejected_as_expected",
+      "errors": [
+        "R01: traceability disagreement for steps"
+      ]
+    },
+    {
+      "case": "broken_internal_link",
+      "result": "rejected_as_expected",
+      "errors": [
+        "Broken/escaping link README.md -> missing.md"
+      ]
+    },
+    {
+      "case": "chapter_drift",
+      "result": "rejected_as_expected",
+      "errors": [
+        "S001: full/chapter copy disagreement"
+      ]
+    },
+    {
+      "case": "symlink_payload",
+      "result": "rejected_as_expected",
+      "errors": [
+        "Symlink forbidden in package: unexpected-link"
+      ]
+    },
+    {
+      "case": "cycle_partition",
+      "result": "rejected_as_expected",
+      "errors": [
+        "Execution cycles do not partition the ordered mandatory steps",
+        "EQM-P01: cycle bounds disagree",
+        "EQM-P01: progress cycle completion counts disagree"
+      ]
+    },
+    {
+      "case": "regression_reverse_map",
+      "result": "rejected_as_expected",
+      "errors": [
+        "S046: review regression mapping disagrees"
+      ]
+    },
+    {
+      "case": "invalid_acceptance",
+      "result": "rejected_as_expected",
+      "errors": [
+        "RA01: unknown acceptance reference",
+        "RA01: owning step S047 omits mapped contracts",
+        "RA01: owning step S048 omits mapped contracts",
+        "RA01: owning step S049 omits mapped contracts",
+        "RA01: owning step S050 omits mapped contracts",
+        "RA01: owning step S145 omits mapped contracts",
+        "RA01: owning step S149 omits mapped contracts",
+        "RA01: owning step S151 omits mapped contracts",
+        "RA01: owning step S155 omits mapped contracts"
+      ]
+    },
+    {
+      "case": "multiple_active_steps",
+      "result": "rejected_as_expected",
+      "errors": [
+        "More than one implementation step is active"
+      ]
+    },
+    {
+      "case": "regression_traceability_drift",
+      "result": "rejected_as_expected",
+      "errors": [
+        "R11: traceability disagreement for review regressions"
+      ]
+    },
+    {
+      "case": "cycle_completion_drift",
+      "result": "rejected_as_expected",
+      "errors": [
+        "EQM-P01: progress cycle completion counts disagree"
+      ]
+    },
+    {
+      "case": "regression_text_drift",
+      "result": "rejected_as_expected",
+      "errors": [
+        "RA01: Markdown/machine regression mismatch in expected"
+      ]
+    }
+  ],
+  "reconstruction_check": {
+    "result": "passed",
+    "current_embedded_files": 55
+  },
+  "delivery_status": {
+    "mandatory_steps": "pending",
+    "acceptance_cases": "not_run",
+    "review_regressions": "not_run",
+    "review_findings": "open_revalidate",
+    "native_extension": "not_activated",
+    "operational_authorization": "not_granted"
+  },
+  "not_performed_in_this_revision": [
+    "EQM source implementation",
+    "EQM Rust/native/product test execution",
+    "Fresh dependency audit",
+    "Production signing",
+    "Release authorization or deployment",
+    "Git commits or publication",
+    "Archive generation"
+  ],
+  "baseline_note": "Prior cargo xtask check passed 258 tests at the pinned baseline; that historical result is separate from this revision and does not close refactor acceptance.",
+  "integrity_instructions": "SHA256SUMS is generated after this validation record and covers every directory payload except itself. Run python3 tools/validate_package.py --json to verify the complete revised directory. The revision-1 checksum-list digest remains in HANDOFF_MANIFEST.json. No replacement ZIP is produced.",
+  "materialized_plan_reviews": {
+    "date": "2026-09-26",
+    "feasibility": "PASS",
+    "completeness": "PASS",
+    "scope_alignment": "PASS",
+    "scope": "Independent read-only plan review; not implementation acceptance."
+  }
+}

@@ -1,0 +1,2292 @@
+{
+ "plan": "eqm_product_v1",
+ "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+ "preflight": "baseline_review_recorded_revalidate_before_S001",
+ "next_step": "S002",
+ "implementation": "in_progress",
+ "local_verification": "not_run",
+ "platform_verification": "not_run",
+ "operational_authorization": "not_granted",
+ "optional_native": "not_activated",
+ "steps": [
+  {
+   "id": "S001",
+   "status": "complete",
+   "commit_sha": "4fdcdb24158ea71bb407e4e99fd55056b160cb94",
+   "report": "implementation/reports/S001.md",
+   "verification": [
+    "cargo fmt --all --check",
+    "cargo test --all-targets --locked -p xtask",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo check --workspace --all-targets --locked",
+    "cargo xtask check",
+    "git diff --check"
+   ],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S002",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S003",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S004",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S005",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S006",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S007",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S008",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S009",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S010",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S011",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S012",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S013",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S014",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S015",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S016",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S017",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S018",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S019",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S020",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S021",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S022",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S023",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S024",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S025",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S026",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S027",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S028",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S029",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S030",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S031",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S032",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S033",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S034",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S035",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S036",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S037",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S038",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S039",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S040",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S041",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S042",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S043",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S044",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S045",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S046",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S047",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S048",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S049",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S050",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S051",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S052",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S053",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S054",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S055",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S056",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S057",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S058",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S059",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S060",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S061",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S062",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S063",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S064",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S065",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S066",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S067",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S068",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S069",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S070",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S071",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S072",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S073",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S074",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S075",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S076",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S077",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S078",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S079",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S080",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S081",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S082",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S083",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S084",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S085",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S086",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S087",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S088",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S089",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S090",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S091",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S092",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S093",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S094",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S095",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S096",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S097",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S098",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S099",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S100",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S101",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S102",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S103",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S104",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S105",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S106",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S107",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S108",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S109",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S110",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S111",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S112",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S113",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S114",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S115",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S116",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S117",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S118",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S119",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S120",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S121",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S122",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S123",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S124",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S125",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S126",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S127",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S128",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S129",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S130",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S131",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S132",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S133",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S134",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S135",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S136",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S137",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S138",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S139",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S140",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S141",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S142",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S143",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S144",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S145",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S146",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S147",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S148",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S149",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S150",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S151",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S152",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S153",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S154",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S155",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S156",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S157",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S158",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S159",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S160",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S161",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S162",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S163",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S164",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S165",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S166",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S167",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S168",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S169",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S170",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S171",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S172",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S173",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S174",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S175",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S176",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S177",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S178",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S179",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S180",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S181",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S182",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S183",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S184",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S185",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S186",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S187",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S188",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S189",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S190",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S191",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S192",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S193",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S194",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S195",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S196",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S197",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S198",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S199",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S200",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S201",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S202",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S203",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S204",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S205",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S206",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S207",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S208",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S209",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S210",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  },
+  {
+   "id": "S211",
+   "status": "pending",
+   "commit_sha": null,
+   "report": null,
+   "verification": [],
+   "baseline_exceptions": []
+  }
+ ],
+ "acceptance": [
+  {
+   "id": "AC001",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC002",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC003",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC004",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC005",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC006",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC007",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC008",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC009",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC010",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC011",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC012",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC013",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC014",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC015",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC016",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC017",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC018",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC019",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC020",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC021",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC022",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC023",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC024",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC025",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC026",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC027",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC028",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC029",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC030",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC031",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC032",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC033",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC034",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC035",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC036",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC037",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC038",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC039",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC040",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC041",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC042",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC043",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC044",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC045",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC046",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC047",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC048",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC049",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC050",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC051",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC052",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC053",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC054",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC055",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC056",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC057",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC058",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC059",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC060",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC061",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC062",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC063",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "AC064",
+   "status": "not_run",
+   "evidence": []
+  }
+ ],
+ "plan_revision": 2,
+ "planning_status": "owner_approved_materialized",
+ "approval": {
+  "date": "2026-09-26",
+  "owner_instruction": "All recommendations are approved; create/update the durable execution plans to implement the refactor in full and list every unfinished cycle.",
+  "status": "approved_for_plan_materialization",
+  "scope": "All 64 requirements and acceptance cases, F01-F20, RA01-RA21, the ordered 15-cycle sequence and DEV-001.",
+  "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
+ },
+ "next_cycle": "EQM-P01",
+ "active_step": "S002",
+ "cycles": [
+  {
+   "id": "EQM-P01",
+   "first_step": "S001",
+   "last_step": "S012",
+   "status": "in_progress",
+   "completed_steps": 1,
+   "total_steps": 12
+  },
+  {
+   "id": "EQM-P02",
+   "first_step": "S013",
+   "last_step": "S027",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 15
+  },
+  {
+   "id": "EQM-P03",
+   "first_step": "S028",
+   "last_step": "S043",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 16
+  },
+  {
+   "id": "EQM-P04",
+   "first_step": "S044",
+   "last_step": "S058",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 15
+  },
+  {
+   "id": "EQM-P05",
+   "first_step": "S059",
+   "last_step": "S076",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 18
+  },
+  {
+   "id": "EQM-P06",
+   "first_step": "S077",
+   "last_step": "S096",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 20
+  },
+  {
+   "id": "EQM-P07",
+   "first_step": "S097",
+   "last_step": "S115",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 19
+  },
+  {
+   "id": "EQM-P08",
+   "first_step": "S116",
+   "last_step": "S131",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 16
+  },
+  {
+   "id": "EQM-P09",
+   "first_step": "S132",
+   "last_step": "S143",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 12
+  },
+  {
+   "id": "EQM-P10",
+   "first_step": "S144",
+   "last_step": "S157",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 14
+  },
+  {
+   "id": "EQM-P11",
+   "first_step": "S158",
+   "last_step": "S164",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 7
+  },
+  {
+   "id": "EQM-P12",
+   "first_step": "S165",
+   "last_step": "S178",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 14
+  },
+  {
+   "id": "EQM-P13",
+   "first_step": "S179",
+   "last_step": "S190",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 12
+  },
+  {
+   "id": "EQM-P14",
+   "first_step": "S191",
+   "last_step": "S201",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 11
+  },
+  {
+   "id": "EQM-P15",
+   "first_step": "S202",
+   "last_step": "S211",
+   "status": "pending",
+   "completed_steps": 0,
+   "total_steps": 10
+  }
+ ],
+ "review_regressions": [
+  {
+   "id": "RA01",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA02",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA03",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA04",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA05",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA06",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA07",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA08",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA09",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA10",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA11",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA12",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA13",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA14",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA15",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA16",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA17",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA18",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA19",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA20",
+   "status": "not_run",
+   "evidence": []
+  },
+  {
+   "id": "RA21",
+   "status": "not_run",
+   "evidence": []
+  }
+ ],
+ "baseline_verification": {
+  "commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
+  "date": "2026-09-26",
+  "commands": [
+   {
+    "command": "cargo xtask check",
+    "status": "passed",
+    "tests": 258
+   },
+   {
+    "command": "cargo metadata --no-deps --format-version 1 --locked",
+    "status": "passed"
+   },
+   {
+    "command": "cargo xtask help",
+    "status": "passed"
+   }
+  ],
+  "scope": "Previously executed baseline only; no refactor acceptance or supported-platform/operational claims.",
+  "extended_verify": "not_run",
+  "product_native_crypto_operational_acceptance": "not_run"
+ }
+}

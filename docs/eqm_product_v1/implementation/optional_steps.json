@@ -1,0 +1,854 @@
+{
+  "plan": "eqm_product_v1 optional native extension",
+  "activation": "not_activated",
+  "steps": [
+    {
+      "id": "N001",
+      "title": "Activate a concrete local-evaluation feature",
+      "purpose": "Prevent optional architecture from becoming automatic scope.",
+      "scope": "Record explicit owner approval for the feature, exact supported platform matrix, consumer repository and failure/latency needs; otherwise do not start this sequence.",
+      "files": [
+        "docs/eqm_product_v1/decisions/",
+        "authorized consumer repository instructions"
+      ],
+      "tests": "Review dependency and product needs against R03/R49; core Rust gates remain green and no bridge is added yet.",
+      "expected": "Optional work has explicit product authority and scope.",
+      "commit_message": "docs: activate the local conformance integration",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "OPTIONAL_ACTIVATION",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N002",
+      "title": "Choose one verified boundary strategy",
+      "purpose": "Avoid maintaining multiple speculative bridges.",
+      "scope": "Inspect current consumer targets and select one coherent sidecar or in-process strategy; record packaging, ownership, security and exact native commands before later steps; do not assume JNA supports Kotlin/Native.",
+      "files": [
+        "docs/eqm_product_v1/decisions/",
+        "authorized consumer build metadata",
+        "Cargo.toml"
+      ],
+      "tests": "Build a minimal disposable compatibility probe on each required target and record limitations; select only a proven supported path.",
+      "expected": "One boundary strategy and test matrix are fixed for the remaining sequence.",
+      "commit_message": "docs: select the native conformance boundary",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N001",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N003",
+      "title": "Define the narrow consumer contract",
+      "purpose": "Keep business logic and media out of the evaluator boundary.",
+      "scope": "Specify batch evaluation/query, structured errors, version negotiation and lifecycle ownership for the selected strategy; no new business accounts/tasks/media APIs.",
+      "files": [
+        "crates/eqm_protocol/src/",
+        "proposed optional transport crate",
+        "consumer commonMain interface"
+      ],
+      "tests": "Contract fixtures reject unsupported versions and unbounded inputs; supported scalar/time mappings are exact.",
+      "expected": "The consumer interface is small and spec-anchored.",
+      "commit_message": "feat: define the local conformance consumer contract",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N002",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked -p eqm_protocol",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N004",
+      "title": "Isolate the optional transport package",
+      "purpose": "Preserve core purity and dependency cost.",
+      "scope": "Add only the selected boundary package/features with exact dependencies and documented lint/safety scope; no blanket unsafe relaxation or default daemon inclusion.",
+      "files": [
+        "Cargo.toml",
+        "Cargo.lock",
+        "proposed optional transport Cargo.toml",
+        "consumer build metadata"
+      ],
+      "tests": "Core builds without optional transport; declared feature sets compile and production trust remains unavailable to read-only consumer.",
+      "expected": "Optional packaging does not contaminate the core or default product distribution.",
+      "commit_message": "build: isolate optional conformance transport",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N003",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N005",
+      "title": "Implement safe boundary ownership",
+      "purpose": "Prevent resource leaks and invalid object reuse.",
+      "scope": "Implement lifetime-managed buffers/handles for in-process integration or owned session/process resources for a sidecar, according to the selected strategy; document safety invariants.",
+      "files": [
+        "selected transport source",
+        "consumer platform adapter",
+        "transport tests"
+      ],
+      "tests": "Invalid/double-close/use-after-close and oversized message fixtures reject safely; no raw Rust collection layout crosses an ABI.",
+      "expected": "The chosen boundary has explicit tested resource ownership.",
+      "commit_message": "feat: enforce local conformance resource ownership",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N004",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N006",
+      "title": "Implement batch evaluation and query calls",
+      "purpose": "Avoid per-cell or per-obligation foreign calls.",
+      "scope": "Expose the shared application operation and snapshot-bound queries through the selected transport, preserving read-only defaults and full structured results.",
+      "files": [
+        "selected transport source",
+        "crates/eqm_application/src/query.rs",
+        "consumer platform adapter"
+      ],
+      "tests": "Batched consumer results match direct Rust evaluation; filters do not alter scope or decision.",
+      "expected": "Native consumers use the same evaluator without fine-grained cross-language chatter.",
+      "commit_message": "feat: expose batched local conformance operations",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N005",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked -p eqm_application",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N007",
+      "title": "Implement cancellation and shutdown",
+      "purpose": "Bound consumer lifecycle races.",
+      "scope": "Propagate consumer cancellation to owned evaluation/acquisition only where explicitly permitted, close resources deterministically, and preserve committed result discoverability; no detached background tasks.",
+      "files": [
+        "selected transport source",
+        "consumer platform adapter",
+        "transport tests"
+      ],
+      "tests": "Cancellation before/during/after completion and shutdown under load produce deterministic documented outcomes.",
+      "expected": "The optional integration remains safe during app closure and interrupted work.",
+      "commit_message": "fix: bound local conformance cancellation and shutdown",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N006",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N008",
+      "title": "Translate errors and compatibility explicitly",
+      "purpose": "Avoid interpreting foreign failures as success.",
+      "scope": "Map application errors/statuses and supported schema/ABI/protocol negotiation into the consumer; reject unknown versions and preserve safe source/reason detail.",
+      "files": [
+        "selected transport source",
+        "consumer commonMain/platform adapters",
+        "crates/eqm_protocol/src/"
+      ],
+      "tests": "Unknown status/version, malformed response, invalid numeric mapping and internal failure cannot produce a passing UI state.",
+      "expected": "Consumer behavior is exact under failures and version skew.",
+      "commit_message": "fix: preserve local conformance error semantics",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N007",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked -p eqm_protocol",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N009",
+      "title": "Secure the selected transport boundary",
+      "purpose": "Match isolation to actual strategy instead of a slogan.",
+      "scope": "For sidecar use restricted authenticated IPC and explicit process identity; for in-process validate privilege/lifetime boundary and document lack of crash isolation; no default unauthenticated localhost endpoint.",
+      "files": [
+        "selected transport source",
+        "consumer packaging/security configuration"
+      ],
+      "tests": "Unauthorized peer/message or forged handle tests reject; aborting-panic behavior is documented and tested only in disposable processes.",
+      "expected": "The chosen boundary makes accurate security and fault-containment claims.",
+      "commit_message": "fix: secure the local conformance transport",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N008",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N010",
+      "title": "Integrate the declared desktop consumer",
+      "purpose": "Wire the actual supported desktop runtime only.",
+      "scope": "Add the selected platform implementation behind a small common interface; connect report display with scope/freshness/reasons and bounded pagination, not product business operations.",
+      "files": [
+        "authorized desktop commonMain/platform sources",
+        "selected transport packaging"
+      ],
+      "tests": "Run discovered desktop build/test/smoke lanes on every supported OS/architecture; no per-row process spawn.",
+      "expected": "The desktop feature works on the declared matrix with coherent snapshot views.",
+      "commit_message": "feat: integrate desktop local conformance access",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N009",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N011",
+      "title": "Integrate explicitly approved mobile consumers",
+      "purpose": "Avoid assuming desktop bridge portability.",
+      "scope": "Only for mobile targets included in activation, add platform implementations of the same consumer interface using the chosen proven strategy; keep capture/storage/sync platform-owned.",
+      "files": [
+        "authorized mobile commonMain/platform sources",
+        "selected transport packaging"
+      ],
+      "tests": "Run actual supported Android/iOS device/simulator lanes and ownership/cancellation tests; no unsupported JNA-on-Native use.",
+      "expected": "Approved mobile local evaluation works or remains an explicit activation blocker.",
+      "commit_message": "feat: integrate approved mobile conformance access",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N010",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies.",
+        "Discover and record the exact native host/product test and smoke commands for Q01/Q02 before this step. Run required native execution tests on the declared host; cross-compilation or synthetic EQM fixtures alone are not that evidence."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N012",
+      "title": "Package and verify native artifacts",
+      "purpose": "Make bridge support a shipped tested capability.",
+      "scope": "Generate/package selected native libraries or sidecar artifacts with exact version/provenance and platform conventions; avoid committing generated build outputs.",
+      "files": [
+        "selected transport build tooling",
+        "authorized consumer Gradle/Xcode configuration",
+        "tools/xtask/src/main.rs"
+      ],
+      "tests": "Install/run packaged artifacts on all declared targets; verify architecture, symbols/version, licenses, checksums and incompatible load errors.",
+      "expected": "Packaging support is demonstrated rather than inferred from Rust compilation.",
+      "commit_message": "build: verify local conformance runtime packaging",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N011",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked -p xtask",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N013",
+      "title": "Test cross-runtime semantic and numeric parity",
+      "purpose": "Guard language-boundary behavior.",
+      "scope": "Run the shared canonical/decision vectors through direct Rust and each activated consumer, including numeric/time/Unicode, errors, pagination and concurrent calls.",
+      "files": [
+        "tests/fixtures/",
+        "selected transport tests",
+        "authorized consumer tests"
+      ],
+      "tests": "Equivalent inputs produce the same decision identity/reasons; unsupported ranges reject rather than rounding.",
+      "expected": "Native results preserve canonical Rust semantics.",
+      "commit_message": "test: verify local conformance cross-runtime parity",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N012",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N014",
+      "title": "Measure optional integration overhead",
+      "purpose": "Validate the feature's actual runtime cost.",
+      "scope": "Benchmark startup, memory, batch latency, cancellation and report paging on declared devices/hosts; record owner-approved budgets rather than new arbitrary promises.",
+      "files": [
+        "selected transport benchmarks",
+        "authorized consumer tests",
+        "docs/eqm_product_v1/implementation/STATUS.md"
+      ],
+      "tests": "Measured results include complete workloads and compare direct/transport behavior without weakening safety.",
+      "expected": "Optional integration performance is evidence-backed.",
+      "commit_message": "perf: measure local conformance integration overhead",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N013",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies.",
+        "Run the owning benchmark/fixture tests and, when the populated benchmark step is reached, the actual cargo xtask benchmark lane on declared hardware; record measurements and host gaps, not thresholds alone."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N015",
+      "title": "Complete optional security and lifecycle review",
+      "purpose": "Prove optional readiness independently of core completion.",
+      "scope": "Review any unsafe/native boundary, dependencies, privileges and failure modes; run supported feature/host/consumer gates and record all remaining gaps.",
+      "files": [
+        "selected transport source",
+        "docs/eqm_product_v1/implementation/STATUS.md",
+        "authorized consumer tests"
+      ],
+      "tests": "No unresolved ownership/security/platform blocker is hidden; core and optional test matrices pass.",
+      "expected": "Optional feature readiness is explicitly established or blocked.",
+      "commit_message": "test: complete local conformance integration acceptance",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N014",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies.",
+        "Inspect Cargo metadata/manifests for the actual package/features and intentional lockfile update command. Verify the linked dependency/runtime and audited exact pins; enumerate valid feature combinations before running feature checks."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    },
+    {
+      "id": "N016",
+      "title": "Document optional release and support disposition",
+      "purpose": "Close the extension with reproducible operational context.",
+      "scope": "Update consumer/API support docs, compatibility rules, packaging/runbooks and final status with actual evidence and owner release permission; do not deploy automatically.",
+      "files": [
+        "docs/eqm_product_v1/specs/RUNTIME_INTEGRATION.md",
+        "docs/eqm_product_v1/runbooks/",
+        "authorized consumer documentation"
+      ],
+      "tests": "Documentation examples and package checks pass; exact support/activation state and rollback are recorded.",
+      "expected": "A maintainer can operate or disable the optional feature without chat history.",
+      "commit_message": "docs: finalize local conformance integration support",
+      "requirements": [
+        "R03",
+        "R49",
+        "R50",
+        "R51",
+        "R52",
+        "R53"
+      ],
+      "chapter": "N",
+      "chapter_title": "Optional native integration",
+      "predecessor": "N015",
+      "initial_status": "not_activated",
+      "acceptance": [
+        "AC003",
+        "AC049",
+        "AC050",
+        "AC051",
+        "AC052",
+        "AC053"
+      ],
+      "contract_files": [
+        "implementation/VERIFICATION.md",
+        "specs/ARCHITECTURE.md",
+        "specs/COMPATIBILITY.md",
+        "specs/RUNTIME_INTEGRATION.md"
+      ],
+      "verification_commands": [
+        "cargo fmt --all --check",
+        "cargo check --workspace --all-targets --locked",
+        "cargo test --all-targets --locked --workspace",
+        "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo xtask check",
+        "git diff --check",
+        "cargo test --workspace --doc --locked"
+      ],
+      "verification_discovery": [
+        "After N002, use the exact selected transport package/feature and activated consumer build/test/package commands; discover them from Cargo metadata and the approved consumer Gradle/Xcode/native setup before code changes. Do not run both sidecar and FFI strategies."
+      ],
+      "gate": "Requires explicit Q11 activation, Q01/Q02 consumer matrix and Q13 boundary review. No optional implementation is implied by core approval."
+    }
+  ]
+}
