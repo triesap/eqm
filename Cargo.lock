@@ -766,6 +766,7 @@ dependencies = [
 name = "xtask"
 version = "0.0.0"
 dependencies = [
+ "eqm_domain",
  "flate2",
  "serde_json",
  "sha2",

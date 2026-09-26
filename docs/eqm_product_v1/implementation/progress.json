@@ -242,7 +242,7 @@
     {
      "id": "S015-R1",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "92f781a535146660f59ab1ba72428d93d6fc63f6",
      "report": "implementation/reports/S015.md#s015-r1",
      "verification": [
       "cargo test --locked -p eqm_protocol -p eqm_runner -p eqm_domain -p eqm_test_support",
@@ -252,13 +252,24 @@
       "cargo xtask check",
       "cargo test --locked -p eqm_application --doc",
       "git diff --check"
-     ],
-     "sha_recorded_externally": true
+     ]
     },
     {
      "id": "S015-R2",
-     "status": "pending",
-     "commit_sha": null
+     "status": "complete",
+     "commit_sha": null,
+     "report": "implementation/reports/S015.md#s015-r2",
+     "verification": [
+      "cargo test --locked -p eqm_domain -p eqm_protocol -p xtask",
+      "cargo fmt --all --check",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask schemas generate",
+      "cargo xtask schemas check",
+      "cargo xtask check",
+      "cargo test --locked -p eqm_application --doc",
+      "git diff --check"
+     ],
+     "sha_recorded_externally": true
     },
     {
      "id": "S015-R3",
@@ -2500,7 +2511,7 @@
    "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   }
  ],
- "next_checkpoint": "S015-R2",
+ "next_checkpoint": "S015-R3",
  "supervisor_review": {
   "source_commit": "3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b",
   "report": "implementation/reports/CODEX-3da0b50.md",

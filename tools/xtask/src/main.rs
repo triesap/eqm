@@ -1,9 +1,10 @@
 //! Repository automation for EquivalenceMatrix.
 
+use eqm_domain::{SchemaKind, SchemaUri, SchemaVersion};
 use flate2::{Compression, GzBuilder, read::GzDecoder};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
@@ -15,7 +16,7 @@ use tar::{Archive, Builder, Header};
 use tempfile::{NamedTempFile, TempDir};
 
 const NIGHTLY: &str = "nightly-2026-07-16";
-const SCHEMA_COUNT: usize = 22;
+const SCHEMA_URI_PREFIX: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/";
 const APPROVED_SPEC_SUBTREE: &str = "docs/eqm_product_v1";
 const FUZZ_TARGETS: [&str; 7] = [
     "toml",
@@ -249,9 +250,7 @@ fn supply_chain() -> Result<()> {
 
 fn schemas(args: &[OsString]) -> Result<()> {
     match args {
-        [command] if command == "generate" => {
-            generate_schemas(&repository_root().join("schemas/v1"))
-        }
+        [command] if command == "generate" => generate_schemas(&repository_root().join("schemas")),
         [command] if command == "check" => check_schemas(),
         _ => Err(Error::usage(
             "schemas requires exactly one of `generate` or `check`",
@@ -336,66 +335,122 @@ fn check_no_legacy_names(include_negative: bool, roots: &[PathBuf]) -> Result<()
     Ok(())
 }
 
-fn generate_schemas(output: &Path) -> Result<()> {
-    execute(
-        "cargo",
-        [
-            OsStr::new("run"),
-            OsStr::new("--quiet"),
-            OsStr::new("--locked"),
-            OsStr::new("-p"),
-            OsStr::new("eqm_manifest"),
-            OsStr::new("--bin"),
-            OsStr::new("generate_manifest_schemas"),
-            OsStr::new("--"),
-            output.join("manifest").as_os_str(),
-        ],
-    )?;
-    execute(
-        "cargo",
-        [
-            OsStr::new("run"),
-            OsStr::new("--quiet"),
-            OsStr::new("--locked"),
-            OsStr::new("-p"),
-            OsStr::new("eqm_protocol"),
-            OsStr::new("--bin"),
-            OsStr::new("generate_protocol_schemas"),
-            OsStr::new("--"),
-            output.join("protocol").as_os_str(),
-        ],
-    )
+fn generate_schemas(root: &Path) -> Result<()> {
+    for version in SchemaVersion::ALL {
+        let version_root = root.join(version.as_str());
+        if version == SchemaVersion::V1 {
+            execute(
+                "cargo",
+                [
+                    OsStr::new("run"),
+                    OsStr::new("--quiet"),
+                    OsStr::new("--locked"),
+                    OsStr::new("-p"),
+                    OsStr::new("eqm_manifest"),
+                    OsStr::new("--bin"),
+                    OsStr::new("generate_manifest_schemas"),
+                    OsStr::new("--"),
+                    version_root.join("manifest").as_os_str(),
+                ],
+            )?;
+        }
+        execute(
+            "cargo",
+            [
+                OsStr::new("run"),
+                OsStr::new("--quiet"),
+                OsStr::new("--locked"),
+                OsStr::new("-p"),
+                OsStr::new("eqm_protocol"),
+                OsStr::new("--bin"),
+                OsStr::new("generate_protocol_schemas"),
+                OsStr::new("--"),
+                version_root.join("protocol").as_os_str(),
+                OsStr::new(version.as_str()),
+            ],
+        )?;
+    }
+    Ok(())
 }
 
 fn check_schemas() -> Result<()> {
     let temporary = TempDir::new().map_err(Error::io)?;
-    let generated = temporary.path().join("schemas/v1");
+    let generated = temporary.path().join("schemas");
     generate_schemas(&generated)?;
-    compare_trees(&repository_root().join("schemas/v1"), &generated)
+    let committed = repository_root().join("schemas");
+    for version in SchemaVersion::ALL {
+        compare_version_inventory(
+            &committed.join(version.as_str()),
+            &generated.join(version.as_str()),
+            version,
+        )?;
+    }
+    Ok(())
+}
+
+/// Compares one version inventory, treating an absent/empty inventory on both
+/// sides as intentionally empty rather than a missing commit.
+fn compare_version_inventory(
+    committed: &Path,
+    generated: &Path,
+    version: SchemaVersion,
+) -> Result<()> {
+    let existing = |root: &Path| -> Result<Vec<PathBuf>> {
+        if root.exists() {
+            files_below(root)
+        } else {
+            Ok(Vec::new())
+        }
+    };
+    let committed_files = existing(committed)?;
+    let generated_files = existing(generated)?;
+    if committed_files.is_empty() && generated_files.is_empty() {
+        return Ok(());
+    }
+    if committed_files.is_empty() {
+        return Err(Error::message(format!(
+            "generated {version} schema inventory is not committed"
+        )));
+    }
+    if generated_files.is_empty() {
+        return Err(Error::message(format!(
+            "committed {version} schemas have no generator inventory"
+        )));
+    }
+    compare_trees(committed, generated)
 }
 
 fn check_schema_parity() -> Result<()> {
     let root = repository_root();
-    let schema_root = root.join("schemas/v1");
+    let schema_root = root.join("schemas");
     let mut known = BTreeSet::new();
+    let mut counts: BTreeMap<SchemaVersion, usize> = BTreeMap::new();
     for path in files_below(&schema_root)? {
         if path.extension() != Some(OsStr::new("json")) {
             continue;
         }
+        let relative = path
+            .strip_prefix(&schema_root)
+            .map_err(|error| Error::message(error.to_string()))?;
+        let expected = schema_uri_for_path(relative)?;
         let document: Value =
             serde_json::from_reader(File::open(&path).map_err(Error::io)?).map_err(Error::json)?;
         let id = document.get("$id").and_then(Value::as_str).ok_or_else(|| {
             Error::message(format!("schema has no string $id: {}", path.display()))
         })?;
+        if id != expected.to_string() {
+            return Err(Error::message(format!(
+                "schema $id `{id}` does not match its versioned path {}",
+                path.display()
+            )));
+        }
         if !known.insert(id.to_owned()) {
             return Err(Error::message(format!("duplicate schema $id: {id}")));
         }
+        *counts.entry(expected.version()).or_insert(0) += 1;
     }
-    if known.len() != SCHEMA_COUNT {
-        return Err(Error::message(format!(
-            "expected {SCHEMA_COUNT} schemas, found {}",
-            known.len()
-        )));
+    if known.is_empty() {
+        return Err(Error::message("no committed schemas were found"));
     }
     for scan_root in [
         root.join("examples/android-ios"),
@@ -409,10 +464,7 @@ fn check_schema_parity() -> Result<()> {
                 character.is_whitespace() || matches!(character, '"' | '\'' | ',' | ']' | '}')
             }) {
                 let token = token.trim_end_matches('\\');
-                if token
-                    .starts_with("https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/")
-                    && !known.contains(token)
-                {
+                if token.starts_with(SCHEMA_URI_PREFIX) && !known.contains(token) {
                     return Err(Error::message(format!(
                         "unknown schema URI in {}: {token}",
                         path.display()
@@ -421,8 +473,62 @@ fn check_schema_parity() -> Result<()> {
             }
         }
     }
-    println!("schema-parity schemas={SCHEMA_COUNT} status=ok");
+    for version in SchemaVersion::ALL {
+        let count = counts.get(&version).copied().unwrap_or(0);
+        println!("schema-parity version={version} schemas={count} status=ok");
+    }
     Ok(())
+}
+
+/// Derives the exact versioned schema identity from a committed schema path.
+fn schema_uri_for_path(relative: &Path) -> Result<SchemaUri> {
+    let mut components = relative.components();
+    let version = components
+        .next()
+        .and_then(|component| component.as_os_str().to_str())
+        .ok_or_else(|| {
+            Error::message(format!(
+                "schema path is not versioned: {}",
+                relative.display()
+            ))
+        })?;
+    let version: SchemaVersion = version.parse().map_err(|_| {
+        Error::message(format!(
+            "unsupported schema version in {}",
+            relative.display()
+        ))
+    })?;
+    let group = components
+        .next()
+        .and_then(|component| component.as_os_str().to_str())
+        .ok_or_else(|| {
+            Error::message(format!("schema path has no group: {}", relative.display()))
+        })?;
+    let file = components
+        .next()
+        .and_then(|component| component.as_os_str().to_str())
+        .ok_or_else(|| {
+            Error::message(format!("schema path has no file: {}", relative.display()))
+        })?;
+    if components.next().is_some() {
+        return Err(Error::message(format!(
+            "schema path is deeper than expected: {}",
+            relative.display()
+        )));
+    }
+    let name = file
+        .strip_suffix(".schema.json")
+        .ok_or_else(|| Error::message(format!("schema file is not a .schema.json: {file}")))?;
+    let kind: SchemaKind = name
+        .parse()
+        .map_err(|_| Error::message(format!("unsupported schema kind: {name}")))?;
+    let uri = SchemaUri::versioned(kind, version);
+    if uri.kind().group().as_str() != group {
+        return Err(Error::message(format!(
+            "schema group `{group}` does not match kind `{name}`"
+        )));
+    }
+    Ok(uri)
 }
 
 fn check_end_to_end() -> Result<()> {
@@ -1248,5 +1354,36 @@ mod tests {
         assert!(approved_spec_relative(Path::new("docs/eqm_product_v1")).is_some());
         assert!(approved_spec_relative(Path::new("docs/concepts.md")).is_none());
         assert!(approved_spec_relative(Path::new("docs/eqm_product_v2/README.md")).is_none());
+    }
+
+    #[test]
+    fn committed_schema_paths_map_to_explicit_versioned_identities() {
+        let v1 = schema_uri_for_path(Path::new("v1/manifest/workspace.schema.json"));
+        assert_eq!(
+            v1.ok().map(|uri| uri.to_string()).as_deref(),
+            Some(
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json"
+            )
+        );
+        let v2 = schema_uri_for_path(Path::new("v2/protocol/evidence-result.schema.json")).ok();
+        assert_eq!(v2.map(|uri| uri.version()), Some(SchemaVersion::V2));
+        assert_eq!(v2.map(|uri| uri.kind()), Some(SchemaKind::EvidenceResult));
+    }
+
+    #[test]
+    fn committed_schema_paths_reject_version_group_and_kind_mismatches() {
+        for relative in [
+            "v3/manifest/workspace.schema.json",
+            "v1/protocol/workspace.schema.json",
+            "v1/manifest/unknown.schema.json",
+            "v1/manifest/workspace.json",
+            "v1/manifest/workspace.schema.json/extra",
+            "workspace.schema.json",
+        ] {
+            assert!(
+                schema_uri_for_path(Path::new(relative)).is_err(),
+                "accepted {relative}"
+            );
+        }
     }
 }

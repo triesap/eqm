@@ -7,7 +7,7 @@ use crate::dto::{
 use crate::{DiscoveredSource, SourceClass, parse_toml};
 use eqm_domain::{
     ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, RepoPath, SchemaKind, SchemaUri,
-    SourceName,
+    SchemaVersion, SourceName,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -146,6 +146,12 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
     let schema: SchemaUri = schema
         .parse()
         .map_err(|_| ValidationErrorKind::WrongSchema)?;
+    // Authored manifests remain on the current v1 contract; a v2 manifest URI is
+    // a different, not-yet-allocated version and must fail explicitly rather than
+    // decode under v1 field rules.
+    if schema.version() != SchemaVersion::CURRENT {
+        return Err(ValidationErrorKind::WrongSchema);
+    }
     let kind = schema.kind();
     let allowed = matches!(
         (class, kind),

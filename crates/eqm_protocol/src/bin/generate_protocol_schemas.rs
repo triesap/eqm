@@ -1,6 +1,11 @@
-//! Deterministically generate protocol-owned JSON Schemas.
+//! Deterministically generate protocol-owned JSON Schemas for one explicit
+//! version.
+//!
+//! The generator is invoked once per coordinated schema version. Version 2
+//! registers the five concrete protocol families in S015-R3; until then its
+//! inventory is explicitly empty rather than a set of placeholder documents.
 
-use eqm_domain::{SchemaKind, SchemaUri};
+use eqm_domain::{SchemaKind, SchemaUri, SchemaVersion};
 use eqm_protocol::*;
 use schemars::JsonSchema;
 use serde_json::Value;
@@ -16,6 +21,7 @@ fn write<T: JsonSchema>(root: &Path, name: &str, id: &str) -> Result<(), Box<dyn
     object.insert("$id".to_owned(), Value::String(id.to_owned()));
     let mut bytes = serde_json::to_vec_pretty(&value)?;
     bytes.push(b'\n');
+    fs::create_dir_all(root)?;
     fs::write(root.join(format!("{name}.schema.json")), bytes)?;
     Ok(())
 }
@@ -63,14 +69,12 @@ fn write_semantic_graph(root: &Path) -> Result<(), Box<dyn Error>> {
     });
     let mut bytes = serde_json::to_vec_pretty(&value)?;
     bytes.push(b'\n');
+    fs::create_dir_all(root)?;
     fs::write(root.join("semantic-graph.schema.json"), bytes)?;
     Ok(())
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let root = std::env::args().nth(1).ok_or("output directory required")?;
-    let root = Path::new(&root);
-    fs::create_dir_all(root)?;
+fn write_v1(root: &Path) -> Result<(), Box<dyn Error>> {
     write::<ReportEnvelope<ValidateResultDto, EvidenceSubjectDto, EvidenceSubjectDto>>(
         root,
         "result",
@@ -90,5 +94,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         "adapter-response",
         &ADAPTER_RESPONSE_SCHEMA.to_string(),
     )?;
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let mut arguments = std::env::args().skip(1);
+    let root = arguments.next().ok_or("output directory required")?;
+    let version = arguments.next().ok_or("schema version required")?;
+    let version: SchemaVersion = version.parse().map_err(|_| "unsupported schema version")?;
+    let root = Path::new(&root);
+    match version {
+        SchemaVersion::V1 => write_v1(root)?,
+        // S015-R3 registers the five concrete v2 protocol families.
+        SchemaVersion::V2 => {}
+    }
     Ok(())
 }

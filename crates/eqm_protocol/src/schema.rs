@@ -1,6 +1,6 @@
-//! Exact current-v1 public protocol schema identities.
+//! Exact version-qualified public protocol schema identities.
 
-use eqm_domain::{SchemaKind, SchemaUri};
+use eqm_domain::{SchemaKind, SchemaUri, SchemaVersion};
 
 /// Common result-envelope schema.
 pub const RESULT_SCHEMA: SchemaUri = SchemaUri::new(SchemaKind::Result);
@@ -23,7 +23,7 @@ pub const ADAPTER_REQUEST_SCHEMA: SchemaUri = SchemaUri::new(SchemaKind::Adapter
 /// Adapter-response schema.
 pub const ADAPTER_RESPONSE_SCHEMA: SchemaUri = SchemaUri::new(SchemaKind::AdapterResponse);
 
-/// Every EQM-owned protocol schema in stable schema-kind order.
+/// Every v1 EQM-owned protocol schema in stable schema-kind order.
 pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
     ADAPTER_REQUEST_SCHEMA,
     ADAPTER_RESPONSE_SCHEMA,
@@ -36,6 +36,21 @@ pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
     RUNTIME_FACTS_SCHEMA,
     TEST_RESULT_SCHEMA,
 ];
+
+/// Every v2 EQM-owned protocol schema in stable schema-kind order.
+///
+/// S015-R3 registers the five concrete v2 protocol families here; this explicit
+/// empty inventory is plumbing, not an invented placeholder document.
+pub const V2_PROTOCOL_SCHEMAS: [SchemaUri; 0] = [];
+
+/// Returns the protocol schema inventory for an explicit version.
+#[must_use]
+pub const fn protocol_schemas(version: SchemaVersion) -> &'static [SchemaUri] {
+    match version {
+        SchemaVersion::V1 => &PROTOCOL_SCHEMAS,
+        SchemaVersion::V2 => &V2_PROTOCOL_SCHEMAS,
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -59,5 +74,25 @@ mod tests {
                 .all(|schema| schema.version() == SchemaVersion::V1)
         );
         assert_eq!(RESULT_SCHEMA.kind(), SchemaKind::Result);
+    }
+
+    #[test]
+    fn protocol_inventories_are_version_qualified_and_unique() {
+        assert_eq!(protocol_schemas(SchemaVersion::V1), &PROTOCOL_SCHEMAS);
+        for version in SchemaVersion::ALL {
+            let inventory = protocol_schemas(version);
+            let unique: BTreeSet<_> = inventory.iter().map(ToString::to_string).collect();
+            assert_eq!(unique.len(), inventory.len());
+            assert!(
+                inventory.iter().all(|schema| schema.version() == version),
+                "inventory for {version} mixes versions"
+            );
+            assert!(
+                inventory
+                    .iter()
+                    .all(|schema| schema.kind().group() == SchemaGroup::Protocol)
+            );
+        }
+        assert!(protocol_schemas(SchemaVersion::V2).is_empty());
     }
 }

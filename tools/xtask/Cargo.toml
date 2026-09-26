@@ -7,6 +7,7 @@ publish = false
 rust-version.workspace = true
 
 [dependencies]
+eqm_domain.workspace = true
 flate2 = "=1.1.5"
 serde_json.workspace = true
 sha2.workspace = true

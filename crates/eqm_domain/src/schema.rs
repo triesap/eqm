@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
-const SCHEMA_BASE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1";
+const SCHEMA_BASE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas";
 
 /// The public repository directory that owns a schema document.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -26,21 +26,33 @@ impl SchemaGroup {
     }
 }
 
-/// The coordinated EQM v1 schema version.
+/// An explicitly versioned EQM schema namespace.
+///
+/// `V1` stays the current authored and protocol contract; `V2` is the
+/// incompatible successor namespace. A URI always carries the version
+/// explicitly, so no consumer has to guess it from a floating alias.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum SchemaVersion {
     /// Version 1.
     V1,
+    /// Version 2.
+    V2,
 }
 
 impl SchemaVersion {
-    /// Returns the only accepted version.
+    /// The version that the current authored and protocol contract uses.
     pub const CURRENT: Self = Self::V1;
+
+    /// Every coordinated version in ascending order.
+    pub const ALL: [Self; 2] = [Self::V1, Self::V2];
 
     /// Returns the URI path component.
     #[must_use]
     pub const fn as_str(self) -> &'static str {
-        "v1"
+        match self {
+            Self::V1 => "v1",
+            Self::V2 => "v2",
+        }
     }
 }
 
@@ -54,11 +66,10 @@ impl FromStr for SchemaVersion {
     type Err = SchemaParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value == Self::CURRENT.as_str() {
-            Ok(Self::CURRENT)
-        } else {
-            Err(SchemaParseError::UnsupportedSchemaVersion)
-        }
+        Self::ALL
+            .into_iter()
+            .find(|version| version.as_str() == value)
+            .ok_or(SchemaParseError::UnsupportedSchemaVersion)
     }
 }
 
@@ -214,27 +225,39 @@ impl FromStr for SchemaKind {
     }
 }
 
-/// An exact current EQM schema URI.
+/// An exact EQM schema URI qualified by an explicit version.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct SchemaUri(SchemaKind);
+pub struct SchemaUri {
+    kind: SchemaKind,
+    version: SchemaVersion,
+}
 
 impl SchemaUri {
-    /// Creates the current URI for a closed schema kind.
+    /// Creates the current-version URI for a closed schema kind.
     #[must_use]
     pub const fn new(kind: SchemaKind) -> Self {
-        Self(kind)
+        Self {
+            kind,
+            version: SchemaVersion::CURRENT,
+        }
+    }
+
+    /// Creates an explicit-version URI for a closed schema kind.
+    #[must_use]
+    pub const fn versioned(kind: SchemaKind, version: SchemaVersion) -> Self {
+        Self { kind, version }
     }
 
     /// Returns the document kind.
     #[must_use]
     pub const fn kind(self) -> SchemaKind {
-        self.0
+        self.kind
     }
 
     /// Returns the coordinated version.
     #[must_use]
     pub const fn version(self) -> SchemaVersion {
-        SchemaVersion::CURRENT
+        self.version
     }
 }
 
@@ -242,9 +265,10 @@ impl Display for SchemaUri {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "{SCHEMA_BASE}/{group}/{kind}.schema.json",
-            group = self.0.group().as_str(),
-            kind = self.0.as_str(),
+            "{SCHEMA_BASE}/{version}/{group}/{kind}.schema.json",
+            version = self.version.as_str(),
+            group = self.kind.group().as_str(),
+            kind = self.kind.as_str(),
         )
     }
 }
@@ -253,11 +277,15 @@ impl FromStr for SchemaUri {
     type Err = SchemaParseError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        SchemaKind::ALL
-            .into_iter()
-            .map(Self::new)
-            .find(|uri| uri.to_string() == value)
-            .ok_or(SchemaParseError::InvalidSchemaUri)
+        for version in SchemaVersion::ALL {
+            for kind in SchemaKind::ALL {
+                let uri = Self { kind, version };
+                if uri.to_string() == value {
+                    return Ok(uri);
+                }
+            }
+        }
+        Err(SchemaParseError::InvalidSchemaUri)
     }
 }
 
@@ -335,6 +363,23 @@ mod tests {
     }
 
     #[test]
+    fn every_explicit_version_schema_round_trips() {
+        for version in SchemaVersion::ALL {
+            for kind in SchemaKind::ALL {
+                let uri = SchemaUri::versioned(kind, version);
+                assert_eq!(uri.to_string().parse(), Ok(uri));
+                assert_eq!(uri.kind(), kind);
+                assert_eq!(uri.version(), version);
+                assert!(uri.to_string().contains(&format!("/{version}/")));
+            }
+        }
+        assert_ne!(
+            SchemaUri::versioned(SchemaKind::EvidenceResult, SchemaVersion::V2).to_string(),
+            SchemaUri::new(SchemaKind::EvidenceResult).to_string()
+        );
+    }
+
+    #[test]
     fn malformed_foreign_old_and_future_schemas_fail_closed() {
         for value in [
             "",
@@ -342,8 +387,11 @@ mod tests {
             "https://example.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/main/schemas/v1/manifest/workspace.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v0/manifest/workspace.schema.json",
-            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1.0/manifest/workspace.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/unknown.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json?x=1",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json#x",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/unknown.schema.json",
@@ -353,9 +401,11 @@ mod tests {
     }
 
     #[test]
-    fn schema_version_is_exact_current() {
-        assert_eq!("v1".parse(), Ok(SchemaVersion::CURRENT));
-        for value in ["", "1", "V1", "v0", "v2", "v1.0"] {
+    fn schema_version_accepts_every_coordinated_version() {
+        assert_eq!("v1".parse(), Ok(SchemaVersion::V1));
+        assert_eq!("v2".parse(), Ok(SchemaVersion::V2));
+        assert_eq!(SchemaVersion::CURRENT, SchemaVersion::V1);
+        for value in ["", "1", "V1", "v0", "v3", "v1.0"] {
             assert_eq!(
                 value.parse::<SchemaVersion>(),
                 Err(SchemaParseError::UnsupportedSchemaVersion)
