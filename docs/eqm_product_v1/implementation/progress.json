@@ -303,7 +303,7 @@
     {
      "id": "S015-R5",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "bc63c6bf944989a56bd6774a27ba62569338440d",
      "report": "implementation/reports/S015.md#s015-r5",
      "verification": [
       "cargo xtask schemas generate",
@@ -316,8 +316,7 @@
       "cargo test --locked -p eqm_application --doc",
       "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
       "git diff --check"
-     ],
-     "sha_recorded_externally": true
+     ]
     }
    ],
    "implementation_status": "corrective_checkpoints_complete_pending_supervisor_acceptance"
