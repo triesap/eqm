@@ -11,11 +11,19 @@
 #![allow(missing_docs)]
 
 use crate::{WireInt, WireUint};
-use eqm_domain::{EvidenceCounts, PositiveCount, Sha256Digest, UtcInstantV2, V2_UTC_PATTERN};
+use eqm_domain::{
+    EvidenceCounts, PositiveCount, RepositoryIdentity, SelectorText, Sha256Digest, SourceCommit,
+    UtcInstantV2, V2_UTC_PATTERN,
+};
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, de};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
+
+/// Declared v2 runtime-facts byte envelope, honored at every parse.
+const MAX_RUNTIME_FACTS_BYTES: usize = 16 * 1024 * 1024;
+/// Declared v2 runtime-facts count ceiling, carried over from v1.
+const MAX_RUNTIME_FACTS: usize = 100_000;
 
 /// Rejects an explicit `null` for a v2 optional member.
 ///
@@ -518,10 +526,10 @@ pub struct RuntimeFactsV2Dto {
 
 impl RuntimeFactsV2Dto {
     pub fn from_json(bytes: &[u8]) -> Result<Self, V2DtoError> {
-        if bytes.len() > 16 * 1024 * 1024 {
+        if bytes.len() > MAX_RUNTIME_FACTS_BYTES {
             return Err(V2DtoError::InvalidLimits);
         }
-        let value: Self = crate::strict::from_slice_limited(bytes, 16 * 1024 * 1024)
+        let value: Self = crate::strict::from_slice_limited(bytes, MAX_RUNTIME_FACTS_BYTES)
             .map_err(|_| V2DtoError::Json)?;
         if value.schema != crate::RUNTIME_FACTS_SCHEMA_V2.to_string() {
             return Err(V2DtoError::InvalidSchema);
@@ -531,7 +539,8 @@ impl RuntimeFactsV2Dto {
             .parse::<Sha256Digest>()
             .map_err(|_| V2DtoError::InvalidDigest)?;
         let mut canonical: Value =
-            crate::strict::parse_strict(bytes).map_err(|_| V2DtoError::Json)?;
+            crate::strict::parse_strict_limited(bytes, MAX_RUNTIME_FACTS_BYTES)
+                .map_err(|_| V2DtoError::Json)?;
         canonical
             .as_object_mut()
             .ok_or(V2DtoError::Json)?
@@ -566,6 +575,41 @@ impl RuntimeFactsV2Dto {
             ScopeSubjectV2Dto::Target { target } if target == &self.target
         ) {
             return Err(V2DtoError::InvalidSubject);
+        }
+        // v1 runtime facts already require these subject syntax checks; v2 must
+        // not regress to a scope-only check. This is structural validation, not
+        // later trust or lineage semantics.
+        self.subject
+            .repository
+            .parse::<RepositoryIdentity>()
+            .map_err(|_| V2DtoError::InvalidSubject)?;
+        self.subject
+            .repository_id_digest
+            .parse::<Sha256Digest>()
+            .map_err(|_| V2DtoError::InvalidSubject)?;
+        self.subject
+            .source_commit
+            .parse::<SourceCommit>()
+            .map_err(|_| V2DtoError::InvalidSubject)?;
+        self.subject
+            .target_configuration_digest
+            .parse::<Sha256Digest>()
+            .map_err(|_| V2DtoError::InvalidSubject)?;
+        if self
+            .subject
+            .build_id
+            .as_deref()
+            .is_some_and(|value| SelectorText::new(value).is_err())
+            || self
+                .subject
+                .artifact_digest
+                .as_deref()
+                .is_some_and(|value| value.parse::<Sha256Digest>().is_err())
+        {
+            return Err(V2DtoError::InvalidSubject);
+        }
+        if self.facts.len() > MAX_RUNTIME_FACTS {
+            return Err(V2DtoError::InvalidLimits);
         }
         if !self.profile_values.windows(2).all(|pair| pair[0] < pair[1]) {
             return Err(V2DtoError::InvalidOrdering);
@@ -1185,6 +1229,119 @@ mod tests {
         };
         bounded.entries = vec![entry; 250_001];
         assert_eq!(bounded.validate_structure(), Err(V2DtoError::InvalidLimits));
+        Ok(())
+    }
+
+    fn facts_record(count: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+        let mut facts = RuntimeFactsV2Dto {
+            schema: crate::RUNTIME_FACTS_SCHEMA_V2.to_string(),
+            provider: "runtime.fixture".to_owned(),
+            subject: subject(),
+            target: "web".to_owned(),
+            profile_values: Vec::new(),
+            observed_at: instant("2026-01-02T03:04:05Z")?,
+            expires_at: instant("2026-01-03T03:04:05Z")?,
+            facts: (0..count)
+                .map(|index| RuntimeFactV2Dto {
+                    surface: "account.create.signup.identifier".to_owned(),
+                    dimension: "availability".to_owned(),
+                    key: format!("k{index:06}"),
+                    value: FactValueV2Dto::Boolean(true),
+                })
+                .collect(),
+            producer: "producer://runtime/fixture/snapshot-1".to_owned(),
+            claimed_trust: "signed_ci".to_owned(),
+            facts_digest: String::new(),
+        };
+        recompute_facts_digest(&mut facts)?;
+        Ok(serde_json::to_vec(&facts)?)
+    }
+
+    fn recompute_facts_digest(facts: &mut RuntimeFactsV2Dto) -> Result<(), Box<dyn Error>> {
+        facts.facts_digest = facts_digest_of(facts)?;
+        Ok(())
+    }
+
+    fn facts_digest_of(facts: &RuntimeFactsV2Dto) -> Result<String, Box<dyn Error>> {
+        let mut value = serde_json::to_value(facts)?;
+        value
+            .as_object_mut()
+            .ok_or("runtime facts object")?
+            .remove("facts_digest");
+        Ok(Sha256Digest::hash_content(&serde_json_canonicalizer::to_vec(&value)?).to_string())
+    }
+
+    #[test]
+    fn v2_runtime_facts_bound_is_honored_at_every_parse() -> Result<(), Box<dyn Error>> {
+        let base = serde_json::to_vec(&runtime_facts()?)?;
+        assert!(base.len() < 8 * 1024 * 1024);
+        // A digest-valid record past the default 8 MiB parser limit must still
+        // parse: the digest preparation honors the declared 16 MiB envelope.
+        let mut beyond_default = base.clone();
+        beyond_default.resize(9 * 1024 * 1024, b' ');
+        assert!(
+            RuntimeFactsV2Dto::from_json(&beyond_default).is_ok(),
+            "declared v2 16 MiB record was rejected at the default parser bound"
+        );
+        let mut at_bound = base.clone();
+        at_bound.resize(MAX_RUNTIME_FACTS_BYTES, b' ');
+        assert!(RuntimeFactsV2Dto::from_json(&at_bound).is_ok());
+        let mut over = base;
+        over.resize(MAX_RUNTIME_FACTS_BYTES + 1, b' ');
+        assert_eq!(
+            RuntimeFactsV2Dto::from_json(&over),
+            Err(V2DtoError::InvalidLimits)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn v2_runtime_facts_count_ceiling_is_enforced() -> Result<(), Box<dyn Error>> {
+        // 100000 otherwise-valid facts pass; 100001 reject on the count ceiling.
+        assert!(RuntimeFactsV2Dto::from_json(&facts_record(MAX_RUNTIME_FACTS)?).is_ok());
+        assert_eq!(
+            RuntimeFactsV2Dto::from_json(&facts_record(MAX_RUNTIME_FACTS + 1)?),
+            Err(V2DtoError::InvalidLimits)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn v2_runtime_facts_subject_syntax_is_enforced() -> Result<(), Box<dyn Error>> {
+        // Each mutation changes one subject field and recomputes the enclosing
+        // facts digest, so the rejection is the intended structural check and
+        // not a digest mismatch.
+        let base = serde_json::to_value(runtime_facts()?)?;
+        let mutations: [(&str, Value); 6] = [
+            ("repository", serde_json::json!("not-a-repository")),
+            ("repository_id_digest", serde_json::json!("sha256:bad")),
+            ("source_commit", serde_json::json!("zz")),
+            (
+                "target_configuration_digest",
+                serde_json::json!("sha256:bad"),
+            ),
+            ("build_id", serde_json::json!("")),
+            ("artifact_digest", serde_json::json!("not-a-digest")),
+        ];
+        for (field, value) in mutations {
+            let mut mutated = base.clone();
+            mutated["subject"][field] = value;
+            let digest = {
+                let mut unsigned = mutated.clone();
+                unsigned
+                    .as_object_mut()
+                    .ok_or("runtime facts object")?
+                    .remove("facts_digest");
+                Sha256Digest::hash_content(&serde_json_canonicalizer::to_vec(&unsigned)?)
+                    .to_string()
+            };
+            mutated["facts_digest"] = serde_json::json!(digest);
+            assert_eq!(
+                RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&mutated)?),
+                Err(V2DtoError::InvalidSubject),
+                "malformed subject field {field} was accepted"
+            );
+        }
         Ok(())
     }
 

@@ -83,8 +83,8 @@ impl RuntimeFactsDto {
         if bytes.len() > MAX_RUNTIME_FACTS_BYTES {
             return Err(RuntimeFactsDtoError::TooLarge);
         }
-        let value: Self =
-            crate::strict::from_slice(bytes).map_err(|_| RuntimeFactsDtoError::Json)?;
+        let value: Self = crate::strict::from_slice_limited(bytes, MAX_RUNTIME_FACTS_BYTES)
+            .map_err(|_| RuntimeFactsDtoError::Json)?;
         if value.schema != RUNTIME_FACTS_SCHEMA.to_string() {
             return Err(RuntimeFactsDtoError::InvalidSchema);
         }
@@ -93,7 +93,8 @@ impl RuntimeFactsDto {
             .parse()
             .map_err(|_| RuntimeFactsDtoError::InvalidDigest)?;
         let mut canonical_value: Value =
-            crate::strict::parse_strict(bytes).map_err(|_| RuntimeFactsDtoError::Json)?;
+            crate::strict::parse_strict_limited(bytes, MAX_RUNTIME_FACTS_BYTES)
+                .map_err(|_| RuntimeFactsDtoError::Json)?;
         canonical_value
             .as_object_mut()
             .ok_or(RuntimeFactsDtoError::Json)?
@@ -301,6 +302,78 @@ mod tests {
         let digest = Sha256Digest::hash_content(&serde_json_canonicalizer::to_vec(&value)?);
         value["facts_digest"] = Value::String(digest.to_string());
         Ok(serde_json::to_vec(&value)?)
+    }
+
+    #[test]
+    fn runtime_facts_bound_is_honored_at_every_parse() -> Result<(), Box<dyn Error>> {
+        let base = runtime_facts()?;
+        assert!(base.len() < 8 * 1024 * 1024);
+        // Beyond the default 8 MiB parser limit but inside the declared 16 MiB
+        // envelope: the digest parse must honor the family bound, not 8 MiB.
+        let mut beyond_default = base.clone();
+        beyond_default.resize(9 * 1024 * 1024, b' ');
+        assert!(
+            RuntimeFactsDto::from_json(&beyond_default).is_ok(),
+            "declared 16 MiB record was rejected at the default parser bound"
+        );
+        // Exactly at the declared bound passes; one byte over fails as a size
+        // error before any parse.
+        let mut at_bound = base.clone();
+        at_bound.resize(MAX_RUNTIME_FACTS_BYTES, b' ');
+        assert!(RuntimeFactsDto::from_json(&at_bound).is_ok());
+        let mut over = base;
+        over.resize(MAX_RUNTIME_FACTS_BYTES + 1, b' ');
+        assert_eq!(
+            RuntimeFactsDto::from_json(&over),
+            Err(RuntimeFactsDtoError::TooLarge)
+        );
+        Ok(())
+    }
+
+    fn facts_record(count: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+        let facts: Vec<RuntimeFactDto> = (0..count)
+            .map(|index| RuntimeFactDto {
+                surface: "account.create.signup.identifier".to_owned(),
+                dimension: "availability".to_owned(),
+                key: format!("k{index:06}"),
+                value: FactValueDto::Boolean(true),
+            })
+            .collect();
+        let mut value = json!({
+            "schema": RUNTIME_FACTS_SCHEMA.to_string(),
+            "provider": "runtime.fixture",
+            "subject": {
+                "repository": "https://example.com/repo",
+                "repository_id_digest": Sha256Digest::hash_content(b"https://example.com/repo").to_string(),
+                "scope": {"kind": "target", "target": "web"},
+                "source_commit": "a".repeat(40),
+                "build_id": "42",
+                "artifact_digest": Sha256Digest::hash_content(b"artifact").to_string(),
+                "target_configuration_digest": Sha256Digest::hash_content(b"configuration").to_string()
+            },
+            "target": "web",
+            "profile_values": [],
+            "observed_at": "2026-08-08T00:00:00Z",
+            "expires_at": "2026-08-09T00:00:00Z",
+            "facts": serde_json::to_value(&facts)?,
+            "producer": "producer://runtime/fixture/snapshot-1",
+            "claimed_trust": "signed_ci"
+        });
+        let digest = Sha256Digest::hash_content(&serde_json_canonicalizer::to_vec(&value)?);
+        value["facts_digest"] = Value::String(digest.to_string());
+        Ok(serde_json::to_vec(&value)?)
+    }
+
+    #[test]
+    fn runtime_facts_count_ceiling_is_enforced() -> Result<(), Box<dyn Error>> {
+        let at_cap = facts_record(MAX_RUNTIME_FACTS)?;
+        assert!(RuntimeFactsDto::from_json(&at_cap).is_ok());
+        let over = facts_record(MAX_RUNTIME_FACTS + 1)?;
+        assert_eq!(
+            RuntimeFactsDto::from_json(&over),
+            Err(RuntimeFactsDtoError::InvalidOrdering)
+        );
+        Ok(())
     }
 
     #[test]

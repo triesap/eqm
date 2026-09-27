@@ -331,7 +331,7 @@
     {
      "id": "S015-R6",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "9730a76fc4e7c14ee3110f13c5c6f27a8dc8ad93",
      "report": "implementation/reports/S015.md#s015-r6",
      "verification": [
       "cargo test --locked -p eqm_manifest -p eqm_protocol -p eqm",
@@ -345,10 +345,17 @@
     },
     {
      "id": "S015-R7",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/S015.md",
-     "verification": []
+     "report": "implementation/reports/S015.md#s015-r7",
+     "verification": [
+      "cargo test --locked -p eqm_protocol",
+      "cargo fmt --all --check",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "git diff --check"
+     ],
+     "implementation_status": "committed"
     },
     {
      "id": "S015-R8",
@@ -2590,7 +2597,7 @@
    "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   }
  ],
- "next_checkpoint": "S015-R7",
+ "next_checkpoint": "S015-R8",
  "supervisor_review": {
   "source_commit": "7d44724abba2fa90baf806563da0a692c5bb5857",
   "report": "implementation/reports/CODEX-7d44724.md",
@@ -2703,11 +2710,12 @@
   },
   {
    "id": "RF13",
-   "status": "open",
+   "status": "addressed_pending_supervisor_acceptance",
    "priority": "P1",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
-   "checkpoint": "S015-R7"
+   "checkpoint": "S015-R7",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF14",
@@ -2743,12 +2751,13 @@
   },
   {
    "id": "RF18",
-   "status": "open",
+   "status": "addressed_pending_supervisor_acceptance",
    "priority": "P1",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
-   "checkpoint": "S015-R7"
+   "checkpoint": "S015-R7",
+   "implementation_claim": "addressed"
   }
  ],
- "s015_corrective_status": "R1_R6_committed_R7_R9_required"
+ "s015_corrective_status": "R1_R7_committed_R8_R9_required"
 }
