@@ -1,5 +1,106 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-003 — Close version ingress and prove S015 conformance
+
+**Date/author:** 2026-09-27, Codex supervisor under owner delegation.
+**Reviewed source:** `7d44724abba2fa90baf806563da0a692c5bb5857`.
+**Disposition:** S015 remains in progress, changes required. R1–R5 commits are
+retained; the next checkpoint is S015-R6. This amendment takes precedence over
+DEV-002 only where it clarifies conformance evidence and continuation status.
+All other DEV-002 decisions remain binding. Preserve the 211 numbered steps.
+
+The independent [review](reports/CODEX-7d44724.md) records RF11–RF17.
+A green standard gate did not detect v2-labeled workspace/lock input being read
+with v1 semantics, missing nested inventory validation, repeated smaller byte
+bounds, schema/runtime differences, or tests which bypass their claimed boundary.
+These are unfinished S015 obligations, not new product scope.
+
+### Decisions settled by Codex
+
+1. **Identity versus supported reader.** `SchemaUri` may represent a known
+   kind/version pair without promising a generated schema or a supported reader.
+   Every ingress must enforce its exact supported version and kind. Existing
+   workspace, lock and authored-manifest readers accept v1 only until their
+   owning integration step. Keep CURRENT at v1. Audit every SchemaUri consumer;
+   a kind-only check is insufficient. No placeholder v2 manifests or fallback.
+2. **Nested structural validation.** A v2 adapter response must validate the
+   nested inventory's v2 marker and all structural checks already required by
+   standalone InventoryV2Dto ingestion, including digest syntax and bounds.
+   Also validate the response's own digest syntax. Reuse validation without a
+   weaker deserialize-only route. This does not confer trust or pull the later
+   relationship/verification/evaluator steps into S015.
+3. **Bounds are end-to-end.** Keep the existing per-family byte limits at every
+   parse, including canonical-digest preparation. v1 and v2 runtime facts retain
+   the declared 16 MiB envelope and 100000-fact ceiling. Do not globally raise
+   the default strict parser's 8 MiB limit. Test actual valid records, including
+   computed digests, padded beyond 8 MiB, at 16 MiB and one byte over; test fact
+   count at/above its cap. Preserve the completed release bound correction.
+4. **Schema assertions.** All five v2 schemas must constrain each instance's
+   `schema` member to its exact family/version URI, including embedded inventory.
+   `$id` alone is not this constraint. The UTC pattern must reject zero and
+   redundant fractional groups (including `.000Z`, `.123000Z`, `.123456000Z`)
+   while accepting canonical 0/3/6/9 groups. Use date-time format assertions in
+   the conformance validator for calendar validity, in addition to the v2
+   canonical pattern. Raw parser/calendar validation remains mandatory.
+5. **Three distinct validation layers.** JSON Schema validates JSON values,
+   not original number-token spellings: 1.0 and 1e3 are integral values. Raw v2
+   parsing must still reject those tokens, negative zero and duplicate members.
+   Keep raw-byte/token, schema-value and semantic-validation test expectations
+   separate. This corrects DEV-002's overbroad schema/parser agreement wording;
+   it does not relax the v2 wire contract. Cross-field digest/trust semantics
+   remain runtime responsibilities and must not be attributed to JSON Schema.
+   See [Draft 2020-12 validation](https://json-schema.org/draft/2020-12/json-schema-validation#section-6.1.1).
+6. **Real schema validation is authorized.** Add an exact-pinned, toolchain-
+   compatible Rust `jsonschema` dev dependency, with Draft 2020-12 and explicit
+   format assertion support. Select the exact compatible release as an ordinary
+   implementation detail, record its version/features/license/lock changes and
+   use only local schema resolution with network retrieval disabled. No runtime
+   dependency is authorized by this decision. Replace the bespoke pseudo-validator;
+   do not reinterpret standard integer semantics to force test agreement.
+7. **Evidence must exercise the claimed input and boundary.** Absence-vector
+   tests must consume each literal input and compare its declared output; never
+   synthesize the test input from expected success/failure. Validate exact
+   category/discipline mappings. Test provider over-return through read_evidence
+   with a fake reader (exact limit, one over, missing reader, propagated error,
+   no runner execution), not only the comparison helper. A reconcile control
+   must successfully load a valid locked local inventory; its duplicate-member
+   mutant must fail at the same ingress. Another unrelated error is not success.
+8. **Continuation is preauthorized, acceptance is separate.** Complete R6–R9
+   in order, then continue S016–S211 while dependency-unblocked. Once the
+   objective repair checks pass, Pi may mark S015 implementation-complete and
+   proceed, recording supervisor acceptance as pending review of the new HEAD.
+   Do not stop solely to request that already-authorized transition. Codex
+   reviews at each session handback; Pi cannot approve itself, change these
+   decisions, waive gates or skip blocked predecessors. S143 is intermediate.
+   A new material scope/contract conflict needs a concrete Codex decision;
+   routine mechanics and pinned dependency selection within decision 6 do not.
+
+### Remaining corrective commits under S015
+
+Each row is one independently green commit, with report and ledger updates.
+Use the existing S015 report with real stable anchors and exact commit receipts.
+
+| Checkpoint | Scope | Required evidence and dominant lane |
+| --- | --- | --- |
+| S015-R6 | RF11/RF12: enforce reader version/kind and nested inventory structural validation. | Successful v1 workspace/lock controls; changing only the URI to v2/v3/wrong kind rejects through actual preparation/CLI. Valid records for all five v2 readers pass; root and nested version mutations reject; nested invalid digest rejects both standalone and embedded. Manifest/protocol/CLI tests, full standard gate. |
+| S015-R7 | RF13: repair runtime-facts bounds in v1/v2 and retain the fact-count ceiling. | Actual digest-valid records pass beyond 8 MiB and at 16 MiB; one byte over fails with size error; 100000 facts pass where otherwise valid, 100001 reject. Audit all family parse bounds; protocol tests and full standard gate. |
+| S015-R8 | RF14/RF15: correct generated schema constraints and use standards-conforming validation. | Regenerate five v2 schemas atomically; 22 v1 schemas byte-identical. Full valid fixtures and single-field mutants for all families run against committed/generated schemas, including nested markers/null, integer endpoints/string ranges, canonical times and invalid calendars. Separate lexical-only and cross-field expectations. Protocol/domain schema tests, schema parity and full standard gate. |
+| S015-R9 | RF16/RF17: replace tautological controls and reconcile evidence. | Literal absence inputs/outputs execute; exact discipline mapping; successful reconcile control and duplicate mutant; fake-reader integration succeeds/fails at real boundary. Run application doctests and all S015 tests; correct report claims, anchors, cursor and per-checkpoint receipts. Package structure and full standard gate. |
+
+Full standard gate is `cargo xtask check` plus `git diff --check`. Each checkpoint
+also runs its targeted tests; regenerate/check schemas whenever their source
+changes. R9 runs S015's complete declared command set. Retain raw command logs
+outside the checkout and report their paths externally. Do not rewrite original
+package delivery hashes or amend reviewed commits. Do not write implementation
+code through the supervisor: Pi remains the implementation agent.
+
+S016 retains canonical sets/NFC/opaque-byte work; S025/S059/S061 retain relationship
+acceptance, S027 hash-corpus closure, S069 freshness arithmetic, and later owning
+steps the rest of the v2 consumer migration. External product/host/policy gates
+remain effective at their first dependent step. Local tests do not establish
+release readiness; no publication, deployment or optional-native activation is
+part of this amendment.
+
 ## DEV-002 — Supervisor-owned S015 completion and continuation
 
 **Date/author:** 2026-09-26, Codex supervisor. **Status:** owner-delegated
@@ -842,7 +943,7 @@ Enforce approved numeric and temporal wire forms.
 Make cross-runtime digests predictable.
 
 ### 3. Exact scope of code changes
-Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; implement exact v2 integer ranges, canonical UTC time, null/absence and overflow; establish explicit version-qualified DTO/schema generation and five concrete v2 protocol families; repair bounded ingress/read integration; update generated schemas and conformance tests atomically before S016.
+Retain DEV-002 S015-R1 through S015-R5 and complete DEV-003 S015-R6 through S015-R9: close exact version/kind ingress and nested inventory validation; repair runtime-facts byte/count bounds; enforce v2 schema markers and minimal UTC fractions; use actual schema validation with separate raw-token expectations; replace tautological corpus/application/CLI controls and reconcile evidence before S016.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
@@ -856,16 +957,20 @@ Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; imp
 - `crates/eqm_test_support/`
 - `schemas/`
 - `crates/eqm_protocol/tests/`
+- `crates/eqm_manifest/src/`
+- `Cargo.toml`
+- `Cargo.lock`
+- `crates/eqm_protocol/Cargo.toml`
 
 ### 5. Unit tests or integration tests required
-All DEV-002 endpoint, canonical token, leap-second/year/precision, null/absence, unsupported-version, runtime/schema, v1 preservation, actual ingress and bounded-provider controls pass. Every applicable frozen vector executes without silent skips; application doctests and schema parity pass.
+All DEV-002 and DEV-003 controls pass: full integer endpoints, canonical raw tokens, UTC/calendar/absence rules, exact root/nested versions, v1 preservation, all five schemas validated with Draft 2020-12, actual 16 MiB runtime-facts and fact-count bounds, literal corpus execution, successful reconcile control and fake-reader integration. Application doctests and schema parity pass; JSON-value conformance is distinguished from raw-token and cross-field validation.
 
 ### 6. Verification commands
 ```sh
 cargo xtask schemas generate
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_protocol -p eqm_domain
+cargo test --all-targets --locked -p eqm_protocol -p eqm_domain -p eqm_manifest -p eqm_application -p eqm -p eqm_test_support
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 cargo xtask schemas check
@@ -873,7 +978,7 @@ cargo test --locked -p eqm_application --doc
 git diff --check
 ```
 
-**Admission gate:** DEV-002: S015 is reopened; complete S015-R1 through S015-R5 before S016. The supervisor owns scope/representation/dependency decisions; implementation agents do not defer required work or amend these decisions independently.
+**Admission gate:** DEV-003: S015 remains open; complete S015-R6 through S015-R9 before S016. Once objective repair checks pass, proceed through dependency-unblocked S016–S211 with supervisor acceptance separately pending review. Codex owns scope/representation/dependency decisions; Pi cannot change them or waive gates.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.

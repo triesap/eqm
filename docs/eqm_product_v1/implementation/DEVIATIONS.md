@@ -1,6 +1,6 @@
 # Deviation register
 
-Revision 2 is the imported planning baseline. DEV-001 and DEV-002 record approved amendments; source implementation status is tracked separately in progress.json and STATUS.md.
+Revision 2 is the imported planning baseline. DEV-001, DEV-002 and DEV-003 record approved amendments; source implementation status is tracked separately in progress.json and STATUS.md.
 
 The commit order and boundaries are mandatory. Do not skip, merge, reorder or broaden a step for convenience. Only inspected repository evidence that a step is obsolete or unsafe may justify a documented deviation; a product-intent/security change additionally needs owner approval.
 
@@ -53,3 +53,27 @@ Date/author: 2026-09-26, Codex supervisor under explicit owner delegation. Revie
 The [binding decisions and independently green S015-R1–R5 checkpoints](COMMIT_SEQUENCE.md#dev-002--supervisor-owned-s015-completion-and-continuation) are part of the existing governing sequence. [Review RF01–RF10](reports/CODEX-3da0b50.md) supplies the evidence: v1 acceptance regression, missing v2 schemas/null handling, integer canonicality/endpoints, temporal validation, ingress/read bounds and incomplete proof. S015 already owns these representation and schema obligations; no new product subsystem or renumbering is approved.
 
 Preserve all S001–S211 IDs; reopen S015 and block S016 admission until its five corrective checkpoints pass. S015-R4 also closes outstanding contributions from earlier corrections. All original R/AC/RA links remain in force. Generate schemas from source, preserve v1 and original signed bytes, run the declared targeted/standard/doctest/structure checks, and record each actual corrective SHA. No source repair is asserted by this planning amendment. The owner authorizes Codex to make scope decisions; the implementation agent performs the decided work and reports new decisions to the supervisor. Full continuation is authorized through the dependency-unblocked sequence toward S211; concrete external gates remain binding.
+
+## DEV-003 — S015 reader isolation and conformance closure
+
+**Date/author:** 2026-09-27, Codex supervisor under owner delegation.
+**Reviewed HEAD:** 7d44724abba2fa90baf806563da0a692c5bb5857.
+**Affected steps/contracts:** S015 and retained S006/S011/S012/S014 regression
+contributions; R18/R19/R21/R52/R64 and existing acceptance links.
+**Evidence:** [review RF11–RF17](reports/CODEX-7d44724.md): actual command ingress
+accepts unsupported v2 workspace/lock labels; nested inventory validation,
+runtime-facts limits, schema assertions and test evidence remain incomplete.
+
+**Why proceeding unchanged is unsafe:** green tests leave version boundaries
+open and overstate conformance. JSON Schema cannot prove original numeric token
+spelling, so requiring that would incentivize an incorrect substitute validator.
+**Replacement:** four independently green corrective commits S015-R6–R9 in the
+existing [governing sequence](COMMIT_SEQUENCE.md), retaining all original step IDs
+and R1–R5 history. Exact version checks, existing bounds, actual Draft 2020-12
+validation with a dev-only dependency, and real input/boundary tests are approved.
+The raw canonical contract is unchanged; value and semantic layers are explicit.
+**Continuation:** after objective repair gates, Pi continues dependency-unblocked
+S016–S211 with independent supervisor acceptance still pending; no gate waiver.
+**Verification:** current-source standard check, application doctest and build
+passed; ingress probe demonstrates the defect. Package structure/diff checks
+are required on this planning update. Implementation is pending with Pi.

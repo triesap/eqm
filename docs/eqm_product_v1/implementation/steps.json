@@ -871,7 +871,7 @@
     {
       "title": "Enforce approved numeric and temporal wire forms",
       "purpose": "Make cross-runtime digests predictable.",
-      "scope": "Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; implement exact v2 integer ranges, canonical UTC time, null/absence and overflow; establish explicit version-qualified DTO/schema generation and five concrete v2 protocol families; repair bounded ingress/read integration; update generated schemas and conformance tests atomically before S016.",
+      "scope": "Retain DEV-002 S015-R1 through S015-R5 and complete DEV-003 S015-R6 through S015-R9: close exact version/kind ingress and nested inventory validation; repair runtime-facts byte/count bounds; enforce v2 schema markers and minimal UTC fractions; use actual schema validation with separate raw-token expectations; replace tautological corpus/application/CLI controls and reconcile evidence before S016.",
       "files": [
         "crates/eqm_protocol/src/",
         "crates/eqm_domain/src/time.rs",
@@ -883,9 +883,13 @@
         "crates/eqm_application/src/",
         "crates/eqm_cli/src/commands/",
         "crates/eqm_runner/src/inventory.rs",
-        "crates/eqm_test_support/"
+        "crates/eqm_test_support/",
+        "crates/eqm_manifest/src/",
+        "Cargo.toml",
+        "Cargo.lock",
+        "crates/eqm_protocol/Cargo.toml"
       ],
-      "tests": "All DEV-002 endpoint, canonical token, leap-second/year/precision, null/absence, unsupported-version, runtime/schema, v1 preservation, actual ingress and bounded-provider controls pass. Every applicable frozen vector executes without silent skips; application doctests and schema parity pass.",
+      "tests": "All DEV-002 and DEV-003 controls pass: full integer endpoints, canonical raw tokens, UTC/calendar/absence rules, exact root/nested versions, v1 preservation, all five schemas validated with Draft 2020-12, actual 16 MiB runtime-facts and fact-count bounds, literal corpus execution, successful reconcile control and fake-reader integration. Application doctests and schema parity pass; JSON-value conformance is distinguished from raw-token and cross-field validation.",
       "expected": "No consumer silently changes a number or time before hashing.",
       "commit_message": "fix: enforce canonical numeric and time representations",
       "requirements": [
@@ -914,13 +918,14 @@
         "decisions/ADR-0012-approved-review-closure.md",
         "decisions/ADR-0013-wire-namespace-and-representations.md",
         "implementation/DEVIATIONS.md",
-        "implementation/reports/CODEX-3da0b50.md"
+        "implementation/reports/CODEX-3da0b50.md",
+        "implementation/reports/CODEX-7d44724.md"
       ],
       "verification_commands": [
         "cargo xtask schemas generate",
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
-        "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain",
+        "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain -p eqm_manifest -p eqm_application -p eqm -p eqm_test_support",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo xtask check",
         "cargo xtask schemas check",
@@ -928,7 +933,7 @@
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": "DEV-002: S015 is reopened; complete S015-R1 through S015-R5 before S016. The supervisor owns scope/representation/dependency decisions; implementation agents do not defer required work or amend these decisions independently.",
+      "gate": "DEV-003: S015 remains open; complete S015-R6 through S015-R9 before S016. Once objective repair checks pass, proceed through dependency-unblocked S016–S211 with supervisor acceptance separately pending review. Codex owns scope/representation/dependency decisions; Pi cannot change them or waive gates.",
       "initial_status": "pending",
       "review_regressions": [
         "RA13"
@@ -938,7 +943,11 @@
         "S015-R2",
         "S015-R3",
         "S015-R4",
-        "S015-R5"
+        "S015-R5",
+        "S015-R6",
+        "S015-R7",
+        "S015-R8",
+        "S015-R9"
       ]
     },
     {
@@ -13559,9 +13568,10 @@
   "supervision": {
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
-    "amendment": "DEV-002",
-    "next_checkpoint": "S015-R1",
+    "amendment": "DEV-003",
+    "next_checkpoint": "S015-R6",
     "execution_target": "S211 subject to explicit predecessor and external evidence gates",
-    "intermediate_checkpoint": "S143 is not a stopping boundary"
+    "intermediate_checkpoint": "S143 is not a stopping boundary",
+    "continuation": "After objective R6–R9 gates pass, continue S016–S211; supervisor acceptance remains independently tracked."
   }
 }

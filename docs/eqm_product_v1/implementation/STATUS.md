@@ -1,58 +1,51 @@
 # Verification and implementation status
 
-Imported plan revision 2; current engineering amendment DEV-002, 2026-09-26.
-Reviewed source HEAD: `3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b`.
+Imported plan revision 2; current amendment DEV-003, 2026-09-27.
+Reviewed source HEAD: `7d44724abba2fa90baf806563da0a692c5bb5857`.
 
 ## Current implementation
 
-S001–S014 are committed; prior review corrections have been independently
-inspected. CR04/CR05/CR07 are accepted for their original bounded scope.
-CR01/CR02/CR03/CR06/CR08 retain obligations mapped to DEV-002.
-S015 has an implementation commit but is **reopened, changes required** after
-supervisor findings RF01–RF10. Corrective checkpoints **S015-R1 through
-S015-R5 are implementation-complete**: pre-S015 v1 integer acceptance is
-restored, the 22 v1 schemas remain byte-identical, schema identity is
-version-qualified with per-version parity, the five concrete v2 protocol
-families exist with generated v2 schemas, release/adapter ingress and the
-application result bound have real controls, and every applicable
-representation vector is dispatched by its declared discipline. Independent
-supervisor acceptance is **not yet given**; S015 remains `changes_required`
-until Codex reviews. After acceptance the next numbered step is **S016** in the
-governing COMMIT_SEQUENCE.md. Checkpoint SHAs are recorded externally and
-backfilled one checkpoint later (R1 = `92f781a`, R2 = `0fb6a86`,
-R3 = `c5547fc`, R4 = `799f7ae`).
+S001–S014 are recorded complete. S015 remains **in progress, changes required**.
+Five corrective implementation commits R1–R5 plus receipt commit exist, but the
+independent review found RF11–RF17. Next checkpoint: **S015-R6**, followed by
+R7, R8 and R9. S016 has not started. R1–R5 receipts are retained; no history is
+rewritten and no accepted repair is discarded.
 
-EQM-P01's 12 numbered steps are recorded complete, with remaining regression
-contributions explicitly assigned to the current corrections. EQM-P02 has
-S013–S014 complete and S015 in progress. P03–P15 are pending. Preserve all 211
-numbered IDs; the five corrective checkpoints do not renumber the plan.
+v1 integer acceptance is restored; 22 v1 schemas remain unchanged; five v2
+protocol families, version identity, exact integer endpoints, canonical runtime
+time/null handling and the release bound fix are present. Remaining defects
+involve version ingress, nested validation, runtime-facts limits, schema
+assertions and insufficient regression controls. See the
+[review](reports/CODEX-7d44724.md) for all findings and earlier dispositions.
 
-The owner delegates scope/representation/sequence decisions to Codex; the
-implementation agent performs code generation and verification within those
-resolved decisions. All dependency-unblocked work toward S211 is authorized;
-S143 is an intermediate checkpoint. Missing concrete external evidence still
-blocks its first dependent step. Optional native work remains unactivated.
+EQM-P01 has 12 numbered steps recorded complete. EQM-P02 has S013–S014 complete
+and S015 in progress; P03–P15 are pending. Corrective checkpoints retain S015
+traceability and do not increase the 211 numbered steps.
 
-## Verified evidence and limits
+Codex owns scope, contract, sequence and acceptance decisions; Pi implements.
+After objective R6–R9 gates pass, Pi may record S015 implementation-complete and
+continue dependency-unblocked S016–S211, while supervisor acceptance of the new
+HEAD remains separately pending. No stop at S143 or invented approval gate.
+Existing external-evidence prerequisites and optional-native boundaries remain.
 
-Independent `cargo xtask check` and `cargo test --locked -p eqm_application
---doc` passed at the reviewed source HEAD. The latter separately exercised the
-negative compile test not covered by all-targets testing. Per-commit correction
-and S015 logs report green standard lanes. See the
-[supervisor review](reports/CODEX-3da0b50.md) for source findings and limitations.
+## Independent verification and limits
 
-The live progress ledger separates these local checks from full acceptance.
-AC001–AC064 and RA01–RA21 remain unclosed unless their complete declared evidence
-is recorded. Extended verification, supported Linux host evidence, real product
-acceptance and operational authorization have not been established. macOS arm64
-and Linux x86_64 remain the approved initial execution/storage target matrix.
-This is not a release candidate and no human release test is required yet.
+At the reviewed HEAD, `cargo xtask check`, application doctests and the CLI build
+passed. The actual-ingress CLI probe nevertheless accepted unsupported v2
+workspace/lock markers. Original v1 schemas are byte-identical. Pi's historical
+per-checkpoint command claims were reviewed; separate raw R1–R5 logs were not
+located, so they are not independently attested. Current-HEAD logs are retained
+externally. Planning verification is recorded with the supervisor receipt.
+
+AC001–AC064 and RA01–RA21 are not closed merely by test counts or references.
+Extended verification, Linux x86_64 execution, real product acceptance and
+operational authorization remain unverified. Initial execution/storage targets
+remain macOS arm64 and Linux x86_64. This is not a release candidate; human
+release testing is not the next action.
 
 ## Governing artifacts
 
-COMMIT_SEQUENCE.md remains the single governing implementation sequence;
-steps.json and chapter files are synchronized views; progress.json records live
-state; DEVIATIONS.md records DEV-001 and DEV-002. Original imported hashes and
-package validation describe the historical delivery, not current source
-acceptance. Use the structure-only validator after intentional implementation
-updates; never regenerate original hashes to hide divergence.
+COMMIT_SEQUENCE.md is the sole governing sequence; steps.json and chapter files
+are synchronized views. progress.json records live state; DEVIATIONS.md records
+DEV-001–DEV-003. Keep original delivery hashes unchanged. Use the structure-only
+package validator for intentional implementation/planning updates.

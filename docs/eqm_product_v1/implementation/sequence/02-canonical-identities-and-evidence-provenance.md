@@ -1,6 +1,6 @@
 # Chapter 02: Canonical identities and evidence provenance
 
-Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. All implementation steps are pending.
+Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S015 remains open under DEV-003.
 
 **Definition of green:** Canonical component/subject/raw/semantic/attempt identities and dirty-source provenance pass mutation vectors.
 
@@ -112,7 +112,7 @@ Enforce approved numeric and temporal wire forms.
 Make cross-runtime digests predictable.
 
 ### 3. Exact scope of code changes
-Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; implement exact v2 integer ranges, canonical UTC time, null/absence and overflow; establish explicit version-qualified DTO/schema generation and five concrete v2 protocol families; repair bounded ingress/read integration; update generated schemas and conformance tests atomically before S016.
+Retain DEV-002 S015-R1 through S015-R5 and complete DEV-003 S015-R6 through S015-R9: close exact version/kind ingress and nested inventory validation; repair runtime-facts byte/count bounds; enforce v2 schema markers and minimal UTC fractions; use actual schema validation with separate raw-token expectations; replace tautological corpus/application/CLI controls and reconcile evidence before S016.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
@@ -126,16 +126,20 @@ Complete DEV-002 checkpoints S015-R1 through S015-R5: restore v1 acceptance; imp
 - `crates/eqm_test_support/`
 - `schemas/`
 - `crates/eqm_protocol/tests/`
+- `crates/eqm_manifest/src/`
+- `Cargo.toml`
+- `Cargo.lock`
+- `crates/eqm_protocol/Cargo.toml`
 
 ### 5. Unit tests or integration tests required
-All DEV-002 endpoint, canonical token, leap-second/year/precision, null/absence, unsupported-version, runtime/schema, v1 preservation, actual ingress and bounded-provider controls pass. Every applicable frozen vector executes without silent skips; application doctests and schema parity pass.
+All DEV-002 and DEV-003 controls pass: full integer endpoints, canonical raw tokens, UTC/calendar/absence rules, exact root/nested versions, v1 preservation, all five schemas validated with Draft 2020-12, actual 16 MiB runtime-facts and fact-count bounds, literal corpus execution, successful reconcile control and fake-reader integration. Application doctests and schema parity pass; JSON-value conformance is distinguished from raw-token and cross-field validation.
 
 ### 6. Verification commands
 ```sh
 cargo xtask schemas generate
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_protocol -p eqm_domain
+cargo test --all-targets --locked -p eqm_protocol -p eqm_domain -p eqm_manifest -p eqm_application -p eqm -p eqm_test_support
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 cargo xtask schemas check
@@ -143,7 +147,7 @@ cargo test --locked -p eqm_application --doc
 git diff --check
 ```
 
-**Admission gate:** DEV-002: S015 is reopened; complete S015-R1 through S015-R5 before S016. The supervisor owns scope/representation/dependency decisions; implementation agents do not defer required work or amend these decisions independently.
+**Admission gate:** DEV-003: S015 remains open; complete S015-R6 through S015-R9 before S016. Once objective repair checks pass, proceed through dependency-unblocked S016–S211 with supervisor acceptance separately pending review. Codex owns scope/representation/dependency decisions; Pi cannot change them or waive gates.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.

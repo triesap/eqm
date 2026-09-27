@@ -252,7 +252,9 @@
       "cargo xtask check",
       "cargo test --locked -p eqm_application --doc",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed",
+     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
     },
     {
      "id": "S015-R2",
@@ -268,7 +270,9 @@
       "cargo xtask check",
       "cargo test --locked -p eqm_application --doc",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed",
+     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
     },
     {
      "id": "S015-R3",
@@ -284,7 +288,9 @@
       "cargo xtask check",
       "cargo test --locked -p eqm_application --doc",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed",
+     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
     },
     {
      "id": "S015-R4",
@@ -298,7 +304,9 @@
       "cargo xtask check",
       "cargo test --locked -p eqm_application --doc",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed",
+     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
     },
     {
      "id": "S015-R5",
@@ -316,10 +324,40 @@
       "cargo test --locked -p eqm_application --doc",
       "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed",
+     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
+    },
+    {
+     "id": "S015-R6",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/S015.md",
+     "verification": []
+    },
+    {
+     "id": "S015-R7",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/S015.md",
+     "verification": []
+    },
+    {
+     "id": "S015-R8",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/S015.md",
+     "verification": []
+    },
+    {
+     "id": "S015-R9",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/S015.md",
+     "verification": []
     }
    ],
-   "implementation_status": "corrective_checkpoints_complete_pending_supervisor_acceptance"
+   "implementation_status": "additional_corrective_checkpoints_required"
   },
   {
    "id": "S016",
@@ -2492,14 +2530,14 @@
    "status": "fixed",
    "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
    "summary": "strict ingestion honors each caller bound",
-   "supervisor_status": "coverage_completed_S015-R4"
+   "supervisor_status": "partial_remaining_in_RF13_RF16"
   },
   {
    "id": "CR02",
    "status": "fixed",
    "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
    "summary": "external inventory and release ingress use the strict boundary",
-   "supervisor_status": "coverage_completed_S015-R4"
+   "supervisor_status": "partial_remaining_in_RF13_RF16"
   },
   {
    "id": "CR03",
@@ -2527,7 +2565,7 @@
    "status": "fixed",
    "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
    "summary": "narrow ReadCapabilities view and corrected S012 claim",
-   "supervisor_status": "coverage_completed_S015-R4"
+   "supervisor_status": "partial_remaining_in_RF13_RF16"
   },
   {
    "id": "CR07",
@@ -2544,88 +2582,155 @@
    "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   }
  ],
- "next_checkpoint": "S016",
+ "next_checkpoint": "S015-R6",
  "supervisor_review": {
-  "source_commit": "3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b",
-  "report": "implementation/reports/CODEX-3da0b50.md",
+  "source_commit": "7d44724abba2fa90baf806563da0a692c5bb5857",
+  "report": "implementation/reports/CODEX-7d44724.md",
   "status": "changes_required",
-  "amendment": "DEV-002",
+  "amendment": "DEV-003",
   "standard_check": "passed",
   "application_doctest": "passed",
-  "release_candidate": false
+  "release_candidate": false,
+  "version_ingress_probe": "failed_closedness_v2_workspace_and_lock_accepted"
  },
  "execution_target": "S211 subject to predecessor and external evidence gates",
  "supervisor_findings": [
   {
    "id": "RF01",
-   "status": "addressed",
+   "status": "accepted_for_original_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R1"
+   "checkpoint": "S015-R1",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF02",
-   "status": "addressed",
+   "status": "partial_remaining_obligations_in_DEV_003",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R3"
+   "checkpoint": "S015-R3",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF03",
-   "status": "addressed",
+   "status": "accepted_for_original_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R1"
+   "checkpoint": "S015-R1",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF04",
-   "status": "addressed",
+   "status": "accepted_for_original_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R1"
+   "checkpoint": "S015-R1",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF05",
-   "status": "addressed",
+   "status": "partial_remaining_obligations_in_DEV_003",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R1"
+   "checkpoint": "S015-R1",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF06",
-   "status": "addressed",
+   "status": "partial_remaining_obligations_in_DEV_003",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R3"
+   "checkpoint": "S015-R3",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF07",
-   "status": "addressed",
+   "status": "accepted_for_original_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R4"
+   "checkpoint": "S015-R4",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF08",
-   "status": "addressed",
+   "status": "partial_remaining_obligations_in_DEV_003",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R4"
+   "checkpoint": "S015-R4",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF09",
-   "status": "addressed",
+   "status": "partial_remaining_obligations_in_DEV_003",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R5"
+   "checkpoint": "S015-R5",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF10",
-   "status": "addressed",
+   "status": "partial_remaining_obligations_in_DEV_003",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
-   "checkpoint": "S015-R5"
+   "checkpoint": "S015-R5",
+   "implementation_claim": "addressed"
+  },
+  {
+   "id": "RF11",
+   "status": "open",
+   "priority": "P1",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-7d44724.md",
+   "checkpoint": "S015-R6"
+  },
+  {
+   "id": "RF12",
+   "status": "open",
+   "priority": "P1",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-7d44724.md",
+   "checkpoint": "S015-R6"
+  },
+  {
+   "id": "RF13",
+   "status": "open",
+   "priority": "P1",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-7d44724.md",
+   "checkpoint": "S015-R7"
+  },
+  {
+   "id": "RF14",
+   "status": "open",
+   "priority": "P2",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-7d44724.md",
+   "checkpoint": "S015-R8"
+  },
+  {
+   "id": "RF15",
+   "status": "open",
+   "priority": "P2",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-7d44724.md",
+   "checkpoint": "S015-R8"
+  },
+  {
+   "id": "RF16",
+   "status": "open",
+   "priority": "P2",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-7d44724.md",
+   "checkpoint": "S015-R9"
+  },
+  {
+   "id": "RF17",
+   "status": "open",
+   "priority": "P2",
+   "owner": "S015",
+   "report": "implementation/reports/CODEX-7d44724.md",
+   "checkpoint": "S015-R9"
   }
  ],
- "s015_corrective_status": "complete_pending_supervisor_acceptance"
+ "s015_corrective_status": "R1_R5_committed_R6_R9_required"
 }

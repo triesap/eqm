@@ -44,3 +44,21 @@ strict duplicate rejection remains the approved security correction. Subsequent
 owning steps add actual v2 shapes and explicit consumers together. No placeholder
 manifest schemas or implicit version conversion is authorized. The staged v2
 contract is not a published release or a promise of indefinite v1/v2 support.
+
+## DEV-003 conformance clarification
+
+DEV-003 in the governing COMMIT_SEQUENCE.md closes reader version isolation,
+nested structural validation and schema assertions. A known SchemaUri is not
+proof that a reader or generated schema exists. Existing authored/workspace/lock
+readers reject v2 until their owning integration steps. The five v2 families
+must enforce exact root/nested schema markers and uniform declared byte/count
+bounds. v1 schemas and accepted numeric/time forms remain unchanged.
+
+Raw canonical JSON token validation, Draft 2020-12 value validation and runtime
+semantic validation are separate obligations. JSON Schema integer includes
+integral values written as 1.0 or 1e3; raw v2 readers reject those spellings.
+Do not claim a schema proves original token form, duplicate-member rejection,
+digest consistency or trust. Conformance tests use an actual standards validator
+with date-time format assertions and local-only resolution. v2 UTC patterns
+still enforce minimal AutoSi groups; runtime validation retains exact calendar
+checks. No canonical input rule is relaxed by this clarification.
