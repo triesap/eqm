@@ -130,6 +130,67 @@ fn count(value: usize) -> Result<u64, std::num::TryFromIntError> {
 mod tests {
     use super::*;
     use crate::cli::{ParseOutcome, parse};
+    use std::fs;
+
+    const V1_WORKSPACE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json";
+    const V1_LOCK: &str =
+        "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json";
+
+    fn run_validate(root: &Path) -> Result<u8, Box<dyn Error>> {
+        let ParseOutcome::Run(parsed) = parse(["validate", "--format", "json", "--no-progress"])?
+        else {
+            return Err("unexpected help".into());
+        };
+        Ok(execute(parsed, root)?.exit_code)
+    }
+
+    #[test]
+    fn unsupported_workspace_and_lock_uris_fail_through_actual_preparation()
+    -> Result<(), Box<dyn Error>> {
+        // Control: the unmutated v1 workspace and lock validate successfully.
+        let repository = crate::test_support::example_repository()?;
+        assert_eq!(run_validate(repository.path())?, 0);
+
+        // Workspace-only URI mutation to v2/v3/wrong kind must reject through
+        // the real CLI preparation boundary, not only a unit helper.
+        for mutation in [
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/manifest/workspace.schema.json",
+            V1_LOCK,
+        ] {
+            let repository = crate::test_support::example_repository()?;
+            let config = fs::read_to_string(repository.path().join("eqm.toml"))?;
+            fs::write(
+                repository.path().join("eqm.toml"),
+                config.replace(V1_WORKSPACE, mutation),
+            )?;
+            assert_eq!(
+                run_validate(repository.path())?,
+                3,
+                "accepted workspace schema {mutation}"
+            );
+        }
+
+        // Lock-only URI mutation rejects too.
+        for mutation in [
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/lock.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/manifest/lock.schema.json",
+            V1_WORKSPACE,
+        ] {
+            let repository = crate::test_support::example_repository()?;
+            let lock = fs::read_to_string(repository.path().join("eqm.lock"))?;
+            fs::write(
+                repository.path().join("eqm.lock"),
+                lock.replace(V1_LOCK, mutation),
+            )?;
+            assert_eq!(
+                run_validate(repository.path())?,
+                3,
+                "accepted lock schema {mutation}"
+            );
+        }
+        Ok(())
+    }
 
     #[test]
     fn valid_and_invalid_workspaces_return_exact_categories_without_writes()

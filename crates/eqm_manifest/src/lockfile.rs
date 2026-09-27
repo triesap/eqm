@@ -5,7 +5,7 @@ use crate::dto::LockDto;
 use crate::parse_toml;
 use eqm_domain::{
     AdapterId, FragmentId, RepoPath, RepositoryIdentity, Revision, SchemaKind, SchemaUri,
-    SelectorText, Sha256Digest, SourceCommit, SourceName, TrustLevel,
+    SchemaVersion, SelectorText, Sha256Digest, SourceCommit, SourceName, TrustLevel,
 };
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -87,7 +87,13 @@ pub fn load_lockfile(config: &WorkspaceConfig) -> Result<WorkspaceLock, LockErro
     .map_err(|_| LockError::InvalidToml)?;
     let dto: LockDto = toml::from_str(parsed.text()).map_err(|_| LockError::InvalidFields)?;
     let schema: SchemaUri = dto.schema.parse().map_err(|_| LockError::WrongSchema)?;
-    if schema.kind() != SchemaKind::Lock || dto.version != 1 {
+    // The lock reader owns only the exact current v1 contract. A version-
+    // qualified successor URI is a different namespace and must fail here
+    // instead of decoding v1 lock fields under a v2 identity.
+    if schema.kind() != SchemaKind::Lock
+        || schema.version() != SchemaVersion::CURRENT
+        || dto.version != 1
+    {
         return Err(LockError::WrongSchema);
     }
 
@@ -318,6 +324,23 @@ digest = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85
             load(&LOCK.replace("/schemas/v1/manifest/lock", "/schemas/v0/manifest/lock")),
             Err(LockError::WrongSchema)
         );
+    }
+
+    #[test]
+    fn successor_version_lock_uri_fails_closed() {
+        // Only the declared URI changes; the v1 lock body remains valid, so a
+        // v2 namespace declaration must not be read with v1 semantics.
+        for schema in [
+            "/schemas/v2/manifest/lock.schema.json",
+            "/schemas/v3/manifest/lock.schema.json",
+            "/schemas/v2/protocol/lock.schema.json",
+        ] {
+            assert_eq!(
+                load(&LOCK.replace("/schemas/v1/manifest/lock.schema.json", schema)),
+                Err(LockError::WrongSchema),
+                "accepted lock schema {schema}"
+            );
+        }
     }
 
     #[cfg(unix)]

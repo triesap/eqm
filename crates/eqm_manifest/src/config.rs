@@ -1,7 +1,7 @@
 //! Repository-bound workspace configuration selection.
 
 use crate::{ParseError, dto::WorkspaceDto, parse_toml};
-use eqm_domain::{RepoPath, SchemaKind, SchemaUri, SourceName};
+use eqm_domain::{RepoPath, SchemaKind, SchemaUri, SchemaVersion, SourceName};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
@@ -127,7 +127,10 @@ fn find_configs(
 
 fn validate_declarations(dto: &WorkspaceDto) -> Result<(), ConfigError> {
     let schema: SchemaUri = dto.schema.parse().map_err(|_| ConfigError::InvalidConfig)?;
-    if schema.kind() != SchemaKind::Workspace {
+    // Workspace discovery accepts only the exact current v1 contract: a
+    // version-qualified successor URI is a different, not-yet-allocated
+    // contract and must fail rather than decode under v1 field rules.
+    if schema.kind() != SchemaKind::Workspace || schema.version() != SchemaVersion::CURRENT {
         return Err(ConfigError::InvalidConfig);
     }
     if dto.contract_sources.is_empty()
@@ -228,6 +231,33 @@ waiver_sources = ["eqm/waivers/**/*.toml"]
             select_workspace_config(repository.path(), None),
             Err(ConfigError::MultipleConfigs)
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn successor_version_and_wrong_kind_workspace_uris_fail_closed() -> Result<(), Box<dyn Error>> {
+        let repository = repository()?;
+        // Only the URI changes; the remaining v1 fields stay valid. A v2 (or
+        // v3/wrong-kind) declaration must not be read with v1 semantics.
+        for schema in [
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/manifest/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/workspace.schema.json",
+            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json",
+        ] {
+            let declared = CONFIG.replace(
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json",
+                schema,
+            );
+            fs::write(repository.path().join("eqm.toml"), declared)?;
+            assert!(
+                matches!(
+                    select_workspace_config(repository.path(), None),
+                    Err(ConfigError::InvalidConfig)
+                ),
+                "accepted workspace schema {schema}"
+            );
+        }
         Ok(())
     }
 

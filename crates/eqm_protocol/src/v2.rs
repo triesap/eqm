@@ -677,15 +677,24 @@ impl InventoryV2Dto {
         }
         let value: Self = crate::strict::from_slice_limited(bytes, 16 * 1024 * 1024)
             .map_err(|_| V2DtoError::Json)?;
-        if value.schema != crate::INVENTORY_SCHEMA_V2.to_string() {
+        value.validate_structure()?;
+        Ok(value)
+    }
+
+    /// Structural checks shared by standalone ingestion and an embedded
+    /// adapter-response inventory: exact v2 marker, declared byte/entry bounds
+    /// and digest syntax. It confers no trust and does not pull in later
+    /// relationship or verification semantics.
+    fn validate_structure(&self) -> Result<(), V2DtoError> {
+        if self.schema != crate::INVENTORY_SCHEMA_V2.to_string() {
             return Err(V2DtoError::InvalidSchema);
         }
-        if value.entries.len() > 250_000 {
+        if self.entries.len() > 250_000 {
             return Err(V2DtoError::InvalidLimits);
         }
-        validate_digest(&value.adapter_digest)?;
-        validate_digest(&value.inventory_digest)?;
-        Ok(value)
+        validate_digest(&self.adapter_digest)?;
+        validate_digest(&self.inventory_digest)?;
+        Ok(())
     }
 }
 
@@ -790,12 +799,12 @@ impl AdapterResponseV2Dto {
         if matches!(value.status, AdapterStatusV2Dto::Error) == value.inventory.is_some() {
             return Err(V2DtoError::InvalidStatus);
         }
-        if value
-            .inventory
-            .as_ref()
-            .is_some_and(|inventory| inventory.entries.len() > 250_000)
-        {
-            return Err(V2DtoError::InvalidLimits);
+        // Validate the response's own adapter digest and, when present, the
+        // nested inventory through the same structural checks standalone
+        // ingestion applies. A weaker deserialize-only route is not used.
+        validate_digest(&value.adapter_digest)?;
+        if let Some(inventory) = &value.inventory {
+            inventory.validate_structure()?;
         }
         Ok(value)
     }
@@ -1065,6 +1074,117 @@ mod tests {
                 .parse::<eqm_domain::SchemaUri>()
                 .is_err()
         );
+        Ok(())
+    }
+
+    fn response() -> Result<AdapterResponseV2Dto, Box<dyn Error>> {
+        Ok(AdapterResponseV2Dto {
+            schema: crate::ADAPTER_RESPONSE_SCHEMA_V2.to_string(),
+            request_id: "request-1".to_owned(),
+            adapter: "adapter.test".to_owned(),
+            adapter_digest: digest("adapter"),
+            status: AdapterStatusV2Dto::Ok,
+            inventory: Some(inventory()?),
+            diagnostics: Vec::new(),
+        })
+    }
+
+    fn assert_root_marker_rejects<T>(
+        value: &Value,
+        parse: impl Fn(&[u8]) -> Result<T, V2DtoError>,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        T: std::fmt::Debug + PartialEq,
+    {
+        let mut mutated = value.clone();
+        // A v1 evidence-result URI is foreign to every v2 family, so each
+        // reader must reject it at the exact-marker check.
+        mutated["schema"] = serde_json::json!(crate::EVIDENCE_RESULT_SCHEMA.to_string());
+        let bytes = serde_json::to_vec(&mutated)?;
+        assert_eq!(parse(&bytes), Err(V2DtoError::InvalidSchema));
+        Ok(())
+    }
+
+    #[test]
+    fn every_v2_root_marker_rejects_a_foreign_identity() -> Result<(), Box<dyn Error>> {
+        assert_root_marker_rejects(&serde_json::to_value(evidence_result()?)?, |bytes| {
+            EvidenceResultV2Dto::from_json(bytes)
+        })?;
+        assert_root_marker_rejects(&serde_json::to_value(runtime_facts()?)?, |bytes| {
+            RuntimeFactsV2Dto::from_json(bytes)
+        })?;
+        assert_root_marker_rejects(&serde_json::to_value(inventory()?)?, |bytes| {
+            InventoryV2Dto::from_json(bytes)
+        })?;
+        assert_root_marker_rejects(&serde_json::to_value(adapter_request())?, |bytes| {
+            AdapterRequestV2Dto::from_json(bytes)
+        })?;
+        assert_root_marker_rejects(&serde_json::to_value(response()?)?, |bytes| {
+            AdapterResponseV2Dto::from_json(bytes)
+        })?;
+        Ok(())
+    }
+
+    #[test]
+    fn adapter_response_enforces_nested_inventory_structure() -> Result<(), Box<dyn Error>> {
+        let bytes = serde_json::to_vec(&response()?)?;
+        assert!(AdapterResponseV2Dto::from_json(&bytes).is_ok());
+
+        // A v2 inventory is accepted standalone and embedded with the same
+        // structural checks; its marker must match in both routes.
+        assert_eq!(
+            InventoryV2Dto::from_json(&serde_json::to_vec(&inventory()?)?),
+            Ok(inventory()?)
+        );
+        let mut standalone: Value = serde_json::to_value(inventory()?)?;
+        standalone["schema"] = serde_json::json!(crate::INVENTORY_SCHEMA.to_string());
+        assert_eq!(
+            InventoryV2Dto::from_json(&serde_json::to_vec(&standalone)?),
+            Err(V2DtoError::InvalidSchema)
+        );
+        let mut value: Value = serde_json::from_slice(&bytes)?;
+        value["inventory"]["schema"] = serde_json::json!(crate::INVENTORY_SCHEMA.to_string());
+        assert_eq!(
+            AdapterResponseV2Dto::from_json(&serde_json::to_vec(&value)?),
+            Err(V2DtoError::InvalidSchema)
+        );
+
+        // Digest syntax is checked on both the nested inventory fields and the
+        // response's own adapter digest.
+        let mut value: Value = serde_json::from_slice(&bytes)?;
+        value["inventory"]["adapter_digest"] = serde_json::json!("sha256:bad");
+        assert_eq!(
+            AdapterResponseV2Dto::from_json(&serde_json::to_vec(&value)?),
+            Err(V2DtoError::InvalidDigest)
+        );
+        let mut value: Value = serde_json::from_slice(&bytes)?;
+        value["inventory"]["inventory_digest"] = serde_json::json!("not-a-digest");
+        assert_eq!(
+            AdapterResponseV2Dto::from_json(&serde_json::to_vec(&value)?),
+            Err(V2DtoError::InvalidDigest)
+        );
+        let mut value: Value = serde_json::from_slice(&bytes)?;
+        value["adapter_digest"] = serde_json::json!("sha256:bad");
+        assert_eq!(
+            AdapterResponseV2Dto::from_json(&serde_json::to_vec(&value)?),
+            Err(V2DtoError::InvalidDigest)
+        );
+
+        // The declared byte and entry bounds hold for the response too.
+        let oversized = vec![b' '; 16 * 1024 * 1024 + 1];
+        assert_eq!(
+            AdapterResponseV2Dto::from_json(&oversized),
+            Err(V2DtoError::InvalidLimits)
+        );
+        let mut bounded = inventory()?;
+        let entry = InventoryEntryV2Dto {
+            kind: "kind".to_owned(),
+            key: "key".to_owned(),
+            attributes: BTreeMap::new(),
+            source: "src/file.rs".to_owned(),
+        };
+        bounded.entries = vec![entry; 250_001];
+        assert_eq!(bounded.validate_structure(), Err(V2DtoError::InvalidLimits));
         Ok(())
     }
 

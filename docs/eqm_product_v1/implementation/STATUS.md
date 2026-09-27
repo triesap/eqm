@@ -6,16 +6,15 @@ Reviewed source HEAD: `7d44724abba2fa90baf806563da0a692c5bb5857`.
 ## Current implementation
 
 S001–S014 are recorded complete. S015 remains **in progress, changes required**.
-Five corrective implementation commits R1–R5 plus receipt commit exist, but the
-independent review found RF11–RF18. Next checkpoint: **S015-R6**, followed by
-R7, R8 and R9. S016 has not started. R1–R5 receipts are retained; no history is
-rewritten and no accepted repair is discarded.
+Corrective commits R1–R6 exist, but the independent review found RF11–RF18. Next
+checkpoint: **S015-R7**, followed by R8 and R9. S016 has not started. R1–R6
+receipts are retained; no history is rewritten and no accepted repair is discarded.
 
 v1 integer acceptance is restored; 22 v1 schemas remain unchanged; five v2
 protocol families, version identity, exact integer endpoints, canonical runtime
-time/null handling and the release bound fix are present. Remaining defects
-involve version ingress, nested validation, runtime-facts limits, schema
-assertions and insufficient regression controls. See the
+time/null handling, exact version/kind reader isolation and nested inventory
+validation are present. Remaining defects involve runtime-facts limits and
+subject checks, schema assertions and insufficient regression controls. See the
 [review](reports/CODEX-7d44724.md) for all findings and earlier dispositions.
 
 EQM-P01 has 12 numbered steps recorded complete. EQM-P02 has S013–S014 complete
