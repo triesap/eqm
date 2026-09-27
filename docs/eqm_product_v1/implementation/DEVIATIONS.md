@@ -60,7 +60,7 @@ Preserve all S001–S211 IDs; reopen S015 and block S016 admission until its fiv
 **Reviewed HEAD:** 7d44724abba2fa90baf806563da0a692c5bb5857.
 **Affected steps/contracts:** S015 and retained S006/S011/S012/S014 regression
 contributions; R18/R19/R21/R52/R64 and existing acceptance links.
-**Evidence:** [review RF11–RF17](reports/CODEX-7d44724.md): actual command ingress
+**Evidence:** [review RF11–RF18](reports/CODEX-7d44724.md): actual command ingress
 accepts unsupported v2 workspace/lock labels; nested inventory validation,
 runtime-facts limits, schema assertions and test evidence remain incomplete.
 

@@ -7,7 +7,7 @@ Reviewed source HEAD: `7d44724abba2fa90baf806563da0a692c5bb5857`.
 
 S001–S014 are recorded complete. S015 remains **in progress, changes required**.
 Five corrective implementation commits R1–R5 plus receipt commit exist, but the
-independent review found RF11–RF17. Next checkpoint: **S015-R6**, followed by
+independent review found RF11–RF18. Next checkpoint: **S015-R6**, followed by
 R7, R8 and R9. S016 has not started. R1–R5 receipts are retained; no history is
 rewritten and no accepted repair is discarded.
 

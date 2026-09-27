@@ -9,7 +9,7 @@ retained; the next checkpoint is S015-R6. This amendment takes precedence over
 DEV-002 only where it clarifies conformance evidence and continuation status.
 All other DEV-002 decisions remain binding. Preserve the 211 numbered steps.
 
-The independent [review](reports/CODEX-7d44724.md) records RF11–RF17.
+The independent [review](reports/CODEX-7d44724.md) records RF11–RF18.
 A green standard gate did not detect v2-labeled workspace/lock input being read
 with v1 semantics, missing nested inventory validation, repeated smaller byte
 bounds, schema/runtime differences, or tests which bypass their claimed boundary.
@@ -31,7 +31,11 @@ These are unfinished S015 obligations, not new product scope.
    relationship/verification/evaluator steps into S015.
 3. **Bounds are end-to-end.** Keep the existing per-family byte limits at every
    parse, including canonical-digest preparation. v1 and v2 runtime facts retain
-   the declared 16 MiB envelope and 100000-fact ceiling. Do not globally raise
+   the declared 16 MiB envelope and 100000-fact ceiling. Preserve v1's existing
+   subject syntax checks in v2 runtime facts as well: repository identity,
+   repository/configuration digests, source commit, optional build ID and artifact
+   digest. These are existing structural checks, not later trust semantics.
+   Do not globally raise
    the default strict parser's 8 MiB limit. Test actual valid records, including
    computed digests, padded beyond 8 MiB, at 16 MiB and one byte over; test fact
    count at/above its cap. Preserve the completed release bound correction.
@@ -83,7 +87,7 @@ Use the existing S015 report with real stable anchors and exact commit receipts.
 | Checkpoint | Scope | Required evidence and dominant lane |
 | --- | --- | --- |
 | S015-R6 | RF11/RF12: enforce reader version/kind and nested inventory structural validation. | Successful v1 workspace/lock controls; changing only the URI to v2/v3/wrong kind rejects through actual preparation/CLI. Valid records for all five v2 readers pass; root and nested version mutations reject; nested invalid digest rejects both standalone and embedded. Manifest/protocol/CLI tests, full standard gate. |
-| S015-R7 | RF13: repair runtime-facts bounds in v1/v2 and retain the fact-count ceiling. | Actual digest-valid records pass beyond 8 MiB and at 16 MiB; one byte over fails with size error; 100000 facts pass where otherwise valid, 100001 reject. Audit all family parse bounds; protocol tests and full standard gate. |
+| S015-R7 | RF13/RF18: repair runtime-facts bounds and retain fact-count/subject structural validation. | Actual digest-valid records pass beyond 8 MiB and at 16 MiB; one byte over fails with size error; 100000 facts pass where otherwise valid, 100001 reject. Valid subjects pass; one-field malformed repository/commit/digest/build-ID mutants reject after recomputing the enclosing facts digest. Audit all family parse bounds; protocol tests and full standard gate. |
 | S015-R8 | RF14/RF15: correct generated schema constraints and use standards-conforming validation. | Regenerate five v2 schemas atomically; 22 v1 schemas byte-identical. Full valid fixtures and single-field mutants for all families run against committed/generated schemas, including nested markers/null, integer endpoints/string ranges, canonical times and invalid calendars. Separate lexical-only and cross-field expectations. Protocol/domain schema tests, schema parity and full standard gate. |
 | S015-R9 | RF16/RF17: replace tautological controls and reconcile evidence. | Literal absence inputs/outputs execute; exact discipline mapping; successful reconcile control and duplicate mutant; fake-reader integration succeeds/fails at real boundary. Run application doctests and all S015 tests; correct report claims, anchors, cursor and per-checkpoint receipts. Package structure and full standard gate. |
 
@@ -943,7 +947,7 @@ Enforce approved numeric and temporal wire forms.
 Make cross-runtime digests predictable.
 
 ### 3. Exact scope of code changes
-Retain DEV-002 S015-R1 through S015-R5 and complete DEV-003 S015-R6 through S015-R9: close exact version/kind ingress and nested inventory validation; repair runtime-facts byte/count bounds; enforce v2 schema markers and minimal UTC fractions; use actual schema validation with separate raw-token expectations; replace tautological corpus/application/CLI controls and reconcile evidence before S016.
+Retain DEV-002 S015-R1 through S015-R5 and complete DEV-003 S015-R6 through S015-R9: close exact version/kind ingress and nested inventory validation; repair runtime-facts byte/count bounds and retained subject syntax checks; enforce v2 schema markers and minimal UTC fractions; use actual schema validation with separate raw-token expectations; replace tautological corpus/application/CLI controls and reconcile evidence before S016.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
