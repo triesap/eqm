@@ -8,9 +8,21 @@ use std::str::FromStr;
 /// The exact ECMA regex for a canonical v2 UTC instant spelling.
 ///
 /// Years 0001-9999, literal `Z`, and the minimal AutoSi fractional group of
-/// 0/3/6/9 digits. It excludes leap-second notation (`:60`) and redundant
-/// fractions; calendar validity is a separate cross-field check.
-pub const V2_UTC_PATTERN: &str = r"^(000[1-9]|00[1-9][0-9]|0[1-9][0-9]{2}|[1-9][0-9]{3})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]{3}|\.[0-9]{6}|\.[0-9]{9})?Z$";
+/// 0/3/6/9 digits. It excludes leap-second notation (`:60`) and every redundant
+/// fraction (`.000`, `.123000`, `.123456000`): a 3-digit group must be non-zero
+/// and a 6- or 9-digit group must end in a non-zero digit group. Calendar
+/// validity is a separate cross-field check.
+pub const V2_UTC_PATTERN: &str = concat!(
+    "^(000[1-9]|00[1-9][0-9]|0[1-9][0-9]{2}|[1-9][0-9]{3})",
+    "-(0[1-9]|1[0-2])",
+    "-(0[1-9]|[12][0-9]|3[01])",
+    "T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]",
+    "(",
+    r"\.[0-9]{2}[1-9]|\.[0-9][1-9][0-9]|\.[1-9][0-9]{2}",
+    r"|\.[0-9]{3}([0-9]{2}[1-9]|[0-9][1-9][0-9]|[1-9][0-9]{2})",
+    r"|\.[0-9]{6}([0-9]{2}[1-9]|[0-9][1-9][0-9]|[1-9][0-9]{2})",
+    ")?Z$",
+);
 
 /// A canonical v2 UTC instant with exact nanoseconds.
 ///

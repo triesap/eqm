@@ -119,6 +119,36 @@ impl JsonSchema for CanonicalInstant {
 }
 
 // ---------------------------------------------------------------------------
+// exact schema markers
+// ---------------------------------------------------------------------------
+
+macro_rules! v2_schema_marker {
+    ($function:ident, $uri:path) => {
+        fn $function(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+            schemars::json_schema!({
+                "const": $uri.to_string(),
+                "type": "string",
+            })
+        }
+    };
+}
+
+v2_schema_marker!(
+    evidence_result_schema_marker,
+    crate::EVIDENCE_RESULT_SCHEMA_V2
+);
+v2_schema_marker!(runtime_facts_schema_marker, crate::RUNTIME_FACTS_SCHEMA_V2);
+v2_schema_marker!(inventory_schema_marker, crate::INVENTORY_SCHEMA_V2);
+v2_schema_marker!(
+    adapter_request_schema_marker,
+    crate::ADAPTER_REQUEST_SCHEMA_V2
+);
+v2_schema_marker!(
+    adapter_response_schema_marker,
+    crate::ADAPTER_RESPONSE_SCHEMA_V2
+);
+
+// ---------------------------------------------------------------------------
 // evidence-result
 // ---------------------------------------------------------------------------
 
@@ -307,6 +337,7 @@ pub struct ProfileValueV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EvidenceResultV2Dto {
+    #[schemars(schema_with = "evidence_result_schema_marker")]
     pub schema: String,
     pub id: String,
     pub subject: EvidenceSubjectV2Dto,
@@ -511,6 +542,7 @@ pub struct RuntimeFactV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeFactsV2Dto {
+    #[schemars(schema_with = "runtime_facts_schema_marker")]
     pub schema: String,
     pub provider: String,
     pub subject: EvidenceSubjectV2Dto,
@@ -702,6 +734,7 @@ pub struct SourceLocationV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct InventoryV2Dto {
+    #[schemars(schema_with = "inventory_schema_marker")]
     pub schema: String,
     pub adapter: String,
     pub adapter_digest: String,
@@ -765,6 +798,7 @@ pub struct AdapterLimitsV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterRequestV2Dto {
+    #[schemars(schema_with = "adapter_request_schema_marker")]
     pub schema: String,
     pub request_id: String,
     pub adapter: String,
@@ -815,6 +849,7 @@ pub enum AdapterStatusV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterResponseV2Dto {
+    #[schemars(schema_with = "adapter_response_schema_marker")]
     pub schema: String,
     pub request_id: String,
     pub adapter: String,
@@ -857,7 +892,7 @@ impl AdapterResponseV2Dto {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use regex_lite::Regex;
+    use jsonschema::{Draft, Validator};
     use std::error::Error;
     use std::path::Path;
 
@@ -1352,51 +1387,215 @@ mod tests {
         Ok(serde_json::from_slice(&std::fs::read(path)?)?)
     }
 
-    fn resolve<'a>(root: &'a Value, schema: &'a Value) -> &'a Value {
-        let Some(reference) = schema.get("$ref").and_then(Value::as_str) else {
-            return schema;
-        };
-        let Some(name) = reference.strip_prefix("#/$defs/") else {
-            return schema;
-        };
-        root.get("$defs")
-            .and_then(|defs| defs.get(name))
-            .unwrap_or(schema)
+    fn validator(name: &str) -> Result<Validator, Box<dyn Error>> {
+        let schema = schema_document(name)?;
+        Ok(jsonschema::options()
+            .with_draft(Draft::Draft202012)
+            .should_validate_formats(true)
+            .build(&schema)?)
+    }
+
+    fn assert_schema_accepts(name: &str, instance: &Value) -> Result<(), Box<dyn Error>> {
+        let validator = validator(name)?;
+        if let Err(error) = validator.validate(instance) {
+            return Err(format!("{name} rejected a valid instance: {error}").into());
+        }
+        Ok(())
+    }
+
+    fn assert_schema_rejects(
+        name: &str,
+        instance: &Value,
+        note: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        let validator = validator(name)?;
+        assert!(
+            validator.validate(instance).is_err(),
+            "{name} accepted {note}"
+        );
+        Ok(())
     }
 
     #[test]
-    fn v2_generated_schemas_agree_with_representation_rules() -> Result<(), Box<dyn Error>> {
-        let schema = schema_document("adapter-request")?;
-        let limits = resolve(&schema, &schema["properties"]["limits"]);
-        let pattern = limits["properties"]["timeout_ms"]["anyOf"][1]["pattern"]
-            .as_str()
-            .ok_or("unsigned pattern")?;
-        let regex = Regex::new(pattern)?;
-        assert!(regex.is_match("18446744073709551615"));
-        assert!(!regex.is_match("18446744073709551616"));
-        assert!(!regex.is_match("0"));
-        assert!(!regex.is_match("5"));
-
-        let schema = schema_document("evidence-result")?;
-        let pattern = schema["$defs"]["CanonicalInstant"]["pattern"]
-            .as_str()
-            .ok_or("time pattern")?;
-        let regex = Regex::new(pattern)?;
-        assert!(regex.is_match("2026-01-02T03:04:05.000000001Z"));
-        assert!(!regex.is_match("2016-12-31T23:59:60Z"));
-        assert!(!regex.is_match("0000-01-01T00:00:00Z"));
-        assert!(!regex.is_match("2026-01-02T03:04:05.1Z"));
-        assert!(!regex.is_match("2026-01-02T03:04:05+00:00"));
-        let required: Vec<&str> = schema["required"]
-            .as_array()
-            .ok_or("required")?
-            .iter()
-            .filter_map(Value::as_str)
-            .collect();
-        assert!(!required.contains(&"runner_digest"));
+    fn v2_schema_members_are_exact_constants() -> Result<(), Box<dyn Error>> {
+        // `$id` alone is not the per-instance constraint: each family's `schema`
+        // member must be pinned to its exact v2 URI, including the inventory
+        // embedded in an adapter response.
+        for (name, uri) in [
+            ("evidence-result", crate::EVIDENCE_RESULT_SCHEMA_V2),
+            ("runtime-facts", crate::RUNTIME_FACTS_SCHEMA_V2),
+            ("inventory", crate::INVENTORY_SCHEMA_V2),
+            ("adapter-request", crate::ADAPTER_REQUEST_SCHEMA_V2),
+            ("adapter-response", crate::ADAPTER_RESPONSE_SCHEMA_V2),
+        ] {
+            let schema = schema_document(name)?;
+            assert_eq!(
+                schema["properties"]["schema"]["const"],
+                serde_json::json!(uri.to_string()),
+                "{name} schema member is not an exact constant"
+            );
+        }
+        let response = schema_document("adapter-response")?;
         assert_eq!(
-            schema["properties"]["runner_digest"]["type"].as_str(),
-            Some("string")
+            response["$defs"]["InventoryV2Dto"]["properties"]["schema"]["const"],
+            serde_json::json!(crate::INVENTORY_SCHEMA_V2.to_string()),
+            "embedded inventory schema member is not an exact constant"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn v2_committed_schemas_accept_valid_records_and_reject_mutants() -> Result<(), Box<dyn Error>>
+    {
+        // evidence-result: root marker, canonical/redundant/invalid-calendar
+        // time, explicit null for an optional member, and integer endpoints.
+        let base = serde_json::to_value(evidence_result()?)?;
+        assert_schema_accepts("evidence-result", &base)?;
+        let mut value = base.clone();
+        value["schema"] = serde_json::json!(crate::EVIDENCE_RESULT_SCHEMA.to_string());
+        assert_schema_rejects("evidence-result", &value, "a v1 root marker")?;
+        let mut value = base.clone();
+        value["observed_at"] = serde_json::json!("2026-01-02T03:04:05.000000001Z");
+        assert_schema_accepts("evidence-result", &value)?;
+        for (time, note) in [
+            ("2026-01-02T03:04:05.000Z", "a redundant 3-digit fraction"),
+            (
+                "2026-01-02T03:04:05.123000Z",
+                "a redundant 6-digit fraction",
+            ),
+            (
+                "2026-01-02T03:04:05.123456000Z",
+                "a redundant 9-digit fraction",
+            ),
+            ("2026-02-30T00:00:00Z", "an invalid calendar date"),
+            ("2026-01-02T03:04:05+00:00", "a non-Z offset"),
+        ] {
+            let mut value = base.clone();
+            value["observed_at"] = serde_json::json!(time);
+            assert_schema_rejects("evidence-result", &value, note)?;
+        }
+        let mut value = base.clone();
+        value["runner_digest"] = Value::Null;
+        assert_schema_rejects("evidence-result", &value, "an explicit null optional")?;
+        let mut value = base.clone();
+        value["payload"]["execution"]["counts"]["selected"] =
+            serde_json::json!(crate::MAX_SAFE_INTEGER);
+        assert_schema_accepts("evidence-result", &value)?;
+        let mut value = base.clone();
+        value["payload"]["execution"]["counts"]["selected"] =
+            serde_json::json!(crate::MAX_SAFE_INTEGER + 1);
+        assert_schema_rejects("evidence-result", &value, "an out-of-range integer")?;
+        let mut value = base.clone();
+        value["payload"]["execution"]["counts"]["selected"] =
+            serde_json::json!("18446744073709551615");
+        value["payload"]["execution"]["counts"]["passed"] =
+            serde_json::json!("18446744073709551615");
+        assert_schema_accepts("evidence-result", &value)?;
+        let mut value = base.clone();
+        value["payload"]["execution"]["counts"]["selected"] = serde_json::json!("5");
+        assert_schema_rejects("evidence-result", &value, "an in-range decimal string")?;
+
+        // runtime-facts: root marker and signed integer encoding endpoints.
+        let base = serde_json::to_value(runtime_facts()?)?;
+        assert_schema_accepts("runtime-facts", &base)?;
+        let mut value = base.clone();
+        value["schema"] = serde_json::json!(crate::RUNTIME_FACTS_SCHEMA.to_string());
+        assert_schema_rejects("runtime-facts", &value, "a v1 root marker")?;
+        let mut value = base.clone();
+        value["facts"][0]["value"]["value"] = serde_json::json!("9223372036854775807");
+        assert_schema_accepts("runtime-facts", &value)?;
+        let mut value = base.clone();
+        value["facts"][0]["value"]["value"] = serde_json::json!(i64::MAX);
+        assert_schema_rejects("runtime-facts", &value, "an out-of-range integer")?;
+
+        // inventory: root marker, time and entry fields.
+        let base = serde_json::to_value(inventory()?)?;
+        assert_schema_accepts("inventory", &base)?;
+        let mut value = base.clone();
+        value["schema"] = serde_json::json!(crate::INVENTORY_SCHEMA.to_string());
+        assert_schema_rejects("inventory", &value, "a v1 root marker")?;
+        let mut value = base.clone();
+        value["generated_at"] = serde_json::json!("2026-01-02T03:04:05.100Z");
+        assert_schema_accepts("inventory", &value)?;
+        let mut value = base.clone();
+        value["generated_at"] = serde_json::json!("2026-01-02T03:04:05.100000Z");
+        assert_schema_rejects("inventory", &value, "a redundant microsecond fraction")?;
+
+        // adapter-request: root marker and numeric limits.
+        let base = serde_json::to_value(adapter_request())?;
+        assert_schema_accepts("adapter-request", &base)?;
+        let mut value = base.clone();
+        value["schema"] = serde_json::json!(crate::ADAPTER_REQUEST_SCHEMA.to_string());
+        assert_schema_rejects("adapter-request", &value, "a v1 root marker")?;
+        let mut value = base.clone();
+        value["limits"]["max_input_bytes"] = serde_json::json!("18446744073709551615");
+        assert_schema_accepts("adapter-request", &value)?;
+        let mut value = base.clone();
+        value["limits"]["max_input_bytes"] = serde_json::json!("0");
+        assert_schema_rejects("adapter-request", &value, "an in-range decimal string")?;
+
+        // adapter-response: root marker and the embedded inventory marker.
+        let base = serde_json::to_value(response()?)?;
+        assert_schema_accepts("adapter-response", &base)?;
+        let mut value = base.clone();
+        value["schema"] = serde_json::json!(crate::ADAPTER_RESPONSE_SCHEMA.to_string());
+        assert_schema_rejects("adapter-response", &value, "a v1 root marker")?;
+        let mut value = base.clone();
+        value["inventory"]["schema"] = serde_json::json!(crate::INVENTORY_SCHEMA.to_string());
+        assert_schema_rejects("adapter-response", &value, "a v1 embedded inventory marker")?;
+        let mut value = base.clone();
+        value["inventory"] = Value::Null;
+        assert_schema_rejects("adapter-response", &value, "an explicit null inventory")?;
+        Ok(())
+    }
+
+    #[test]
+    fn schema_value_and_raw_token_layers_stay_separate() -> Result<(), Box<dyn Error>> {
+        // JSON-value layer: a conforming validator treats integral numbers as
+        // integers regardless of the original token spelling.
+        let mut value = serde_json::to_value(adapter_request())?;
+        value["limits"]["timeout_ms"] = serde_json::json!(1000.0);
+        assert_schema_accepts("adapter-request", &value)?;
+        let mut value = serde_json::to_value(adapter_request())?;
+        value["limits"]["timeout_ms"] = serde_json::json!(1e3);
+        assert_schema_accepts("adapter-request", &value)?;
+
+        // Raw-token layer: the same spellings, and duplicate members, are
+        // rejected before schema-value validation.
+        let text = String::from_utf8(serde_json::to_vec(&adapter_request())?)?;
+        assert!(text.contains("\"timeout_ms\":1000"));
+        for token in ["1e3", "1000.0"] {
+            let mutated = text.replace("\"timeout_ms\":1000", &format!("\"timeout_ms\":{token}"));
+            assert!(
+                AdapterRequestV2Dto::from_json(mutated.as_bytes()).is_err(),
+                "raw parser accepted the token {token}"
+            );
+        }
+        let duplicate = text.replace(
+            "\"timeout_ms\":1000",
+            "\"timeout_ms\":1000,\"timeout_ms\":1",
+        );
+        assert!(
+            AdapterRequestV2Dto::from_json(duplicate.as_bytes()).is_err(),
+            "raw parser accepted a duplicate member"
+        );
+
+        // Cross-field layer: the schema constrains values, not digest identity
+        // or trust vocabulary, so those remain runtime responsibilities.
+        let base = serde_json::to_value(evidence_result()?)?;
+        let mut value = base.clone();
+        value["result_digest"] = serde_json::json!(digest("other"));
+        assert_schema_accepts("evidence-result", &value)?;
+        assert_eq!(
+            EvidenceResultV2Dto::from_json(&serde_json::to_vec(&value)?),
+            Err(V2DtoError::IdentityMismatch)
+        );
+        let mut value = base;
+        value["claimed_trust"] = serde_json::json!("not-a-trust");
+        assert_schema_accepts("evidence-result", &value)?;
+        assert_eq!(
+            EvidenceResultV2Dto::from_json(&serde_json::to_vec(&value)?),
+            Err(V2DtoError::InvalidVocabulary)
         );
         Ok(())
     }

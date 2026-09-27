@@ -10,6 +10,10 @@ allow = [
   "MIT",
   "Unicode-3.0",
   "Unlicense",
+  # Zlib (permissive, OSI/FSF) is required transitively by the exact-pinned
+  # Draft 2020-12 conformance validator `jsonschema` (dev-only) through
+  # `referencing` -> `hashbrown` -> `foldhash`. Recorded under DEV-003 decision 6.
+  "Zlib",
 ]
 
 [bans]

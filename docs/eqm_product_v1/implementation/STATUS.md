@@ -6,16 +6,18 @@ Reviewed source HEAD: `7d44724abba2fa90baf806563da0a692c5bb5857`.
 ## Current implementation
 
 S001–S014 are recorded complete. S015 remains **in progress, changes required**.
-Corrective commits R1–R7 exist, but the independent review found RF11–RF18. Next
-checkpoint: **S015-R8**, followed by R9. S016 has not started. R1–R7
+Corrective commits R1–R8 exist, but the independent review found RF11–RF18. Next
+checkpoint: **S015-R9**. S016 has not started. R1–R8
 receipts are retained; no history is rewritten and no accepted repair is discarded.
 
 v1 integer acceptance is restored; 22 v1 schemas remain unchanged; five v2
 protocol families, version identity, exact integer endpoints, canonical runtime
 time/null handling, exact version/kind reader isolation, nested inventory
 validation and end-to-end runtime-facts 16 MiB/100000-fact bounds with retained
-v2 subject checks are present. Remaining defects involve schema assertions and
-insufficient regression controls. See the
+v2 subject checks are present, and the five v2 schemas constrain exact markers
+with a minimal AutoSi pattern verified by a real Draft 2020-12 validator.
+Remaining defects involve regression controls that bypass their claimed
+boundary and the evidence/ledger reconciliation. See the
 [review](reports/CODEX-7d44724.md) for all findings and earlier dispositions.
 
 EQM-P01 has 12 numbered steps recorded complete. EQM-P02 has S013–S014 complete

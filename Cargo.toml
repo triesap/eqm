@@ -54,6 +54,7 @@ toml = "=1.1.4"
 tempfile = "=3.27.0"
 toml_edit = "=0.25.13"
 regex-lite = "=0.1.9"
+jsonschema = { version = "=0.48.5", default-features = false }
 unicode-normalization = "=0.1.24"
 eqm_domain = { path = "crates/eqm_domain", version = "=0.1.0" }
 eqm_application = { path = "crates/eqm_application", version = "=0.1.0" }

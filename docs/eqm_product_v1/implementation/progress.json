@@ -346,7 +346,7 @@
     {
      "id": "S015-R7",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "44ecc923830f1ffb42c173317e493892907e54da",
      "report": "implementation/reports/S015.md#s015-r7",
      "verification": [
       "cargo test --locked -p eqm_protocol",
@@ -359,10 +359,19 @@
     },
     {
      "id": "S015-R8",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/S015.md",
-     "verification": []
+     "report": "implementation/reports/S015.md#s015-r8",
+     "verification": [
+      "cargo xtask schemas generate",
+      "cargo test --locked -p eqm_protocol -p eqm_domain",
+      "cargo fmt --all --check",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo deny check licenses",
+      "git diff --check"
+     ],
+     "implementation_status": "committed"
     },
     {
      "id": "S015-R9",
@@ -2597,7 +2606,7 @@
    "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   }
  ],
- "next_checkpoint": "S015-R8",
+ "next_checkpoint": "S015-R9",
  "supervisor_review": {
   "source_commit": "7d44724abba2fa90baf806563da0a692c5bb5857",
   "report": "implementation/reports/CODEX-7d44724.md",
@@ -2719,19 +2728,21 @@
   },
   {
    "id": "RF14",
-   "status": "open",
+   "status": "addressed_pending_supervisor_acceptance",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
-   "checkpoint": "S015-R8"
+   "checkpoint": "S015-R8",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF15",
-   "status": "open",
+   "status": "addressed_pending_supervisor_acceptance",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
-   "checkpoint": "S015-R8"
+   "checkpoint": "S015-R8",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF16",
@@ -2759,5 +2770,5 @@
    "implementation_claim": "addressed"
   }
  ],
- "s015_corrective_status": "R1_R7_committed_R8_R9_required"
+ "s015_corrective_status": "R1_R8_committed_R9_required"
 }

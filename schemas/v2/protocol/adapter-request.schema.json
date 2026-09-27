@@ -203,6 +203,7 @@
       "type": "string"
     },
     "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/adapter-request.schema.json",
       "type": "string"
     },
     "subject": {

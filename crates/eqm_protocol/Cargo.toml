@@ -19,6 +19,10 @@ schemars.workspace = true
 
 [dev-dependencies]
 regex-lite.workspace = true
+# Exact-pinned Draft 2020-12 conformance validator for the protocol schema
+# tests. `default-features = false` disables resolve-http/resolve-file and the
+# TLS/reqwest stack, so schemas resolve locally only with no network retrieval.
+jsonschema.workspace = true
 
 [lints]
 workspace = true
