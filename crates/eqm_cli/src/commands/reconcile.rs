@@ -394,44 +394,69 @@ mod tests {
     -> Result<(), Box<dyn Error>> {
         let repository = crate::test_support::example_repository()?;
         let root = repository.path();
-        let digest = eqm_domain::Sha256Digest::hash_content(b"adapter-fixture").to_string();
+        let adapter_digest = eqm_domain::Sha256Digest::hash_content(b"adapter-fixture").to_string();
         let mut lock = fs::read_to_string(root.join("eqm.lock"))?;
         lock.push_str(&format!(
-            "\n[[adapters]]\nid = \"adapter.test\"\nversion = \"1.0.0\"\nsource = \"https://example.com/adapters/test\"\nresolved = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\ndigest = \"{digest}\"\nprotocol = 1\n"
+            "\n[[adapters]]\nid = \"adapter.test\"\nversion = \"1.0.0\"\nsource = \"https://example.com/adapters/test\"\nresolved = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\ndigest = \"{adapter_digest}\"\nprotocol = 1\n"
         ));
         fs::write(root.join("eqm.lock"), lock)?;
         let request = SessionRequest::new(Default::default(), crate::cli::CommandName::Reconcile);
         let session = prepare(&request, root)?;
         let target = TargetId::new("android")?;
 
-        let inventory = |attributes: &str| {
-            format!(
-                "{{\"schema\":\"{}\",\"adapter\":\"adapter.test\",\"adapter_digest\":\"{digest}\",\"subject\":{{\"repository\":\"https://example.com/product/android\",\"repository_id_digest\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"scope\":{{\"kind\":\"target\",\"target\":\"android\"}},\"source_commit\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"build_id\":null,\"artifact_digest\":null,\"target_configuration_digest\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}},\"target\":\"android\",\"generated_at\":\"2026-08-07T12:00:00Z\",\"completeness\":\"complete\",\"entries\":[{{\"kind\":\"route\",\"key\":\"home\",\"attributes\":{{{attributes}}},\"source\":\"src/home.ts\"}}],\"diagnostics\":[],\"inventory_digest\":\"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"}}",
-                eqm_protocol::INVENTORY_SCHEMA
-            )
-        };
-        fs::write(
-            root.join("inventory.duplicate.json"),
-            inventory(
-                "\"enabled\":{\"type\":\"boolean\",\"value\":true},\"enabled\":{\"type\":\"boolean\",\"value\":false}",
-            ),
-        )?;
+        // A fully valid locked inventory. `build_id`/`artifact_digest` are
+        // present as null because the v1 subject DTO serializes absent options
+        // as null, and the canonical digest is computed over that form.
+        let mut inventory = serde_json::json!({
+            "schema": eqm_protocol::INVENTORY_SCHEMA.to_string(),
+            "adapter": "adapter.test",
+            "adapter_digest": adapter_digest,
+            "subject": {
+                "repository": "https://example.com/product/android",
+                "repository_id_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "scope": {"kind": "target", "target": "android"},
+                "source_commit": "a".repeat(40),
+                "build_id": serde_json::Value::Null,
+                "artifact_digest": serde_json::Value::Null,
+                "target_configuration_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "target": "android",
+            "generated_at": "2026-08-07T12:00:00Z",
+            "completeness": "complete",
+            "entries": [{
+                "kind": "route",
+                "key": "home",
+                "attributes": {"enabled": {"type": "boolean", "value": true}},
+                "source": "src/home.ts"
+            }],
+            "diagnostics": []
+        });
+        let digest =
+            eqm_domain::Sha256Digest::hash_content(&serde_json_canonicalizer::to_vec(&inventory)?)
+                .to_string();
+        inventory["inventory_digest"] = serde_json::json!(digest);
+        let valid_text = serde_json::to_string(&inventory)?;
+        fs::write(root.join("inventory.valid.json"), &valid_text)?;
+
+        // The positive control genuinely succeeds at the locked-adapter ingress.
+        let valid = load_inventory(&session, "inventory.valid.json", &target)?;
+        assert!(valid.inventory().is_some());
+
+        // The mutant differs only by a second, differently-valued `enabled`
+        // member, so it must fail as an ambiguous duplicate parse at the same
+        // ingress rather than as some unrelated later error.
+        let duplicate_text = valid_text.replace(
+            "\"enabled\":{\"type\":\"boolean\",\"value\":true}",
+            "\"enabled\":{\"type\":\"boolean\",\"value\":true},\"enabled\":{\"type\":\"boolean\",\"value\":false}",
+        );
+        assert_ne!(
+            duplicate_text, valid_text,
+            "duplicate mutation did not apply"
+        );
+        fs::write(root.join("inventory.duplicate.json"), duplicate_text)?;
         let duplicate = load_inventory(&session, "inventory.duplicate.json", &target);
-        assert!(duplicate.is_err());
         assert_eq!(
             duplicate.err().map(|error| error.to_string()).as_deref(),
-            Some("Json")
-        );
-
-        fs::write(
-            root.join("inventory.valid.json"),
-            inventory("\"enabled\":{\"type\":\"boolean\",\"value\":true}"),
-        )?;
-        let valid = load_inventory(&session, "inventory.valid.json", &target);
-        // The distinct-member control parses and reaches lock/digest validation;
-        // it is never rejected as an ambiguous duplicate.
-        assert_ne!(
-            valid.err().map(|error| error.to_string()).as_deref(),
             Some("Json")
         );
         Ok(())

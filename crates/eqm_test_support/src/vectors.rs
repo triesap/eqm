@@ -634,26 +634,55 @@ mod tests {
 
     #[test]
     fn every_vector_declares_a_discipline_consistent_with_its_category() {
+        // Exact category-to-discipline mapping. The two integer categories are
+        // the only ones that legitimately use both the unsigned and signed
+        // controls (an unsigned control may still test a negative input that it
+        // must reject); every other category names exactly one control.
         for vector in REPRESENTATION_VECTORS {
-            let wire_category = matches!(
-                vector.category,
-                "integer_range" | "decimal_string" | "timestamp" | "absence" | "digest_domain"
+            let allowed: &[VectorDiscipline] = match vector.category {
+                "integer_range" | "decimal_string" => &[
+                    VectorDiscipline::UnsignedInteger,
+                    VectorDiscipline::SignedInteger,
+                ],
+                "timestamp" => &[VectorDiscipline::Timestamp],
+                "absence" => &[VectorDiscipline::Absence],
+                "digest_domain" => &[VectorDiscipline::Digest],
+                "namespace"
+                | "set"
+                | "sequence"
+                | "text_unicode"
+                | "conjunction"
+                | "alternatives"
+                | "distinct_fail_pass"
+                | "retry_unstable"
+                | "attempt_conflict"
+                | "timeout_unknown"
+                | "missing_non_success"
+                | "count_unit"
+                | "campaign_selection"
+                | "fragment_risk" => &[VectorDiscipline::SemanticRule],
+                _ => &[],
+            };
+            assert!(
+                !allowed.is_empty(),
+                "{}: category `{}` has no exact discipline mapping",
+                vector.id,
+                vector.category
             );
-            if wire_category {
-                assert_ne!(
-                    vector.discipline,
-                    VectorDiscipline::SemanticRule,
-                    "{}: wire category has no executing control",
-                    vector.id
-                );
-            } else {
-                assert_eq!(
-                    vector.discipline,
-                    VectorDiscipline::SemanticRule,
-                    "{}: semantic rule must not claim a wire control",
-                    vector.id
-                );
-            }
+            assert!(
+                allowed.contains(&vector.discipline),
+                "{}: discipline {:?} is not the exact control for category `{}`",
+                vector.id,
+                vector.discipline,
+                vector.category
+            );
+        }
+        // Every required category must be reachable by this exact mapping.
+        for category in REQUIRED_VECTOR_CATEGORIES {
+            let mapped = REPRESENTATION_VECTORS
+                .iter()
+                .any(|vector| vector.category == *category);
+            assert!(mapped, "required category `{category}` has no vector");
         }
     }
 

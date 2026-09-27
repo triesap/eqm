@@ -5,10 +5,11 @@ Reviewed source HEAD: `7d44724abba2fa90baf806563da0a692c5bb5857`.
 
 ## Current implementation
 
-S001–S014 are recorded complete. S015 remains **in progress, changes required**.
-Corrective commits R1–R8 exist, but the independent review found RF11–RF18. Next
-checkpoint: **S015-R9**. S016 has not started. R1–R8
-receipts are retained; no history is rewritten and no accepted repair is discarded.
+S001–S014 are recorded complete. S015 is **implementation-complete, pending
+supervisor acceptance** of the new HEAD: corrective commits R1–R9 exist and
+R6–R9 closed RF11–RF18 with literal-input, fake-provider and real-validator
+controls. S016 is the next step and is dependency-unblocked. R1–R9 receipts are
+retained; no history is rewritten and no accepted repair is discarded.
 
 v1 integer acceptance is restored; 22 v1 schemas remain unchanged; five v2
 protocol families, version identity, exact integer endpoints, canonical runtime
@@ -21,14 +22,16 @@ boundary and the evidence/ledger reconciliation. See the
 [review](reports/CODEX-7d44724.md) for all findings and earlier dispositions.
 
 EQM-P01 has 12 numbered steps recorded complete. EQM-P02 has S013–S014 complete
-and S015 in progress; P03–P15 are pending. Corrective checkpoints retain S015
-traceability and do not increase the 211 numbered steps.
+and S015 implementation-complete pending acceptance; P03–P15 are pending.
+Corrective checkpoints retain S015 traceability and do not increase the 211
+numbered steps.
 
 Codex owns scope, contract, sequence and acceptance decisions; Pi implements.
-After objective R6–R9 gates pass, Pi may record S015 implementation-complete and
-continue dependency-unblocked S016–S211, while supervisor acceptance of the new
-HEAD remains separately pending. No stop at S143 or invented approval gate.
-Existing external-evidence prerequisites and optional-native boundaries remain.
+S015's objective R6–R9 gates passed, so S015 is recorded implementation-complete
+and dependency-unblocked work continues from S016 while supervisor acceptance of
+the new HEAD remains separately pending. No stop at S143 or invented approval
+gate. Existing external-evidence prerequisites and optional-native boundaries
+remain.
 
 ## Independent verification and limits
 

@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S015",
+ "next_step": "S016",
  "implementation": "in_progress",
  "local_verification": "not_run",
  "platform_verification": "not_run",
@@ -224,7 +224,7 @@
   },
   {
    "id": "S015",
-   "status": "in_progress",
+   "status": "implementation_complete_pending_supervisor_acceptance",
    "commit_sha": "3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b",
    "report": "implementation/reports/S015.md",
    "verification": [
@@ -237,7 +237,7 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "supervisor_status": "changes_required",
+   "supervisor_status": "acceptance_pending_review_of_new_HEAD",
    "corrective_checkpoints": [
     {
      "id": "S015-R1",
@@ -360,7 +360,7 @@
     {
      "id": "S015-R8",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "05e6d9d9ddc4e778b9ac1d3d9f7256607f561365",
      "report": "implementation/reports/S015.md#s015-r8",
      "verification": [
       "cargo xtask schemas generate",
@@ -375,13 +375,24 @@
     },
     {
      "id": "S015-R9",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/S015.md",
-     "verification": []
+     "report": "implementation/reports/S015.md#s015-r9",
+     "verification": [
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain",
+      "cargo test --locked -p eqm_test_support -p eqm_application -p eqm",
+      "cargo test --locked -p eqm_application --doc",
+      "cargo xtask schemas check",
+      "cargo xtask check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ],
+     "implementation_status": "committed"
     }
    ],
-   "implementation_status": "additional_corrective_checkpoints_required"
+   "implementation_status": "implementation_complete_pending_supervisor_acceptance"
   },
   {
    "id": "S016",
@@ -2284,7 +2295,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S015",
+ "active_step": "S016",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2606,7 +2617,7 @@
    "supervisor_status": "partial_remaining_obligations_in_DEV_002"
   }
  ],
- "next_checkpoint": "S015-R9",
+ "next_checkpoint": "S016",
  "supervisor_review": {
   "source_commit": "7d44724abba2fa90baf806563da0a692c5bb5857",
   "report": "implementation/reports/CODEX-7d44724.md",
@@ -2746,19 +2757,21 @@
   },
   {
    "id": "RF16",
-   "status": "open",
+   "status": "addressed_pending_supervisor_acceptance",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
-   "checkpoint": "S015-R9"
+   "checkpoint": "S015-R9",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF17",
-   "status": "open",
+   "status": "addressed_pending_supervisor_acceptance",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
-   "checkpoint": "S015-R9"
+   "checkpoint": "S015-R9",
+   "implementation_claim": "addressed"
   },
   {
    "id": "RF18",
@@ -2770,5 +2783,5 @@
    "implementation_claim": "addressed"
   }
  ],
- "s015_corrective_status": "R1_R8_committed_R9_required"
+ "s015_corrective_status": "R1_R9_committed_implementation_complete_pending_acceptance"
 }

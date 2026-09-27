@@ -9,9 +9,22 @@ use eqm_protocol::{WireInt, WireUint, v2};
 use eqm_test_support::{
     REPRESENTATION_VECTORS, RepresentationVector, VectorDiscipline, VectorOutcome,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::error::Error;
 use std::str::FromStr;
+
+/// Minimal v2 absence probe: one optional member that is omitted when absent
+/// and rejected when explicitly `null`.
+#[derive(Debug, Deserialize, Serialize)]
+struct AbsenceProbe {
+    #[serde(
+        default,
+        deserialize_with = "v2::deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    optional: Option<String>,
+}
 
 #[test]
 fn every_applicable_representation_vector_executes() -> Result<(), Box<dyn Error>> {
@@ -102,39 +115,12 @@ fn run_digest(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
     check(vector, rendered)
 }
 
-/// Executes the absence scenarios against the real v2 nested subject DTO.
+/// Executes an absence vector by feeding its literal input into the v2 absence
+/// probe and comparing the exact serialized output.
 fn run_absence(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
-    let mut value = serde_json::json!({
-        "repository": "https://example.com/team/project",
-        "repository_id_digest": Sha256Digest::hash_content(b"repo").to_string(),
-        "scope": {"kind": "target", "target": "web"},
-        "source_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "target_configuration_digest": Sha256Digest::hash_content(b"config").to_string(),
-    });
-    match vector.outcome {
-        VectorOutcome::Accept { .. } => {
-            let subject: v2::EvidenceSubjectV2Dto = serde_json::from_value(value)?;
-            let text = serde_json::to_string(&subject)?;
-            assert!(
-                !text.contains("build_id"),
-                "{}: absent optional emitted",
-                vector.id
-            );
-            assert!(
-                !text.contains("artifact_digest"),
-                "{}: absent optional emitted",
-                vector.id
-            );
-            Ok(())
-        }
-        VectorOutcome::Reject => {
-            value["build_id"] = Value::Null;
-            assert!(
-                serde_json::from_value::<v2::EvidenceSubjectV2Dto>(value).is_err(),
-                "{}: explicit null accepted",
-                vector.id
-            );
-            Ok(())
-        }
-    }
+    let rendered = match serde_json::from_str::<AbsenceProbe>(vector.input) {
+        Ok(probe) => Some(serde_json::to_string(&probe)?),
+        Err(_) => None,
+    };
+    check(vector, rendered)
 }

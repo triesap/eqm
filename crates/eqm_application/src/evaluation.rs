@@ -120,6 +120,13 @@ fn within_read_limit(count: usize, limit: usize) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use eqm_domain::{
+        AttemptOutcome, DimensionId, EvidenceKind, EvidencePayload, EvidenceResult,
+        EvidenceScopeSubject, EvidenceSubject, Extensions, Facet, FullRequirementId, ProfileId,
+        ProfileSelection, Revision, SelectorText, Sha256Digest, SymbolicValueId, TargetId,
+        TrustLevel, UnitId,
+    };
+    use std::cell::Cell;
 
     #[test]
     fn evidence_read_limits_are_bounded() {
@@ -140,5 +147,129 @@ mod tests {
         assert!(!within_read_limit(2, 1));
         assert!(within_read_limit(MAX_EVIDENCE_READ, MAX_EVIDENCE_READ));
         assert!(!within_read_limit(MAX_EVIDENCE_READ + 1, MAX_EVIDENCE_READ));
+    }
+
+    fn digest(value: &[u8]) -> Sha256Digest {
+        Sha256Digest::hash_content(value)
+    }
+
+    fn fixture_result() -> Result<EvidenceResult, Box<dyn Error>> {
+        let id = digest(b"result");
+        Ok(EvidenceResult::new(
+            id,
+            EvidenceSubject::new(
+                "https://github.com/example/project".parse()?,
+                digest(b"repository"),
+                EvidenceScopeSubject::Target(TargetId::new("web")?),
+                "a".repeat(40).parse()?,
+                None,
+                None,
+                digest(b"target-config"),
+            ),
+            TargetId::new("web")?,
+            UnitId::new("account.create.signup.identifier")?,
+            vec![FullRequirementId::new(
+                "account.create.signup.identifier#email_default",
+            )?],
+            vec![Facet::Behavior],
+            EvidenceKind::ManualReview,
+            digest(b"spec"),
+            digest(b"contract"),
+            digest(b"binding"),
+            digest(b"policy"),
+            None,
+            None,
+            None,
+            None,
+            vec![ProfileSelection::new(
+                ProfileId::new("audience.default")?,
+                Revision::new(1)?,
+                vec![(DimensionId::new("region")?, SymbolicValueId::new("us")?)],
+            )?],
+            "producer://human/review/reviewer-1".parse()?,
+            TrustLevel::TrustedCi,
+            "2026-08-07T12:00:00Z".parse()?,
+            EvidencePayload::manual_review(
+                AttemptOutcome::Passed,
+                "owner://team/reviewers".parse()?,
+                Some(SelectorText::new("Approved")?),
+            )?,
+            Vec::new(),
+            id,
+            Extensions::default(),
+        )?)
+    }
+
+    /// A read-only fake provider that can under-, exactly-, or over-return and
+    /// can propagate a store error. It records how often it was invoked.
+    #[derive(Default)]
+    struct FakeReader {
+        records: Vec<EvidenceResult>,
+        error: Option<EvidenceReadError>,
+        calls: Cell<usize>,
+    }
+
+    impl EvidenceReader for FakeReader {
+        fn read_evidence(
+            &self,
+            _request: &EvidenceReadRequest,
+        ) -> Result<Vec<EvidenceResult>, EvidenceReadError> {
+            self.calls.set(self.calls.get() + 1);
+            match self.error {
+                Some(error) => Err(error),
+                None => Ok(self.records.clone()),
+            }
+        }
+    }
+
+    #[test]
+    fn read_evidence_boundary_covers_exact_over_return_error_and_missing()
+    -> Result<(), Box<dyn Error>> {
+        let record = fixture_result()?;
+
+        // Exact limit succeeds with the real record count and one read call.
+        let reader = FakeReader {
+            records: vec![record.clone(), record.clone()],
+            ..FakeReader::default()
+        };
+        let view = crate::ReadCapabilities::new().with_evidence(&reader);
+        let request = EvidenceReadRequest::new(2)?;
+        let records = read_evidence(&view, &request)?;
+        assert_eq!(records.len(), 2);
+        assert_eq!(reader.calls.get(), 1);
+
+        // One over the declared limit fails with the exact bound error and no
+        // silent truncation. The read view has no execution or verification
+        // port, so this path cannot launch a runner.
+        let reader = FakeReader {
+            records: vec![record.clone(), record.clone(), record],
+            ..FakeReader::default()
+        };
+        let view = crate::ReadCapabilities::new().with_evidence(&reader);
+        let request = EvidenceReadRequest::new(2)?;
+        assert_eq!(
+            read_evidence(&view, &request),
+            Err(EvidenceReadError::LimitExceeded)
+        );
+        assert_eq!(reader.calls.get(), 1);
+
+        // A provider error is propagated unchanged, never masked as success.
+        let reader = FakeReader {
+            error: Some(EvidenceReadError::Unavailable),
+            ..FakeReader::default()
+        };
+        let view = crate::ReadCapabilities::new().with_evidence(&reader);
+        assert_eq!(
+            read_evidence(&view, &EvidenceReadRequest::new(1)?),
+            Err(EvidenceReadError::Unavailable)
+        );
+
+        // A missing reader is an explicit error, not an empty success.
+        let empty = crate::ReadCapabilities::new();
+        assert_eq!(
+            read_evidence(&empty, &EvidenceReadRequest::new(1)?),
+            Err(EvidenceReadError::MissingReader)
+        );
+        Ok(())
     }
 }
