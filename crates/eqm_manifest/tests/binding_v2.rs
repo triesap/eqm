@@ -15,9 +15,13 @@ use eqm_domain::{
     IntendedExposureState, MembershipOperator, OwnerRef, PositiveCount, RepoPath, Revision,
     RunnerId, SelectorText, SurfaceId, SymbolicValueId, TargetId, UnitId,
 };
-use eqm_manifest::{canonicalize_binding_v2, project_binding_v2};
+use eqm_manifest::{
+    CanonicalizationError, canonicalize_binding_v2, load_workspace, project_binding_v2,
+};
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::fs;
+use std::path::Path;
 use std::str::FromStr;
 
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
@@ -641,6 +645,300 @@ fn extension_encoding_is_recursive_for_every_variant() -> Result<(), Box<dyn Err
                 "str": {"type": "string", "value": "x"}
             }
         })
+    );
+    Ok(())
+}
+
+fn example_workspace() -> Result<tempfile::TempDir, Box<dyn Error>> {
+    let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .ok_or("workspace root unavailable")?
+        .join("examples/android-ios");
+    let directory = tempfile::tempdir()?;
+    copy_tree(&source, directory.path())?;
+    fs::create_dir_all(directory.path().join(".git"))?;
+    Ok(directory)
+}
+
+fn copy_tree(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
+    fs::create_dir_all(destination)?;
+    for entry in fs::read_dir(source)? {
+        let entry = entry?;
+        let target = destination.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_tree(&entry.path(), &target)?;
+        } else {
+            fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
+}
+
+fn loaded_binding(root: &Path) -> Result<Binding, Box<dyn Error>> {
+    let loaded = load_workspace(root, None)?;
+    loaded
+        .graph_input()
+        .bindings
+        .iter()
+        .find(|binding| binding.id().as_str() == "binding.ios.auth_signup")
+        .cloned()
+        .ok_or_else(|| "binding.ios.auth_signup unavailable".into())
+}
+
+#[test]
+fn loaded_manifest_comment_and_formatting_do_not_change_projection() -> Result<(), Box<dyn Error>> {
+    let repository = example_workspace()?;
+    let path = repository.path().join("eqm/bindings/ios.auth_signup.toml");
+    let original = fs::read_to_string(&path)?;
+
+    let baseline_binding = loaded_binding(repository.path())?;
+    let id = baseline_binding.id().clone();
+    let revision = baseline_binding.revision();
+    let baseline = canonicalize_binding_v2(&baseline_binding)?;
+
+    // Comments and formatting have no representation in the typed Binding: the
+    // loaded graph must project to identical bytes with the same ID/revision.
+    let reformatted = format!(
+        "# authored comment retained in the manifest, not in the projection\n\n{}\n   \n",
+        original.replace("revision = 1", "revision = 1  # inline comment")
+    );
+    assert_ne!(reformatted, original);
+    fs::write(&path, reformatted)?;
+    let reloaded = loaded_binding(repository.path())?;
+    assert_eq!(reloaded.id(), &id, "ID must stay fixed");
+    assert_eq!(reloaded.revision(), revision, "revision must stay fixed");
+    let after = canonicalize_binding_v2(&reloaded)?;
+    assert_eq!(after.bytes(), baseline.bytes());
+    assert_eq!(after.digest(), baseline.digest());
+
+    // A real semantic selector mutation keeps the IDs fixed but changes bytes.
+    let semantic = original.replace(
+        "test_id = \"testSignupIdentifierDefaultsToEmail\"",
+        "test_id = \"testSignupIdentifierChanged\"",
+    );
+    assert_ne!(semantic, original);
+    fs::write(&path, semantic)?;
+    let mutated_binding = loaded_binding(repository.path())?;
+    assert_eq!(mutated_binding.id(), &id, "ID must stay fixed");
+    assert_eq!(mutated_binding.revision(), revision);
+    let mutated = canonicalize_binding_v2(&mutated_binding)?;
+    assert_ne!(mutated.bytes(), after.bytes());
+    assert_ne!(mutated.digest(), after.digest());
+    Ok(())
+}
+
+#[test]
+fn projected_duplicate_after_display_exclusion_is_reachable() -> Result<(), Box<dyn Error>> {
+    let exposure_with_display = |label: &str| -> Result<Exposure, Box<dyn Error>> {
+        let extensions = Extensions::new(BTreeMap::from([(
+            ExtensionNamespace::new("dev.equivalencematrix.display")?,
+            ExtensionValue::String(label.into()),
+        )]))?;
+        Ok(Exposure::new(
+            SurfaceId::new("account.create.signup.start")?,
+            IntendedExposureState::Required,
+            Applicability::always(true),
+            None,
+            extensions,
+        ))
+    };
+    let plain = || -> Result<Exposure, Box<dyn Error>> {
+        Ok(Exposure::new(
+            SurfaceId::new("account.create.signup.start")?,
+            IntendedExposureState::Required,
+            Applicability::always(true),
+            None,
+            Extensions::default(),
+        ))
+    };
+
+    // Two exposures differ only in their display-only extension. `Binding::new`
+    // accepts both because the full values differ...
+    let duplicate = binding(
+        1,
+        &["owner://team/web"],
+        vec![artifact(
+            "signup",
+            "src/signup.rs",
+            Some(route_selector("/signup")?),
+            Extensions::default(),
+        )?],
+        vec![exposure_with_display("A")?, exposure_with_display("B")?],
+        vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+        Extensions::default(),
+    )?;
+    // ...but excluding the display namespace makes them identical projected
+    // members, which the canonical set rejects rather than silently collapsing.
+    assert_eq!(
+        canonicalize_binding_v2(&duplicate),
+        Err(CanonicalizationError::DuplicateMember)
+    );
+
+    // A truly identical exposure pair is rejected earlier by `Binding::new`.
+    let identical = binding(
+        1,
+        &["owner://team/web"],
+        vec![artifact(
+            "signup",
+            "src/signup.rs",
+            Some(route_selector("/signup")?),
+            Extensions::default(),
+        )?],
+        vec![plain()?, plain()?],
+        vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+        Extensions::default(),
+    );
+    let Err(error) = identical else {
+        return Err("identical exposures unexpectedly accepted".into());
+    };
+    assert!(matches!(
+        error.downcast_ref::<eqm_domain::EntityBuildError>(),
+        Some(eqm_domain::EntityBuildError::DuplicateExposure)
+    ));
+
+    // Distinct exposures (different non-display semantics) remain accepted and
+    // project to distinct members.
+    let distinct = binding(
+        1,
+        &["owner://team/web"],
+        vec![artifact(
+            "signup",
+            "src/signup.rs",
+            Some(route_selector("/signup")?),
+            Extensions::default(),
+        )?],
+        vec![
+            Exposure::new(
+                SurfaceId::new("account.create.signup.start")?,
+                IntendedExposureState::Required,
+                Applicability::always(true),
+                None,
+                Extensions::default(),
+            ),
+            Exposure::new(
+                SurfaceId::new("account.create.signup.start")?,
+                IntendedExposureState::Prohibited,
+                Applicability::always(true),
+                None,
+                Extensions::default(),
+            ),
+        ],
+        vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+        Extensions::default(),
+    )?;
+    let projected = project_binding_v2(&distinct)?;
+    assert_eq!(
+        projected["exposures"].as_array().map(Vec::len),
+        Some(2),
+        "distinct exposures must remain two canonical members"
+    );
+    Ok(())
+}
+
+#[test]
+fn nested_display_extensions_are_excluded_at_embedded_levels() -> Result<(), Box<dyn Error>> {
+    let build = |artifact_extensions: Extensions,
+                 evidence_extensions: Extensions|
+     -> Result<Binding, Box<dyn Error>> {
+        binding(
+            1,
+            &["owner://team/web"],
+            vec![artifact(
+                "signup",
+                "src/signup.rs",
+                Some(route_selector("/signup")?),
+                artifact_extensions,
+            )?],
+            vec![exposure(Applicability::always(true))?],
+            vec![evidence(Some(1), Some(60_000), evidence_extensions)?],
+            Extensions::default(),
+        )
+    };
+    let plain = build(Extensions::default(), Extensions::default())?;
+    let decorated = build(display_extensions()?, display_extensions()?)?;
+    assert_eq!(
+        canonicalize_binding_v2(&plain)?,
+        canonicalize_binding_v2(&decorated)?,
+        "display extensions at embedded entity levels must not alter identity"
+    );
+    Ok(())
+}
+
+#[test]
+fn ordered_all_and_any_children_are_not_sorted() -> Result<(), Box<dyn Error>> {
+    let all_with = |order: [SymbolicValueId; 2]| -> Result<Binding, Box<dyn Error>> {
+        let first = Applicability::compare(
+            DimensionId::new("region")?,
+            ComparisonOperator::Equal,
+            order[0].clone(),
+        );
+        let second = Applicability::compare(
+            DimensionId::new("tier")?,
+            ComparisonOperator::Equal,
+            order[1].clone(),
+        );
+        binding(
+            1,
+            &["owner://team/web"],
+            vec![artifact(
+                "signup",
+                "src/signup.rs",
+                Some(route_selector("/signup")?),
+                Extensions::default(),
+            )?],
+            vec![exposure(Applicability::all(vec![first, second])?)?],
+            vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+            Extensions::default(),
+        )
+    };
+    let forward = all_with([SymbolicValueId::new("us")?, SymbolicValueId::new("gold")?])?;
+    let reversed = all_with([SymbolicValueId::new("gold")?, SymbolicValueId::new("us")?])?;
+    let forward = canonicalize_binding_v2(&forward)?;
+    let reversed = canonicalize_binding_v2(&reversed)?;
+    assert_ne!(
+        forward.bytes(),
+        reversed.bytes(),
+        "reversing ordered all children must change the projection"
+    );
+
+    // The `any` form behaves the same way.
+    let any_with = |order: [SymbolicValueId; 2]| -> Result<Binding, Box<dyn Error>> {
+        let first = Applicability::membership(
+            DimensionId::new("region")?,
+            MembershipOperator::In,
+            vec![order[0].clone()],
+        )?;
+        let second = Applicability::membership(
+            DimensionId::new("tier")?,
+            MembershipOperator::In,
+            vec![order[1].clone()],
+        )?;
+        binding(
+            1,
+            &["owner://team/web"],
+            vec![artifact(
+                "signup",
+                "src/signup.rs",
+                Some(route_selector("/signup")?),
+                Extensions::default(),
+            )?],
+            vec![exposure(Applicability::any(vec![first, second])?)?],
+            vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+            Extensions::default(),
+        )
+    };
+    assert_ne!(
+        canonicalize_binding_v2(&any_with([
+            SymbolicValueId::new("us")?,
+            SymbolicValueId::new("gold")?
+        ])?)?
+        .bytes(),
+        canonicalize_binding_v2(&any_with([
+            SymbolicValueId::new("gold")?,
+            SymbolicValueId::new("us")?
+        ])?)?
+        .bytes()
     );
     Ok(())
 }

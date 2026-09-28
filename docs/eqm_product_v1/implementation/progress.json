@@ -517,8 +517,8 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_R1_repair_supervisor_pending",
-   "supervisor_status": "changes_required_RF24_RF26_repaired_RF25_open"
+   "implementation_status": "committed_R1_R2_supervisor_pending",
+   "supervisor_status": "changes_required_RF24_RF25_RF26_repaired_supervisor_pending"
   },
   {
    "id": "S018",
@@ -538,8 +538,8 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_R1_repair_supervisor_pending",
-   "supervisor_status": "changes_required_RF24_RF26_repaired_RF25_open",
+   "implementation_status": "committed_R1_R2_supervisor_pending",
+   "supervisor_status": "changes_required_RF24_RF25_RF26_repaired_supervisor_pending",
    "corrective_checkpoints": [
     {
      "id": "S018-R1",
@@ -562,10 +562,22 @@
     },
     {
      "id": "S018-R2",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/CODEX-3469fac.md",
-     "verification": []
+     "report": "implementation/reports/S018.md#corrective-checkpoint-s018-r2--prove-component-projections-at-manifest-boundaries",
+     "implementation_status": "committed_supervisor_pending",
+     "supervisor_status": "pending_review",
+     "verification": [
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_manifest -p eqm_domain",
+      "cargo test -p eqm_manifest --doc --locked",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     }
    ]
   },
@@ -2792,7 +2804,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S018-R2",
+ "next_checkpoint": "S019-A",
  "supervisor_review": {
   "source_commit": "3469face3a88d280f2577f4ff936419408c1d248",
   "report": "implementation/reports/CODEX-3469fac.md",
@@ -3046,7 +3058,7 @@
   },
   {
    "id": "RF25",
-   "status": "open",
+   "status": "implementation_complete_supervisor_pending",
    "priority": "P2",
    "owner": "S018",
    "affected_steps": [
@@ -3055,7 +3067,7 @@
    ],
    "checkpoint": "S018-R2",
    "summary": "Manifest provenance/duplicate/expression proof remains incomplete",
-   "report": "implementation/reports/CODEX-3469fac.md"
+   "report": "implementation/reports/S018.md#corrective-checkpoint-s018-r2--prove-component-projections-at-manifest-boundaries"
   },
   {
    "id": "RF26",

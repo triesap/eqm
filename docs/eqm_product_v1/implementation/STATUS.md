@@ -2,18 +2,18 @@
 
 Current amendment DEV-006, 2026-09-28. Reviewed source:
 `3469face3a88d280f2577f4ff936419408c1d248`. Latest implementation commits:
-S016-R3 `test: close collection and diagnostic boundary evidence`, then S018-R1
-`fix: preserve extension types in component identities` (SHAs recorded
+S016-R3 `test: close collection and diagnostic boundary evidence`, S018-R1
+`fix: preserve extension types in component identities`, then S018-R2
+`test: prove component projections at manifest boundaries` (SHAs recorded
 externally).
 
 S001–S015 and S016-P1/R1 behavior are accepted for allocated scope. RF01–RF21
 are closed for that scope. RF22's implementation matrix is complete pending
 supervisor review (S016-R3); S016's implementation contribution is complete.
-S017/S018 implementations are retained. RF24 (typed digest wrappers) and RF26
-(recursive extension type tags) are repaired at S018-R1 pending review; RF25
-(manifest-boundary proof) remains open for S018-R2. S019's decision-required
+S017/S018 implementations are retained and their RF24/RF25/RF26 repairs are
+implementation-complete pending review (S018-R1/R2). S019's decision-required
 block is resolved by Codex, not a context interruption. Next:
-**S018-R2 → S019-A/B/C → S020–S211**.
+**S019-A → S019-B → S019-C → S020–S211**.
 
 All 211 IDs remain. P01 has 12 complete steps; P02 has four complete steps
 (S013–S016), with S017/S018 changes required and S019 not yet started. Later
@@ -34,13 +34,15 @@ related-location/diagnostic-vector claim. S018-R1 returns the existing typed
 v2 extension value with `{type,value}` so integer and digit-text cannot collide;
 a compile-fail doctest proves cross-domain substitution fails. Only the two
 affected extension `BOUNDARY_DIGEST` v2 goldens changed; base and all v1 bytes
-are unchanged. RF25 manifest-boundary proof is still open. Selector helper
-consumer integration and end-to-end v2 construction remain with their owning
-future steps; S025/S059/S061 retain relationships, S027 full provenance corpus
-and S069 freshness arithmetic. No whole AC/RA closure follows from referenced
-tests. Linux/extended verification, live product/crypto/host evidence and
-release/signing authorization are unverified. This is not a release candidate;
-human testing is not the next dependency.
+are unchanged. S018-R2 replaces the substituted parse-provenance proof with real
+`load_workspace` comment/formatting and semantic-mutation controls, exercises the
+reachable post-display-exclusion `DuplicateMember` path, and proves ordered
+all/any sensitivity. Selector helper consumer integration and end-to-end v2
+construction remain with their owning future steps; S025/S059/S061 retain
+relationships, S027 full provenance corpus and S069 freshness arithmetic. No
+whole AC/RA closure follows from referenced tests. Linux/extended verification,
+live product/crypto/host evidence and release/signing authorization are unverified.
+This is not a release candidate; human testing is not the next dependency.
 
 Codex owns decisions, Pi generates implementation. Follow the sole governing
 COMMIT_SEQUENCE.md and synchronized views. Continue ordered unblocked work through
