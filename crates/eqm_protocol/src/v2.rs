@@ -13,7 +13,7 @@
 use crate::{CanonicalSet, WireInt, WireUint};
 use eqm_domain::{
     AdapterId, AttemptOutcome, DimensionId, EvidenceCounts, EvidenceKind, Facet, FullRequirementId,
-    HttpMethod, InventoryCompleteness, OwnerRef, PositiveCount, ProducerRef, ProfileId, ProviderId,
+    HttpMethod, InventoryCompleteness, OwnerRef, ProducerRef, ProfileId, ProviderId,
     ReleaseChannel, RepoPath, RepositoryIdentity, Revision, SelectorText, Sha256Digest,
     SourceCommit, SurfaceId, SymbolicValueId, TargetId, TrustLevel, UnitId, UtcInstantV2,
     V2_UTC_PATTERN,
@@ -513,11 +513,15 @@ fn validate_execution(execution: &ExecutionPayloadV2Dto) -> Result<(), V2DtoErro
     if execution.finished_at < execution.started_at {
         return Err(V2DtoError::InvalidTime);
     }
-    for attempt in &execution.attempts {
-        PositiveCount::new(attempt.number.get()).map_err(|_| V2DtoError::InvalidAttempt)?;
+    for (index, attempt) in execution.attempts.iter().enumerate() {
+        // The existing attempt-index rule: attempts are numbered 1..=n in the
+        // declared order. A reordered, duplicated or skipped index is invalid.
+        if attempt.number.get() != index as u64 + 1 {
+            return Err(V2DtoError::InvalidAttempt);
+        }
         attempt
             .outcome
-            .parse::<eqm_domain::AttemptOutcome>()
+            .parse::<AttemptOutcome>()
             .map_err(|_| V2DtoError::InvalidVocabulary)?;
         if attempt.finished_at < attempt.started_at {
             return Err(V2DtoError::InvalidTime);

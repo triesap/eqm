@@ -2,16 +2,17 @@
 //!
 //! These tests drive the actual `CanonicalSet` boundary through the concrete v2
 //! DTOs: valid permutations are accepted and produce identical canonical bytes,
-//! duplicates are rejected before a lossy collection can erase them, ordered
-//! sequences keep order and multiplicity, object members sort by complete
-//! canonical member bytes rather than derived Rust `Ord`, authored metadata is
-//! rejected when it is not NFC, and the runtime-facts digest binds the canonical
-//! semantic set projection rather than the received array order.
+//! duplicates and logical-key collisions are rejected before a lossy collection
+//! can erase them, ordered sequences keep order and multiplicity, object members
+//! sort by complete canonical member bytes rather than derived Rust `Ord`,
+//! authored metadata is rejected when it is not exact NFC, and the runtime-facts
+//! digest binds the canonical semantic set projection rather than the received
+//! array order.
 
-use eqm_domain::Sha256Digest;
+use eqm_domain::{RawObjectDigest, Sha256Digest};
 use eqm_protocol::{
-    AttemptV2Dto, CanonicalSet, EvidenceResultV2Dto, EvidenceSelectorV2Dto, ExecutionPayloadV2Dto,
-    InventoryV2Dto, RuntimeFactsV2Dto, V2DtoError,
+    AdapterResponseV2Dto, CanonicalSet, EvidencePayloadV2Dto, EvidenceResultV2Dto,
+    EvidenceSelectorV2Dto, InventoryV2Dto, RuntimeFactsV2Dto, V2DtoError,
 };
 use serde_json::{Value, json};
 use std::error::Error;
@@ -63,8 +64,39 @@ fn evidence_result() -> Value {
     })
 }
 
+fn inventory() -> Value {
+    json!({
+        "schema": eqm_protocol::INVENTORY_SCHEMA_V2.to_string(),
+        "adapter": "adapter.test",
+        "adapter_digest": digest("adapter"),
+        "subject": subject(),
+        "target": "web",
+        "generated_at": "2026-01-02T03:04:05Z",
+        "completeness": "complete",
+        "entries": [],
+        "diagnostics": [],
+        "inventory_digest": digest("inventory"),
+    })
+}
+
+fn adapter_response(inventory: Value) -> Value {
+    json!({
+        "schema": eqm_protocol::ADAPTER_RESPONSE_SCHEMA_V2.to_string(),
+        "request_id": "request-1",
+        "adapter": "adapter.test",
+        "adapter_digest": digest("adapter"),
+        "status": "ok",
+        "inventory": inventory,
+        "diagnostics": [],
+    })
+}
+
 fn parse_evidence(value: &Value) -> Result<EvidenceResultV2Dto, V2DtoError> {
     EvidenceResultV2Dto::from_json(&serde_json::to_vec(value).map_err(|_| V2DtoError::Json)?)
+}
+
+fn parse_inventory(value: &Value) -> Result<InventoryV2Dto, V2DtoError> {
+    InventoryV2Dto::from_json(&serde_json::to_vec(value).map_err(|_| V2DtoError::Json)?)
 }
 
 #[test]
@@ -109,6 +141,118 @@ fn semantic_set_permutations_are_equal_and_duplicates_reject() -> Result<(), Box
 }
 
 #[test]
+fn subject_target_sets_are_canonical_and_duplicate_free() -> Result<(), Box<dyn Error>> {
+    let with_targets = |targets: &[&str]| {
+        let mut value = evidence_result();
+        value["subject"]["scope"] = json!({"kind": "target_set", "targets": targets});
+        value
+    };
+    let first = parse_evidence(&with_targets(&["web", "ios"]))?;
+    let second = parse_evidence(&with_targets(&["ios", "web"]))?;
+    assert_eq!(first, second, "target-set permutations must agree");
+    assert_eq!(serde_json::to_vec(&first)?, serde_json::to_vec(&second)?);
+
+    // Exact duplicate members reject before the set is collected.
+    assert!(parse_evidence(&with_targets(&["web", "web"])).is_err());
+    // An empty scope violates the nonempty target-set rule.
+    assert_eq!(
+        parse_evidence(&with_targets(&[])),
+        Err(V2DtoError::InvalidSubject)
+    );
+    Ok(())
+}
+
+#[test]
+fn profile_values_are_canonical_and_conflicts_reject() -> Result<(), Box<dyn Error>> {
+    let member = |dimension: &str, value: &str| json!({"profile": "account.profile", "revision": 1, "dimension": dimension, "value": value});
+    let with_profiles = |profiles: Value| {
+        let mut value = evidence_result();
+        value["profile_values"] = profiles;
+        value
+    };
+    let first = parse_evidence(&with_profiles(json!([
+        member("locale", "en"),
+        member("track", "beta")
+    ])))?;
+    let second = parse_evidence(&with_profiles(json!([
+        member("track", "beta"),
+        member("locale", "en")
+    ])))?;
+    assert_eq!(first, second, "profile permutations must agree");
+    assert_eq!(serde_json::to_vec(&first)?, serde_json::to_vec(&second)?);
+
+    // Duplicate (profile, dimension) with a different value is a logical-key
+    // collision, not a second valid record.
+    assert_eq!(
+        parse_evidence(&with_profiles(json!([
+            member("locale", "en"),
+            member("locale", "fr")
+        ]))),
+        Err(V2DtoError::InvalidOrdering)
+    );
+    // Conflicting revisions for one profile reject.
+    let conflicting = json!([
+        {"profile": "account.profile", "revision": 1, "dimension": "locale", "value": "en"},
+        {"profile": "account.profile", "revision": 2, "dimension": "track", "value": "beta"},
+    ]);
+    assert_eq!(
+        parse_evidence(&with_profiles(conflicting)),
+        Err(V2DtoError::InvalidOrdering)
+    );
+    Ok(())
+}
+
+#[test]
+fn inventory_entries_are_canonical_and_duplicate_free() -> Result<(), Box<dyn Error>> {
+    let entry = |kind: &str, key: &str, marker: &str| json!({"kind": kind, "key": key, "attributes": {"m": {"type": "text", "value": marker}}, "source": "src/file.kt"});
+    let with_entries = |entries: Value| {
+        let mut value = inventory();
+        value["entries"] = entries;
+        value
+    };
+    let first = parse_inventory(&with_entries(json!([
+        entry("view", "a", "x"),
+        entry("view", "b", "y"),
+    ])))?;
+    let second = parse_inventory(&with_entries(json!([
+        entry("view", "b", "y"),
+        entry("view", "a", "x"),
+    ])))?;
+    assert_eq!(first, second, "entry permutations must agree");
+    assert_eq!(serde_json::to_vec(&first)?, serde_json::to_vec(&second)?);
+
+    // Duplicate (kind, key) with different attributes is a logical-key collision.
+    assert_eq!(
+        parse_inventory(&with_entries(json!([
+            entry("view", "a", "x"),
+            entry("view", "a", "y"),
+        ]))),
+        Err(V2DtoError::InvalidOrdering)
+    );
+    Ok(())
+}
+
+#[test]
+fn embedded_inventory_entries_are_canonical_and_duplicate_free() -> Result<(), Box<dyn Error>> {
+    let entry = |kind: &str, key: &str, marker: &str| json!({"kind": kind, "key": key, "attributes": {"m": {"type": "text", "value": marker}}, "source": "src/file.kt"});
+    let parse = |entries: Value| -> Result<AdapterResponseV2Dto, V2DtoError> {
+        let mut value = inventory();
+        value["entries"] = entries;
+        let bytes = serde_json::to_vec(&adapter_response(value)).map_err(|_| V2DtoError::Json)?;
+        AdapterResponseV2Dto::from_json(&bytes)
+    };
+    let first = parse(json!([entry("view", "a", "x"), entry("view", "b", "y")]))?;
+    let second = parse(json!([entry("view", "b", "y"), entry("view", "a", "x")]))?;
+    assert_eq!(first, second, "embedded entry permutations must agree");
+    assert_eq!(serde_json::to_vec(&first)?, serde_json::to_vec(&second)?);
+    assert_eq!(
+        parse(json!([entry("view", "a", "x"), entry("view", "a", "y")])),
+        Err(V2DtoError::InvalidOrdering)
+    );
+    Ok(())
+}
+
+#[test]
 fn object_members_sort_by_canonical_bytes_not_derived_ord() -> Result<(), Box<dyn Error>> {
     let mut value = evidence_result();
     // Derived `Ord` for AttachmentV2Dto compares `name` first, so "a" would
@@ -127,48 +271,59 @@ fn object_members_sort_by_canonical_bytes_not_derived_ord() -> Result<(), Box<dy
     Ok(())
 }
 
-#[test]
-fn ordered_sequences_preserve_order_and_multiplicity() -> Result<(), Box<dyn Error>> {
-    let attempt = |number: u64| {
-        json!({
-            "number": number,
-            "outcome": "passed",
-            "started_at": "2026-01-02T03:04:05Z",
-            "finished_at": "2026-01-02T03:04:06Z",
+fn execution_payload(numbers: &[u64]) -> Value {
+    let attempts: Vec<Value> = numbers
+        .iter()
+        .map(|number| {
+            json!({
+                "number": number,
+                "outcome": "passed",
+                "started_at": "2026-01-02T03:04:05Z",
+                "finished_at": "2026-01-02T03:04:06Z",
+            })
         })
-    };
-    let payload: ExecutionPayloadV2Dto = serde_json::from_value(json!({
-        "attempts": [attempt(2), attempt(1), attempt(2)],
-        "counts": {"selected": 0, "passed": 0, "failed": 0, "skipped": 0, "filtered": 0, "quarantined": 0},
+        .collect();
+    json!({
+        "attempts": attempts,
+        "counts": {"selected": 2, "passed": 2, "failed": 0, "skipped": 0, "filtered": 0, "quarantined": 0},
         "started_at": "2026-01-02T03:04:05Z",
         "finished_at": "2026-01-02T03:04:06Z",
-    }))?;
-    let numbers: Vec<u64> = payload
+    })
+}
+
+fn evidence_with_execution(numbers: &[u64]) -> Value {
+    let mut value = evidence_result();
+    value["kind"] = json!("test");
+    value["payload"] = json!({"kind": "test", "execution": execution_payload(numbers)});
+    value
+}
+
+#[test]
+fn ordered_sequences_preserve_order_and_multiplicity() -> Result<(), Box<dyn Error>> {
+    let parsed = parse_evidence(&evidence_with_execution(&[1, 2]))?;
+    let EvidencePayloadV2Dto::Test { execution } = &parsed.payload else {
+        return Err("expected a test execution payload".into());
+    };
+    let numbers: Vec<u64> = execution
         .attempts
         .iter()
-        .map(|attempt: &AttemptV2Dto| attempt.number.get())
+        .map(|attempt| attempt.number.get())
         .collect();
-    assert_eq!(numbers, vec![2, 1, 2], "attempt order and multiplicity");
+    assert_eq!(numbers, vec![1, 2], "attempt order is preserved");
 
     let location = |line: u32| json!({"uri": "src/a.rs", "start": {"line": line, "column": 0}, "end": {"line": line, "column": 0}});
-    let inventory = json!({
-        "schema": eqm_protocol::INVENTORY_SCHEMA_V2.to_string(),
-        "adapter": "adapter.test",
-        "adapter_digest": digest("adapter"),
-        "subject": subject(),
-        "target": "web",
-        "generated_at": "2026-01-02T03:04:05Z",
-        "completeness": "complete",
-        "entries": [],
-        "diagnostics": [{
-            "code": "adapter.one",
-            "severity": "warning",
-            "message": "observed",
-            "related": [location(3), location(1), location(3)],
-        }],
-        "inventory_digest": digest("inventory"),
-    });
-    let parsed: InventoryV2Dto = InventoryV2Dto::from_json(&serde_json::to_vec(&inventory)?)?;
+    let diagnostics = |related: Value| json!([{"code": "adapter.one", "severity": "warning", "message": "observed", "related": related}]);
+    let with_diagnostics = |diagnostics: Value| {
+        let mut value = inventory();
+        value["diagnostics"] = diagnostics;
+        value
+    };
+
+    let parsed = parse_inventory(&with_diagnostics(diagnostics(json!([
+        location(3),
+        location(1),
+        location(3),
+    ]))))?;
     let lines: Vec<u32> = parsed.diagnostics[0]
         .related
         .iter()
@@ -179,6 +334,31 @@ fn ordered_sequences_preserve_order_and_multiplicity() -> Result<(), Box<dyn Err
         vec![3, 1, 3],
         "related-location order and multiplicity"
     );
+
+    // Diagnostics are an ordered list: reordering changes the canonical output
+    // instead of being collapsed like a semantic set.
+    let first = serde_json::to_vec(&parse_inventory(&with_diagnostics(diagnostics(json!([
+        location(1),
+        location(3)
+    ]))))?)?;
+    let second = serde_json::to_vec(&parse_inventory(&with_diagnostics(diagnostics(json!([
+        location(3),
+        location(1)
+    ]))))?)?;
+    assert_ne!(first, second, "diagnostic order must be significant");
+    Ok(())
+}
+
+#[test]
+fn attempt_numbering_is_enforced_at_evidence_result_root() -> Result<(), Box<dyn Error>> {
+    assert!(parse_evidence(&evidence_with_execution(&[1, 2])).is_ok());
+    for invalid in [&[2u64, 1][..], &[1, 1][..], &[1, 3][..], &[0][..]] {
+        assert_eq!(
+            parse_evidence(&evidence_with_execution(invalid)),
+            Err(V2DtoError::InvalidAttempt),
+            "attempt numbering {invalid:?} was accepted"
+        );
+    }
     Ok(())
 }
 
@@ -255,27 +435,23 @@ fn authored_metadata_rejects_non_nfc_without_normalizing() -> Result<(), Box<dyn
     Ok(())
 }
 
-fn runtime_facts() -> Value {
-    json!({
-        "schema": eqm_protocol::RUNTIME_FACTS_SCHEMA_V2.to_string(),
-        "provider": "runtime.fixture",
-        "subject": subject(),
-        "target": "web",
-        "profile_values": [],
-        "observed_at": "2026-01-02T03:04:05Z",
-        "expires_at": "2026-01-03T03:04:05Z",
-        "facts": [
-            {"surface": "account.create.signup.identifier", "dimension": "availability", "key": "a", "value": {"type": "boolean", "value": true}},
-            {"surface": "account.create.signup.identifier", "dimension": "availability", "key": "b", "value": {"type": "boolean", "value": false}},
-        ],
-        "producer": "producer://runtime/fixture/snapshot-1",
-        "claimed_trust": "signed_ci",
-        "facts_digest": "",
-    })
+const CANONICAL_FACTS_PROJECTION: &str = r#"{"claimed_trust":"signed_ci","expires_at":"2026-01-03T03:04:05Z","facts":[{"dimension":"availability","key":"a","surface":"account.create.signup.identifier","value":{"type":"boolean","value":true}},{"dimension":"availability","key":"b","surface":"account.create.signup.identifier","value":{"type":"integer","value":42}}],"observed_at":"2026-01-02T03:04:05Z","producer":"producer://runtime/fixture/snapshot-1","profile_values":[{"dimension":"locale","profile":"account.profile","revision":1,"value":"en"},{"dimension":"track","profile":"account.profile","revision":1,"value":"beta"}],"provider":"runtime.fixture","schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/runtime-facts.schema.json","subject":{"repository":"https://example.com/team/project","repository_id_digest":"sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e","scope":{"kind":"target","target":"web"},"source_commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","target_configuration_digest":"sha256:b79606fb3afea5bd1609ed40b622142f1c98125abcfe89a76a661b0e8e343910"},"target":"web"}"#;
+
+const CANONICAL_FACTS_DIGEST: &str =
+    "sha256:2277503dd67b1bef4b36a5ed3416fd249384e0c161474ce7fa5efffb53b690e0";
+
+/// A record whose `facts_digest` is the fixed literal digest of the canonical
+/// projection above. The literal values are reviewed constants, not a test copy
+/// of the production array-sorting algorithm.
+fn canonical_facts_record() -> Result<Value, Box<dyn Error>> {
+    let mut record: Value = serde_json::from_str(CANONICAL_FACTS_PROJECTION)?;
+    record["facts_digest"] = json!(CANONICAL_FACTS_DIGEST);
+    Ok(record)
 }
 
-/// Producer-side digest over the canonical semantic set projection, mirroring
-/// the enforced boundary: unordered arrays are canonically ordered before JCS.
+/// Recomputes a mutant's enclosing digest so a negative test fails on the
+/// intended structural check rather than a digest mismatch. This mirrors the
+/// boundary only for the mutant inputs; the accepted oracle above is literal.
 fn canonical_facts_digest(document: &mut Value) -> Result<String, Box<dyn Error>> {
     document
         .as_object_mut()
@@ -294,39 +470,50 @@ fn canonical_facts_digest(document: &mut Value) -> Result<String, Box<dyn Error>
 }
 
 #[test]
-fn runtime_facts_digest_binds_canonical_semantic_set_projection() -> Result<(), Box<dyn Error>> {
-    let mut document = runtime_facts();
-    let facts = canonical_facts_digest(&mut document)?;
-    document["facts_digest"] = json!(facts);
+fn literal_canonical_runtime_facts_bytes_and_digest() -> Result<(), Box<dyn Error>> {
+    let record = canonical_facts_record()?;
+    let parsed = RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&record)?)?;
+    assert_eq!(parsed.facts_digest, CANONICAL_FACTS_DIGEST);
 
-    let bytes = serde_json::to_vec(&document)?;
-    let parsed = RuntimeFactsV2Dto::from_json(&bytes)?;
+    let mut projection = record.clone();
+    projection
+        .as_object_mut()
+        .ok_or("runtime facts object")?
+        .remove("facts_digest");
+    let canonical = String::from_utf8(serde_json_canonicalizer::to_vec(&projection)?)?;
+    assert_eq!(canonical, CANONICAL_FACTS_PROJECTION);
     assert_eq!(
-        parsed
-            .facts
-            .iter()
-            .map(|fact| fact.key.as_str())
-            .collect::<Vec<_>>(),
-        vec!["a", "b"]
+        Sha256Digest::hash_content(CANONICAL_FACTS_PROJECTION.as_bytes()).to_string(),
+        CANONICAL_FACTS_DIGEST
     );
+    Ok(())
+}
 
-    // A permutation of the same set keeps the digest valid because the boundary
-    // binds the canonical projection rather than the received order.
+#[test]
+fn runtime_facts_digest_binds_canonical_semantic_set_projection() -> Result<(), Box<dyn Error>> {
+    let document = canonical_facts_record()?;
+    let parsed = RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&document)?)?;
+    let fact_keys: Vec<&str> = parsed.facts.iter().map(|fact| fact.key.as_str()).collect();
+    assert_eq!(fact_keys, vec!["a", "b"]);
+
+    // A permutation of the same set keeps the literal digest valid because the
+    // boundary binds the canonical projection rather than the received order.
     let mut permuted = document.clone();
-    let facts = permuted["facts"].as_array_mut().ok_or("facts array")?;
-    facts.reverse();
+    permuted["facts"]
+        .as_array_mut()
+        .ok_or("facts array")?
+        .reverse();
     assert!(RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&permuted)?).is_ok());
 
-    // Exact duplicate members reject at deserialization.
+    // Exact duplicate members reject before collection.
     let mut duplicated = document.clone();
-    let facts = duplicated["facts"].as_array().ok_or("facts array")?;
-    let first = facts[0].clone();
+    let first = duplicated["facts"][0].clone();
     duplicated["facts"] = json!([first.clone(), first]);
     let digest = canonical_facts_digest(&mut duplicated)?;
     duplicated["facts_digest"] = json!(digest);
     assert!(RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&duplicated)?).is_err());
 
-    // A shared logical key with a different value is rejected by validation.
+    // A shared logical key with a different value rejects by validation.
     let mut conflicting = document.clone();
     conflicting["facts"][1]["key"] = json!("a");
     let digest = canonical_facts_digest(&mut conflicting)?;
@@ -334,6 +521,87 @@ fn runtime_facts_digest_binds_canonical_semantic_set_projection() -> Result<(), 
     assert_eq!(
         RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&conflicting)?),
         Err(V2DtoError::InvalidOrdering)
+    );
+    Ok(())
+}
+
+#[test]
+fn runtime_facts_profile_values_are_canonical_and_revision_conflicts_reject()
+-> Result<(), Box<dyn Error>> {
+    let document = canonical_facts_record()?;
+    let mut permuted = document.clone();
+    permuted["facts"]
+        .as_array_mut()
+        .ok_or("facts array")?
+        .reverse();
+    permuted["profile_values"]
+        .as_array_mut()
+        .ok_or("profile array")?
+        .reverse();
+    let parsed = RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&document)?)?;
+    let permuted = RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&permuted)?)?;
+    assert_eq!(parsed, permuted, "profile permutations must agree");
+    let dimensions: Vec<&str> = parsed
+        .profile_values
+        .iter()
+        .map(|value| value.dimension.as_str())
+        .collect();
+    assert_eq!(dimensions, vec!["locale", "track"]);
+
+    // A conflicting revision for one profile rejects even after the enclosing
+    // digest is recomputed.
+    let mut conflicting = document.clone();
+    conflicting["profile_values"][1]["revision"] = json!(2);
+    let digest = canonical_facts_digest(&mut conflicting)?;
+    conflicting["facts_digest"] = json!(digest);
+    assert_eq!(
+        RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&conflicting)?),
+        Err(V2DtoError::InvalidOrdering)
+    );
+    Ok(())
+}
+
+#[test]
+fn strict_ingress_preserves_raw_bytes_while_semantic_view_canonicalizes()
+-> Result<(), Box<dyn Error>> {
+    // A raw input with non-canonical formatting/array order and an escaped
+    // separator that decodes to the same semantic value. The received bytes and
+    // their raw-object identity must stay exact; only the separate semantic view
+    // is canonicalized.
+    let mut permuted = canonical_facts_record()?;
+    permuted["facts"]
+        .as_array_mut()
+        .ok_or("facts array")?
+        .reverse();
+    permuted["profile_values"]
+        .as_array_mut()
+        .ok_or("profile array")?
+        .reverse();
+    let raw = String::from_utf8(serde_json::to_vec_pretty(&permuted)?)?
+        .replace("team/project", "team\\u002fproject")
+        .into_bytes();
+    let original = raw.clone();
+    let raw_digest = RawObjectDigest::hash_content(&raw).to_string();
+
+    let parsed = RuntimeFactsV2Dto::from_json(&raw)?;
+    assert_eq!(raw, original, "strict ingress must not rewrite input bytes");
+    assert_eq!(
+        RawObjectDigest::hash_content(&raw).to_string(),
+        raw_digest,
+        "raw-object identity must stay exact"
+    );
+
+    let fact_keys: Vec<&str> = parsed.facts.iter().map(|fact| fact.key.as_str()).collect();
+    let dimensions: Vec<&str> = parsed
+        .profile_values
+        .iter()
+        .map(|value| value.dimension.as_str())
+        .collect();
+    assert_eq!(fact_keys, vec!["a", "b"], "semantic facts are canonical");
+    assert_eq!(dimensions, vec!["locale", "track"]);
+    assert_eq!(
+        parsed.subject.repository,
+        "https://example.com/team/project"
     );
     Ok(())
 }

@@ -4,7 +4,7 @@
 //! Dispatch is by `VectorDiscipline`, never by vector ID or a minimum count, so
 //! a newly added applicable vector cannot be silently skipped.
 
-use eqm_domain::{Sha256Digest, UtcInstantV2};
+use eqm_domain::{RawObjectDigest, Sha256Digest, UtcInstantV2};
 use eqm_protocol::{CanonicalSet, WireInt, WireUint, is_authored_nfc, v2};
 use eqm_test_support::{
     REPRESENTATION_VECTORS, RepresentationVector, VectorDiscipline, VectorOutcome,
@@ -175,50 +175,88 @@ fn run_authored_text(vector: &RepresentationVector) -> Result<(), Box<dyn Error>
     check(vector, rendered)
 }
 
-/// Executes an opaque-byte vector against literal bytes and their exact digest.
-/// The input is a byte-escape literal where `\xNN` denotes one raw byte; it is
-/// never routed through the authored JSON-string validator.
+/// Executes an opaque-byte vector against literal bytes and their exact
+/// raw-object domain digest. The input is a byte-escape literal where `\xNN`
+/// denotes one raw byte; it is never routed through the authored JSON-string
+/// validator.
 fn run_opaque_bytes(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
     let VectorOutcome::Accept { output } = vector.outcome else {
         return Err(format!("{}: opaque-byte vector must accept", vector.id).into());
     };
-    let bytes = decode_byte_literal(vector.input);
-    let expected = decode_byte_literal(output);
+    let bytes = decode_byte_literal(vector.input)?;
+    let expected = decode_byte_literal(output)?;
     assert_eq!(bytes, expected, "{}: opaque bytes changed", vector.id);
-    let digest = Sha256Digest::hash_content(&bytes).to_string();
+    let digest = RawObjectDigest::hash_content(&bytes).to_string();
     if let Some(expected_digest) = vector.expected_digest {
-        assert_eq!(digest, expected_digest, "{}: opaque digest", vector.id);
+        assert_eq!(
+            digest, expected_digest,
+            "{}: opaque raw-object digest",
+            vector.id
+        );
     }
     Ok(())
 }
 
+/// A frozen-vector byte-literal decoding failure.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ByteLiteralError {
+    /// A `\x` escape was truncated.
+    TruncatedEscape,
+    /// A backslash introduced an unsupported escape.
+    InvalidEscape,
+}
+
+impl std::fmt::Display for ByteLiteralError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(match self {
+            Self::TruncatedEscape => "byte literal has a truncated \\xNN escape",
+            Self::InvalidEscape => "byte literal has an unsupported escape",
+        })
+    }
+}
+
+impl std::error::Error for ByteLiteralError {}
+
 /// Decodes a byte-escape literal: `\xNN` yields one raw byte and every other
-/// character contributes its exact UTF-8 bytes.
-fn decode_byte_literal(literal: &str) -> Vec<u8> {
+/// character contributes its exact UTF-8 bytes. Malformed or truncated escapes
+/// are rejected rather than silently dropping characters.
+fn decode_byte_literal(literal: &str) -> Result<Vec<u8>, ByteLiteralError> {
     let mut bytes = Vec::with_capacity(literal.len());
     let mut characters = literal.chars();
     while let Some(character) = characters.next() {
-        if character == '\\' {
-            match characters.next() {
-                Some('x') => {
-                    let high = characters.next().and_then(|digit| digit.to_digit(16));
-                    let low = characters.next().and_then(|digit| digit.to_digit(16));
-                    match (high, low) {
-                        (Some(high), Some(low)) => bytes.push((high * 16 + low) as u8),
-                        _ => bytes.push(b'\\'),
-                    }
-                }
-                Some(other) => {
-                    bytes.push(b'\\');
-                    let mut buffer = [0_u8; 4];
-                    bytes.extend_from_slice(other.encode_utf8(&mut buffer).as_bytes());
-                }
-                None => bytes.push(b'\\'),
-            }
-        } else {
+        if character != '\\' {
             let mut buffer = [0_u8; 4];
             bytes.extend_from_slice(character.encode_utf8(&mut buffer).as_bytes());
+            continue;
+        }
+        match characters.next() {
+            Some('x') => {
+                let high = characters
+                    .next()
+                    .and_then(|digit| digit.to_digit(16))
+                    .ok_or(ByteLiteralError::TruncatedEscape)?;
+                let low = characters
+                    .next()
+                    .and_then(|digit| digit.to_digit(16))
+                    .ok_or(ByteLiteralError::TruncatedEscape)?;
+                bytes.push((high * 16 + low) as u8);
+            }
+            _ => return Err(ByteLiteralError::InvalidEscape),
         }
     }
-    bytes
+    Ok(bytes)
+}
+
+#[test]
+fn byte_literal_decoder_rejects_malformed_and_truncated_escapes() {
+    assert_eq!(
+        decode_byte_literal("cafe\\xcc\\x81").ok(),
+        Some(b"cafe\xcc\x81".to_vec())
+    );
+    for malformed in ["trailing\\", "\\x", "\\x1", "\\xG1", "\\q"] {
+        assert!(
+            decode_byte_literal(malformed).is_err(),
+            "byte-literal decoder accepted {malformed:?}"
+        );
+    }
 }

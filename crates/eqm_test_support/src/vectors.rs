@@ -461,7 +461,7 @@ pub const REPRESENTATION_VECTORS: &[RepresentationVector] = &[
         outcome: accept("cafe\\xcc\\x81"),
         note: "opaque decomposed UTF-8 payload bytes stay exact and are not NFC-validated",
         expected_digest: Some(
-            "sha256:81ef060bcd98adc7824eb5c1ada83c32491b16018e11e79f00ab9d09e04b015a",
+            "sha256:49b87054b84e1ce1d47d29770fbbdcf08a9be7b20b70baea070f63b2fcfcfb96",
         ),
     },
     RepresentationVector {
@@ -472,7 +472,7 @@ pub const REPRESENTATION_VECTORS: &[RepresentationVector] = &[
         outcome: accept("\\xff\\xfeopaque"),
         note: "opaque non-UTF-8 payload bytes are preserved exactly, not rejected",
         expected_digest: Some(
-            "sha256:b3bfbd4d01baf352825439038d31a893815c41a0ad540bfd47795265c6923d74",
+            "sha256:a72f7a5a853ca56111730541545021f35bc2315bf43f9f4c125c1504612ee1f9",
         ),
     },
     // Digest domains.
