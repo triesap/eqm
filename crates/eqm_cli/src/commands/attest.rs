@@ -249,14 +249,9 @@ fn validate_subject_binding(
 }
 
 pub(super) fn repository_identity(root: &Path) -> Result<String, Box<dyn Error>> {
-    let remote = git_output(root, &["remote", "get-url", "origin"])?;
-    let normalized = if let Some(path) = remote.strip_prefix("git@github.com:") {
-        format!("https://github.com/{}", path.trim_end_matches(".git"))
-    } else {
-        remote.trim_end_matches(".git").to_owned()
-    };
-    let _: eqm_domain::RepositoryIdentity = normalized.parse()?;
-    Ok(normalized)
+    Ok(eqm_application::source::repository_identity(root)?
+        .as_str()
+        .to_owned())
 }
 
 pub(super) fn git_output(root: &Path, arguments: &[&str]) -> Result<String, Box<dyn Error>> {

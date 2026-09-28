@@ -219,13 +219,7 @@ fn invocation_request_id(
 }
 
 fn repository_identity(root: &Path) -> Result<RepositoryIdentity, Box<dyn Error>> {
-    let remote = git_output(root, &["remote", "get-url", "origin"])?;
-    let normalized = if let Some(path) = remote.strip_prefix("git@github.com:") {
-        format!("https://github.com/{}", path.trim_end_matches(".git"))
-    } else {
-        remote.trim_end_matches(".git").to_owned()
-    };
-    Ok(normalized.parse()?)
+    Ok(eqm_application::source::repository_identity(root)?)
 }
 
 fn git_output(root: &Path, arguments: &[&str]) -> Result<String, Box<dyn Error>> {

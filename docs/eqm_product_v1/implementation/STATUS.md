@@ -10,18 +10,20 @@ retains implemented binding semantics; its remaining applicability contribution 
 implemented in S019-R1. S019-A/B/C retain their implementation and the DEV-007
 RF27/RF28 corrections are implemented in S019-R1/R2, all pending Codex review.
 P01 is complete (12/12); P02 has five accepted numbered steps (S013–S016, S018),
-with S017/S019/S020/S021 implemented pending review and S022–S027 remaining. All
-later cycles are pending. No committed code is discarded.
+with S017/S019/S020/S021 implemented pending review and S022 in progress and
+blocked on a Codex representation decision (its centralization is committed; its
+release-provenance gate is not). S023–S027 remain. All later cycles are pending.
+No committed code is discarded.
 
-Next: **S022 → all ordered unblocked successors through S211**. S019-R1
-(`fix: canonicalize applicability children as semantic sets`), S019-R2
-(`test: complete contract and policy provenance boundaries`), S020
-(`fix: derive exact target configuration identity`) and S021
-(`fix: include executable content in runner identity`) are implementation-complete
-pending Codex review; together they close RF27/RF28 and S017's remaining
-applicability contribution. S143 is an intermediate checkpoint. Later S028/S029/
-S031/S038/S043 retain the approved obligation to bind newly modeled target role
-and source-component fields into the target projection in their owning steps.
+Next: **S022 (BLOCKED on a Codex representation decision), then S023 → S211**.
+S019-R1, S019-R2, S020 and S021 are implementation-complete pending Codex review.
+S022 centralized repository-identity normalization and source provenance (with a
+dirty/clean flag) in `eqm_application`, but wiring dirty content into clean
+release provenance conflicts with the approved signup release fixture, which
+writes untracked generated release records; the exact dirty representation/gate
+requires a Codex decision (see [S022](reports/S022.md)). S023 and later steps are
+blocked until that is resolved. Later S028/S029/S031/S038/S043 retain the approved
+obligation to bind newly modeled target role and source-component fields.
 
 RF22/RF24/RF26 are accepted. RF25's loader/display/duplicate controls are accepted;
 its ordered-child obligation is superseded by RF27's set semantics. RF27, RF28 and

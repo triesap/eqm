@@ -22,6 +22,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fs;
 use std::path::Path;
+#[cfg(test)]
 use std::process::Command;
 
 /// Established release-record ingress bound; every strict parse uses it.
@@ -118,8 +119,9 @@ fn execute_with_authority(
         .chain(effective_record_trust(&record_dto, authority))
         .chain(runtime.and_then(|value| effective_runtime_trust(value, authority)))
         .min();
-    let current_repository = repository_identity(session.repository_root())?;
-    let current_commit = git_output(session.repository_root(), &["rev-parse", "HEAD"])?;
+    let provenance = eqm_application::source::inspect_source_provenance(session.repository_root())?;
+    let current_repository = provenance.repository().as_str().to_owned();
+    let current_commit = provenance.source_commit().as_str().to_owned();
     let context_complete = !matching.is_empty()
         && runtime_digest.is_some()
         && record_dto.source_commit == current_commit
@@ -463,16 +465,12 @@ fn evidence_subject_matches(
 }
 
 fn repository_identity(root: &Path) -> Result<String, Box<dyn Error>> {
-    let remote = git_output(root, &["remote", "get-url", "origin"])?;
-    let normalized = if let Some(path) = remote.strip_prefix("git@github.com:") {
-        format!("https://github.com/{}", path.trim_end_matches(".git"))
-    } else {
-        remote.trim_end_matches(".git").to_owned()
-    };
-    let _: eqm_domain::RepositoryIdentity = normalized.parse()?;
-    Ok(normalized)
+    Ok(eqm_application::source::repository_identity(root)?
+        .as_str()
+        .to_owned())
 }
 
+#[cfg(test)]
 fn git_output(root: &Path, arguments: &[&str]) -> Result<String, Box<dyn Error>> {
     let output = Command::new("git")
         .args(arguments)

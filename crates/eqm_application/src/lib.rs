@@ -36,6 +36,7 @@ pub mod clock;
 pub mod evaluation;
 pub mod provenance;
 pub mod session;
+pub mod source;
 
 pub use acquisition::{
     AcquisitionError, AcquisitionOutcome, AcquisitionReceipt, AcquisitionRequest, EvidenceVerifier,
@@ -51,6 +52,10 @@ pub use provenance::{
     prepare_target_configuration,
 };
 pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
+pub use source::{
+    SourceProvenance, SourceProvenanceError, inspect_source_provenance,
+    normalize_repository_identity, repository_identity,
+};
 
 /// A capability an application operation may require.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
