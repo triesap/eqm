@@ -54,3 +54,14 @@ Pure evaluation remains independently callable without an async runtime. Host I/
 Create validated internal primitives and fixtures before routing production entry points. Replace duplicated CLI decision paths with the application service one command at a time. Keep the existing fail-closed release path until the new protected pipeline is fully connected. Remove old evaluators after equivalence/regression tests, not before. Do not maintain alternate production truth calculators behind convenience flags.
 
 Feature flags, if needed, isolate optional host capabilities and native packaging. They never disable validation or turn absent security functionality into pass. Enumerate actual supported combinations and test them; do not invent a broad feature matrix before inspecting Cargo manifests.
+
+## DEV-006 projection boundary allocation
+
+S019 adds narrow validated domain projection carriers PolicySelectionInputV2 and
+SelectedProfileInputV2; they certify local structural validity, not trust. Existing
+engine SelectedProfile/SelectedPolicyProfiles and selection algorithms remain in
+place. eqm_manifest serializes the carriers and finalized contract graph into
+typed v2 component identities. eqm_application assembles them from one prepared
+session and the existing selection request API. No manifest-to-engine/protocol
+dependency or engine serialization/I/O dependency is introduced. The governing
+DEV-006 amendment defines exact invariants and independent implementation slices.

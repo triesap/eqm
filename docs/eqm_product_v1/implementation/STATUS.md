@@ -1,38 +1,34 @@
 # Verification and implementation status
 
-Imported plan revision 2; current amendment DEV-005, 2026-09-28.
-Reviewed source: `68378317044d49a121caff07e783573abdf3cd56`.
+Current amendment DEV-006, 2026-09-28. Reviewed source:
+`3469face3a88d280f2577f4ff936419408c1d248`.
 
-S001–S015 and prerequisite S016-P1 are accepted for their allocated scope.
-RF01–RF19 are closed for that scope. S016's committed implementation is retained
-and RF20–RF22 are addressed by S016-R1/R2. **S016, S017 and S018 implementation
-are complete with supervisor acceptance pending.** **Next: S019**, then S020–S211
-as dependency and external evidence gates permit. S017/S018 implement the separate
-v2 binding and evidence-specification projections decided in DEV-005; later owning
-steps integrate them. S143 is an intermediate checkpoint, not the execution target.
+S001–S015 and S016-P1/R1 behavior are accepted for allocated scope. RF01–RF21
+are closed for that scope. RF22 is partially repaired; S016 is active for remaining
+regression proof. S017/S018 implementations are retained with changes required:
+RF24 typed identity APIs, RF25 manifest-boundary evidence, RF26 extension type
+collision. S019's decision-required block is resolved by Codex, not a context
+interruption. Next: **S016-R3 → S018-R1 → S018-R2 → S019-A/B/C → S020–S211**.
 
-EQM-P01 has 12 complete numbered steps; EQM-P02 has three (S013–S015).
-P03–P15 remain pending. All 211 numbered IDs and original dependencies remain.
+All 211 IDs remain. P01 has 12 complete steps; P02 has three fully closed steps
+(S013–S015), with S016 active and S017/S018 changes required. S019 has no committed
+implementation. Later cycles remain pending. Committed code is not discarded or
+represented as never implemented merely because review corrections remain.
 
-Independent source review, standard `cargo xtask check` (393 passed test results
-at the S018 tree), `cargo deny check`, live `cargo audit --deny warnings`, and
-current package structure validation pass. Existing allowed duplicate-version
-warnings remain. The 22 v1 schemas and Cargo.lock are unchanged across the
-reviewed batch and the S016-R1/R2/S017/S018 trees; the five v2 schemas are also
-byte-identical because only validation logic, not DTO shape, changed. The v1
-binding/fragment/graph projections, bytes and hashes are unchanged.
-The historical package log records a failure despite an exit-0 receipt; RF23
-records this discrepancy and the later independently passing tree distinctly.
-No assertion that every historical checkpoint passed is supported by that receipt.
+Independent standard check (393 passed test results), full cargo deny, live cargo
+audit and current structure validation pass. Four existing binding/specification
+literal hashes were independently recomputed; that confirms their bytes, not
+absence of semantic collisions. All 22 v1 / five v2 schema files and Cargo.lock
+are unchanged in this batch. RF23's historical receipt discrepancy remains intact.
 
-S025/S059/S061 retain relationship acceptance; S027 the full hash corpus; S069
-freshness arithmetic. AC/RA references do not close acceptance. Linux, extended
-verification, live product evidence, signing and operational authorization remain
-unverified. This is not a release candidate; human release testing is not next.
+S016-R1 closes typed authored ingress. Selector helper consumer integration and
+end-to-end v2 construction remain with their owning future steps; S025/S059/S061
+retain relationships, S027 full provenance corpus and S069 freshness arithmetic.
+No whole AC/RA closure follows from referenced tests. Linux/extended verification,
+live product/crypto/host evidence and release/signing authorization are unverified.
+This is not a release candidate; human testing is not the next dependency.
 
-Codex owns scope/representation/sequence/license/acceptance decisions; Pi generates
-code and maintains factual progress. Continue unblocked work after the objective
-repair gates without another approval pause. Preserve Q01–Q15, no publication or
-deployment, and no optional-native activation. COMMIT_SEQUENCE.md is the sole
-governing plan; synchronized views and live progress follow DEV-001–DEV-005.
-Preserve delivery hashes and use structure-only validation.
+Codex owns decisions, Pi generates implementation. Follow the sole governing
+COMMIT_SEQUENCE.md and synchronized views. Continue ordered unblocked work through
+S211, not merely S143, preserving Q01–Q15 at actual dependent steps. No publication,
+deployment, signing, live-enforcement or optional-native activation is authorized.

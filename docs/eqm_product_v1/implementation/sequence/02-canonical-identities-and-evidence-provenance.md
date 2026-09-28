@@ -1,6 +1,6 @@
 # Chapter 02: Canonical identities and evidence provenance
 
-Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S015 and S016-P1 are accepted; S016-R1 is next under DEV-005.
+Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S015 and S016-P1/R1 behavior are accepted; S016-R3 is next under DEV-006.
 
 **Definition of green:** Canonical component/subject/raw/semantic/attempt identities and dirty-source provenance pass mutation vectors.
 
@@ -167,7 +167,7 @@ Read their Given/When/Expected contracts in the referenced regression catalog. T
 
 **Predecessor:** S015. **Contracts:** R18, R19, R21, R43, R64. **Acceptance:** AC018, AC019, AC021, AC043, AC064.
 
-**Read:** [specs/API_CONTRACTS.md](../../specs/API_CONTRACTS.md), [specs/STORAGE_AND_PERFORMANCE.md](../../specs/STORAGE_AND_PERFORMANCE.md), [repo/REVIEW_FINDINGS.md](../../repo/REVIEW_FINDINGS.md), [implementation/review_regressions.json](../../implementation/review_regressions.json), [decisions/ADR-0012-approved-review-closure.md](../../decisions/ADR-0012-approved-review-closure.md).
+**Read:** [specs/API_CONTRACTS.md](../../specs/API_CONTRACTS.md), [specs/STORAGE_AND_PERFORMANCE.md](../../specs/STORAGE_AND_PERFORMANCE.md), [repo/REVIEW_FINDINGS.md](../../repo/REVIEW_FINDINGS.md), [implementation/review_regressions.json](../../implementation/review_regressions.json), [decisions/ADR-0012-approved-review-closure.md](../../decisions/ADR-0012-approved-review-closure.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-121622f.md](../../implementation/reports/CODEX-121622f.md), [implementation/reports/CODEX-6837831.md](../../implementation/reports/CODEX-6837831.md), [implementation/reports/CODEX-3469fac.md](../../implementation/reports/CODEX-3469fac.md).
 
 ### 1. Step title
 Add canonical set and Unicode vectors.
@@ -176,7 +176,7 @@ Add canonical set and Unicode vectors.
 Distinguish semantic unordered collections from ordered scenarios.
 
 ### 3. Exact scope of code changes
-Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and S016-R2 to close authored v2 ingress/type validation and real-boundary collection/sequence/raw-byte regressions. Follow the explicit field mapping, independent literal canonical bytes/digest expectations and evidence discipline in DEV-005; preserve all retained DEV-004 rules and v1 bytes.
+Retain S016-P1/R1/R2 and accepted RF20/RF21 repairs. Complete DEV-006 S016-R3 for the explicit missing exact-duplicate, attachment-permutation, runtime-profile conflict and diagnostic-vector regressions; preserve prior behavior and v1 forms. RF22 is partial until this matrix passes.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical.rs`
@@ -188,7 +188,7 @@ Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and
 - `tests/fixtures/`
 
 ### 5. Unit tests or integration tests required
-Execute every DEV-005 mapped authored field family with valid typed controls and one-field mutants at owning roots; all set permutations/exact and logical-key duplicates, profile revision conflicts, valid attempt-index rules, diagnostic/related-location sequence order and multiplicity, independent literal runtime-facts bytes/hash, and strict/raw opaque identity controls. Preserve S015 regressions and v1 schema/hash bytes. Final ledger and current status must pass structure validation after edits.
+Run the concrete DEV-006 RF22 matrix at owning v2 roots with valid controls, exact and logical-key duplicate distinctions, recomputed mutant digests, and JCS comparison of returned semantic values. Diagnostic order/multiplicity tests must change the diagnostic vector itself; retain related-location, attempt, NFC, raw-byte and S015 controls.
 
 ### 6. Verification commands
 ```sh
@@ -204,7 +204,7 @@ cargo xtask schemas check
 git diff --check
 ```
 
-**Admission gate:** DEV-005: S016-P1 accepted, RF19 closed. Execute independently green S016-R1 then S016-R2 before S017. After their objective gates, record supervisor acceptance pending and continue ordered unblocked work through S211.
+**Admission gate:** DEV-006: S016-R1 behavior accepted; execute S016-R3, then S018-R1/R2 contributions for S017/S018, then S019-A/B/C and ordered unblocked successors through S211.
 
 ### 7. Expected result
 Canonicalization is executable protocol behavior rather than serializer convention.
@@ -224,7 +224,7 @@ Read their Given/When/Expected contracts in the referenced regression catalog. T
 
 **Predecessor:** S016. **Contracts:** R19. **Acceptance:** AC019.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-6837831.md](../../implementation/reports/CODEX-6837831.md), [implementation/reports/CODEX-3469fac.md](../../implementation/reports/CODEX-3469fac.md).
 
 ### 1. Step title
 Hash complete binding semantics.
@@ -233,7 +233,7 @@ Hash complete binding semantics.
 Correct the ID-only binding digest shortcut.
 
 ### 3. Exact scope of code changes
-Implement a separate v2 complete binding projection and existing BindingDigest using DEV-005 numeric/set rules. Reuse the existing binding projection as a field inventory, not its v1 bytes. Include all binding/artifact/exposure/evidence semantics and semantic extensions; exclude only dev.equivalencematrix.display and absent parse provenance. Preserve v1 APIs/hashes and existing crate directions; later owning steps integrate v2 evidence construction.
+Retain the separate complete v2 binding projection. Close DEV-006 RF24/RF25/RF26 via S018-R1/R2: typed BindingDigest output, recursively tagged ExtensionValue semantics, actual manifest parse-provenance/duplicate/ordered-expression controls, corrected reports. Preserve all v1 bytes and unaffected v2 oracles; update only approved extension goldens.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical.rs`
@@ -242,7 +242,7 @@ Implement a separate v2 complete binding projection and existing BindingDigest u
 - `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
-Same-ID selector/artifact path/constraint/semantic-extension changes alter identity; actual display-extension and comment/formatting changes remain stable. Set permutations agree, ordered extension/expression arrays retain order, and integer boundaries have literal canonical-byte/digest controls. All v1 projection/hash fixtures remain unchanged.
+Retain same-ID semantic mutation and literal controls. Add typed API/compile-fail proof, large integer-versus-text extension distinction including nested values, real loaded comment/formatting and semantic mutations, reachable post-display-exclusion duplicate rejection, and ordered all/any expression controls under DEV-006.
 
 ### 6. Verification commands
 ```sh
@@ -269,7 +269,7 @@ fix: bind evidence to canonical binding semantics
 
 **Predecessor:** S017. **Contracts:** R19. **Acceptance:** AC019.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../../decisions/ADR-0013-wire-namespace-and-representations.md).
 
 ### 1. Step title
 Hash complete evidence specifications.
@@ -278,7 +278,7 @@ Hash complete evidence specifications.
 Correct the ID-pair evidence-specification shortcut.
 
 ### 3. Exact scope of code changes
-Add a canonical specification projection covering kind, requirements, facets, selector, runner reference and relevant constraints; document input-domain relationships.
+Retain complete v2 evidence-specification projection and shared helpers. Complete DEV-006 S018-R1/R2 jointly with S017 contributions: typed EvidenceSpecificationDigest/BindingDigest APIs, recursive type-tagged extensions that cannot collapse integer into text, independent changed-extension oracles, actual manifest-boundary controls and accurate evidence.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical/`
@@ -286,7 +286,7 @@ Add a canonical specification projection covering kind, requirements, facets, se
 - `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
-Selector/kind/count changes with the same spec ID change identity; stable semantic projections remain repeatable.
+Retain selector/kind/count/runner/freshness mutations. Exercise integer-versus-text extension pairs and nested arrays/objects at both component projections, typed return and compile-fail domain substitution, actual loader/display/duplicate/expression controls, unchanged empty-extension and v1 goldens. Execute manifest doctests.
 
 ### 6. Verification commands
 ```sh
@@ -294,6 +294,7 @@ cargo fmt --all --check
 cargo check --workspace --all-targets --locked
 cargo test --all-targets --locked -p eqm_manifest -p eqm_domain
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --locked -p eqm_manifest --doc
 cargo xtask check
 git diff --check
 ```
@@ -313,7 +314,7 @@ fix: hash exact evidence specification semantics
 
 **Predecessor:** S018. **Contracts:** R19, R58. **Acceptance:** AC019, AC058.
 
-**Read:** [specs/EVALUATION_SEMANTICS.md](../../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVALUATION_SEMANTICS.md](../../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../../decisions/ADR-0013-wire-namespace-and-representations.md).
 
 ### 1. Step title
 Separate contract and policy digests.
@@ -322,25 +323,34 @@ Separate contract and policy digests.
 Stop populating unrelated provenance with one workspace digest.
 
 ### 3. Exact scope of code changes
-Expose explicit contract and selected-policy/profile semantic projections; retain workspace digest only as aggregate context and update internal construction helpers.
+Implement DEV-006 S019-A/B/C: validated domain PolicySelectionInputV2/SelectedProfileInputV2 carriers; explicit v2 contract projection over capabilities/journeys/surfaces/fragments plus normative graph extensions; complete selected policy/profile definitions and known/unknown selections; typed ContractDigest/PolicySelectionDigest and same-session application construction. Preserve engine selection algorithms, crate directions, v1 records and workspace aggregate identity.
 
 ### 4. Files/modules likely involved
+- `crates/eqm_domain/src/`
+- `crates/eqm_domain/tests/`
 - `crates/eqm_manifest/src/canonical/`
+- `crates/eqm_manifest/src/lib.rs`
+- `crates/eqm_manifest/tests/`
 - `crates/eqm_engine/src/selection.rs`
 - `crates/eqm_application/src/`
+- `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
-Contract-only and policy-only changes affect the intended domains; unchanged unrelated projections remain stable.
+Prove literal bytes/digests, integer endpoints and tagged extension distinctions, exact selections and explicit unknown versus missing/defaults, isolated contract/policy/profile/graph-extension mutations, unselected-definition stability, duplicate/undeclared input failures, ordered journey/expression arrays, canonical sets, real manifest formatting and same-session application mode/authority errors.
 
 ### 6. Verification commands
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application
+cargo test --all-targets --locked -p eqm_domain -p eqm_manifest -p eqm_engine -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc
 cargo xtask check
+cargo xtask schemas check
 git diff --check
 ```
+
+**Admission gate:** DEV-006 resolves the decision-required S019 block. After S016-R3 and S018-R1/R2, execute independently green S019-A, S019-B, S019-C; mark S019 complete only after C. Continue all ordered unblocked successors through S211.
 
 ### 7. Expected result
 Internal prepared context has distinct accurate contract/policy identities.

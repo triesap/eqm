@@ -118,3 +118,22 @@ structure validation passes; the earlier failed log is retained as failed eviden
 Codex reconciles status now; Pi implements the source/test repairs and continues
 all dependency-unblocked work through S211. No implementation fix, live product
 acceptance or release readiness is asserted by this planning amendment.
+
+## DEV-006 — Projection type safety, regression closure and S019 composition
+
+**Date/author:** 2026-09-28, Codex supervisor under owner delegation.
+**Reviewed source:** 3469face3a88d280f2577f4ff936419408c1d248.
+RF20/RF21 are accepted; RF22 remains partial. [RF24–RF26](reports/CODEX-3469fac.md)
+require typed component identities, real manifest-boundary proof and recursive
+v2 extension type tags to prevent large-integer/text canonical collisions.
+All four implementation commits remain; S016-R3 and S018-R1/R2 close the gaps.
+Only the affected new v2 extension goldens change; v1 remains frozen.
+
+The [DEV-006 governing amendment](COMMIT_SEQUENCE.md#dev-006--close-boundary-evidence-and-unblock-contract-provenance)
+settles S019: contract entities plus normative graph extensions, explicit v2
+forms, narrow validated domain selection carriers, full selected definitions and
+known/unknown values, canonicalization in manifest and same-session assembly in
+application. S019-A/B/C are independently green slices without renumbering the
+211 steps. The decision block is resolved; code/test changes remain Pi-owned.
+Continue ordered unblocked work to S211 after the objective gates. No external
+authority, release readiness or new operational/native activation is inferred.

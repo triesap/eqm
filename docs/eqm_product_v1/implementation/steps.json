@@ -953,7 +953,7 @@
     {
       "title": "Add canonical set and Unicode vectors",
       "purpose": "Distinguish semantic unordered collections from ordered scenarios.",
-      "scope": "Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and S016-R2 to close authored v2 ingress/type validation and real-boundary collection/sequence/raw-byte regressions. Follow the explicit field mapping, independent literal canonical bytes/digest expectations and evidence discipline in DEV-005; preserve all retained DEV-004 rules and v1 bytes.",
+      "scope": "Retain S016-P1/R1/R2 and accepted RF20/RF21 repairs. Complete DEV-006 S016-R3 for the explicit missing exact-duplicate, attachment-permutation, runtime-profile conflict and diagnostic-vector regressions; preserve prior behavior and v1 forms. RF22 is partial until this matrix passes.",
       "files": [
         "crates/eqm_manifest/src/canonical.rs",
         "crates/eqm_protocol/src/",
@@ -963,7 +963,7 @@
         "schemas/v2/",
         "tests/fixtures/"
       ],
-      "tests": "Execute every DEV-005 mapped authored field family with valid typed controls and one-field mutants at owning roots; all set permutations/exact and logical-key duplicates, profile revision conflicts, valid attempt-index rules, diagnostic/related-location sequence order and multiplicity, independent literal runtime-facts bytes/hash, and strict/raw opaque identity controls. Preserve S015 regressions and v1 schema/hash bytes. Final ledger and current status must pass structure validation after edits.",
+      "tests": "Run the concrete DEV-006 RF22 matrix at owning v2 roots with valid controls, exact and logical-key duplicate distinctions, recomputed mutant digests, and JCS comparison of returned semantic values. Diagnostic order/multiplicity tests must change the diagnostic vector itself; retain related-location, attempt, NFC, raw-byte and S015 controls.",
       "expected": "Canonicalization is executable protocol behavior rather than serializer convention.",
       "commit_message": "test: lock canonical collection and string semantics",
       "requirements": [
@@ -992,7 +992,8 @@
         "decisions/ADR-0012-approved-review-closure.md",
         "decisions/ADR-0013-wire-namespace-and-representations.md",
         "implementation/reports/CODEX-121622f.md",
-        "implementation/reports/CODEX-6837831.md"
+        "implementation/reports/CODEX-6837831.md",
+        "implementation/reports/CODEX-3469fac.md"
       ],
       "verification_commands": [
         "cargo audit --deny warnings",
@@ -1007,7 +1008,7 @@
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": "DEV-005: S016-P1 accepted, RF19 closed. Execute independently green S016-R1 then S016-R2 before S017. After their objective gates, record supervisor acceptance pending and continue ordered unblocked work through S211.",
+      "gate": "DEV-006: S016-R1 behavior accepted; execute S016-R3, then S018-R1/R2 contributions for S017/S018, then S019-A/B/C and ordered unblocked successors through S211.",
       "initial_status": "pending",
       "review_regressions": [
         "RA13"
@@ -1017,20 +1018,21 @@
       ],
       "corrective_checkpoints": [
         "S016-R1",
-        "S016-R2"
+        "S016-R2",
+        "S016-R3"
       ]
     },
     {
       "title": "Hash complete binding semantics",
       "purpose": "Correct the ID-only binding digest shortcut.",
-      "scope": "Implement a separate v2 complete binding projection and existing BindingDigest using DEV-005 numeric/set rules. Reuse the existing binding projection as a field inventory, not its v1 bytes. Include all binding/artifact/exposure/evidence semantics and semantic extensions; exclude only dev.equivalencematrix.display and absent parse provenance. Preserve v1 APIs/hashes and existing crate directions; later owning steps integrate v2 evidence construction.",
+      "scope": "Retain the separate complete v2 binding projection. Close DEV-006 RF24/RF25/RF26 via S018-R1/R2: typed BindingDigest output, recursively tagged ExtensionValue semantics, actual manifest parse-provenance/duplicate/ordered-expression controls, corrected reports. Preserve all v1 bytes and unaffected v2 oracles; update only approved extension goldens.",
       "files": [
         "crates/eqm_manifest/src/canonical.rs",
         "crates/eqm_manifest/src/canonical/",
         "crates/eqm_domain/src/digest.rs",
         "crates/eqm_manifest/tests/"
       ],
-      "tests": "Same-ID selector/artifact path/constraint/semantic-extension changes alter identity; actual display-extension and comment/formatting changes remain stable. Set permutations agree, ordered extension/expression arrays retain order, and integer boundaries have literal canonical-byte/digest controls. All v1 projection/hash fixtures remain unchanged.",
+      "tests": "Retain same-ID semantic mutation and literal controls. Add typed API/compile-fail proof, large integer-versus-text extension distinction including nested values, real loaded comment/formatting and semantic mutations, reachable post-display-exclusion duplicate rejection, and ordered all/any expression controls under DEV-006.",
       "expected": "Binding identity binds actual approved semantics.",
       "commit_message": "fix: bind evidence to canonical binding semantics",
       "requirements": [
@@ -1046,7 +1048,8 @@
       "contract_files": [
         "specs/EVIDENCE_AND_IDENTITY.md",
         "decisions/ADR-0013-wire-namespace-and-representations.md",
-        "implementation/reports/CODEX-6837831.md"
+        "implementation/reports/CODEX-6837831.md",
+        "implementation/reports/CODEX-3469fac.md"
       ],
       "verification_commands": [
         "cargo fmt --all --check",
@@ -1059,18 +1062,22 @@
       "verification_discovery": [],
       "gate": null,
       "initial_status": "pending",
-      "review_regressions": []
+      "review_regressions": [],
+      "corrective_checkpoints": [
+        "S018-R1",
+        "S018-R2"
+      ]
     },
     {
       "title": "Hash complete evidence specifications",
       "purpose": "Correct the ID-pair evidence-specification shortcut.",
-      "scope": "Add a canonical specification projection covering kind, requirements, facets, selector, runner reference and relevant constraints; document input-domain relationships.",
+      "scope": "Retain complete v2 evidence-specification projection and shared helpers. Complete DEV-006 S018-R1/R2 jointly with S017 contributions: typed EvidenceSpecificationDigest/BindingDigest APIs, recursive type-tagged extensions that cannot collapse integer into text, independent changed-extension oracles, actual manifest-boundary controls and accurate evidence.",
       "files": [
         "crates/eqm_manifest/src/canonical/",
         "crates/eqm_domain/src/evidence.rs",
         "crates/eqm_manifest/tests/"
       ],
-      "tests": "Selector/kind/count changes with the same spec ID change identity; stable semantic projections remain repeatable.",
+      "tests": "Retain selector/kind/count/runner/freshness mutations. Exercise integer-versus-text extension pairs and nested arrays/objects at both component projections, typed return and compile-fail domain substitution, actual loader/display/duplicate/expression controls, unchanged empty-extension and v1 goldens. Execute manifest doctests.",
       "expected": "Evidence cannot match a changed specification merely by retaining names.",
       "commit_message": "fix: hash exact evidence specification semantics",
       "requirements": [
@@ -1084,31 +1091,43 @@
         "AC019"
       ],
       "contract_files": [
-        "specs/EVIDENCE_AND_IDENTITY.md"
+        "specs/EVIDENCE_AND_IDENTITY.md",
+        "implementation/reports/CODEX-3469fac.md",
+        "decisions/ADR-0013-wire-namespace-and-representations.md"
       ],
       "verification_commands": [
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
         "cargo test --all-targets --locked -p eqm_manifest -p eqm_domain",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo test --locked -p eqm_manifest --doc",
         "cargo xtask check",
         "git diff --check"
       ],
       "verification_discovery": [],
       "gate": null,
       "initial_status": "pending",
-      "review_regressions": []
+      "review_regressions": [],
+      "corrective_checkpoints": [
+        "S018-R1",
+        "S018-R2"
+      ]
     },
     {
       "title": "Separate contract and policy digests",
       "purpose": "Stop populating unrelated provenance with one workspace digest.",
-      "scope": "Expose explicit contract and selected-policy/profile semantic projections; retain workspace digest only as aggregate context and update internal construction helpers.",
+      "scope": "Implement DEV-006 S019-A/B/C: validated domain PolicySelectionInputV2/SelectedProfileInputV2 carriers; explicit v2 contract projection over capabilities/journeys/surfaces/fragments plus normative graph extensions; complete selected policy/profile definitions and known/unknown selections; typed ContractDigest/PolicySelectionDigest and same-session application construction. Preserve engine selection algorithms, crate directions, v1 records and workspace aggregate identity.",
       "files": [
+        "crates/eqm_domain/src/",
+        "crates/eqm_domain/tests/",
         "crates/eqm_manifest/src/canonical/",
+        "crates/eqm_manifest/src/lib.rs",
+        "crates/eqm_manifest/tests/",
         "crates/eqm_engine/src/selection.rs",
-        "crates/eqm_application/src/"
+        "crates/eqm_application/src/",
+        "crates/eqm_application/tests/"
       ],
-      "tests": "Contract-only and policy-only changes affect the intended domains; unchanged unrelated projections remain stable.",
+      "tests": "Prove literal bytes/digests, integer endpoints and tagged extension distinctions, exact selections and explicit unknown versus missing/defaults, isolated contract/policy/profile/graph-extension mutations, unselected-definition stability, duplicate/undeclared input failures, ordered journey/expression arrays, canonical sets, real manifest formatting and same-session application mode/authority errors.",
       "expected": "Internal prepared context has distinct accurate contract/policy identities.",
       "commit_message": "fix: separate contract and policy provenance",
       "requirements": [
@@ -1125,20 +1144,29 @@
       ],
       "contract_files": [
         "specs/EVALUATION_SEMANTICS.md",
-        "specs/EVIDENCE_AND_IDENTITY.md"
+        "specs/EVIDENCE_AND_IDENTITY.md",
+        "implementation/reports/CODEX-3469fac.md",
+        "decisions/ADR-0013-wire-namespace-and-representations.md"
       ],
       "verification_commands": [
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
-        "cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application",
+        "cargo test --all-targets --locked -p eqm_domain -p eqm_manifest -p eqm_engine -p eqm_application",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc",
         "cargo xtask check",
+        "cargo xtask schemas check",
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": null,
+      "gate": "DEV-006 resolves the decision-required S019 block. After S016-R3 and S018-R1/R2, execute independently green S019-A, S019-B, S019-C; mark S019 complete only after C. Continue all ordered unblocked successors through S211.",
       "initial_status": "pending",
-      "review_regressions": []
+      "review_regressions": [],
+      "implementation_checkpoints": [
+        "S019-A",
+        "S019-B",
+        "S019-C"
+      ]
     },
     {
       "title": "Separate target configuration identity",
@@ -13589,10 +13617,10 @@
   "supervision": {
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
-    "amendment": "DEV-005",
-    "next_checkpoint": "S016-R1",
+    "amendment": "DEV-006",
+    "next_checkpoint": "S016-R3",
     "execution_target": "S211 subject to explicit predecessor and external evidence gates",
     "intermediate_checkpoint": "S143 is not a stopping boundary",
-    "continuation": "S016-P1 accepted. Complete S016-R1/R2, then S017–S211 subject to predecessor/external gates; S143 remains intermediate."
+    "continuation": "Complete S016-R3 and S018-R1/R2; S019 composition decision resolved, implement S019-A/B/C then all ordered unblocked work through S211."
   }
 }

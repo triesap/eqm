@@ -172,3 +172,20 @@ prove consumer validation; the first owning v2 selector ingress must call its
 typed validation. No extra schema family or relationship/trust acceptance is
 introduced to manufacture that integration. S017 uses a separate v2 binding
 projection under the existing BindingDigest domain; all v1 bytes stay frozen.
+
+## DEV-006 component extension type preservation
+
+Every v2 component ExtensionValue is recursively encoded as an object with exactly
+`type` and `value`: tags boolean/integer/string/array/object. Integer payloads use
+the approved signed numeric forms; array payloads contain ordered tagged values;
+object payloads map existing keys to tagged values. The namespace map stays a map
+and excludes only dev.equivalencematrix.display. This prevents large Integer values
+from colliding with String values containing the same digits, and prevents plain
+objects imitating typed tags. V1 remains unchanged. The affected new v2 extension
+goldens must change under DEV-006; unaffected base goldens remain exact.
+
+Component APIs retain BindingDigest/EvidenceSpecificationDigest/ContractDigest/
+PolicySelectionDigest internally, extracting raw digest text only at explicit
+boundaries. S019's exact composition, field spelling, set/sequence allocation and
+selection carrier invariants are normative in DEV-006 of COMMIT_SEQUENCE.md.
+Unknown selection is a tagged state without value, not null or an omitted dimension.

@@ -61,3 +61,25 @@ artifact paths remain semantic. Comments, formatting and source spans do not
 enter Binding. Use the existing BindingDigest domain and preserve v1 projection
 APIs/hashes. Later owning v2 construction/relationship steps integrate the new
 component identity; S017 does not silently reinterpret existing v1 transports.
+
+## DEV-006 contract and selected-policy identities
+
+ContractDigest binds the explicit v2 capabilities/journeys/surfaces/fragments plus
+normative graph extensions from one finalized prepared graph. All exact loaded
+revisions and expanded surface requirements remain; unrelated target/binding/
+policy/profile/runner/waiver/import/adapter collections are separate identities.
+Entity titles/descriptions are retained; only the display extension namespace and
+parse provenance are excluded. Journey surface order is semantic.
+
+PolicySelectionDigest binds the complete selected Policy and selected Profile
+definitions plus each declared dimension's known or explicit unknown value. IDs
+and revisions alone do not suffice. A narrow validated domain input carries exact
+definitions/values; manifest owns pure v2 canonicalization; application selects
+and resolves definitions from one immutable PreparedSession graph without I/O,
+default invention, latest-revision fallback or authority promotion. Existing
+engine selection/mode/origin rules stay in force.
+
+The governing DEV-006 amendment freezes exact JSON member names, array semantics,
+carrier invariants and S019-A/B/C allocation. Recursive extension type tags retain
+integer-versus-text distinctions; v1 and unaffected component oracles remain exact.
+The workspace digest remains aggregate context, never a substitute identity.

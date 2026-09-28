@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S019",
+ "next_step": "S016",
  "implementation": "in_progress",
- "local_verification": "standard_passed_S018_complete_S019_active",
+ "local_verification": "standard_passed_393_tests_repairs_required",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -401,7 +401,7 @@
   },
   {
    "id": "S016",
-   "status": "complete",
+   "status": "in_progress",
    "commit_sha": "68378317044d49a121caff07e783573abdf3cd56",
    "report": "implementation/reports/S016.md",
    "verification": [
@@ -434,8 +434,8 @@
      "supervisor_status": "accepted"
     }
    ],
-   "implementation_status": "complete",
-   "supervisor_status": "pending",
+   "implementation_status": "committed_regression_closure_pending",
+   "supervisor_status": "R1_accepted_R2_partial_RF22",
    "corrective_checkpoints": [
     {
      "id": "S016-R1",
@@ -456,7 +456,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed",
-     "supervisor_status": "pending"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S016-R2",
@@ -477,13 +477,20 @@
       "git diff --check"
      ],
      "implementation_status": "committed",
-     "supervisor_status": "pending"
+     "supervisor_status": "partial_RF22"
+    },
+    {
+     "id": "S016-R3",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/CODEX-3469fac.md",
+     "verification": []
     }
    ]
   },
   {
    "id": "S017",
-   "status": "complete",
+   "status": "changes_required",
    "commit_sha": "93a82a141d3ffdb03d62cf3d088d5e14afa898a6",
    "report": "implementation/reports/S017.md",
    "verification": [
@@ -497,13 +504,13 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "complete",
-   "supervisor_status": "pending"
+   "implementation_status": "committed_repairs_required",
+   "supervisor_status": "changes_required_RF24_RF25_RF26"
   },
   {
    "id": "S018",
-   "status": "complete",
-   "commit_sha": null,
+   "status": "changes_required",
+   "commit_sha": "3469face3a88d280f2577f4ff936419408c1d248",
    "report": "implementation/reports/S018.md",
    "verification": [
     "cargo fmt --all --check",
@@ -518,16 +525,56 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "complete",
-   "supervisor_status": "pending"
+   "implementation_status": "committed_repairs_required",
+   "supervisor_status": "changes_required_RF24_RF25_RF26",
+   "corrective_checkpoints": [
+    {
+     "id": "S018-R1",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/CODEX-3469fac.md",
+     "verification": []
+    },
+    {
+     "id": "S018-R2",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/CODEX-3469fac.md",
+     "verification": []
+    }
+   ]
   },
   {
    "id": "S019",
-   "status": "in_progress",
+   "status": "pending",
    "commit_sha": null,
    "report": null,
    "verification": [],
-   "baseline_exceptions": []
+   "baseline_exceptions": [],
+   "decision_status": "resolved_by_Codex_DEV006",
+   "implementation_checkpoints": [
+    {
+     "id": "S019-A",
+     "status": "pending",
+     "commit_sha": null,
+     "report": null,
+     "verification": []
+    },
+    {
+     "id": "S019-B",
+     "status": "pending",
+     "commit_sha": null,
+     "report": null,
+     "verification": []
+    },
+    {
+     "id": "S019-C",
+     "status": "pending",
+     "commit_sha": null,
+     "report": null,
+     "verification": []
+    }
+   ]
   },
   {
    "id": "S020",
@@ -2398,7 +2445,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S019",
+ "active_step": "S016",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2413,7 +2460,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 6,
+   "completed_steps": 3,
    "total_steps": 15
   },
   {
@@ -2720,17 +2767,19 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S019",
+ "next_checkpoint": "S016-R3",
  "supervisor_review": {
-  "source_commit": "68378317044d49a121caff07e783573abdf3cd56",
-  "report": "implementation/reports/CODEX-6837831.md",
-  "status": "accepted_S016_P1_changes_required_S016",
-  "amendment": "DEV-005",
-  "standard_check": "passed_367_tests",
+  "source_commit": "3469face3a88d280f2577f4ff936419408c1d248",
+  "report": "implementation/reports/CODEX-3469fac.md",
+  "status": "RF20_RF21_accepted_RF22_partial_RF24_RF25_RF26_open",
+  "amendment": "DEV-006",
+  "standard_check": "passed_393_tests",
   "advisory_audit": "passed",
   "dependency_policy": "passed",
-  "package_structure": "passed_current_tree_historical_receipt_not_supported",
-  "release_candidate": false
+  "package_structure": "passed",
+  "literal_oracles": "four_existing_binding_spec_hashes_independently_recomputed",
+  "release_candidate": false,
+  "s019_decision": "resolved"
  },
  "execution_target": "S211 subject to predecessor and external evidence gates",
  "supervisor_findings": [
@@ -2918,30 +2967,35 @@
   },
   {
    "id": "RF20",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S016",
    "checkpoint": "S016-R1",
    "report": "implementation/reports/CODEX-6837831.md",
-   "summary": "Missing authored field validation at v2 roots"
+   "summary": "Missing authored field validation at v2 roots",
+   "closure_report": "implementation/reports/CODEX-3469fac.md",
+   "commit_sha": "49d7177ee68c77e5a43c17ac40de35a39f611c78"
   },
   {
    "id": "RF21",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S016",
    "checkpoint": "S016-R1",
    "report": "implementation/reports/CODEX-6837831.md",
-   "summary": "NFC-only checks bypass existing typed syntax and bounds"
+   "summary": "NFC-only checks bypass existing typed syntax and bounds",
+   "closure_report": "implementation/reports/CODEX-3469fac.md",
+   "commit_sha": "49d7177ee68c77e5a43c17ac40de35a39f611c78"
   },
   {
    "id": "RF22",
-   "status": "open",
+   "status": "partially_addressed",
    "priority": "P2",
    "owner": "S016",
-   "checkpoint": "S016-R2",
+   "checkpoint": "S016-R3",
    "report": "implementation/reports/CODEX-6837831.md",
-   "summary": "Incomplete real-boundary and independent canonical regression evidence"
+   "summary": "Incomplete real-boundary and independent canonical regression evidence",
+   "followup_report": "implementation/reports/CODEX-3469fac.md"
   },
   {
    "id": "RF23",
@@ -2951,6 +3005,45 @@
    "checkpoint": "Codex DEV-005",
    "report": "implementation/reports/CODEX-6837831.md",
    "summary": "Historical package receipt disagrees with saved failure log"
+  },
+  {
+   "id": "RF24",
+   "status": "open",
+   "priority": "P2",
+   "owner": "S018",
+   "affected_steps": [
+    "S017",
+    "S018"
+   ],
+   "checkpoint": "S018-R1",
+   "summary": "Component projection APIs erase domain-specific digest types",
+   "report": "implementation/reports/CODEX-3469fac.md"
+  },
+  {
+   "id": "RF25",
+   "status": "open",
+   "priority": "P2",
+   "owner": "S018",
+   "affected_steps": [
+    "S017",
+    "S018"
+   ],
+   "checkpoint": "S018-R2",
+   "summary": "Manifest provenance/duplicate/expression proof remains incomplete",
+   "report": "implementation/reports/CODEX-3469fac.md"
+  },
+  {
+   "id": "RF26",
+   "status": "open",
+   "priority": "P1",
+   "owner": "S018",
+   "affected_steps": [
+    "S017",
+    "S018"
+   ],
+   "checkpoint": "S018-R1",
+   "summary": "Large integer and text extensions collapse to identical canonical identities",
+   "report": "implementation/reports/CODEX-3469fac.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9"

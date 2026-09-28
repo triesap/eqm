@@ -1,5 +1,254 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-006 — Close boundary evidence and unblock contract provenance
+
+**Date/author:** 2026-09-28, Codex supervisor under owner delegation.
+**Reviewed source:** `3469face3a88d280f2577f4ff936419408c1d248`.
+The four implementation commits are retained. RF20/RF21 are accepted; RF22 is
+partially repaired, not closed. New RF24/RF25/RF26 concern typed component identities,
+missing manifest-boundary proof and extension type collisions. See [the review](reports/CODEX-3469fac.md).
+S019's reported representation decision is resolved below. No external product
+fact or user approval is required to implement these decisions.
+
+This amendment supersedes obsolete cursors and completion claims. S001–S015
+remain accepted; S016 is active for its remaining tests, S017/S018 have retained
+implementation with changes required, and S019 is pending implementation with its
+decision resolved. Preserve 211 numbered IDs, all original dependencies, v1
+behavior and original receipts. Current independent standard gate (393 tests),
+dependency policy, live advisory audit and package structure pass. That does not
+close missing acceptance evidence.
+
+### Ordered checkpoints before S019
+
+| Checkpoint | Scope | Green / commit |
+| --- | --- | --- |
+| S016-R3 | Finish RF22's exact matrix below; correct the diagnostic-list claim and retain R1/R2 behavior and evidence. | Complete declared S016 commands plus final structure validation; `test: close collection and diagnostic boundary evidence`. |
+| S018-R1 | Close RF24/RF26 for both S017/S018 projections: return existing typed digest wrappers and encode extension type tags to prevent integer/string identity collisions; add literal mutation controls. | Locked domain/manifest all-target tests, manifest doctests including type-boundary proof, fmt/check/clippy, standard gate, schema parity, final structure/diff checks; `fix: preserve extension types in component identities`. |
+| S018-R2 | Close RF25: actual loader/comment/formatting, reachable projected-duplicate and ordered-expression controls; correct the projection reports. | Same domain/manifest/standard/schema/structure/diff gates; `test: prove component projections at manifest boundaries`. |
+
+One independently green commit per checkpoint; do not amend reviewed history.
+S016-R3 completes S016's implementation contribution. S018-R1/R2 complete the
+remaining S017 and S018 contributions together because they share the projection
+API boundary. Record their supervisor acceptance as pending after implementation,
+then immediately continue S019-A/B/C and unblocked successors through S211.
+No extra approval pause is required between those objective gates.
+
+### RF22: concrete remaining regression matrix
+
+Keep all existing successful controls. The required missing cases are:
+
+| Owning root / collection | Add or complete |
+| --- | --- |
+| EvidenceResult facets | Exact duplicate rejects; retain existing permutation proof. |
+| EvidenceResult attachments | Two valid reversed members produce identical canonical bytes; exact duplicate rejects; retain differing-digest same-name rejection and the member-order trap. |
+| EvidenceResult profile_values | Exact duplicate rejects; retain permutation, logical-key and conflicting-revision checks. |
+| RuntimeFacts profile_values | Exact duplicate and same (profile, dimension) with a different value reject; retain permutation/digest and conflicting-revision checks. |
+| Inventory entries, standalone and embedded AdapterResponse | Exact duplicate rejects at both owning paths; retain differing-attribute same-key and permutation controls. |
+| Inventory diagnostics and outer AdapterResponse diagnostics | At least two distinct diagnostics swap order and change canonical output; repeated diagnostic records retain multiplicity. Test the diagnostic vector itself, not only its related-location vector. |
+
+Retain target-set, requirements, facts, valid/invalid attempt numbering,
+related-location order, authored text and raw-byte controls. Every negative has
+a valid control through the same reader. Recompute mutant runtime-facts digests
+without hiding serialization failures; remove the test helper's silent
+`unwrap_or_default` fallback. Exact-member rejection is distinct from later
+logical-key rejection. Compare JCS of returned semantic DTO values for canonical
+byte claims; normal Serde output may additionally prove stable serialization.
+Do not claim new component/relationship/storage acceptance from these tests.
+
+### RF24/RF25/RF26: typed identities and actual projection boundaries
+
+CanonicalBindingV2 must store/return BindingDigest, and CanonicalEvidenceSpecV2
+must store/return EvidenceSpecificationDigest, using those existing wrappers'
+hash_content constructors. The wrapper-only change preserves bytes and digest text; RF26 separately requires
+the explicit extension representation correction below. Raw
+Sha256Digest extraction is explicit through as_digest only at a wire/legacy
+boundary, never the generic internal return type. Add typed positive API checks
+and a compile-fail doctest showing cross-domain substitution fails; execute the
+doctests. Preserve the v1 generic digest APIs and existing domain labels.
+
+**RF26 — extension type distinction:** support::extension_value_v2 currently
+encodes a large Integer as a JSON string while String emits that same JSON
+string. For example Integer(i64::MIN) and String("-9223372036854775808") yield
+identical bytes and digest when all other fields match. Hashing complete
+semantics requires retaining this type distinction.
+
+Freeze this v2 extension representation now: every ExtensionValue is an object
+with exactly `type` and `value`. Tags are `boolean`, `integer`, `string`, `array`,
+and `object`. Boolean/string payloads are their exact validated values; integer
+payloads use wire_int; array payloads are ordered arrays of recursively tagged
+ExtensionValues; object payloads are JCS-keyed maps of recursively tagged
+ExtensionValues. The extensions namespace map itself stays a map, excluding
+only dev.equivalencematrix.display. Tag each namespace value recursively; do not
+tag only out-of-range integers, rely on schema inference, or parse strings that
+look numeric. This also distinguishes an authored object resembling a tag from
+the typed value it resembles. No v1 extension representation changes.
+
+Add same-ID integer-versus-text cases for both projections, covering positive
+and negative out-of-safe-range values and nested arrays/objects; require different
+canonical bytes and typed digests. Include literal base and boundary byte/hash
+oracles for the new representation. Codex authorizes updating ONLY the affected
+new v2 extension goldens; retain old values in the report with the exact reason.
+Empty-extension base bytes/digests and all v1 goldens stay unchanged. Recompute
+expected hashes independently from reviewed literal bytes. No digest-domain
+label or published schema family changes. This correction is also the extension
+representation for S019 and all later v2 component projections.
+
+The current parse-provenance test constructs the same Binding twice; it does
+not alter or load a manifest. Add actual temporary authored fixtures through
+load_workspace/conversion: a valid original, a comments/whitespace-only change,
+and a semantic selector/path change. First two yield identical v2 canonical
+bytes/identities; the semantic mutation differs while IDs remain fixed. Keep
+real display-extension controls, including an embedded entity level.
+
+Correct the assertion that canonical duplicates are unreachable. Binding::new
+rejects equal Exposure values, but two exposures with different display-only
+extension values can both pass construction and become identical after display
+exclusion. Exercise that public path and assert DuplicateMember. Keep two
+semantically different exposure controls accepted, and prove reversing ordered
+applicability all/any children changes the projection rather than sorting them.
+Do not add unchecked constructors merely to manufacture a negative case.
+
+### S019 decisions: exact contract projection
+
+Choose contract authority **plus normative graph extensions**. WorkspaceGraphInput
+already calls these extensions normative; excluding them would drop bound
+semantics. The v2 root has exactly `capabilities`, `journeys`, `surfaces`,
+`fragments`, and `extensions`. Input is the prepared FinalizedWorkspaceGraph,
+including all loaded exact fragment revisions and expanded surface requirements;
+do not choose a latest revision or silently narrow it to the current CLI filter.
+CanonicalContractV2 owns immutable JCS bytes and ContractDigest. Version/domain
+comes from the v2 API and existing digest label; do not invent a published schema
+URI for this internal projection or reuse the v1 semantic-graph schema marker.
+
+For each entity include the existing canonical capability/journey/surface/fragment
+field inventory and all nested requirement/fragment-origin/transition fields.
+Include titles, descriptions, owners, statuses, risk, applicability, providers,
+revision/pin metadata and semantic extensions. Only the named display extension
+namespace is excluded; titles/descriptions are not newly declared display-only.
+The manifest file path, comments, whitespace and source-map spans are not inputs.
+Exclude targets, bindings, policies, profiles, runners, waiver records, imports
+and adapter lock records as top-level contract components. Their own identities
+and later provenance retain those axes; fragment use pins and included fragment
+semantics remain in the contract. Graph-level semantic extension changes do
+change ContractDigest by this explicit decision.
+
+Build explicit v2 entity projections. Reusing complete v1 JSON unchanged under
+a new domain is rejected: large integers, Unicode, escaped text and complete
+record ordering are not guaranteed by small ASCII fixtures. Field-safe selector
+helpers containing only already validated strings may be reused. Revisions,
+counts and extension integers follow ADR-0013 full-range numeric forms. Use the
+existing v2 pure support helpers without manifest-to-engine/protocol edges.
+
+Canonical sets: the four entity arrays, owners, requirement records, facets,
+fragment-origin records, transition edges and applicability membership values.
+Order by complete projected member JCS bytes and reject exact projected duplicates.
+Ordered sequences: a journey's declared surfaces (stored as Vec in the domain),
+applicability all/any child lists and extension arrays. Object maps use JCS keys.
+Retain the existing absence and NFC rules. Do not recursively sort all arrays.
+
+### S019 decisions: policy/profile projection and crate ownership
+
+Choose a narrow, validated **domain projection input carrier**, with canonical
+serialization in eqm_manifest and assembly in eqm_application. Do not move the
+engine's selection algorithm or introduce serialization/I/O dependencies into it.
+Do not move/rename existing SelectedProfile types merely to implement this API.
+
+Add PolicySelectionInputV2 and SelectedProfileInputV2 in eqm_domain (lifetimes or
+owned equivalents are an internal choice). Private fields retain the exact
+Policy and selected Profile definitions plus fully resolved dimension values.
+Fallible construction requires exactly the policy's profile-ID set, no duplicate
+profile IDs (including different revisions), every declared dimension exactly
+once, no undeclared dimensions and only declared finite known values. Dimension
+state is explicit known(SymbolicValueId) or unknown; absence does not become
+unknown and constructors do not apply development defaults. Accept Vec inputs
+where necessary to reject duplicates before map collection. These carriers prove
+structural selection validity, not protected authority or trusted execution.
+
+The v2 root has exactly `policy` and `profiles`. `policy` contains the complete
+selected policy definition with v2 forms: id/revision/title/description/owners,
+profile IDs, required targets, rule selectors/constraints, waiver policy and
+semantic extensions. `profiles` is a canonical set of records with exactly
+`definition` and `values`. `definition` contains each exact selected Profile's
+complete v2 definition: id/revision/title/description/owners, dimension declarations
+and finite values, defaults and semantic extensions. This binds same-ID/revision
+semantic edits; IDs/revisions alone are insufficient. Unselected definitions do
+not enter this projection.
+
+`values` is a canonical set with one record per declared dimension:
+`{"dimension":"locale","state":"known","value":"en"}` or
+`{"dimension":"locale","state":"unknown"}`. Unknown has no value member;
+never encode null, omit a declared dimension, or equate unknown to a default.
+This is the exact projection spelling, not a new transport protocol. Existing
+engine Option values map explicitly to these states after engine selection.
+
+Sets: profiles, selected dimension records, profile dimension definitions and
+finite values, owners, policy profile/target references, policy rules, all
+populated rule-selector axes, required facets and waiver controls. Ordered
+extension arrays retain order; defaults remain object maps. Every numeric field,
+including policy maximum_age/minimum_count and waiver limits, uses approved v2
+forms. Preserve all selector axes and distinction between an absent selector
+axis and a populated axis. Exclude only display extensions and parse provenance.
+CanonicalPolicySelectionV2 owns JCS bytes and PolicySelectionDigest. Mode, authority
+origin, clock, waivers as records, unrelated graph extensions and workspace
+summary are separate context axes, not injected into this projection. No trust
+claim follows from obtaining its digest.
+
+The application entry point takes one PreparedSession plus the existing mode and
+explicit/development-default PolicyProfileRequest inputs. It invokes the existing
+selection algorithm against that session's immutable graph, resolves each exact
+selected profile definition from the same graph, builds the validated domain
+carrier and calls manifest canonicalization. Expose a typed immutable provenance
+bundle with contract and selected-policy identities/bytes. Missing exact definitions
+or invalid selection return typed errors retaining causes; never fallback to a
+workspace digest, reselect latest, reload files, inspect the clock or execute tools.
+Keep existing engine mode/default/trusted-origin checks. Do not accept an unrelated
+preselected policy/profile graph through a new unchecked public adapter. The
+existing workspace_digest remains aggregate context. V1 CLI/runner records are
+not silently switched to v2 identities; later owning v2 construction steps consume
+this additive application entry point.
+
+### S019 independently green implementation slices
+
+| Checkpoint | Scope | Commit |
+| --- | --- | --- |
+| S019-A | Domain projection carriers, local invariant/error tests; no engine algorithm change or schema publication. | `feat: validate policy selection provenance inputs` |
+| S019-B | Complete separate v2 contract/entity projection, ContractDigest and independent byte/hash/isolation controls. | `feat: project exact v2 contract authority` |
+| S019-C | Complete selected-policy/profile projection, typed identity and same-session application construction; integration and isolation controls; mark numbered S019 complete only here. | `fix: separate contract and policy provenance` |
+
+All three slices retain S019's original R19/AC019 mapping and declared gates.
+For each run fmt, locked workspace all-target check, owning domain/manifest/engine/
+application tests, clippy -D warnings, standard check, schema parity and final
+structure/diff checks. Include relevant doctests and preserve all literal v1 and unaffected
+S017/S018 oracles; RF26 alone updates the affected v2 extension goldens. No new dependency or license-policy exception is needed.
+
+Required S019 evidence: independent literal canonical bytes/digests, safe-integer
+boundary and endpoint values, unknown versus missing versus known/default values,
+exact revision failures, duplicate and undeclared profiles/dimensions/values,
+contract-only mutation versus selected-policy-only mutation, selected-profile
+same-ID/revision definition mutation, unselected policy/profile stability, graph
+semantic-extension inclusion and display-only exclusion, real manifest formatting
+stability, canonical set permutations, ordered journey-surface/expression changes,
+and same-session application integration retaining mode/authority failures.
+Do not claim byte equivalence by rebuilding the same object without mutation.
+
+### Continuation decisions and limits
+
+This settles S019's composition, representations, crate placement and input types.
+Its earlier decision-required block is removed by Codex, not reclassified as a
+session interruption. Ordinary function naming, helper extraction, borrowing and
+test layout remain implementation choices. Existing additive v2 representation
+rules apply to successors; small currently observed numbers do not authorize
+rehashing v1 encodings. New material semantic compositions still return to Codex;
+Pi may not invent authority, waive gates or change scope to avoid that boundary.
+
+After objective repair and S019 gates, continue every ordered unblocked successor
+toward S211; S143 is intermediate. Preserve Q01–Q15 at their first dependent step,
+use compact per-step context and receipts, and distinguish genuine context limits
+from missing decisions or external facts. No publication, deployment, signing,
+live enforcement or optional-native activation is authorized. Human release
+testing is not the next action; component hashes and local fixtures do not prove
+end-to-end product conformance or release authority.
+
 ## DEV-005 — S016 review closure and binding projection decision
 
 **Date/author:** 2026-09-28, Codex supervisor under owner delegation.
@@ -1263,7 +1512,7 @@ Read their Given/When/Expected contracts in the referenced regression catalog. T
 
 **Predecessor:** S015. **Contracts:** R18, R19, R21, R43, R64. **Acceptance:** AC018, AC019, AC021, AC043, AC064.
 
-**Read:** [specs/API_CONTRACTS.md](../specs/API_CONTRACTS.md), [specs/STORAGE_AND_PERFORMANCE.md](../specs/STORAGE_AND_PERFORMANCE.md), [repo/REVIEW_FINDINGS.md](../repo/REVIEW_FINDINGS.md), [implementation/review_regressions.json](../implementation/review_regressions.json), [decisions/ADR-0012-approved-review-closure.md](../decisions/ADR-0012-approved-review-closure.md).
+**Read:** [specs/API_CONTRACTS.md](../specs/API_CONTRACTS.md), [specs/STORAGE_AND_PERFORMANCE.md](../specs/STORAGE_AND_PERFORMANCE.md), [repo/REVIEW_FINDINGS.md](../repo/REVIEW_FINDINGS.md), [implementation/review_regressions.json](../implementation/review_regressions.json), [decisions/ADR-0012-approved-review-closure.md](../decisions/ADR-0012-approved-review-closure.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-121622f.md](../implementation/reports/CODEX-121622f.md), [implementation/reports/CODEX-6837831.md](../implementation/reports/CODEX-6837831.md), [implementation/reports/CODEX-3469fac.md](../implementation/reports/CODEX-3469fac.md).
 
 ### 1. Step title
 Add canonical set and Unicode vectors.
@@ -1272,7 +1521,7 @@ Add canonical set and Unicode vectors.
 Distinguish semantic unordered collections from ordered scenarios.
 
 ### 3. Exact scope of code changes
-Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and S016-R2 to close authored v2 ingress/type validation and real-boundary collection/sequence/raw-byte regressions. Follow the explicit field mapping, independent literal canonical bytes/digest expectations and evidence discipline in DEV-005; preserve all retained DEV-004 rules and v1 bytes.
+Retain S016-P1/R1/R2 and accepted RF20/RF21 repairs. Complete DEV-006 S016-R3 for the explicit missing exact-duplicate, attachment-permutation, runtime-profile conflict and diagnostic-vector regressions; preserve prior behavior and v1 forms. RF22 is partial until this matrix passes.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical.rs`
@@ -1284,7 +1533,7 @@ Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and
 - `tests/fixtures/`
 
 ### 5. Unit tests or integration tests required
-Execute every DEV-005 mapped authored field family with valid typed controls and one-field mutants at owning roots; all set permutations/exact and logical-key duplicates, profile revision conflicts, valid attempt-index rules, diagnostic/related-location sequence order and multiplicity, independent literal runtime-facts bytes/hash, and strict/raw opaque identity controls. Preserve S015 regressions and v1 schema/hash bytes. Final ledger and current status must pass structure validation after edits.
+Run the concrete DEV-006 RF22 matrix at owning v2 roots with valid controls, exact and logical-key duplicate distinctions, recomputed mutant digests, and JCS comparison of returned semantic values. Diagnostic order/multiplicity tests must change the diagnostic vector itself; retain related-location, attempt, NFC, raw-byte and S015 controls.
 
 ### 6. Verification commands
 ```sh
@@ -1300,7 +1549,7 @@ cargo xtask schemas check
 git diff --check
 ```
 
-**Admission gate:** DEV-005: S016-P1 accepted, RF19 closed. Execute independently green S016-R1 then S016-R2 before S017. After their objective gates, record supervisor acceptance pending and continue ordered unblocked work through S211.
+**Admission gate:** DEV-006: S016-R1 behavior accepted; execute S016-R3, then S018-R1/R2 contributions for S017/S018, then S019-A/B/C and ordered unblocked successors through S211.
 
 ### 7. Expected result
 Canonicalization is executable protocol behavior rather than serializer convention.
@@ -1320,7 +1569,7 @@ Read their Given/When/Expected contracts in the referenced regression catalog. T
 
 **Predecessor:** S016. **Contracts:** R19. **Acceptance:** AC019.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-6837831.md](../implementation/reports/CODEX-6837831.md), [implementation/reports/CODEX-3469fac.md](../implementation/reports/CODEX-3469fac.md).
 
 ### 1. Step title
 Hash complete binding semantics.
@@ -1329,7 +1578,7 @@ Hash complete binding semantics.
 Correct the ID-only binding digest shortcut.
 
 ### 3. Exact scope of code changes
-Implement a separate v2 complete binding projection and existing BindingDigest using DEV-005 numeric/set rules. Reuse the existing binding projection as a field inventory, not its v1 bytes. Include all binding/artifact/exposure/evidence semantics and semantic extensions; exclude only dev.equivalencematrix.display and absent parse provenance. Preserve v1 APIs/hashes and existing crate directions; later owning steps integrate v2 evidence construction.
+Retain the separate complete v2 binding projection. Close DEV-006 RF24/RF25/RF26 via S018-R1/R2: typed BindingDigest output, recursively tagged ExtensionValue semantics, actual manifest parse-provenance/duplicate/ordered-expression controls, corrected reports. Preserve all v1 bytes and unaffected v2 oracles; update only approved extension goldens.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical.rs`
@@ -1338,7 +1587,7 @@ Implement a separate v2 complete binding projection and existing BindingDigest u
 - `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
-Same-ID selector/artifact path/constraint/semantic-extension changes alter identity; actual display-extension and comment/formatting changes remain stable. Set permutations agree, ordered extension/expression arrays retain order, and integer boundaries have literal canonical-byte/digest controls. All v1 projection/hash fixtures remain unchanged.
+Retain same-ID semantic mutation and literal controls. Add typed API/compile-fail proof, large integer-versus-text extension distinction including nested values, real loaded comment/formatting and semantic mutations, reachable post-display-exclusion duplicate rejection, and ordered all/any expression controls under DEV-006.
 
 ### 6. Verification commands
 ```sh
@@ -1365,7 +1614,7 @@ fix: bind evidence to canonical binding semantics
 
 **Predecessor:** S017. **Contracts:** R19. **Acceptance:** AC019.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../decisions/ADR-0013-wire-namespace-and-representations.md).
 
 ### 1. Step title
 Hash complete evidence specifications.
@@ -1374,7 +1623,7 @@ Hash complete evidence specifications.
 Correct the ID-pair evidence-specification shortcut.
 
 ### 3. Exact scope of code changes
-Add a canonical specification projection covering kind, requirements, facets, selector, runner reference and relevant constraints; document input-domain relationships.
+Retain complete v2 evidence-specification projection and shared helpers. Complete DEV-006 S018-R1/R2 jointly with S017 contributions: typed EvidenceSpecificationDigest/BindingDigest APIs, recursive type-tagged extensions that cannot collapse integer into text, independent changed-extension oracles, actual manifest-boundary controls and accurate evidence.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical/`
@@ -1382,7 +1631,7 @@ Add a canonical specification projection covering kind, requirements, facets, se
 - `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
-Selector/kind/count changes with the same spec ID change identity; stable semantic projections remain repeatable.
+Retain selector/kind/count/runner/freshness mutations. Exercise integer-versus-text extension pairs and nested arrays/objects at both component projections, typed return and compile-fail domain substitution, actual loader/display/duplicate/expression controls, unchanged empty-extension and v1 goldens. Execute manifest doctests.
 
 ### 6. Verification commands
 ```sh
@@ -1390,6 +1639,7 @@ cargo fmt --all --check
 cargo check --workspace --all-targets --locked
 cargo test --all-targets --locked -p eqm_manifest -p eqm_domain
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --locked -p eqm_manifest --doc
 cargo xtask check
 git diff --check
 ```
@@ -1409,7 +1659,7 @@ fix: hash exact evidence specification semantics
 
 **Predecessor:** S018. **Contracts:** R19, R58. **Acceptance:** AC019, AC058.
 
-**Read:** [specs/EVALUATION_SEMANTICS.md](../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVALUATION_SEMANTICS.md](../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../decisions/ADR-0013-wire-namespace-and-representations.md).
 
 ### 1. Step title
 Separate contract and policy digests.
@@ -1418,25 +1668,34 @@ Separate contract and policy digests.
 Stop populating unrelated provenance with one workspace digest.
 
 ### 3. Exact scope of code changes
-Expose explicit contract and selected-policy/profile semantic projections; retain workspace digest only as aggregate context and update internal construction helpers.
+Implement DEV-006 S019-A/B/C: validated domain PolicySelectionInputV2/SelectedProfileInputV2 carriers; explicit v2 contract projection over capabilities/journeys/surfaces/fragments plus normative graph extensions; complete selected policy/profile definitions and known/unknown selections; typed ContractDigest/PolicySelectionDigest and same-session application construction. Preserve engine selection algorithms, crate directions, v1 records and workspace aggregate identity.
 
 ### 4. Files/modules likely involved
+- `crates/eqm_domain/src/`
+- `crates/eqm_domain/tests/`
 - `crates/eqm_manifest/src/canonical/`
+- `crates/eqm_manifest/src/lib.rs`
+- `crates/eqm_manifest/tests/`
 - `crates/eqm_engine/src/selection.rs`
 - `crates/eqm_application/src/`
+- `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
-Contract-only and policy-only changes affect the intended domains; unchanged unrelated projections remain stable.
+Prove literal bytes/digests, integer endpoints and tagged extension distinctions, exact selections and explicit unknown versus missing/defaults, isolated contract/policy/profile/graph-extension mutations, unselected-definition stability, duplicate/undeclared input failures, ordered journey/expression arrays, canonical sets, real manifest formatting and same-session application mode/authority errors.
 
 ### 6. Verification commands
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application
+cargo test --all-targets --locked -p eqm_domain -p eqm_manifest -p eqm_engine -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc
 cargo xtask check
+cargo xtask schemas check
 git diff --check
 ```
+
+**Admission gate:** DEV-006 resolves the decision-required S019 block. After S016-R3 and S018-R1/R2, execute independently green S019-A, S019-B, S019-C; mark S019 complete only after C. Continue all ordered unblocked successors through S211.
 
 ### 7. Expected result
 Internal prepared context has distinct accurate contract/policy identities.
