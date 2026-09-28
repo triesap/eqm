@@ -23,15 +23,12 @@
 //! v2 construction/relationship steps integrate this component identity; this
 //! step does not reinterpret legacy v1 transports.
 
+use super::support::{canonical_set, canonical_strings, extensions_v2, wire_uint};
 use super::{CanonicalizationError, MAX_PROJECTION_BYTES, insert_optional, object};
 use eqm_domain::{
-    Applicability, ApplicabilityView, Artifact, Binding, DigestDomain, EvidenceSpecification,
-    Exposure, ExtensionValue, Extensions, Sha256Digest,
+    Applicability, ApplicabilityView, Artifact, Binding, DigestDomain, Exposure, Sha256Digest,
 };
-use serde_json::{Map, Value, json};
-
-/// The largest integer that survives an IEEE-754 double exactly.
-const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
+use serde_json::{Value, json};
 
 /// Immutable canonical v2 binding bytes and domain-separated digest.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -52,85 +49,6 @@ impl CanonicalBindingV2 {
     pub const fn digest(&self) -> Sha256Digest {
         self.digest
     }
-}
-
-/// Returns the approved v2 canonical unsigned integer form.
-fn wire_uint(value: u64) -> Value {
-    if value <= MAX_SAFE_INTEGER {
-        json!(value)
-    } else {
-        json!(value.to_string())
-    }
-}
-
-/// Returns the approved v2 canonical signed integer form.
-fn wire_int(value: i64) -> Value {
-    if value.unsigned_abs() <= MAX_SAFE_INTEGER {
-        json!(value)
-    } else {
-        json!(value.to_string())
-    }
-}
-
-/// Canonically orders set members by complete JCS member bytes and rejects
-/// exact duplicates instead of silently erasing them.
-fn canonical_set(members: impl IntoIterator<Item = Value>) -> Result<Value, CanonicalizationError> {
-    let mut encoded: Vec<(Vec<u8>, Value)> = Vec::new();
-    for member in members {
-        let bytes = serde_json_canonicalizer::to_vec(&member)
-            .map_err(|_| CanonicalizationError::Serialization)?;
-        encoded.push((bytes, member));
-    }
-    encoded.sort_by(|left, right| left.0.cmp(&right.0));
-    for window in encoded.windows(2) {
-        if window[0].0 == window[1].0 {
-            return Err(CanonicalizationError::DuplicateMember);
-        }
-    }
-    Ok(Value::Array(
-        encoded.into_iter().map(|(_, member)| member).collect(),
-    ))
-}
-
-/// Canonically orders a set of authored string members.
-fn canonical_strings(
-    values: impl IntoIterator<Item = String>,
-) -> Result<Value, CanonicalizationError> {
-    canonical_set(values.into_iter().map(Value::String))
-}
-
-/// Projects extensions with v2 integer forms, excluding only the display
-/// namespace. Nested extension arrays keep their declared order.
-fn extensions_v2(values: &Extensions) -> Result<Value, CanonicalizationError> {
-    let mut projected = Map::new();
-    for (namespace, value) in values.values() {
-        if namespace.is_display_only() {
-            continue;
-        }
-        projected.insert(namespace.as_str().to_owned(), extension_value_v2(value)?);
-    }
-    Ok(Value::Object(projected))
-}
-
-fn extension_value_v2(value: &ExtensionValue) -> Result<Value, CanonicalizationError> {
-    Ok(match value {
-        ExtensionValue::Boolean(value) => json!(value),
-        ExtensionValue::Integer(value) => wire_int(*value),
-        ExtensionValue::String(value) => json!(value),
-        ExtensionValue::Array(values) => Value::Array(
-            values
-                .iter()
-                .map(extension_value_v2)
-                .collect::<Result<Vec<_>, _>>()?,
-        ),
-        ExtensionValue::Object(values) => {
-            let mut projected = Map::new();
-            for (key, value) in values {
-                projected.insert(key.as_str().to_owned(), extension_value_v2(value)?);
-            }
-            Value::Object(projected)
-        }
-    })
 }
 
 fn applicability_v2(value: &Applicability) -> Result<Value, CanonicalizationError> {
@@ -211,48 +129,6 @@ fn exposure_v2(value: &Exposure) -> Result<Value, CanonicalizationError> {
     Ok(projected)
 }
 
-fn evidence_v2(value: &EvidenceSpecification) -> Result<Value, CanonicalizationError> {
-    let mut projected = object([
-        ("id", json!(value.id().as_str())),
-        ("kind", json!(value.kind().as_str())),
-        (
-            "requirements",
-            canonical_strings(
-                value
-                    .requirements()
-                    .iter()
-                    .map(|item| item.as_str().to_owned()),
-            )?,
-        ),
-        (
-            "facets",
-            canonical_strings(value.facets().iter().map(|item| item.as_str().to_owned()))?,
-        ),
-        ("extensions", extensions_v2(value.extensions())?),
-    ]);
-    insert_optional(
-        &mut projected,
-        "runner",
-        value.runner().map(|item| json!(item.as_str())),
-    );
-    insert_optional(
-        &mut projected,
-        "selector",
-        value.selector().map(super::evidence_selector),
-    );
-    insert_optional(
-        &mut projected,
-        "minimum_count",
-        value.minimum_count().map(|item| wire_uint(item.get())),
-    );
-    insert_optional(
-        &mut projected,
-        "freshness",
-        value.freshness().map(|item| wire_uint(item.get())),
-    );
-    Ok(projected)
-}
-
 /// Projects one binding into its complete v2 canonical semantic JSON shape.
 ///
 /// Set-valued fields are ordered by complete member bytes and exact duplicates
@@ -294,7 +170,7 @@ pub fn binding_v2(value: &Binding) -> Result<Value, CanonicalizationError> {
                 value
                     .evidence()
                     .values()
-                    .map(evidence_v2)
+                    .map(super::evidence_spec_v2::evidence_spec_v2)
                     .collect::<Result<Vec<_>, _>>()?,
             )?,
         ),

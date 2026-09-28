@@ -1,8 +1,13 @@
 //! RFC 8785 canonical projection of finalized semantic graphs.
 
 mod binding_v2;
+mod evidence_spec_v2;
+mod support;
 
 pub use binding_v2::{CanonicalBindingV2, binding_v2, canonicalize_binding_v2};
+pub use evidence_spec_v2::{
+    CanonicalEvidenceSpecV2, canonicalize_evidence_spec_v2, evidence_spec_v2,
+};
 
 use eqm_domain::{
     AdapterLockIdentity, Applicability, ApplicabilityView, ArgumentTemplate, Artifact,

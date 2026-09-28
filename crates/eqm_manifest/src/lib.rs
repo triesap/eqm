@@ -15,12 +15,14 @@ mod parse;
 mod validation;
 
 pub use canonical::{
-    CanonicalBindingV2, CanonicalFragment, CanonicalGraph, CanonicalizationError,
-    binding as project_binding, binding_v2 as project_binding_v2, canonicalize_binding_v2,
-    canonicalize_fragment, canonicalize_graph, capability as project_capability,
-    fragment as project_fragment, journey as project_journey, policy as project_policy,
-    profile as project_profile, runner as project_runner, surface as project_surface,
-    target as project_target, waiver as project_waiver,
+    CanonicalBindingV2, CanonicalEvidenceSpecV2, CanonicalFragment, CanonicalGraph,
+    CanonicalizationError, binding as project_binding, binding_v2 as project_binding_v2,
+    canonicalize_binding_v2, canonicalize_evidence_spec_v2, canonicalize_fragment,
+    canonicalize_graph, capability as project_capability,
+    evidence_spec_v2 as project_evidence_spec_v2, fragment as project_fragment,
+    journey as project_journey, policy as project_policy, profile as project_profile,
+    runner as project_runner, surface as project_surface, target as project_target,
+    waiver as project_waiver,
 };
 pub use config::{ConfigError, WorkspaceConfig, select_workspace_config};
 pub use conversion::{
