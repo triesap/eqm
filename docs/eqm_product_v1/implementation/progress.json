@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S019",
+ "next_step": "S020",
  "implementation": "in_progress",
- "local_verification": "standard_passed_432_test_executions_S019_R1_green_RF28_S020_pending",
+ "local_verification": "standard_passed_447_test_executions_S019_R1_R2_green_S020_pending",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -601,8 +601,8 @@
    ],
    "baseline_exceptions": [],
    "decision_status": "resolved_by_Codex_DEV007",
-   "implementation_status": "ABC_committed_repairs_required",
-   "supervisor_status": "RF27_RF28_changes_required",
+   "implementation_status": "ABC_R1_R2_committed_supervisor_pending",
+   "supervisor_status": "RF27_RF28_implemented_supervisor_pending",
    "implementation_checkpoints": [
     {
      "id": "S019-A",
@@ -666,7 +666,7 @@
     {
      "id": "S019-R1",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "3f5c96b72d8a7251387e630c156fb59d14f87855",
      "report": "implementation/reports/S019.md",
      "verification": [
       "cargo fmt --all --check",
@@ -683,7 +683,7 @@
     },
     {
      "id": "S019-R2",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
      "report": "implementation/reports/S019.md",
      "verification": [
@@ -695,7 +695,9 @@
       "cargo xtask check",
       "cargo xtask schemas check",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed_supervisor_pending",
+     "supervisor_status": "pending_review"
     }
    ]
   },
@@ -2568,7 +2570,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S019",
+ "active_step": "S020",
  "cycles": [
   {
    "id": "EQM-P01",

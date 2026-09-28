@@ -8,7 +8,7 @@
 use eqm_domain::{
     Applicability, Capability, CapabilityId, ContractDigest, Description, DimensionId, Extensions,
     Facet, FinalizedWorkspaceGraph, Fragment, FragmentId, FragmentUse, Journey, JourneyId,
-    LifecycleStatus, LocalRequirementId, MembershipOperator, OwnerRef, Requirement,
+    LifecycleStatus, LocalRequirementId, MembershipOperator, OwnerRef, ProviderId, Requirement,
     RequirementLevel, RequirementScope, RequirementStatement, Revision, RiskClass, Sha256Digest,
     Surface, SurfaceId, SymbolicValueId, Title, Transition, TransitionTrigger, WorkspaceGraph,
     WorkspaceGraphInput,
@@ -456,5 +456,215 @@ fn contract_extension_integer_and_text_never_collide() -> Result<(), Box<dyn Err
         assert_ne!(integer.bytes(), string.bytes());
         assert_ne!(integer.digest(), string.digest());
     }
+    Ok(())
+}
+
+fn boundary_expected(value: u64) -> serde_json::Value {
+    if value <= 9_007_199_254_740_991 {
+        serde_json::json!(value)
+    } else {
+        serde_json::json!(value.to_string())
+    }
+}
+
+fn journey_at(revision: u64) -> Result<Journey, Box<dyn Error>> {
+    Ok(Journey::new(
+        JourneyId::new("account.create.signup")?,
+        Revision::new(revision)?,
+        title("Signup")?,
+        CapabilityId::new("account.create")?,
+        LifecycleStatus::Active,
+        RiskClass::High,
+        vec![owner("owner://team/accounts")?],
+        vec![
+            SurfaceId::new("account.create.signup.identifier")?,
+            SurfaceId::new("account.create.signup.otp")?,
+        ],
+        vec![Transition::new(
+            SurfaceId::new("account.create.signup.identifier")?,
+            SurfaceId::new("account.create.signup.otp")?,
+            TransitionTrigger::new("submit")?,
+        )],
+        None,
+        Extensions::default(),
+    )?)
+}
+
+fn surface_at(revision: u64) -> Result<Surface, Box<dyn Error>> {
+    Ok(Surface::new(
+        SurfaceId::new("account.create.signup.otp")?,
+        Revision::new(revision)?,
+        title("OTP")?,
+        JourneyId::new("account.create.signup")?,
+        LifecycleStatus::Active,
+        vec![owner("owner://team/accounts")?],
+        vec![requirement("reachable", "The OTP is reachable")?],
+        Vec::new(),
+        None,
+        Extensions::default(),
+    )?)
+}
+
+fn fragment_at(revision: u64) -> Result<Fragment, Box<dyn Error>> {
+    Ok(Fragment::new(
+        FragmentId::new("auth.otp")?,
+        Revision::new(revision)?,
+        title("OTP fragment")?,
+        RiskClass::Low,
+        vec![owner("owner://team/auth")?],
+        vec![requirement("entry", "The OTP entry exists")?],
+        None,
+        Extensions::default(),
+    )?)
+}
+
+#[test]
+fn contract_revisions_use_literal_v2_wire_forms() -> Result<(), Box<dyn Error>> {
+    for revision in [
+        9_007_199_254_740_991_u64,
+        9_007_199_254_740_992_u64,
+        u64::MAX,
+    ] {
+        let mut graph = input()?;
+        graph.journeys = vec![journey_at(revision)?];
+        graph.surfaces = vec![surface_at(revision)?];
+        graph.fragments = vec![fragment_at(revision)?];
+        let projected = project_contract_v2(&finalize(graph)?)?;
+        assert_eq!(
+            projected["journeys"][0]["revision"],
+            boundary_expected(revision)
+        );
+        assert_eq!(
+            projected["surfaces"][0]["revision"],
+            boundary_expected(revision)
+        );
+        assert_eq!(
+            projected["fragments"][0]["revision"],
+            boundary_expected(revision)
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn optional_requirement_and_fragment_origin_fields_are_inventoried_or_absent()
+-> Result<(), Box<dyn Error>> {
+    let populated = Requirement::new(
+        LocalRequirementId::new("provider")?,
+        RequirementLevel::Required,
+        RequirementScope::SharedProvider,
+        RequirementStatement::new("The shared identity is present")?,
+        vec![Facet::Behavior],
+        Applicability::always(true),
+        Some(RiskClass::Critical),
+        Some(ProviderId::new("identity.primary")?),
+        Extensions::default(),
+    )?;
+    let plain = requirement("plain", "No optional fields")?;
+    let mut graph = input()?;
+    graph.fragments = vec![Fragment::new(
+        FragmentId::new("auth.otp")?,
+        Revision::new(1)?,
+        title("OTP fragment")?,
+        RiskClass::Low,
+        vec![owner("owner://team/auth")?],
+        vec![populated, plain],
+        None,
+        Extensions::default(),
+    )?];
+    let projected = project_contract_v2(&finalize(graph)?)?;
+    assert_eq!(
+        projected["fragments"][0]["requirements"][0]["risk_class"],
+        "critical"
+    );
+    assert_eq!(
+        projected["fragments"][0]["requirements"][0]["provider"],
+        "identity.primary"
+    );
+    assert!(
+        projected["fragments"][0]["requirements"][1]
+            .get("risk_class")
+            .is_none()
+    );
+    assert!(
+        projected["fragments"][0]["requirements"][1]
+            .get("provider")
+            .is_none()
+    );
+
+    // A populated fragment-origin prefix appears; the base origin has none.
+    let with_prefix = FragmentUse::new(
+        FragmentId::new("auth.otp")?,
+        Revision::new(1)?,
+        Sha256Digest::hash_content(b"fragment-one"),
+        Some(LocalRequirementId::new("pre")?),
+    );
+    let mut graph = input()?;
+    graph.surfaces = vec![Surface::new(
+        SurfaceId::new("account.create.signup.otp")?,
+        Revision::new(1)?,
+        title("OTP")?,
+        JourneyId::new("account.create.signup")?,
+        LifecycleStatus::Active,
+        vec![owner("owner://team/accounts")?],
+        vec![requirement("reachable", "The OTP is reachable")?],
+        vec![with_prefix],
+        None,
+        Extensions::default(),
+    )?];
+    let projected = project_contract_v2(&finalize(graph)?)?;
+    assert_eq!(
+        projected["surfaces"][0]["fragment_origins"][0]["prefix"],
+        "pre"
+    );
+    let base = project_contract_v2(&workspace()?)?;
+    assert!(
+        base["surfaces"][0]["fragment_origins"][0]
+            .get("prefix")
+            .is_none()
+    );
+    Ok(())
+}
+
+fn membership_requirement(id: &str, value: &str) -> Result<Requirement, Box<dyn Error>> {
+    requirement_with_applicability(
+        id,
+        Applicability::membership(
+            DimensionId::new("region")?,
+            MembershipOperator::In,
+            vec![SymbolicValueId::new(value)?],
+        )?,
+    )
+}
+
+#[test]
+fn contract_record_order_uses_full_member_bytes_not_ids() -> Result<(), Box<dyn Error>> {
+    // `alpha` carries `["zzz"]` and `beta` carries `["aaa"]`; full member-byte
+    // order is (beta, alpha), which differs from the LocalRequirementId order.
+    let alpha = membership_requirement("alpha", "zzz")?;
+    let beta = membership_requirement("beta", "aaa")?;
+    let build = |first: Requirement, second: Requirement| -> Result<_, Box<dyn Error>> {
+        let mut graph = input()?;
+        graph.surfaces = vec![surface_with_requirements(vec![first, second])?];
+        Ok(canonicalize_contract_v2(&finalize(graph)?)?)
+    };
+    let forward = build(alpha.clone(), beta.clone())?;
+    let reversed = build(beta, alpha)?;
+    assert_eq!(forward.bytes(), reversed.bytes());
+    assert_eq!(forward.digest(), reversed.digest());
+
+    let projected = project_contract_v2(&finalize({
+        let mut graph = input()?;
+        graph.surfaces = vec![surface_with_requirements(vec![
+            membership_requirement("alpha", "zzz")?,
+            membership_requirement("beta", "aaa")?,
+        ])?];
+        graph
+    })?)?;
+    assert_eq!(
+        projected["surfaces"][0]["requirements"][0]["id"], "beta",
+        "contract records must be ordered by complete member bytes"
+    );
+    assert_eq!(projected["surfaces"][0]["requirements"][1]["id"], "alpha");
     Ok(())
 }

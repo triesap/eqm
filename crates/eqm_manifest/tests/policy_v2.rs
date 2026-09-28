@@ -6,9 +6,10 @@
 //! extension type distinction.
 
 use eqm_domain::{
-    Description, DurationMillis, Extensions, Facet, OwnerRef, Policy, PolicyId, PolicyRule,
-    PolicySelectionInputV2, PolicySelector, PositiveCount, Profile, ProfileDimension, ProfileId,
-    RequirementLevel, Revision, SelectedDimensionStateV2, SelectedProfileInputV2, SymbolicValueId,
+    Description, DimensionId, DurationMillis, Extensions, Facet, FullRequirementId, OwnerRef,
+    Policy, PolicyId, PolicyRule, PolicySelectionInputV2, PolicySelector, PositiveCount,
+    PositiveDays, Profile, ProfileDimension, ProfileId, RequirementLevel, RequirementScope,
+    Revision, RiskClass, SelectedDimensionStateV2, SelectedProfileInputV2, SymbolicValueId,
     TargetId, Title, TrustLevel, UnitId, WaiverPolicy,
 };
 use eqm_manifest::{canonicalize_policy_selection_v2, project_policy_selection_v2};
@@ -266,5 +267,382 @@ fn policy_selection_extension_integer_and_text_never_collide() -> Result<(), Box
         assert_ne!(integer.bytes(), string.bytes());
         assert_ne!(integer.digest(), string.digest());
     }
+    Ok(())
+}
+
+fn boundary_expected(value: u64) -> serde_json::Value {
+    if value <= 9_007_199_254_740_991 {
+        serde_json::json!(value)
+    } else {
+        serde_json::json!(value.to_string())
+    }
+}
+
+fn selected(profile: &Profile) -> Result<SelectedProfileInputV2<'_>, Box<dyn Error>> {
+    Ok(SelectedProfileInputV2::new(
+        profile,
+        vec![
+            (
+                DimensionId::new("locale")?,
+                SelectedDimensionStateV2::Known(SymbolicValueId::new("en")?),
+            ),
+            (
+                DimensionId::new("region")?,
+                SelectedDimensionStateV2::Unknown,
+            ),
+        ],
+    )?)
+}
+
+#[test]
+fn policy_and_profile_revisions_use_literal_v2_wire_forms() -> Result<(), Box<dyn Error>> {
+    for revision in [
+        9_007_199_254_740_991_u64,
+        9_007_199_254_740_992_u64,
+        u64::MAX,
+    ] {
+        let profile = profile(revision, "Audience")?;
+        let policy = Policy::new(
+            PolicyId::new("policy.default")?,
+            Revision::new(revision)?,
+            Title::new("Default policy")?,
+            vec![owner("owner://team/security")?],
+            vec![profile.id().clone()],
+            vec![TargetId::new("web")?],
+            vec![PolicyRule::new(
+                PolicySelector::new(
+                    Some(vec![UnitId::new("account.create")?]),
+                    None,
+                    None,
+                    None,
+                    None,
+                )?,
+                RequirementLevel::Recommended,
+                vec![Facet::Behavior],
+                TrustLevel::TrustedCi,
+                DurationMillis::new(86_400_000)?,
+                None,
+            )?],
+            WaiverPolicy::deny(),
+            None,
+            Extensions::default(),
+        )?;
+        let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
+        let projected = project_policy_selection_v2(&input)?;
+        assert_eq!(projected["policy"]["revision"], boundary_expected(revision));
+        assert_eq!(
+            projected["profiles"][0]["definition"]["revision"],
+            boundary_expected(revision)
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn policy_rule_endpoints_use_literal_v2_wire_forms() -> Result<(), Box<dyn Error>> {
+    let maximum_age = DurationMillis::new(DurationMillis::MAX)?;
+    let minimum_count = PositiveCount::new(u64::MAX)?;
+    let profile = profile(1, "Audience")?;
+    let policy = Policy::new(
+        PolicyId::new("policy.default")?,
+        Revision::new(1)?,
+        Title::new("Default policy")?,
+        vec![owner("owner://team/security")?],
+        vec![profile.id().clone()],
+        vec![TargetId::new("web")?],
+        vec![PolicyRule::new(
+            PolicySelector::new(
+                Some(vec![UnitId::new("account.create")?]),
+                None,
+                None,
+                None,
+                None,
+            )?,
+            RequirementLevel::Recommended,
+            vec![Facet::Behavior],
+            TrustLevel::TrustedCi,
+            maximum_age,
+            Some(minimum_count),
+        )?],
+        WaiverPolicy::new(
+            true,
+            Some(PositiveDays::new(30)?),
+            Some(PositiveCount::new(2)?),
+            vec![Facet::Behavior],
+        )?,
+        None,
+        Extensions::default(),
+    )?;
+    let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
+    let projected = project_policy_selection_v2(&input)?;
+    let rule = &projected["policy"]["rules"][0];
+    assert_eq!(rule["maximum_age"], serde_json::json!(i64::MAX.to_string()));
+    assert_eq!(
+        rule["minimum_count"],
+        serde_json::json!(u64::MAX.to_string())
+    );
+    assert_eq!(
+        projected["policy"]["waivers"]["maximum_days"],
+        serde_json::json!(30)
+    );
+    // The minimum legal endpoints remain exact integers.
+    assert_eq!(boundary_expected(1), serde_json::json!(1));
+    Ok(())
+}
+
+fn full_selector() -> Result<PolicySelector, Box<dyn Error>> {
+    Ok(PolicySelector::new(
+        Some(vec![UnitId::new("account.create")?]),
+        Some(vec![FullRequirementId::new(
+            "account.create.signup#visible",
+        )?]),
+        Some(vec![RiskClass::High]),
+        Some(vec![Facet::Behavior]),
+        Some(vec![RequirementScope::EachTarget]),
+    )?)
+}
+
+#[test]
+fn populated_selector_axes_and_waiver_fields_are_fully_inventoried() -> Result<(), Box<dyn Error>> {
+    let profile = profile(1, "Audience")?;
+    let policy = Policy::new(
+        PolicyId::new("policy.default")?,
+        Revision::new(1)?,
+        Title::new("Default policy")?,
+        vec![owner("owner://team/security")?],
+        vec![profile.id().clone()],
+        vec![TargetId::new("web")?],
+        vec![PolicyRule::new(
+            full_selector()?,
+            RequirementLevel::Recommended,
+            vec![Facet::Behavior],
+            TrustLevel::TrustedCi,
+            DurationMillis::new(86_400_000)?,
+            None,
+        )?],
+        WaiverPolicy::new(
+            true,
+            Some(PositiveDays::new(30)?),
+            Some(PositiveCount::new(2)?),
+            vec![Facet::Behavior],
+        )?,
+        None,
+        Extensions::default(),
+    )?;
+    let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
+    let projected = project_policy_selection_v2(&input)?;
+    assert_eq!(
+        projected["policy"]["rules"][0]["selector"],
+        serde_json::json!({
+            "units": ["account.create"],
+            "requirements": ["account.create.signup#visible"],
+            "risk_classes": ["high"],
+            "facets": ["behavior"],
+            "scopes": ["each_target"]
+        })
+    );
+    assert_eq!(
+        projected["policy"]["waivers"],
+        serde_json::json!({
+            "allowed": true,
+            "minimum_approvers": 2,
+            "required_controls": ["behavior"],
+            "maximum_days": 30
+        })
+    );
+
+    // A narrow selector and denied waivers keep the unpopulated axes absent.
+    let narrow = Policy::new(
+        PolicyId::new("policy.default")?,
+        Revision::new(1)?,
+        Title::new("Default policy")?,
+        vec![owner("owner://team/security")?],
+        vec![profile.id().clone()],
+        vec![TargetId::new("web")?],
+        vec![PolicyRule::new(
+            PolicySelector::new(
+                Some(vec![UnitId::new("account.create")?]),
+                None,
+                None,
+                None,
+                None,
+            )?,
+            RequirementLevel::Recommended,
+            vec![Facet::Behavior],
+            TrustLevel::TrustedCi,
+            DurationMillis::new(1)?,
+            None,
+        )?],
+        WaiverPolicy::deny(),
+        None,
+        Extensions::default(),
+    )?;
+    let narrow_input = PolicySelectionInputV2::new(&narrow, vec![selected(&profile)?])?;
+    let projected = project_policy_selection_v2(&narrow_input)?;
+    let selector = projected["policy"]["rules"][0]["selector"]
+        .as_object()
+        .ok_or("selector object")?;
+    assert_eq!(selector.keys().collect::<Vec<_>>(), vec!["units"]);
+    assert!(
+        projected["policy"]["waivers"]
+            .as_object()
+            .ok_or("waivers object")?
+            .get("maximum_days")
+            .is_none()
+    );
+    Ok(())
+}
+
+#[test]
+fn populated_dimension_description_is_present_and_absent_exactly() -> Result<(), Box<dyn Error>> {
+    let with_description = Profile::new(
+        ProfileId::new("audience.default")?,
+        Revision::new(1)?,
+        Title::new("Audience")?,
+        vec![owner("owner://team/product")?],
+        vec![ProfileDimension::new(
+            DimensionId::new("region")?,
+            vec![SymbolicValueId::new("eu")?, SymbolicValueId::new("us")?],
+            Some(Description::new("Deployment region")?),
+        )?],
+        vec![(DimensionId::new("region")?, SymbolicValueId::new("us")?)],
+        None,
+        Extensions::default(),
+    )?;
+    let described_policy = policy(vec![with_description.id().clone()])?;
+    let input = PolicySelectionInputV2::new(
+        &described_policy,
+        vec![SelectedProfileInputV2::new(
+            &with_description,
+            vec![(
+                DimensionId::new("region")?,
+                SelectedDimensionStateV2::Known(SymbolicValueId::new("us")?),
+            )],
+        )?],
+    )?;
+    let projected = project_policy_selection_v2(&input)?;
+    assert_eq!(
+        projected["profiles"][0]["definition"]["dimensions"][0]["description"],
+        "Deployment region"
+    );
+    Ok(())
+}
+
+fn profile_with(id: &str, description: &str) -> Result<Profile, Box<dyn Error>> {
+    Ok(Profile::new(
+        ProfileId::new(id)?,
+        Revision::new(1)?,
+        Title::new("Audience")?,
+        vec![owner("owner://team/product")?],
+        vec![
+            ProfileDimension::new(
+                DimensionId::new("locale")?,
+                vec![SymbolicValueId::new("en")?],
+                None,
+            )?,
+            ProfileDimension::new(
+                DimensionId::new("region")?,
+                vec![SymbolicValueId::new("eu")?, SymbolicValueId::new("us")?],
+                None,
+            )?,
+        ],
+        vec![(DimensionId::new("locale")?, SymbolicValueId::new("en")?)],
+        Some(Description::new(description)?),
+        Extensions::default(),
+    )?)
+}
+
+fn profile_values(profile: &Profile) -> Result<SelectedProfileInputV2<'_>, Box<dyn Error>> {
+    Ok(SelectedProfileInputV2::new(
+        profile,
+        vec![
+            (
+                DimensionId::new("locale")?,
+                SelectedDimensionStateV2::Known(SymbolicValueId::new("en")?),
+            ),
+            (
+                DimensionId::new("region")?,
+                SelectedDimensionStateV2::Unknown,
+            ),
+        ],
+    )?)
+}
+
+#[test]
+fn profile_set_order_uses_full_member_bytes_not_ids() -> Result<(), Box<dyn Error>> {
+    // `audience.beta` has description "aaa" and `audience.alpha` has "zzz", so
+    // full member-byte order (beta, alpha) differs from the ID order (alpha, beta).
+    let alpha = profile_with("audience.alpha", "zzz")?;
+    let beta = profile_with("audience.beta", "aaa")?;
+    let build = |first: &Profile, second: &Profile| -> Result<_, Box<dyn Error>> {
+        let policy = policy(vec![alpha.id().clone(), beta.id().clone()])?;
+        let input = PolicySelectionInputV2::new(
+            &policy,
+            vec![profile_values(first)?, profile_values(second)?],
+        )?;
+        Ok(canonicalize_policy_selection_v2(&input)?)
+    };
+    let forward = build(&alpha, &beta)?;
+    let reversed = build(&beta, &alpha)?;
+    assert_eq!(forward.bytes(), reversed.bytes());
+    assert_eq!(forward.digest(), reversed.digest());
+    let projected = project_policy_selection_v2(&PolicySelectionInputV2::new(
+        &policy(vec![alpha.id().clone(), beta.id().clone()])?,
+        vec![profile_values(&alpha)?, profile_values(&beta)?],
+    )?)?;
+    assert_eq!(
+        projected["profiles"][0]["definition"]["id"], "audience.beta",
+        "profiles must be ordered by complete member bytes"
+    );
+    assert_eq!(
+        projected["profiles"][1]["definition"]["id"],
+        "audience.alpha"
+    );
+    Ok(())
+}
+
+#[test]
+fn rule_order_uses_full_member_bytes() -> Result<(), Box<dyn Error>> {
+    // Two rules whose `facets` sets differ; canonical order follows the projected
+    // member bytes regardless of supply order.
+    let rule = |facet: Facet| -> Result<PolicyRule, Box<dyn Error>> {
+        Ok(PolicyRule::new(
+            PolicySelector::new(
+                Some(vec![UnitId::new("account.create")?]),
+                None,
+                None,
+                None,
+                None,
+            )?,
+            RequirementLevel::Recommended,
+            vec![facet],
+            TrustLevel::TrustedCi,
+            DurationMillis::new(1)?,
+            None,
+        )?)
+    };
+    let alpha = rule(Facet::Behavior)?;
+    let zeta = rule(Facet::Visual)?;
+    let profile = profile(1, "Audience")?;
+    let build = |first: PolicyRule, second: PolicyRule| -> Result<_, Box<dyn Error>> {
+        let policy = Policy::new(
+            PolicyId::new("policy.default")?,
+            Revision::new(1)?,
+            Title::new("Default policy")?,
+            vec![owner("owner://team/security")?],
+            vec![profile.id().clone()],
+            vec![TargetId::new("web")?],
+            vec![first, second],
+            WaiverPolicy::deny(),
+            None,
+            Extensions::default(),
+        )?;
+        let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
+        Ok(canonicalize_policy_selection_v2(&input)?)
+    };
+    assert_eq!(
+        build(alpha.clone(), zeta.clone())?.bytes(),
+        build(zeta, alpha)?.bytes()
+    );
     Ok(())
 }
