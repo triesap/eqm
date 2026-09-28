@@ -1,5 +1,9 @@
 //! RFC 8785 canonical projection of finalized semantic graphs.
 
+mod binding_v2;
+
+pub use binding_v2::{CanonicalBindingV2, binding_v2, canonicalize_binding_v2};
+
 use eqm_domain::{
     AdapterLockIdentity, Applicability, ApplicabilityView, ArgumentTemplate, Artifact,
     ArtifactSelector, Binding, Capability, DigestDomain, EnvironmentSource, EvidenceScopeSubject,
@@ -787,6 +791,8 @@ pub enum CanonicalizationError {
     Serialization,
     /// Canonical projection exceeded 256 MiB.
     ProjectionTooLarge,
+    /// A semantic set declared two members with identical canonical bytes.
+    DuplicateMember,
 }
 
 impl Display for CanonicalizationError {
