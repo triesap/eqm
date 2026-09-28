@@ -314,7 +314,7 @@ fn ordered_journey_surfaces_are_not_sorted() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-fn applicability_children_follow_domain_canonical_order() -> Result<(), Box<dyn Error>> {
+fn applicability_children_are_canonical_sets() -> Result<(), Box<dyn Error>> {
     let build = |applicability: Applicability| -> Result<_, Box<dyn Error>> {
         let mut graph = input()?;
         graph.surfaces = vec![surface_with_requirements(vec![
@@ -322,9 +322,8 @@ fn applicability_children_follow_domain_canonical_order() -> Result<(), Box<dyn 
         ])?];
         finalize(graph)
     };
-    // The domain canonicalizes `all`/`any` child order, so a permutation of the
-    // input children is the same expression and the projection must not re-sort
-    // it into something else or reject it as a duplicate.
+    // Identical child objects supplied in opposite input order are the same
+    // semantic set and must produce identical contract bytes and digests.
     let forward = Applicability::all(vec![
         comparison("region", "us")?,
         comparison("tier", "gold")?,
@@ -334,8 +333,12 @@ fn applicability_children_follow_domain_canonical_order() -> Result<(), Box<dyn 
         comparison("region", "us")?,
     ])?;
     assert_eq!(
-        canonicalize_contract_v2(&build(forward)?)?,
+        canonicalize_contract_v2(&build(forward.clone())?)?,
         canonicalize_contract_v2(&build(permuted)?)?
+    );
+    assert_eq!(
+        canonicalize_contract_v2(&build(forward.clone())?)?.digest(),
+        canonicalize_contract_v2(&build(forward)?)?.digest()
     );
 
     // A real child change (distinct semantics) does change the projection.
@@ -350,6 +353,61 @@ fn applicability_children_follow_domain_canonical_order() -> Result<(), Box<dyn 
         ])?)?)?
         .digest(),
         canonicalize_contract_v2(&build(changed)?)?.digest()
+    );
+
+    // Exact duplicate children reject at the existing domain boundary.
+    assert!(matches!(
+        Applicability::all(vec![
+            comparison("region", "us")?,
+            comparison("region", "us")?,
+        ]),
+        Err(eqm_domain::EntityBuildError::DuplicateApplicabilityOperand)
+    ));
+    Ok(())
+}
+
+#[test]
+fn applicability_child_order_follows_jcs_member_bytes_not_enum_order() -> Result<(), Box<dyn Error>>
+{
+    let build = |applicability: Applicability| -> Result<_, Box<dyn Error>> {
+        let mut graph = input()?;
+        graph.surfaces = vec![surface_with_requirements(vec![
+            requirement_with_applicability("only", applicability)?,
+        ])?];
+        finalize(graph)
+    };
+    // Derived Rust enum order puts `Comparison` before `All`/`Any`, but a nested
+    // logical child serializes as `{"all":...}` / `{"any":...}`, which sorts
+    // before `{"dimension":...}` by complete JCS member bytes. The literal
+    // asserted order proves the projection is not following the enum ordering.
+    let all = Applicability::all(vec![
+        comparison("region", "us")?,
+        Applicability::all(vec![comparison("tier", "gold")?])?,
+    ])?;
+    let projected = project_contract_v2(&build(all)?)?;
+    assert_eq!(
+        projected["surfaces"][0]["requirements"][0]["applicability"],
+        serde_json::json!({
+            "all": [
+                {"all": [{"dimension": "tier", "operator": "eq", "value": "gold"}]},
+                {"dimension": "region", "operator": "eq", "value": "us"}
+            ]
+        })
+    );
+
+    let any = Applicability::any(vec![
+        comparison("region", "us")?,
+        Applicability::any(vec![comparison("tier", "gold")?])?,
+    ])?;
+    let projected = project_contract_v2(&build(any)?)?;
+    assert_eq!(
+        projected["surfaces"][0]["requirements"][0]["applicability"],
+        serde_json::json!({
+            "any": [
+                {"any": [{"dimension": "tier", "operator": "eq", "value": "gold"}]},
+                {"dimension": "region", "operator": "eq", "value": "us"}
+            ]
+        })
     );
     Ok(())
 }

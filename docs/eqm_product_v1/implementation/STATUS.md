@@ -11,10 +11,12 @@ implementation with RF27/RF28 corrections required. P01 is complete (12/12); P02
 has five accepted numbered steps (S013–S016, S018), with S017/S019 repairs and
 S020–S027 remaining. All later cycles are pending. No committed code is discarded.
 
-Next: **S019-R1 → S019-R2 → S020 → all ordered unblocked successors through S211**.
-S019-R1 also closes S017's remaining applicability contribution. S143 is an
-intermediate checkpoint. S020's current target-definition composition is resolved
-by Codex; missing future build/source metadata must not be invented.
+Next: **S019-R2 → S020 → all ordered unblocked successors through S211**.
+S019-R1 (`fix: canonicalize applicability children as semantic sets`) is
+implementation-complete pending Codex review: it also closes S017's remaining
+applicability contribution. S019-R2 executes the DEV-007 RF28 boundary matrix.
+S143 is an intermediate checkpoint. S020's current target-definition composition
+is resolved by Codex; missing future build/source metadata must not be invented.
 
 RF22/RF24/RF26 are accepted. RF25's loader/display/duplicate controls are accepted;
 its ordered-child obligation is superseded by RF27's set semantics. RF27 and RF28

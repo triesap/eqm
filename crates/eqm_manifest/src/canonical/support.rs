@@ -6,8 +6,8 @@
 //! projection that excludes only `dev.equivalencematrix.display` while
 //! preserving ordered extension arrays.
 
-use super::CanonicalizationError;
-use eqm_domain::ExtensionValue;
+use super::{CanonicalizationError, object};
+use eqm_domain::{Applicability, ApplicabilityView, ExtensionValue};
 use serde_json::{Map, Value, json};
 
 /// The largest integer that survives an IEEE-754 double exactly.
@@ -29,6 +29,54 @@ pub(super) fn wire_int(value: i64) -> Value {
     } else {
         json!(value.to_string())
     }
+}
+
+/// Projects one validated applicability expression into its v2 canonical shape.
+///
+/// DEV-007 RF27 (correcting the earlier DEV-005/DEV-006 ordered-child reading):
+/// `all` and `any` children are **unordered semantic sets**, exactly like
+/// membership values. Each child is recursively projected, then the children
+/// are ordered by their complete JCS member bytes and projected duplicates are
+/// rejected. The derived Rust enum order (which places `Comparison` before
+/// `All`) is NOT the wire order: a nested `all` child serializes as `{"all":...}`
+/// and therefore sorts before `{"dimension":...}`. `not` remains a single child
+/// and no flattening, algebraic simplification or deduplication is performed.
+pub(super) fn applicability_v2(value: &Applicability) -> Result<Value, CanonicalizationError> {
+    Ok(match value.view() {
+        ApplicabilityView::Constant(always) => object([("always", json!(always))]),
+        ApplicabilityView::Comparison(dimension, operator, item) => object([
+            ("dimension", json!(dimension.as_str())),
+            ("operator", json!(operator.as_str())),
+            ("value", json!(item.as_str())),
+        ]),
+        ApplicabilityView::Membership(dimension, operator, values) => object([
+            ("dimension", json!(dimension.as_str())),
+            ("operator", json!(operator.as_str())),
+            (
+                "values",
+                canonical_strings(values.iter().map(|item| item.as_str().to_owned()))?,
+            ),
+        ]),
+        ApplicabilityView::All(values) => object([(
+            "all",
+            canonical_set(
+                values
+                    .iter()
+                    .map(applicability_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )?,
+        )]),
+        ApplicabilityView::Any(values) => object([(
+            "any",
+            canonical_set(
+                values
+                    .iter()
+                    .map(applicability_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )?,
+        )]),
+        ApplicabilityView::Not(value) => object([("not", applicability_v2(value)?)]),
+    })
 }
 
 /// Canonically orders set members by complete JCS member bytes and rejects

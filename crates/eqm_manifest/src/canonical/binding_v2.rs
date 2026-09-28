@@ -10,9 +10,11 @@
 //! - encodes revisions, counts and freshness with the approved v2 integer wire
 //!   rules and extension integers the same way;
 //! - orders owners, artifacts, exposures, evidence specifications,
-//!   requirements, facets and applicability membership values by each member's
-//!   complete canonical JSON UTF-8 bytes, rejecting exact duplicates;
-//! - preserves the order of ordered expression and extension arrays;
+//!   requirements, facets, applicability membership values and applicability
+//!   `all`/`any` children by each member's complete canonical JSON UTF-8 bytes,
+//!   rejecting exact duplicates (DEV-007 RF27: `all`/`any` are semantic sets,
+//!   not ordered sequences);
+//! - preserves the order of ordered extension arrays and journey surfaces;
 //! - excludes only the `dev.equivalencematrix.display` extension namespace;
 //! - includes an artifact's declared path (semantics) and never invents a
 //!   binding description/comment field.
@@ -23,9 +25,11 @@
 //! v2 construction/relationship steps integrate this component identity; this
 //! step does not reinterpret legacy v1 transports.
 
-use super::support::{canonical_set, canonical_strings, extensions_v2, wire_uint};
+use super::support::{
+    applicability_v2, canonical_set, canonical_strings, extensions_v2, wire_uint,
+};
 use super::{CanonicalizationError, MAX_PROJECTION_BYTES, insert_optional, object};
-use eqm_domain::{Applicability, ApplicabilityView, Artifact, Binding, BindingDigest, Exposure};
+use eqm_domain::{Artifact, Binding, BindingDigest, Exposure};
 use serde_json::{Value, json};
 
 /// Immutable canonical v2 binding bytes and domain-separated digest.
@@ -47,44 +51,6 @@ impl CanonicalBindingV2 {
     pub const fn digest(&self) -> BindingDigest {
         self.digest
     }
-}
-
-fn applicability_v2(value: &Applicability) -> Result<Value, CanonicalizationError> {
-    Ok(match value.view() {
-        ApplicabilityView::Constant(always) => object([("always", json!(always))]),
-        ApplicabilityView::Comparison(dimension, operator, item) => object([
-            ("dimension", json!(dimension.as_str())),
-            ("operator", json!(operator.as_str())),
-            ("value", json!(item.as_str())),
-        ]),
-        ApplicabilityView::Membership(dimension, operator, values) => object([
-            ("dimension", json!(dimension.as_str())),
-            ("operator", json!(operator.as_str())),
-            (
-                "values",
-                canonical_strings(values.iter().map(|item| item.as_str().to_owned()))?,
-            ),
-        ]),
-        ApplicabilityView::All(values) => object([(
-            "all",
-            Value::Array(
-                values
-                    .iter()
-                    .map(applicability_v2)
-                    .collect::<Result<Vec<_>, _>>()?,
-            ),
-        )]),
-        ApplicabilityView::Any(values) => object([(
-            "any",
-            Value::Array(
-                values
-                    .iter()
-                    .map(applicability_v2)
-                    .collect::<Result<Vec<_>, _>>()?,
-            ),
-        )]),
-        ApplicabilityView::Not(value) => object([("not", applicability_v2(value)?)]),
-    })
 }
 
 fn artifact_v2(value: &Artifact) -> Result<Value, CanonicalizationError> {

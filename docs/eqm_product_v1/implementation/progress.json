@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_428_test_executions_RF27_RF28_repairs_required",
+ "local_verification": "standard_passed_432_test_executions_S019_R1_green_RF28_S020_pending",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -518,8 +518,8 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed",
-   "supervisor_status": "RF27_S019_R1_required",
+   "implementation_status": "committed_supervisor_pending",
+   "supervisor_status": "RF27_implemented_S019_R1_supervisor_pending",
    "closure_report": "implementation/reports/CODEX-1512c9f.md"
   },
   {
@@ -665,7 +665,7 @@
    "corrective_checkpoints": [
     {
      "id": "S019-R1",
-     "status": "in_progress",
+     "status": "complete",
      "commit_sha": null,
      "report": "implementation/reports/S019.md",
      "verification": [
@@ -677,7 +677,9 @@
       "cargo xtask check",
       "cargo xtask schemas check",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed_supervisor_pending",
+     "supervisor_status": "pending_review"
     },
     {
      "id": "S019-R2",

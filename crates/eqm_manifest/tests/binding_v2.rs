@@ -9,8 +9,8 @@
 
 use eqm_domain::{
     Applicability, Artifact, ArtifactId, ArtifactRole, ArtifactSelector, Artifacts, Binding,
-    BindingDigest, BindingId, ComparisonOperator, DimensionId, DurationMillis, EvidenceKind,
-    EvidenceSelector, EvidenceSpecId, EvidenceSpecification, Exposure, ExtensionKey,
+    BindingDigest, BindingId, ComparisonOperator, DimensionId, DurationMillis, EntityBuildError,
+    EvidenceKind, EvidenceSelector, EvidenceSpecId, EvidenceSpecification, Exposure, ExtensionKey,
     ExtensionNamespace, ExtensionValue, Extensions, Facet, FullRequirementId, HttpMethod,
     IntendedExposureState, MembershipOperator, OwnerRef, PositiveCount, RepoPath, Revision,
     RunnerId, SelectorText, SurfaceId, SymbolicValueId, TargetId, UnitId,
@@ -865,80 +865,204 @@ fn nested_display_extensions_are_excluded_at_embedded_levels() -> Result<(), Box
     Ok(())
 }
 
-#[test]
-fn ordered_all_and_any_children_are_not_sorted() -> Result<(), Box<dyn Error>> {
-    let all_with = |order: [SymbolicValueId; 2]| -> Result<Binding, Box<dyn Error>> {
-        let first = Applicability::compare(
-            DimensionId::new("region")?,
-            ComparisonOperator::Equal,
-            order[0].clone(),
-        );
-        let second = Applicability::compare(
-            DimensionId::new("tier")?,
-            ComparisonOperator::Equal,
-            order[1].clone(),
-        );
-        binding(
-            1,
-            &["owner://team/web"],
-            vec![artifact(
-                "signup",
-                "src/signup.rs",
-                Some(route_selector("/signup")?),
-                Extensions::default(),
-            )?],
-            vec![exposure(Applicability::all(vec![first, second])?)?],
-            vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+fn binding_with_applicability(applicability: Applicability) -> Result<Binding, Box<dyn Error>> {
+    binding(
+        1,
+        &["owner://team/web"],
+        vec![artifact(
+            "signup",
+            "src/signup.rs",
+            Some(route_selector("/signup")?),
             Extensions::default(),
-        )
-    };
-    let forward = all_with([SymbolicValueId::new("us")?, SymbolicValueId::new("gold")?])?;
-    let reversed = all_with([SymbolicValueId::new("gold")?, SymbolicValueId::new("us")?])?;
-    let forward = canonicalize_binding_v2(&forward)?;
-    let reversed = canonicalize_binding_v2(&reversed)?;
-    assert_ne!(
-        forward.bytes(),
-        reversed.bytes(),
-        "reversing ordered all children must change the projection"
+        )?],
+        vec![exposure(applicability)?],
+        vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+        Extensions::default(),
+    )
+}
+
+fn comparison(dimension: &str, value: &str) -> Result<Applicability, Box<dyn Error>> {
+    Ok(Applicability::compare(
+        DimensionId::new(dimension)?,
+        ComparisonOperator::Equal,
+        SymbolicValueId::new(value)?,
+    ))
+}
+
+#[test]
+fn applicability_all_and_any_children_are_semantic_sets() -> Result<(), Box<dyn Error>> {
+    // Identical child objects supplied in opposite input order are the same
+    // semantic set and must produce identical bytes and digests.
+    let forward = Applicability::all(vec![
+        comparison("region", "us")?,
+        comparison("tier", "gold")?,
+    ])?;
+    let permuted = Applicability::all(vec![
+        comparison("tier", "gold")?,
+        comparison("region", "us")?,
+    ])?;
+    let forward = canonicalize_binding_v2(&binding_with_applicability(forward)?)?;
+    let permuted = canonicalize_binding_v2(&binding_with_applicability(permuted)?)?;
+    assert_eq!(forward.bytes(), permuted.bytes());
+    assert_eq!(forward.digest(), permuted.digest());
+
+    let any_forward = Applicability::any(vec![
+        comparison("region", "us")?,
+        comparison("tier", "gold")?,
+    ])?;
+    let any_permuted = Applicability::any(vec![
+        comparison("tier", "gold")?,
+        comparison("region", "us")?,
+    ])?;
+    assert_eq!(
+        canonicalize_binding_v2(&binding_with_applicability(any_forward)?)?,
+        canonicalize_binding_v2(&binding_with_applicability(any_permuted)?)?
     );
 
-    // The `any` form behaves the same way.
-    let any_with = |order: [SymbolicValueId; 2]| -> Result<Binding, Box<dyn Error>> {
-        let first = Applicability::membership(
+    // A real child-value change is a different semantic set with a new identity.
+    let changed = Applicability::all(vec![
+        comparison("region", "eu")?,
+        comparison("tier", "gold")?,
+    ])?;
+    assert_ne!(
+        forward.digest(),
+        canonicalize_binding_v2(&binding_with_applicability(changed)?)?.digest(),
+        "a real child-value change must alter binding identity"
+    );
+
+    // Exact duplicate children reject at the existing domain boundary.
+    assert!(matches!(
+        Applicability::all(vec![
+            comparison("region", "us")?,
+            comparison("region", "us")?
+        ]),
+        Err(EntityBuildError::DuplicateApplicabilityOperand)
+    ));
+    assert!(matches!(
+        Applicability::any(vec![
+            comparison("region", "us")?,
+            comparison("region", "us")?
+        ]),
+        Err(EntityBuildError::DuplicateApplicabilityOperand)
+    ));
+    Ok(())
+}
+
+#[test]
+fn applicability_child_order_follows_jcs_member_bytes_not_enum_order() -> Result<(), Box<dyn Error>>
+{
+    // Derived Rust enum order puts `Comparison` before `All`, but a nested `all`
+    // child serializes as `{"all":...}` which sorts before `{"dimension":...}`.
+    // The reviewed literal output order proves the projection sorts by member
+    // bytes rather than deriving the wire order from the enum.
+    let region_child = comparison("region", "us")?;
+    let nested_all = Applicability::all(vec![comparison("tier", "gold")?])?;
+    let projected = project_binding_v2(&binding_with_applicability(Applicability::all(vec![
+        region_child,
+        nested_all,
+    ])?)?)?;
+    assert_eq!(
+        projected["exposures"][0]["applicability"],
+        serde_json::json!({
+            "all": [
+                {"all": [{"dimension": "tier", "operator": "eq", "value": "gold"}]},
+                {"dimension": "region", "operator": "eq", "value": "us"}
+            ]
+        })
+    );
+
+    // The `any` form has the same `{"any":` < `{"dimension":` trap.
+    let region_child = comparison("region", "us")?;
+    let nested_any = Applicability::any(vec![comparison("tier", "gold")?])?;
+    let projected = project_binding_v2(&binding_with_applicability(Applicability::any(vec![
+        region_child,
+        nested_any,
+    ])?)?)?;
+    assert_eq!(
+        projected["exposures"][0]["applicability"],
+        serde_json::json!({
+            "any": [
+                {"any": [{"dimension": "tier", "operator": "eq", "value": "gold"}]},
+                {"dimension": "region", "operator": "eq", "value": "us"}
+            ]
+        })
+    );
+    Ok(())
+}
+
+#[test]
+fn nested_logical_and_membership_children_project_recursively() -> Result<(), Box<dyn Error>> {
+    let membership = Applicability::membership(
+        DimensionId::new("region")?,
+        MembershipOperator::In,
+        vec![SymbolicValueId::new("us")?, SymbolicValueId::new("eu")?],
+    )?;
+    let negated = Applicability::logical_not(Applicability::any(vec![membership])?)?;
+    let outer = Applicability::all(vec![negated, comparison("tier", "gold")?])?;
+    let projected = project_binding_v2(&binding_with_applicability(outer)?)?;
+    assert_eq!(
+        projected["exposures"][0]["applicability"],
+        serde_json::json!({
+            "all": [
+                {"dimension": "tier", "operator": "eq", "value": "gold"},
+                {"not": {"any": [
+                    {"dimension": "region", "operator": "in", "values": ["eu", "us"]}
+                ]}}
+            ]
+        })
+    );
+    Ok(())
+}
+
+#[test]
+fn swapping_values_across_fixed_dimensions_changes_identity() -> Result<(), Box<dyn Error>> {
+    // Retained from S018-R2 as a *semantic mutation*, not an order proof: the
+    // region and tier dimensions stay fixed while their values are exchanged, so
+    // the resulting sets genuinely differ and the identity must change.
+    let forward = Applicability::all(vec![
+        comparison("region", "us")?,
+        comparison("tier", "gold")?,
+    ])?;
+    let swapped = Applicability::all(vec![
+        comparison("region", "gold")?,
+        comparison("tier", "us")?,
+    ])?;
+    let forward = canonicalize_binding_v2(&binding_with_applicability(forward)?)?;
+    let swapped = canonicalize_binding_v2(&binding_with_applicability(swapped)?)?;
+    assert_ne!(
+        forward.bytes(),
+        swapped.bytes(),
+        "exchanging values across fixed dimensions is a semantic mutation"
+    );
+    assert_ne!(forward.digest(), swapped.digest());
+
+    let membership_forward = Applicability::any(vec![
+        Applicability::membership(
             DimensionId::new("region")?,
             MembershipOperator::In,
-            vec![order[0].clone()],
-        )?;
-        let second = Applicability::membership(
+            vec![SymbolicValueId::new("us")?],
+        )?,
+        Applicability::membership(
             DimensionId::new("tier")?,
             MembershipOperator::In,
-            vec![order[1].clone()],
-        )?;
-        binding(
-            1,
-            &["owner://team/web"],
-            vec![artifact(
-                "signup",
-                "src/signup.rs",
-                Some(route_selector("/signup")?),
-                Extensions::default(),
-            )?],
-            vec![exposure(Applicability::any(vec![first, second])?)?],
-            vec![evidence(Some(1), Some(60_000), Extensions::default())?],
-            Extensions::default(),
-        )
-    };
+            vec![SymbolicValueId::new("gold")?],
+        )?,
+    ])?;
+    let membership_swapped = Applicability::any(vec![
+        Applicability::membership(
+            DimensionId::new("region")?,
+            MembershipOperator::In,
+            vec![SymbolicValueId::new("gold")?],
+        )?,
+        Applicability::membership(
+            DimensionId::new("tier")?,
+            MembershipOperator::In,
+            vec![SymbolicValueId::new("us")?],
+        )?,
+    ])?;
     assert_ne!(
-        canonicalize_binding_v2(&any_with([
-            SymbolicValueId::new("us")?,
-            SymbolicValueId::new("gold")?
-        ])?)?
-        .bytes(),
-        canonicalize_binding_v2(&any_with([
-            SymbolicValueId::new("gold")?,
-            SymbolicValueId::new("us")?
-        ])?)?
-        .bytes()
+        canonicalize_binding_v2(&binding_with_applicability(membership_forward)?)?.bytes(),
+        canonicalize_binding_v2(&binding_with_applicability(membership_swapped)?)?.bytes()
     );
     Ok(())
 }

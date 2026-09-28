@@ -12,9 +12,10 @@
 //! - revisions use the v2 integer wire form and extension values are recursively
 //!   type-tagged (see [`super::support::extensions_v2`] for the S018-R1 rules);
 //! - canonical sets are ordered by complete member bytes and reject exact
-//!   duplicates;
-//! - ordered sequences (a journey's declared surfaces, applicability `all`/`any`
-//!   children and extension arrays) keep their order and are never sorted;
+//!   duplicates; this includes applicability `all`/`any` children (DEV-007 RF27:
+//!   they are semantic sets, not ordered sequences);
+//! - ordered sequences (a journey's declared surfaces and extension arrays) keep
+//!   their order and are never sorted;
 //! - only the `dev.equivalencematrix.display` extension namespace is excluded;
 //!   titles and descriptions are not display-only.
 //!
@@ -23,11 +24,13 @@
 //! provenance retain those axes. The projection is pure and adds no
 //! `eqm_manifest` -> engine/protocol dependency.
 
-use super::support::{canonical_set, canonical_strings, extensions_v2, wire_uint};
+use super::support::{
+    applicability_v2, canonical_set, canonical_strings, extensions_v2, wire_uint,
+};
 use super::{CanonicalizationError, MAX_PROJECTION_BYTES, insert_optional, object};
 use eqm_domain::{
-    Applicability, ApplicabilityView, Capability, ContractDigest, FinalizedWorkspaceGraph,
-    Fragment, FragmentUse, Journey, Requirement, Surface, Transition,
+    Capability, ContractDigest, FinalizedWorkspaceGraph, Fragment, FragmentUse, Journey,
+    Requirement, Surface, Transition,
 };
 use serde_json::{Value, json};
 
@@ -117,44 +120,6 @@ fn journey_v2(value: &Journey) -> Result<Value, CanonicalizationError> {
         ]),
         value.description().map(|item| item.as_str()),
     ))
-}
-
-fn applicability_v2(value: &Applicability) -> Result<Value, CanonicalizationError> {
-    Ok(match value.view() {
-        ApplicabilityView::Constant(always) => object([("always", json!(always))]),
-        ApplicabilityView::Comparison(dimension, operator, item) => object([
-            ("dimension", json!(dimension.as_str())),
-            ("operator", json!(operator.as_str())),
-            ("value", json!(item.as_str())),
-        ]),
-        ApplicabilityView::Membership(dimension, operator, values) => object([
-            ("dimension", json!(dimension.as_str())),
-            ("operator", json!(operator.as_str())),
-            (
-                "values",
-                canonical_strings(values.iter().map(|item| item.as_str().to_owned()))?,
-            ),
-        ]),
-        ApplicabilityView::All(values) => object([(
-            "all",
-            Value::Array(
-                values
-                    .iter()
-                    .map(applicability_v2)
-                    .collect::<Result<Vec<_>, _>>()?,
-            ),
-        )]),
-        ApplicabilityView::Any(values) => object([(
-            "any",
-            Value::Array(
-                values
-                    .iter()
-                    .map(applicability_v2)
-                    .collect::<Result<Vec<_>, _>>()?,
-            ),
-        )]),
-        ApplicabilityView::Not(value) => object([("not", applicability_v2(value)?)]),
-    })
 }
 
 fn requirement_v2(value: &Requirement) -> Result<Value, CanonicalizationError> {
