@@ -34,6 +34,7 @@ pub mod acquisition;
 pub mod authority;
 pub mod clock;
 pub mod evaluation;
+pub mod provenance;
 pub mod session;
 
 pub use acquisition::{
@@ -45,6 +46,7 @@ pub use clock::{ClockError, host_evaluation_time};
 pub use evaluation::{
     EvaluationRequest, EvidenceReadError, EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ,
 };
+pub use provenance::{PolicyProvenanceError, PolicyProvenanceV2, prepare_policy_provenance};
 pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
 
 /// A capability an application operation may require.

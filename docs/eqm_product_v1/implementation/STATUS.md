@@ -11,11 +11,11 @@ S001–S015 and S016-P1/R1 behavior are accepted for allocated scope. RF01–RF2
 are closed for that scope. RF22's implementation matrix is complete pending
 supervisor review (S016-R3); S016's implementation contribution is complete.
 S017/S018 implementations are retained and their RF24/RF25/RF26 repairs are
-implementation-complete pending review (S018-R1/R2). S019's decision-required
-block is resolved by Codex, not a context interruption; S019-A validated the
-domain `PolicySelectionInputV2`/`SelectedProfileInputV2` carriers and S019-B added
-the exact v2 `CanonicalContractV2` projection, with S019-C next. Next:
-**S019-C → S020–S211**.
+implementation-complete pending review (S018-R1/R2). S019-A/B/C are implemented
+pending review; S019 is complete as a numbered step (validated domain carriers,
+exact v2 contract projection, selected-policy/profile projection plus typed
+`PolicySelectionDigest`, and same-session application assembly). Next: **S020 →
+… → S211**.
 
 All 211 IDs remain. P01 has 12 complete steps; P02 has four complete steps
 (S013–S016), with S017/S018 changes required and S019 not yet started. Later
