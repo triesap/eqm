@@ -13,23 +13,25 @@ P01 is complete (12/12); P02 has five accepted numbered steps (S013–S016, S018
 with S017/S019 repairs implemented pending review and S020–S027 remaining. All
 later cycles are pending. No committed code is discarded.
 
-Next: **S020 → all ordered unblocked successors through S211**. S019-R1
-(`fix: canonicalize applicability children as semantic sets`) and S019-R2
-(`test: complete contract and policy provenance boundaries`) are
-implementation-complete pending Codex review; together they close RF27/RF28 and
-S017's remaining applicability contribution. S143 is an intermediate checkpoint.
-S020's current target-definition composition is resolved by Codex; missing future
-build/source metadata must not be invented.
+Next: **S021 → all ordered unblocked successors through S211**. S019-R1
+(`fix: canonicalize applicability children as semantic sets`), S019-R2
+(`test: complete contract and policy provenance boundaries`) and S020
+(`fix: derive exact target configuration identity`) are implementation-complete
+pending Codex review; together they close RF27/RF28 and S017's remaining
+applicability contribution. S143 is an intermediate checkpoint. Later S028/S029/
+S031/S038/S043 retain the approved obligation to bind newly modeled target role
+and source-component fields into the target projection in their owning steps.
 
 RF22/RF24/RF26 are accepted. RF25's loader/display/duplicate controls are accepted;
 its ordered-child obligation is superseded by RF27's set semantics. RF27 and RF28
-are implemented in S019-R1/R2 pending Codex review. RF29's status/receipt
-discrepancies are reconciled, with missing historical exits explicitly unverified.
-Prior RF23 history remains intact.
+are implemented in S019-R1/R2 pending Codex review. S020's target-definition
+identity is implemented pending Codex review. RF29's status/receipt discrepancies
+are reconciled, with missing historical exits explicitly unverified. Prior RF23
+history remains intact.
 
 Codex independently ran the standard gate at reviewed HEAD. Current standard gate
-exits 0 with 447 successful test executions after S019-R1/R2. Six component
-literal hashes recompute exactly.
+exits 0 with 460 successful test executions after S019-R1/R2 and S020. Six
+component literal hashes recompute exactly.
 Schemas (22 v1, 5 v2) and Cargo.lock are unchanged across the batch. Current
 structure/doc checks are recorded in the supervisor receipt. These checks do not
 close whole acceptance or relationship cases: S025/S059/S061 retain relationship

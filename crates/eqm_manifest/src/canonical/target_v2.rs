@@ -1,0 +1,83 @@
+//! Separate canonical v2 target-configuration projection.
+//!
+//! DEV-007 chooses an exact **target-definition component identity**, separate
+//! from selected-policy, source snapshot, build artifact and execution
+//! identities. At this step [`Target`] contains exactly `id`, `root`,
+//! `platform`, `framework`, `owners` and `extensions`: there are ZERO
+//! build/profile/source-component reference fields to project. The internal JSON
+//! root therefore has exactly those six members, without a schema URI or a
+//! nested `target` wrapper. That absence is a documented fact, not a `null`,
+//! an invented empty collection, a successful verification or a `"none"`
+//! authority.
+//!
+//! Strings retain their validated exact values. `root` remains the authored
+//! [`RepoPath`](eqm_domain::RepoPath): no absolute expansion, filesystem
+//! canonicalization or case folding. Owners are a complete member-byte
+//! canonical set. Extensions use the recursive DEV-006 type tags and exclude
+//! only `dev.equivalencematrix.display`. The projection is pure and enforces the
+//! existing projection byte bound.
+//!
+//! The resulting [`TargetConfigurationDigest`] is a target-definition identity
+//! only. It does not establish a selected policy/profile, a source revision,
+//! resolved source-component content or a build artifact; those remain separate
+//! subject axes with their own identities in later steps. Consumers must not use
+//! it as a full build or trusted-subject identity.
+
+use super::support::{canonical_strings, extensions_v2};
+use super::{CanonicalizationError, MAX_PROJECTION_BYTES, object};
+use eqm_domain::{Target, TargetConfigurationDigest};
+use serde_json::{Value, json};
+
+/// Immutable canonical v2 target-configuration bytes and digest.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CanonicalTargetConfigurationV2 {
+    bytes: Vec<u8>,
+    digest: TargetConfigurationDigest,
+}
+
+impl CanonicalTargetConfigurationV2 {
+    /// Returns the exact one-line JCS bytes without a trailing newline.
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Returns the domain-separated target-configuration identity.
+    #[must_use]
+    pub const fn digest(&self) -> TargetConfigurationDigest {
+        self.digest
+    }
+}
+
+/// Projects one target into its exact v2 target-configuration semantic shape.
+///
+/// The root has exactly `id`, `root`, `platform`, `framework`, `owners` and
+/// `extensions`. There are no build/profile/source-component fields to project
+/// at this step.
+pub fn target_configuration_v2(value: &Target) -> Result<Value, CanonicalizationError> {
+    Ok(object([
+        ("id", json!(value.id().as_str())),
+        ("root", json!(value.root().as_str())),
+        ("platform", json!(value.platform().as_str())),
+        ("framework", json!(value.framework().as_str())),
+        (
+            "owners",
+            canonical_strings(value.owners().iter().map(|owner| owner.as_str().to_owned()))?,
+        ),
+        ("extensions", extensions_v2(value.extensions())?),
+    ]))
+}
+
+/// Canonicalizes one target under the existing `TargetConfigurationDigest` domain.
+pub fn canonicalize_target_configuration_v2(
+    value: &Target,
+) -> Result<CanonicalTargetConfigurationV2, CanonicalizationError> {
+    let projected = target_configuration_v2(value)?;
+    let bytes = serde_json_canonicalizer::to_vec(&projected)
+        .map_err(|_| CanonicalizationError::Serialization)?;
+    if bytes.len() > MAX_PROJECTION_BYTES {
+        return Err(CanonicalizationError::ProjectionTooLarge);
+    }
+    let digest = TargetConfigurationDigest::hash_content(&bytes);
+    Ok(CanonicalTargetConfigurationV2 { bytes, digest })
+}

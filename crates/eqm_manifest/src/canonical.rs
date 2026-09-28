@@ -5,6 +5,7 @@ mod contract_v2;
 mod evidence_spec_v2;
 mod policy_v2;
 mod support;
+mod target_v2;
 
 pub use binding_v2::{CanonicalBindingV2, binding_v2, canonicalize_binding_v2};
 pub use contract_v2::{CanonicalContractV2, canonicalize_contract_v2, contract_v2};
@@ -13,6 +14,9 @@ pub use evidence_spec_v2::{
 };
 pub use policy_v2::{
     CanonicalPolicySelectionV2, canonicalize_policy_selection_v2, policy_selection_v2,
+};
+pub use target_v2::{
+    CanonicalTargetConfigurationV2, canonicalize_target_configuration_v2, target_configuration_v2,
 };
 
 use eqm_domain::{

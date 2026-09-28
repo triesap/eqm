@@ -16,12 +16,13 @@
 use crate::session::PreparedSession;
 use eqm_domain::{
     PolicySelectionInputError, PolicySelectionInputV2, ProfileId, SelectedDimensionStateV2,
-    SelectedProfileInputV2,
+    SelectedProfileInputV2, TargetId,
 };
 use eqm_engine::{EvaluationMode, PolicyProfileRequest, SelectionError, select_policy_profiles};
 use eqm_manifest::{
-    CanonicalContractV2, CanonicalPolicySelectionV2, CanonicalizationError,
-    canonicalize_contract_v2, canonicalize_policy_selection_v2,
+    CanonicalContractV2, CanonicalPolicySelectionV2, CanonicalTargetConfigurationV2,
+    CanonicalizationError, canonicalize_contract_v2, canonicalize_policy_selection_v2,
+    canonicalize_target_configuration_v2,
 };
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -149,4 +150,67 @@ pub fn prepare_policy_provenance(
         contract,
         policy_selection,
     })
+}
+
+/// Typed target-configuration assembly failure retaining its causal error.
+#[derive(Debug)]
+pub enum TargetConfigurationError {
+    /// The requested exact target was absent from this prepared graph.
+    MissingTarget {
+        /// The requested target ID.
+        target: TargetId,
+    },
+    /// The target projection failed.
+    Projection(CanonicalizationError),
+}
+
+impl Display for TargetConfigurationError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingTarget { target } => {
+                write!(
+                    formatter,
+                    "target is missing from the prepared graph: {target}"
+                )
+            }
+            Self::Projection(error) => {
+                write!(formatter, "target-configuration projection failed: {error}")
+            }
+        }
+    }
+}
+
+impl Error for TargetConfigurationError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Projection(error) => Some(error),
+            Self::MissingTarget { .. } => None,
+        }
+    }
+}
+
+/// Returns the exact target-configuration identity for one target in the same
+/// prepared session.
+///
+/// This looks up the requested exact [`TargetId`] in the session's immutable
+/// finalized graph and invokes the pure manifest projection. It does not reload
+/// the graph or files, run selection, read the clock or execute tools, and it
+/// never substitutes an empty/default target or the aggregate workspace digest.
+/// An unavailable target is an error. The returned identity is a
+/// target-definition identity only; it does not establish a selected
+/// policy/profile, source revision, resolved source-component content or build
+/// artifact identity.
+pub fn prepare_target_configuration(
+    session: &PreparedSession,
+    target: &TargetId,
+) -> Result<CanonicalTargetConfigurationV2, TargetConfigurationError> {
+    let graph = session.finalized().graph();
+    let value =
+        graph
+            .targets()
+            .get(target)
+            .ok_or_else(|| TargetConfigurationError::MissingTarget {
+                target: target.clone(),
+            })?;
+    canonicalize_target_configuration_v2(value).map_err(TargetConfigurationError::Projection)
 }

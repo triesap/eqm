@@ -46,7 +46,10 @@ pub use clock::{ClockError, host_evaluation_time};
 pub use evaluation::{
     EvaluationRequest, EvidenceReadError, EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ,
 };
-pub use provenance::{PolicyProvenanceError, PolicyProvenanceV2, prepare_policy_provenance};
+pub use provenance::{
+    PolicyProvenanceError, PolicyProvenanceV2, TargetConfigurationError, prepare_policy_provenance,
+    prepare_target_configuration,
+};
 pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
 
 /// A capability an application operation may require.
