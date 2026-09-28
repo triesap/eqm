@@ -99,6 +99,21 @@ fn parse_inventory(value: &Value) -> Result<InventoryV2Dto, V2DtoError> {
     InventoryV2Dto::from_json(&serde_json::to_vec(value).map_err(|_| V2DtoError::Json)?)
 }
 
+fn parse_adapter_response(value: &Value) -> Result<AdapterResponseV2Dto, V2DtoError> {
+    AdapterResponseV2Dto::from_json(&serde_json::to_vec(value).map_err(|_| V2DtoError::Json)?)
+}
+
+/// Returns the RFC 8785 canonical JSON bytes of one returned semantic DTO, so a
+/// canonical-byte equality claim compares JCS of the parsed value rather than
+/// relying on the incidentals of a normal `serde_json` map emission order.
+fn jcs<T: serde::Serialize>(value: &T) -> Result<Vec<u8>, Box<dyn Error>> {
+    Ok(serde_json_canonicalizer::to_vec(value)?)
+}
+
+fn diagnostic(code: &str) -> Value {
+    json!({"code": code, "severity": "warning", "message": "observed", "related": []})
+}
+
 #[test]
 fn semantic_set_permutations_are_equal_and_duplicates_reject() -> Result<(), Box<dyn Error>> {
     let mut first = evidence_result();
@@ -459,11 +474,14 @@ fn canonical_facts_digest(document: &mut Value) -> Result<String, Box<dyn Error>
         .remove("facts_digest");
     for key in ["facts", "profile_values"] {
         if let Some(Value::Array(items)) = document.get_mut(key) {
-            let mut encoded: Vec<Value> = std::mem::take(items);
-            encoded.sort_by_cached_key(|item| {
-                serde_json_canonicalizer::to_vec(item).unwrap_or_default()
-            });
-            *items = encoded;
+            let mut encoded: Vec<(Vec<u8>, Value)> = Vec::with_capacity(items.len());
+            for item in std::mem::take(items) {
+                // A serializer failure is surfaced, never hidden behind an empty
+                // sort key that would silently accept an uncanonicalizable mutant.
+                encoded.push((serde_json_canonicalizer::to_vec(&item)?, item));
+            }
+            encoded.sort_by(|left, right| left.0.cmp(&right.0));
+            *items = encoded.into_iter().map(|(_, value)| value).collect();
         }
     }
     Ok(Sha256Digest::hash_content(&serde_json_canonicalizer::to_vec(document)?).to_string())
@@ -611,5 +629,191 @@ fn canonical_set_construction_is_order_independent() -> Result<(), Box<dyn Error
     let first = CanonicalSet::from_members(vec!["b".to_owned(), "a".to_owned()])?;
     let second = CanonicalSet::from_members(vec!["a".to_owned(), "b".to_owned()])?;
     assert_eq!(first, second);
+    Ok(())
+}
+
+#[test]
+fn evidence_result_exact_duplicates_reject_for_each_set() -> Result<(), Box<dyn Error>> {
+    // Valid controls through the same readers.
+    let mut facets = evidence_result();
+    facets["facets"] = json!(["behavior", "structure"]);
+    let control = parse_evidence(&facets)?;
+    let mut reversed = evidence_result();
+    reversed["facets"] = json!(["structure", "behavior"]);
+    assert_eq!(
+        control,
+        parse_evidence(&reversed)?,
+        "facet permutations agree"
+    );
+    assert_eq!(jcs(&control)?, jcs(&parse_evidence(&reversed)?)?);
+
+    // An exact duplicate facet reject before the set is collected.
+    let mut duplicated_facets = evidence_result();
+    duplicated_facets["facets"] = json!(["behavior", "behavior"]);
+    assert_eq!(parse_evidence(&duplicated_facets), Err(V2DtoError::Json));
+
+    // Two valid attachments in reversed order produce identical canonical
+    // bytes; an exact duplicate rejects.
+    let attachment = |name: &str, marker: &str| json!({"name": name, "media_type": "text/plain", "digest": digest(marker), "size": 1});
+    let mut first = evidence_result();
+    first["attachments"] = json!([attachment("a.txt", "one"), attachment("b.txt", "two")]);
+    let mut second = evidence_result();
+    second["attachments"] = json!([attachment("b.txt", "two"), attachment("a.txt", "one")]);
+    let first = parse_evidence(&first)?;
+    let second = parse_evidence(&second)?;
+    assert_eq!(first, second, "attachment permutations agree");
+    assert_eq!(jcs(&first)?, jcs(&second)?);
+
+    let mut duplicated_attachments = evidence_result();
+    duplicated_attachments["attachments"] =
+        json!([attachment("a.txt", "one"), attachment("a.txt", "one")]);
+    assert_eq!(
+        parse_evidence(&duplicated_attachments),
+        Err(V2DtoError::Json)
+    );
+
+    // An exact duplicate profile value rejects; permutation and logical-key
+    // controls remain in `profile_values_are_canonical_and_conflicts_reject`.
+    let member = |dimension: &str, value: &str| json!({"profile": "account.profile", "revision": 1, "dimension": dimension, "value": value});
+    let mut duplicated_profiles = evidence_result();
+    duplicated_profiles["profile_values"] = json!([member("locale", "en"), member("locale", "en")]);
+    assert_eq!(parse_evidence(&duplicated_profiles), Err(V2DtoError::Json));
+    Ok(())
+}
+
+#[test]
+fn runtime_facts_profile_value_exact_duplicate_and_conflicting_value_reject()
+-> Result<(), Box<dyn Error>> {
+    let document = canonical_facts_record()?;
+
+    // Valid control: the reviewed literal record parses.
+    assert!(RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&document)?).is_ok());
+
+    // Two identical profile values are an exact duplicate member. The enclosing
+    // digest is recomputed so the failure is the structural duplicate check, not
+    // a stale digest.
+    let mut duplicated = document.clone();
+    let first = duplicated["profile_values"][0].clone();
+    duplicated["profile_values"] = json!([first.clone(), first]);
+    let digest = canonical_facts_digest(&mut duplicated)?;
+    duplicated["facts_digest"] = json!(digest);
+    assert_eq!(
+        RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&duplicated)?),
+        Err(V2DtoError::Json)
+    );
+
+    // The same (profile, dimension) with a different value rejects, which is a
+    // distinct branch from a byte-identical duplicate member.
+    let mut conflicting = document.clone();
+    conflicting["profile_values"][1] = json!({
+        "profile": "account.profile",
+        "revision": 1,
+        "dimension": "locale",
+        "value": "fr",
+    });
+    let digest = canonical_facts_digest(&mut conflicting)?;
+    conflicting["facts_digest"] = json!(digest);
+    assert_eq!(
+        RuntimeFactsV2Dto::from_json(&serde_json::to_vec(&conflicting)?),
+        Err(V2DtoError::InvalidOrdering)
+    );
+    Ok(())
+}
+
+#[test]
+fn inventory_entry_exact_duplicates_reject_standalone_and_embedded() -> Result<(), Box<dyn Error>> {
+    let entry = |kind: &str, key: &str, marker: &str| json!({"kind": kind, "key": key, "attributes": {"m": {"type": "text", "value": marker}}, "source": "src/file.kt"});
+
+    // Standalone owning path: valid control and exact duplicate.
+    let mut standalone = inventory();
+    standalone["entries"] = json!([entry("view", "a", "x"), entry("view", "b", "y")]);
+    assert!(parse_inventory(&standalone).is_ok());
+    let mut duplicated_standalone = inventory();
+    duplicated_standalone["entries"] = json!([entry("view", "a", "x"), entry("view", "a", "x")]);
+    assert_eq!(
+        parse_inventory(&duplicated_standalone),
+        Err(V2DtoError::Json)
+    );
+
+    // Embedded owning path through AdapterResponseV2Dto: valid control and the
+    // same exact duplicate rejects there too.
+    let embedded = |entries: Value| {
+        let mut value = inventory();
+        value["entries"] = entries;
+        adapter_response(value)
+    };
+    assert!(
+        parse_adapter_response(&embedded(json!([
+            entry("view", "a", "x"),
+            entry("view", "b", "y")
+        ])))
+        .is_ok()
+    );
+    assert_eq!(
+        parse_adapter_response(&embedded(json!([
+            entry("view", "a", "x"),
+            entry("view", "a", "x")
+        ]))),
+        Err(V2DtoError::Json)
+    );
+    Ok(())
+}
+
+#[test]
+fn inventory_and_response_diagnostic_vectors_keep_order_and_multiplicity()
+-> Result<(), Box<dyn Error>> {
+    // The diagnostic vector itself is ordered, not only a diagnostic's related
+    // locations. Two distinct diagnostics swapped in order must change the
+    // canonical output.
+    let with_inventory_diagnostics = |diagnostics: Value| {
+        let mut value = inventory();
+        value["diagnostics"] = diagnostics;
+        value
+    };
+    let forward = parse_inventory(&with_inventory_diagnostics(json!([
+        diagnostic("adapter.one"),
+        diagnostic("adapter.two")
+    ])))?;
+    let reversed = parse_inventory(&with_inventory_diagnostics(json!([
+        diagnostic("adapter.two"),
+        diagnostic("adapter.one")
+    ])))?;
+    let codes: Vec<&str> = forward
+        .diagnostics
+        .iter()
+        .map(|d| d.code.as_str())
+        .collect();
+    assert_eq!(codes, vec!["adapter.one", "adapter.two"], "order preserved");
+    assert_ne!(
+        jcs(&forward)?,
+        jcs(&reversed)?,
+        "swapping distinct diagnostics must change canonical output"
+    );
+
+    // Repeated identical diagnostic records retain multiplicity instead of being
+    // collapsed like a semantic set.
+    let repeated = parse_inventory(&with_inventory_diagnostics(json!([
+        diagnostic("adapter.one"),
+        diagnostic("adapter.one")
+    ])))?;
+    assert_eq!(repeated.diagnostics.len(), 2);
+    assert_eq!(repeated.diagnostics[0].code, repeated.diagnostics[1].code);
+
+    // The outer AdapterResponse diagnostic vector is independently ordered and
+    // retains multiplicity.
+    let mut first_response = adapter_response(inventory());
+    first_response["diagnostics"] = json!([diagnostic("response.one"), diagnostic("response.two")]);
+    let mut second_response = adapter_response(inventory());
+    second_response["diagnostics"] =
+        json!([diagnostic("response.two"), diagnostic("response.one")]);
+    let first = parse_adapter_response(&first_response)?;
+    let second = parse_adapter_response(&second_response)?;
+    assert_ne!(jcs(&first)?, jcs(&second)?, "response order is significant");
+
+    let mut repeated_response = adapter_response(inventory());
+    repeated_response["diagnostics"] =
+        json!([diagnostic("response.one"), diagnostic("response.one")]);
+    let repeated_response = parse_adapter_response(&repeated_response)?;
+    assert_eq!(repeated_response.diagnostics.len(), 2);
     Ok(())
 }

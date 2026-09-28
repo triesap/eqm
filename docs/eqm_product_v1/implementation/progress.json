@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S016",
+ "next_step": "S018",
  "implementation": "in_progress",
  "local_verification": "standard_passed_393_tests_repairs_required",
  "platform_verification": "not_run",
@@ -401,7 +401,7 @@
   },
   {
    "id": "S016",
-   "status": "in_progress",
+   "status": "complete",
    "commit_sha": "68378317044d49a121caff07e783573abdf3cd56",
    "report": "implementation/reports/S016.md",
    "verification": [
@@ -434,8 +434,8 @@
      "supervisor_status": "accepted"
     }
    ],
-   "implementation_status": "committed_regression_closure_pending",
-   "supervisor_status": "R1_accepted_R2_partial_RF22",
+   "implementation_status": "implementation_contribution_complete_supervisor_pending",
+   "supervisor_status": "R1_accepted_R2_partial_RF22_R3_pending_review",
    "corrective_checkpoints": [
     {
      "id": "S016-R1",
@@ -481,10 +481,23 @@
     },
     {
      "id": "S016-R3",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/CODEX-3469fac.md",
-     "verification": []
+     "report": "implementation/reports/S016.md#corrective-checkpoint-s016-r3--close-collection-and-diagnostic-boundary-evidence",
+     "implementation_status": "committed_supervisor_pending",
+     "supervisor_status": "pending_review",
+     "verification": [
+      "cargo audit --deny warnings",
+      "cargo deny check",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_manifest -p eqm_protocol -p eqm_domain -p eqm_test_support",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     }
    ]
   },
@@ -2445,7 +2458,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S016",
+ "active_step": "S018",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2460,7 +2473,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 3,
+   "completed_steps": 4,
    "total_steps": 15
   },
   {
@@ -2767,7 +2780,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S016-R3",
+ "next_checkpoint": "S018-R1",
  "supervisor_review": {
   "source_commit": "3469face3a88d280f2577f4ff936419408c1d248",
   "report": "implementation/reports/CODEX-3469fac.md",
@@ -2989,11 +3002,11 @@
   },
   {
    "id": "RF22",
-   "status": "partially_addressed",
+   "status": "implementation_complete_supervisor_pending",
    "priority": "P2",
    "owner": "S016",
    "checkpoint": "S016-R3",
-   "report": "implementation/reports/CODEX-6837831.md",
+   "report": "implementation/reports/S016.md#corrective-checkpoint-s016-r3--close-collection-and-diagnostic-boundary-evidence",
    "summary": "Incomplete real-boundary and independent canonical regression evidence",
    "followup_report": "implementation/reports/CODEX-3469fac.md"
   },
