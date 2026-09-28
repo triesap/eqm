@@ -26,6 +26,16 @@ struct ExtensionMeasure {
     bytes: usize,
 }
 
+/// Returns whether `value` is already Unicode NFC.
+///
+/// Authored v2 metadata is exact NFC and is rejected rather than normalized.
+/// Opaque bytes, observed payload text, source exports, diagnostics and
+/// attachment bytes are never passed through this predicate.
+#[must_use]
+pub fn is_nfc_text(value: &str) -> bool {
+    value.nfc().eq(value.chars())
+}
+
 fn normalized_text(value: &str, maximum: usize) -> bool {
     !value.is_empty()
         && value.len() <= maximum

@@ -34,18 +34,31 @@ pub enum VectorDiscipline {
     Absence,
     /// Canonical digest text.
     Digest,
+    /// Unordered v2 semantic set (`CanonicalSet`).
+    Set,
+    /// Ordered v2 sequence (`Vec`): order and multiplicity are significant.
+    Sequence,
+    /// Authored v2 text: JSON string input, canonical JSON output, exact NFC.
+    AuthoredText,
+    /// Opaque payload bytes (byte-escape literal input), hashed and preserved
+    /// exactly; never passed through the authored JSON-string validator.
+    OpaqueBytes,
     /// A semantic rule whose owning enforcement step is later than S015.
     SemanticRule,
 }
 
 impl VectorDiscipline {
     /// Every discipline, in declaration order.
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 10] = [
         Self::UnsignedInteger,
         Self::SignedInteger,
         Self::Timestamp,
         Self::Absence,
         Self::Digest,
+        Self::Set,
+        Self::Sequence,
+        Self::AuthoredText,
+        Self::OpaqueBytes,
         Self::SemanticRule,
     ];
 }
@@ -377,35 +390,53 @@ pub const REPRESENTATION_VECTORS: &[RepresentationVector] = &[
     RepresentationVector {
         id: "RV-SET-1",
         category: "set",
-        discipline: VectorDiscipline::SemanticRule,
+        discipline: VectorDiscipline::Set,
         input: "[\"b\",\"a\"]",
         outcome: accept("[\"a\",\"b\"]"),
-        note: "set members are canonically ordered",
+        note: "set members are canonically ordered by complete member bytes",
         expected_digest: None,
     },
     RepresentationVector {
         id: "RV-SET-2",
         category: "set",
-        discipline: VectorDiscipline::SemanticRule,
+        discipline: VectorDiscipline::Set,
         input: "[\"a\",\"a\"]",
         outcome: VectorOutcome::Reject,
         note: "duplicate set members are rejected, not collapsed",
         expected_digest: None,
     },
     RepresentationVector {
+        id: "RV-SET-3",
+        category: "set",
+        discipline: VectorDiscipline::Set,
+        input: "[\"a\\nb\",\"a b\"]",
+        outcome: accept("[\"a b\",\"a\\nb\"]"),
+        note: "escaped characters sort by canonical JCS bytes, not raw Rust Ord",
+        expected_digest: None,
+    },
+    RepresentationVector {
         id: "RV-SEQUENCE-1",
         category: "sequence",
-        discipline: VectorDiscipline::SemanticRule,
+        discipline: VectorDiscipline::Sequence,
         input: "[\"b\",\"a\"]",
         outcome: accept("[\"b\",\"a\"]"),
         note: "an ordered sequence preserves declared order",
         expected_digest: None,
     },
-    // Text.
+    RepresentationVector {
+        id: "RV-SEQUENCE-2",
+        category: "sequence",
+        discipline: VectorDiscipline::Sequence,
+        input: "[\"a\",\"a\"]",
+        outcome: accept("[\"a\",\"a\"]"),
+        note: "an ordered sequence preserves multiplicity instead of rejecting",
+        expected_digest: None,
+    },
+    // Text. Authored text carries JSON string input and canonical JSON output.
     RepresentationVector {
         id: "RV-TEXT-1",
         category: "text_unicode",
-        discipline: VectorDiscipline::SemanticRule,
+        discipline: VectorDiscipline::AuthoredText,
         input: "\"cafe\\u0301\"",
         outcome: VectorOutcome::Reject,
         note: "authored text must be NFC; it is rejected, never normalized",
@@ -414,20 +445,35 @@ pub const REPRESENTATION_VECTORS: &[RepresentationVector] = &[
     RepresentationVector {
         id: "RV-TEXT-2",
         category: "text_unicode",
-        discipline: VectorDiscipline::SemanticRule,
+        discipline: VectorDiscipline::AuthoredText,
         input: "\"caf\\u00e9\"",
-        outcome: accept("\"caf\\u00e9\""),
-        note: "NFC authored text is preserved and hashed as exact UTF-8 bytes",
+        outcome: accept("\"café\""),
+        note: "the escape denotes accepted NFC text; canonical output is literal UTF-8 café",
         expected_digest: None,
     },
+    // Opaque payload bytes use a byte-escape literal and are never validated as
+    // authored JSON strings. `\\xNN` denotes one raw byte.
     RepresentationVector {
         id: "RV-TEXT-3",
         category: "text_unicode",
-        discipline: VectorDiscipline::SemanticRule,
-        input: "opaque attachment bytes",
-        outcome: accept("opaque attachment bytes"),
-        note: "opaque Unicode-bearing/attachment payload bytes are not NFC-validated",
-        expected_digest: None,
+        discipline: VectorDiscipline::OpaqueBytes,
+        input: "cafe\\xcc\\x81",
+        outcome: accept("cafe\\xcc\\x81"),
+        note: "opaque decomposed UTF-8 payload bytes stay exact and are not NFC-validated",
+        expected_digest: Some(
+            "sha256:81ef060bcd98adc7824eb5c1ada83c32491b16018e11e79f00ab9d09e04b015a",
+        ),
+    },
+    RepresentationVector {
+        id: "RV-TEXT-4",
+        category: "text_unicode",
+        discipline: VectorDiscipline::OpaqueBytes,
+        input: "\\xff\\xfeopaque",
+        outcome: accept("\\xff\\xfeopaque"),
+        note: "opaque non-UTF-8 payload bytes are preserved exactly, not rejected",
+        expected_digest: Some(
+            "sha256:b3bfbd4d01baf352825439038d31a893815c41a0ad540bfd47795265c6923d74",
+        ),
     },
     // Digest domains.
     RepresentationVector {
@@ -647,10 +693,13 @@ mod tests {
                 "timestamp" => &[VectorDiscipline::Timestamp],
                 "absence" => &[VectorDiscipline::Absence],
                 "digest_domain" => &[VectorDiscipline::Digest],
+                "set" => &[VectorDiscipline::Set],
+                "sequence" => &[VectorDiscipline::Sequence],
+                "text_unicode" => &[
+                    VectorDiscipline::AuthoredText,
+                    VectorDiscipline::OpaqueBytes,
+                ],
                 "namespace"
-                | "set"
-                | "sequence"
-                | "text_unicode"
                 | "conjunction"
                 | "alternatives"
                 | "distinct_fail_pass"

@@ -10,7 +10,7 @@
 
 #![allow(missing_docs)]
 
-use crate::{WireInt, WireUint};
+use crate::{CanonicalSet, WireInt, WireUint, is_authored_nfc};
 use eqm_domain::{
     EvidenceCounts, PositiveCount, RepositoryIdentity, SelectorText, Sha256Digest, SourceCommit,
     UtcInstantV2, V2_UTC_PATTERN,
@@ -248,12 +248,65 @@ pub enum EvidenceSelectorV2Dto {
     },
 }
 
+impl EvidenceSelectorV2Dto {
+    /// Validates authored selector metadata as exact NFC without normalizing.
+    pub fn validate(&self) -> Result<(), V2DtoError> {
+        match self {
+            Self::Symbol { name, language } => {
+                validate_authored(name)?;
+                if let Some(language) = language {
+                    validate_authored(language)?;
+                }
+            }
+            Self::Route { path, method } => {
+                validate_authored(path)?;
+                if let Some(method) = method {
+                    validate_authored(method)?;
+                }
+            }
+            Self::Test {
+                framework,
+                test_id,
+                suite,
+            } => {
+                validate_authored(framework)?;
+                validate_authored(test_id)?;
+                if let Some(suite) = suite {
+                    validate_authored(suite)?;
+                }
+            }
+            Self::Inventory {
+                record_type,
+                key,
+                value,
+            } => {
+                validate_authored(record_type)?;
+                validate_authored(key)?;
+                if let Some(value) = value {
+                    validate_authored(value)?;
+                }
+            }
+            Self::Snapshot {
+                snapshot_id,
+                variant,
+            } => {
+                validate_authored(snapshot_id)?;
+                if let Some(variant) = variant {
+                    validate_authored(variant)?;
+                }
+            }
+            Self::Release { channel } => validate_authored(channel)?,
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ScopeSubjectV2Dto {
     Target { target: String },
     Provider { provider: String },
-    TargetSet { targets: BTreeSet<String> },
+    TargetSet { targets: CanonicalSet<String> },
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
@@ -343,8 +396,8 @@ pub struct EvidenceResultV2Dto {
     pub subject: EvidenceSubjectV2Dto,
     pub target: String,
     pub unit: String,
-    pub requirements: BTreeSet<String>,
-    pub facets: BTreeSet<String>,
+    pub requirements: CanonicalSet<String>,
+    pub facets: CanonicalSet<String>,
     pub kind: String,
     pub evidence_spec_digest: String,
     pub contract_digest: String,
@@ -378,12 +431,12 @@ pub struct EvidenceResultV2Dto {
     )]
     #[schemars(with = "String")]
     pub release_record_digest: Option<String>,
-    pub profile_values: Vec<ProfileValueV2Dto>,
+    pub profile_values: CanonicalSet<ProfileValueV2Dto>,
     pub producer: String,
     pub claimed_trust: String,
     pub observed_at: CanonicalInstant,
     pub payload: EvidencePayloadV2Dto,
-    pub attachments: BTreeSet<AttachmentV2Dto>,
+    pub attachments: CanonicalSet<AttachmentV2Dto>,
     pub result_digest: String,
 }
 
@@ -427,6 +480,80 @@ fn validate_digest(value: &str) -> Result<(), V2DtoError> {
         .map_err(|_| V2DtoError::InvalidDigest)
 }
 
+/// Rejects non-NFC authored v2 metadata without normalizing it.
+fn validate_authored(value: &str) -> Result<(), V2DtoError> {
+    if is_authored_nfc(value) {
+        Ok(())
+    } else {
+        Err(V2DtoError::InvalidVocabulary)
+    }
+}
+
+/// Rejects duplicate `(profile, dimension)` pairs and conflicting revisions
+/// within one profile. Ordering is handled separately by [`CanonicalSet`].
+fn validate_profile_values(values: &[ProfileValueV2Dto]) -> Result<(), V2DtoError> {
+    let mut pairs = BTreeSet::new();
+    let mut revisions: BTreeMap<&str, WireUint> = BTreeMap::new();
+    for value in values {
+        validate_authored(&value.profile)?;
+        validate_authored(&value.dimension)?;
+        validate_authored(&value.value)?;
+        if !pairs.insert((value.profile.as_str(), value.dimension.as_str())) {
+            return Err(V2DtoError::InvalidOrdering);
+        }
+        match revisions.get(value.profile.as_str()) {
+            Some(revision) if *revision != value.revision => {
+                return Err(V2DtoError::InvalidOrdering);
+            }
+            Some(_) => {}
+            None => {
+                revisions.insert(value.profile.as_str(), value.revision);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Rejects duplicate logical fact keys `(surface, dimension, key)`.
+fn validate_fact_keys(facts: &[RuntimeFactV2Dto]) -> Result<(), V2DtoError> {
+    let mut keys = BTreeSet::new();
+    for fact in facts {
+        if !keys.insert((
+            fact.surface.as_str(),
+            fact.dimension.as_str(),
+            fact.key.as_str(),
+        )) {
+            return Err(V2DtoError::InvalidOrdering);
+        }
+    }
+    Ok(())
+}
+
+/// Canonicalizes the unordered semantic arrays inside a runtime-facts object
+/// so the digest binds the canonical semantic set projection rather than the
+/// received array order. Duplicates are rejected, not collapsed.
+fn canonicalize_semantic_arrays(root: &mut Value) -> Result<(), V2DtoError> {
+    for key in ["profile_values", "facts"] {
+        let Some(Value::Array(items)) = root.get_mut(key) else {
+            continue;
+        };
+        let mut encoded: Vec<(Vec<u8>, Value)> = Vec::with_capacity(items.len());
+        for item in items.drain(..) {
+            let bytes =
+                serde_json_canonicalizer::to_vec(&item).map_err(|_| V2DtoError::InvalidDigest)?;
+            encoded.push((bytes, item));
+        }
+        encoded.sort_by(|left, right| left.0.cmp(&right.0));
+        for window in encoded.windows(2) {
+            if window[0].0 == window[1].0 {
+                return Err(V2DtoError::InvalidOrdering);
+            }
+        }
+        *items = encoded.into_iter().map(|(_, value)| value).collect();
+    }
+    Ok(())
+}
+
 fn validate_payload(payload: &EvidencePayloadV2Dto) -> Result<(), V2DtoError> {
     match payload {
         EvidencePayloadV2Dto::StructuralCheck { execution }
@@ -466,6 +593,15 @@ impl EvidenceResultV2Dto {
         if self.schema != crate::EVIDENCE_RESULT_SCHEMA_V2.to_string() {
             return Err(V2DtoError::InvalidSchema);
         }
+        validate_authored(&self.target)?;
+        validate_authored(&self.unit)?;
+        for requirement in &self.requirements {
+            validate_authored(requirement)?;
+        }
+        for facet in &self.facets {
+            validate_authored(facet)?;
+        }
+        validate_profile_values(&self.profile_values)?;
         let id = self
             .id
             .parse::<Sha256Digest>()
@@ -505,8 +641,13 @@ impl EvidenceResultV2Dto {
         self.producer
             .parse::<eqm_domain::ProducerRef>()
             .map_err(|_| V2DtoError::InvalidVocabulary)?;
+        let mut attachment_names = BTreeSet::new();
         for attachment in &self.attachments {
+            validate_authored(&attachment.name)?;
             validate_digest(&attachment.digest)?;
+            if !attachment_names.insert(attachment.name.as_str()) {
+                return Err(V2DtoError::InvalidOrdering);
+            }
         }
         validate_payload(&self.payload)
     }
@@ -547,10 +688,10 @@ pub struct RuntimeFactsV2Dto {
     pub provider: String,
     pub subject: EvidenceSubjectV2Dto,
     pub target: String,
-    pub profile_values: Vec<ProfileValueV2Dto>,
+    pub profile_values: CanonicalSet<ProfileValueV2Dto>,
     pub observed_at: CanonicalInstant,
     pub expires_at: CanonicalInstant,
-    pub facts: Vec<RuntimeFactV2Dto>,
+    pub facts: CanonicalSet<RuntimeFactV2Dto>,
     pub producer: String,
     pub claimed_trust: String,
     pub facts_digest: String,
@@ -577,6 +718,7 @@ impl RuntimeFactsV2Dto {
             .as_object_mut()
             .ok_or(V2DtoError::Json)?
             .remove("facts_digest");
+        canonicalize_semantic_arrays(&mut canonical)?;
         let canonical =
             serde_json_canonicalizer::to_vec(&canonical).map_err(|_| V2DtoError::InvalidDigest)?;
         if Sha256Digest::hash_content(&canonical) != claimed {
@@ -643,15 +785,8 @@ impl RuntimeFactsV2Dto {
         if self.facts.len() > MAX_RUNTIME_FACTS {
             return Err(V2DtoError::InvalidLimits);
         }
-        if !self.profile_values.windows(2).all(|pair| pair[0] < pair[1]) {
-            return Err(V2DtoError::InvalidOrdering);
-        }
-        if !self.facts.windows(2).all(|pair| {
-            (&pair[0].surface, &pair[0].dimension, &pair[0].key)
-                < (&pair[1].surface, &pair[1].dimension, &pair[1].key)
-        }) {
-            return Err(V2DtoError::InvalidOrdering);
-        }
+        validate_profile_values(&self.profile_values)?;
+        validate_fact_keys(&self.facts)?;
         for fact in &self.facts {
             eqm_domain::SurfaceId::new(fact.surface.as_str())
                 .map_err(|_| V2DtoError::InvalidFact)?;
@@ -742,7 +877,7 @@ pub struct InventoryV2Dto {
     pub target: String,
     pub generated_at: CanonicalInstant,
     pub completeness: String,
-    pub entries: Vec<InventoryEntryV2Dto>,
+    pub entries: CanonicalSet<InventoryEntryV2Dto>,
     pub diagnostics: Vec<DiagnosticV2Dto>,
     pub inventory_digest: String,
 }
@@ -768,6 +903,12 @@ impl InventoryV2Dto {
         }
         if self.entries.len() > 250_000 {
             return Err(V2DtoError::InvalidLimits);
+        }
+        let mut keys = BTreeSet::new();
+        for entry in &self.entries {
+            if !keys.insert((entry.kind.as_str(), entry.key.as_str())) {
+                return Err(V2DtoError::InvalidOrdering);
+            }
         }
         validate_digest(&self.adapter_digest)?;
         validate_digest(&self.inventory_digest)?;
@@ -952,8 +1093,8 @@ mod tests {
             subject: subject(),
             target: "web".to_owned(),
             unit: "unit.test".to_owned(),
-            requirements: BTreeSet::from(["R18".to_owned()]),
-            facets: BTreeSet::from(["facet.a".to_owned()]),
+            requirements: CanonicalSet::from_members(vec!["R18".to_owned()])?,
+            facets: CanonicalSet::from_members(vec!["facet.a".to_owned()])?,
             kind: "test".to_owned(),
             evidence_spec_digest: digest("spec"),
             contract_digest: digest("contract"),
@@ -963,14 +1104,14 @@ mod tests {
             adapter_digest: None,
             runtime_facts_digest: None,
             release_record_digest: None,
-            profile_values: Vec::new(),
+            profile_values: CanonicalSet::empty(),
             producer: "producer://ci/runner/1".to_owned(),
             claimed_trust: "signed_ci".to_owned(),
             observed_at: instant("2026-01-02T03:04:05Z")?,
             payload: EvidencePayloadV2Dto::Test {
                 execution: execution()?,
             },
-            attachments: BTreeSet::new(),
+            attachments: CanonicalSet::empty(),
             result_digest: id,
         })
     }
@@ -984,7 +1125,7 @@ mod tests {
             target: "web".to_owned(),
             generated_at: instant("2026-01-02T03:04:05Z")?,
             completeness: "complete".to_owned(),
-            entries: Vec::new(),
+            entries: CanonicalSet::empty(),
             diagnostics: Vec::new(),
             inventory_digest: digest("inventory"),
         })
@@ -1016,15 +1157,15 @@ mod tests {
             provider: "runtime.fixture".to_owned(),
             subject: subject(),
             target: "web".to_owned(),
-            profile_values: Vec::new(),
+            profile_values: CanonicalSet::empty(),
             observed_at: instant("2026-01-02T03:04:05Z")?,
             expires_at: instant("2026-01-03T03:04:05Z")?,
-            facts: vec![RuntimeFactV2Dto {
+            facts: CanonicalSet::from_members(vec![RuntimeFactV2Dto {
                 surface: "account.create.signup.identifier".to_owned(),
                 dimension: "availability".to_owned(),
                 key: "version".to_owned(),
                 value: FactValueV2Dto::Integer(WireInt::new(i64::MAX)),
-            }],
+            }])?,
             producer: "producer://runtime/fixture/snapshot-1".to_owned(),
             claimed_trust: "signed_ci".to_owned(),
             facts_digest: String::new(),
@@ -1262,7 +1403,16 @@ mod tests {
             attributes: BTreeMap::new(),
             source: "src/file.rs".to_owned(),
         };
-        bounded.entries = vec![entry; 250_001];
+        // Distinct logical keys keep the count bound, not duplicate rejection,
+        // as the check under test.
+        bounded.entries = CanonicalSet::from_members(
+            (0..250_001)
+                .map(|index| InventoryEntryV2Dto {
+                    key: format!("key-{index:06}"),
+                    ..entry.clone()
+                })
+                .collect(),
+        )?;
         assert_eq!(bounded.validate_structure(), Err(V2DtoError::InvalidLimits));
         Ok(())
     }
@@ -1273,17 +1423,19 @@ mod tests {
             provider: "runtime.fixture".to_owned(),
             subject: subject(),
             target: "web".to_owned(),
-            profile_values: Vec::new(),
+            profile_values: CanonicalSet::empty(),
             observed_at: instant("2026-01-02T03:04:05Z")?,
             expires_at: instant("2026-01-03T03:04:05Z")?,
-            facts: (0..count)
-                .map(|index| RuntimeFactV2Dto {
-                    surface: "account.create.signup.identifier".to_owned(),
-                    dimension: "availability".to_owned(),
-                    key: format!("k{index:06}"),
-                    value: FactValueV2Dto::Boolean(true),
-                })
-                .collect(),
+            facts: CanonicalSet::from_members(
+                (0..count)
+                    .map(|index| RuntimeFactV2Dto {
+                        surface: "account.create.signup.identifier".to_owned(),
+                        dimension: "availability".to_owned(),
+                        key: format!("k{index:06}"),
+                        value: FactValueV2Dto::Boolean(true),
+                    })
+                    .collect(),
+            )?,
             producer: "producer://runtime/fixture/snapshot-1".to_owned(),
             claimed_trust: "signed_ci".to_owned(),
             facts_digest: String::new(),

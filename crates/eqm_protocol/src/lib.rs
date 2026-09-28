@@ -4,6 +4,7 @@
 
 mod adapter;
 mod attestation;
+mod canonical;
 mod evidence;
 mod records;
 mod report;
@@ -14,6 +15,9 @@ mod strict;
 pub mod v2;
 mod wire;
 
+pub use canonical::{
+    CanonicalCollectionError, CanonicalSet, canonical_member_bytes, is_authored_nfc,
+};
 pub use strict::{
     MAX_JSON_BYTES, StrictJsonError, from_slice as strict_from_slice,
     from_slice_limited as strict_from_slice_limited, parse_strict, parse_strict_limited,

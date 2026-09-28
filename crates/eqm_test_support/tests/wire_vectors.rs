@@ -5,7 +5,7 @@
 //! a newly added applicable vector cannot be silently skipped.
 
 use eqm_domain::{Sha256Digest, UtcInstantV2};
-use eqm_protocol::{WireInt, WireUint, v2};
+use eqm_protocol::{CanonicalSet, WireInt, WireUint, is_authored_nfc, v2};
 use eqm_test_support::{
     REPRESENTATION_VECTORS, RepresentationVector, VectorDiscipline, VectorOutcome,
 };
@@ -57,6 +57,22 @@ fn every_applicable_representation_vector_executes() -> Result<(), Box<dyn Error
             VectorDiscipline::Digest => {
                 executed += 1;
                 run_digest(vector)?;
+            }
+            VectorDiscipline::Set => {
+                executed += 1;
+                run_set(vector)?;
+            }
+            VectorDiscipline::Sequence => {
+                executed += 1;
+                run_sequence(vector)?;
+            }
+            VectorDiscipline::AuthoredText => {
+                executed += 1;
+                run_authored_text(vector)?;
+            }
+            VectorDiscipline::OpaqueBytes => {
+                executed += 1;
+                run_opaque_bytes(vector)?;
             }
         }
     }
@@ -123,4 +139,86 @@ fn run_absence(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
         Err(_) => None,
     };
     check(vector, rendered)
+}
+
+/// Executes a semantic-set vector through the real `CanonicalSet` boundary:
+/// permutations are accepted and emitted in canonical member-byte order, and
+/// duplicates reject before collection.
+fn run_set(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
+    let rendered = match serde_json::from_str::<Vec<String>>(vector.input) {
+        Ok(members) => match CanonicalSet::from_members(members) {
+            Ok(set) => Some(serde_json::to_string(&set)?),
+            Err(_) => None,
+        },
+        Err(_) => None,
+    };
+    check(vector, rendered)
+}
+
+/// Executes an ordered-sequence vector through a plain `Vec`: order and
+/// multiplicity are preserved.
+fn run_sequence(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
+    let rendered = match serde_json::from_str::<Vec<String>>(vector.input) {
+        Ok(members) => Some(serde_json::to_string(&members)?),
+        Err(_) => None,
+    };
+    check(vector, rendered)
+}
+
+/// Executes an authored-text vector: JSON string input, exact NFC acceptance
+/// and canonical JSON string output. No normalization is applied.
+fn run_authored_text(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
+    let rendered = match serde_json::from_str::<String>(vector.input) {
+        Ok(text) if is_authored_nfc(&text) => Some(serde_json::to_string(&text)?),
+        _ => None,
+    };
+    check(vector, rendered)
+}
+
+/// Executes an opaque-byte vector against literal bytes and their exact digest.
+/// The input is a byte-escape literal where `\xNN` denotes one raw byte; it is
+/// never routed through the authored JSON-string validator.
+fn run_opaque_bytes(vector: &RepresentationVector) -> Result<(), Box<dyn Error>> {
+    let VectorOutcome::Accept { output } = vector.outcome else {
+        return Err(format!("{}: opaque-byte vector must accept", vector.id).into());
+    };
+    let bytes = decode_byte_literal(vector.input);
+    let expected = decode_byte_literal(output);
+    assert_eq!(bytes, expected, "{}: opaque bytes changed", vector.id);
+    let digest = Sha256Digest::hash_content(&bytes).to_string();
+    if let Some(expected_digest) = vector.expected_digest {
+        assert_eq!(digest, expected_digest, "{}: opaque digest", vector.id);
+    }
+    Ok(())
+}
+
+/// Decodes a byte-escape literal: `\xNN` yields one raw byte and every other
+/// character contributes its exact UTF-8 bytes.
+fn decode_byte_literal(literal: &str) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(literal.len());
+    let mut characters = literal.chars();
+    while let Some(character) = characters.next() {
+        if character == '\\' {
+            match characters.next() {
+                Some('x') => {
+                    let high = characters.next().and_then(|digit| digit.to_digit(16));
+                    let low = characters.next().and_then(|digit| digit.to_digit(16));
+                    match (high, low) {
+                        (Some(high), Some(low)) => bytes.push((high * 16 + low) as u8),
+                        _ => bytes.push(b'\\'),
+                    }
+                }
+                Some(other) => {
+                    bytes.push(b'\\');
+                    let mut buffer = [0_u8; 4];
+                    bytes.extend_from_slice(other.encode_utf8(&mut buffer).as_bytes());
+                }
+                None => bytes.push(b'\\'),
+            }
+        } else {
+            let mut buffer = [0_u8; 4];
+            bytes.extend_from_slice(character.encode_utf8(&mut buffer).as_bytes());
+        }
+    }
+    bytes
 }

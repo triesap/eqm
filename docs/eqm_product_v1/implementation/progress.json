@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S016",
+ "next_step": "S017",
  "implementation": "in_progress",
- "local_verification": "standard_passed_RF19_pinned_pending_S016",
+ "local_verification": "standard_passed_S016_complete_pending_review",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -401,16 +401,27 @@
   },
   {
    "id": "S016",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
+   "report": "implementation/reports/S016.md",
+   "verification": [
+    "cargo audit --deny warnings",
+    "cargo deny check",
+    "cargo xtask schemas generate",
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo test --all-targets --locked -p eqm_manifest -p eqm_protocol -p eqm_domain -p eqm_test_support",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "cargo xtask schemas check",
+    "git diff --check"
+   ],
    "baseline_exceptions": [],
    "preparatory_checkpoints": [
     {
      "id": "S016-P1",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "ed06989e45a82c24d94d03f0a85f02905860c069",
      "report": "implementation/reports/S016.md#prerequisite-checkpoint-s016-p1",
      "verification": [
       "cargo check --workspace --all-targets --locked",
@@ -421,7 +432,9 @@
      ],
      "implementation_status": "committed"
     }
-   ]
+   ],
+   "implementation_status": "committed",
+   "supervisor_status": "pending_review"
   },
   {
    "id": "S017",
@@ -2316,7 +2329,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S016",
+ "active_step": "S017",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2331,7 +2344,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 3,
+   "completed_steps": 4,
    "total_steps": 15
   },
   {
@@ -2638,7 +2651,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S016",
+ "next_checkpoint": "S017",
  "supervisor_review": {
   "source_commit": "121622ff61a18efb0afd1dc9a13264fc2a97f259",
   "report": "implementation/reports/CODEX-121622f.md",
@@ -2831,7 +2844,8 @@
    "checkpoint": "S016-P1",
    "report": "implementation/reports/S016.md#prerequisite-checkpoint-s016-p1",
    "origin_step": "S005",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "commit_sha": "ed06989e45a82c24d94d03f0a85f02905860c069"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9"

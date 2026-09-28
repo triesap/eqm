@@ -89,6 +89,13 @@
       ],
       "type": "string"
     },
+    "CanonicalSet_string": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
     "EvidenceSubjectV2Dto": {
       "additionalProperties": false,
       "properties": {
@@ -167,11 +174,7 @@
               "type": "string"
             },
             "targets": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array",
-              "uniqueItems": true
+              "$ref": "#/$defs/CanonicalSet_string"
             }
           },
           "required": [

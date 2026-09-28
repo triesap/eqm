@@ -73,7 +73,7 @@ pub use entity::{
     Binding, Capability, ComparisonOperator, Description, EntityBuildError, Exposure, ExtensionKey,
     ExtensionNamespace, ExtensionValue, Extensions, Fragment, FragmentUse, Journey,
     MembershipOperator, Requirement, RequirementStatement, Revision, RouteSelector, SelectorText,
-    Surface, Target, Title, Transition, TransitionTrigger,
+    Surface, Target, Title, Transition, TransitionTrigger, is_nfc_text,
 };
 pub use evidence::{
     EvidenceSelector, EvidenceSpecBuildError, EvidenceSpecification, PositiveCount,
