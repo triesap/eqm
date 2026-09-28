@@ -1,5 +1,121 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-004 — Accept S015 and resume canonical collection work
+
+**Date/author:** 2026-09-28, Codex supervisor under owner delegation.
+**Reviewed source HEAD:** `121622ff61a18efb0afd1dc9a13264fc2a97f259`.
+**Disposition:** S015 and R1–R9 are accepted for their allocated implementation
+scope. RF01–RF18 are closed for that scope; later relationship/trust/evaluator
+acceptance remains with its original owning steps. S001–S015 are complete.
+The [review](reports/CODEX-121622f.md) records independent verification and the
+remaining dependency-policy finding RF19. No release readiness is implied.
+
+DEV-002/DEV-003 representation, authority and continuation decisions remain
+binding except their obsolete active cursors and pending S015 acceptance.
+Preserve all 211 numbered step IDs and the sole governing sequence.
+
+### Dependency decision and prerequisite
+
+Codex approves the exact-pinned dev-only `jsonschema` 0.48.5 dependency with
+its disabled default retrieval features and the documented Zlib license
+allowance for the reviewed dependency graph. Local manifests/license text,
+resolved features, live advisory audit and license/source checks were reviewed.
+This does not authorize future license-policy exceptions by Pi. The additional
+locked packages are test tooling, not an approved new production dependency.
+
+**RF19:** `cargo deny check` fails because eqm_engine's eqm_test_support path
+dev-dependency has no version. This originated in S005 and predates R6–R9;
+fix it now rather than waive it or wait for the release cycle. The actual
+command surface has no `cargo xtask supply-chain` subcommand. Use `cargo audit
+--deny warnings` and `cargo deny check`; `cargo xtask verify` owns the combined
+extended release lane. Do not add a new command solely to fit an inaccurate
+handback command name. Advisory availability was demonstrated in this review.
+
+| Checkpoint | Scope | Definition of green |
+| --- | --- | --- |
+| S016-P1 | Repair RF19 as a prerequisite to S016: add `version = "=0.1.0"` to the existing eqm_engine path dev-dependency on eqm_test_support. Preserve package identity, path and dependency direction. | Locked workspace check, full `cargo deny check`, `cargo audit --deny warnings`, standard `cargo xtask check` and `git diff --check` pass. No wildcard/duplicate/advisory threshold is weakened. Record any future live-DB outage distinctly; do not convert it into a successful audit. |
+
+One small green commit for S016-P1, using `fix: pin the engine test support
+dependency`. No application source changes are needed in this prerequisite.
+Record it under S016 without marking the numbered S016 complete. Then execute
+S016 itself and every dependency-unblocked successor through S211. An existing
+allowed duplicate-version warning is not a waiver or a new failure.
+
+### S016 decisions resolved before delegation
+
+The existing S016 is enforcement work, not merely adding more catalog strings.
+Its already approved set/sequence/text rules require real v2 consumers and
+executable controls. Preserve v1 schemas, readers, canonical bytes and hashes.
+Do not change the existing v1 graph/fragment projection in place. Introduce
+reusable v2 canonical collection/text boundaries now; later component-projection
+steps consume them without silently reinterpreting v1.
+
+For the five allocated v2 families, use this classification:
+
+| Collection | Semantics |
+| --- | --- |
+| Subject target sets; evidence requirements, facets and attachments | Unordered sets. Reject duplicate values before any BTreeSet/map collection can erase them; retain existing attachment-name uniqueness. |
+| Evidence/runtime profile_values; runtime facts; inventory entries | Unordered semantic records. Canonicalize by each complete member's canonical JSON UTF-8 bytes, preserving existing logical-key uniqueness independently of ordering. Profile/dimension duplicates or conflicting revisions within one profile, duplicate fact (surface, dimension, key), and duplicate inventory (kind, key) do not become multiple valid records. |
+| Execution attempts, diagnostic lists and related-location lists | Ordered sequences. Preserve input order and multiplicity; retain existing attempt-index validity checks. Do not sort/deduplicate them through a generic collection helper. |
+| Object maps, including inventory attributes | Strict duplicate-member ingestion plus existing JCS object-key rules, not an array-set sorting algorithm. |
+
+Accept permutations of a valid semantic set and emit the same canonical
+representation; reject duplicate members rather than silently collapsing them.
+Sort by full canonical member bytes, not Rust derived Ord, field insertion order,
+a selected key tuple or unescaped string ordering. Separate a semantic record's
+uniqueness key from its canonical ordering key. Keep original received bytes for
+raw identity/signature use; canonicalization produces a distinct semantic view.
+Runtime-facts digest validation must use the approved canonical semantic set
+projection while preserving the original bytes and all S015 numeric/time/bound
+checks. Do not redefine digest domains or introduce later trust authority here.
+
+Authored metadata follows ADR-0013's NFC rejection rule. Reuse existing typed
+validators and apply the rule to v2 equivalents of authored identifiers, selector
+metadata, profile/symbolic values and reviewer metadata; preserve their existing
+syntax constraints. This does not authorize blanket NFC validation of observed
+payload text, source exports, diagnostic text or attachment bytes. Keep opaque
+payload bytes exact, including decomposed UTF-8 and arbitrary non-UTF-8 bytes.
+Where existing types impose additional restrictions, preserve them rather than
+broadening a v1 reader. Document the field classification and test the actual
+v2 boundaries, not only a standalone demonstration helper.
+
+Resolve the frozen vector notation explicitly: authored-text vectors carry JSON
+string input and canonical JSON output. In RV-TEXT-2, escaped `caf\u00e9` decodes
+to accepted NFC text and canonical output contains literal UTF-8 `café` between
+JSON quotes. Pi is authorized to correct that expected output and its explanatory
+note, retaining the vector ID and recording the change. This changes the
+representation of the same accepted text, not Unicode normalization. Opaque-byte
+vectors need a distinct execution discipline and literal byte/hash expectations;
+they must not be passed through the authored JSON-string validator. Add decomposed
+and non-UTF-8 controls. JCS string serialization and original bytes are different
+representations; see [RFC 8785](https://www.rfc-editor.org/rfc/rfc8785.html#section-3.2.2.2).
+
+S016 must execute every set/sequence/authored-text/opaque vector by explicit
+category/discipline, compare exact outputs, test permutations and duplicates at
+real nested v2 ingress, and prove order sensitivity for sequences. Include cases
+where escaped characters and object field ordering distinguish canonical-byte
+ordering from incidental Rust order. Regenerate/check affected v2 schemas and
+keep the 22 v1 documents byte-identical. No new placeholder schema family is
+required. S027 retains complete cross-domain hash/provenance corpus closure.
+
+### Continuation and evidence
+
+The next session begins S016-P1, then S016–S211. S143 remains intermediate.
+Codex owns changed scope/representation/sequence/license/acceptance decisions;
+Pi may choose ordinary internal mechanics within these settled rules. Keep one
+active step, small context working sets, available session compaction, and a
+verified report/log/commit checkpoint after each slice. Do not stop voluntarily
+at the end of S016 or P02 when continuation is possible. An actual context limit
+is INTERRUPTED; an unavailable required external fact is a dependency blocker.
+Preserve Q01–Q15 gates at their first dependent step and do not invent product,
+cohort, policy, credential or host facts. No deployment/publication/signing or
+optional-native activation is authorized.
+
+Model reporting must distinguish configured defaults from observed runtime
+selection. Record the actual session identity if exposed; otherwise say runtime
+identity is unverified. Do not silently switch models. No need to expose unrelated
+agent state or credentials to establish this fact.
+
 ## DEV-003 — Close version ingress and prove S015 conformance
 
 **Date/author:** 2026-09-27, Codex supervisor under owner delegation.
@@ -982,7 +1098,7 @@ cargo test --locked -p eqm_application --doc
 git diff --check
 ```
 
-**Admission gate:** DEV-003: S015 remains open; complete S015-R6 through S015-R9 before S016. Once objective repair checks pass, proceed through dependency-unblocked S016–S211 with supervisor acceptance separately pending review. Codex owns scope/representation/dependency decisions; Pi cannot change them or waive gates.
+**Admission gate:** DEV-004: S015 accepted at 121622f for its allocated scope. Retain corrective history; proceed to S016-P1 and S016. Later semantic/product acceptance remains with its owning steps.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.
@@ -1011,25 +1127,35 @@ Add canonical set and Unicode vectors.
 Distinguish semantic unordered collections from ordered scenarios.
 
 ### 3. Exact scope of code changes
-Add shared canonicalization vectors and enforce approved sorting for semantic sets while preserving sequence order and Unicode data.
+Complete DEV-004 prerequisite S016-P1 to pin the existing engine test-support dependency without relaxing policy. Then execute set/sequence/authored-text/opaque-byte vectors and enforce the approved v2 field classifications, full canonical member-byte ordering and duplicate rejection at real ingress/serialization boundaries. Preserve v1 projections and original raw bytes; distinguish logical-key uniqueness from ordering and semantic canonicalization from raw identity.
 
 ### 4. Files/modules likely involved
-- `crates/eqm_manifest/src/canonical/`
+- `crates/eqm_manifest/src/canonical.rs`
 - `crates/eqm_protocol/src/`
+- `crates/eqm_domain/src/`
+- `crates/eqm_test_support/`
+- `crates/eqm_engine/Cargo.toml`
+- `schemas/v2/`
 - `tests/fixtures/`
 
 ### 5. Unit tests or integration tests required
-Input-order permutations of sets preserve identity; scenario-order changes differ; composed/decomposed Unicode follows the approved non-normalizing wire rule.
+Valid set permutations produce identical canonical bytes; exact and logical-key duplicates reject before collection. Ordered attempts/diagnostics/related locations preserve sequence and multiplicity. Escaped strings and object members test canonical-byte ordering. Authored NFC accepts, decomposed text rejects without normalization; opaque decomposed/non-UTF-8 bytes remain exact. Every applicable vector executes by explicit discipline with exact outputs. Existing S015 controls and v1 schema/byte preservation remain green; dependency audit/policy passes at S016-P1.
 
 ### 6. Verification commands
 ```sh
+cargo audit --deny warnings
+cargo deny check
+cargo xtask schemas generate
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_protocol
+cargo test --all-targets --locked -p eqm_manifest -p eqm_protocol -p eqm_domain -p eqm_test_support
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
+cargo xtask schemas check
 git diff --check
 ```
+
+**Admission gate:** DEV-004: first complete S016-P1 as one independently green prerequisite commit; then S016 itself and ordered unblocked successors through S211. Codex has settled collection/text classification and the reviewed license allowance; Pi cannot waive policy or change these contracts.
 
 ### 7. Expected result
 Canonicalization is executable protocol behavior rather than serializer convention.

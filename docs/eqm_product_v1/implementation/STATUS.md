@@ -1,56 +1,39 @@
 # Verification and implementation status
 
-Imported plan revision 2; current amendment DEV-003, 2026-09-27.
-Reviewed source HEAD: `7d44724abba2fa90baf806563da0a692c5bb5857`.
+Imported plan revision 2; current amendment DEV-004, 2026-09-28.
+Reviewed source: `121622ff61a18efb0afd1dc9a13264fc2a97f259`.
 
-## Current implementation
+S001–S015 are **complete and reviewed for their allocated scope**. S015 R1–R9
+receipts are retained and the R9 SHA is backfilled. RF01–RF18 are closed for
+that scope. The first unfinished numbered step is S016; its prerequisite
+**S016-P1** fixes the earlier unversioned engine test-support dependency (RF19).
+No S016 implementation has started. Continue ordered unblocked work to S211.
 
-S001–S014 are recorded complete. S015 is **implementation-complete, pending
-supervisor acceptance** of the new HEAD: corrective commits R1–R9 exist and
-R6–R9 closed RF11–RF18 with literal-input, fake-provider and real-validator
-controls. S016 is the next step and is dependency-unblocked. R1–R9 receipts are
-retained; no history is rewritten and no accepted repair is discarded.
+EQM-P01 has 12 complete steps; EQM-P02 has three complete steps (S013–S015).
+P03–P15 remain pending. Preparatory/corrective checkpoints preserve all 211 IDs.
 
-v1 integer acceptance is restored; 22 v1 schemas remain unchanged; five v2
-protocol families, version identity, exact integer endpoints, canonical runtime
-time/null handling, exact version/kind reader isolation, nested inventory
-validation and end-to-end runtime-facts 16 MiB/100000-fact bounds with retained
-v2 subject checks are present, and the five v2 schemas constrain exact markers
-with a minimal AutoSi pattern verified by a real Draft 2020-12 validator.
-Remaining defects involve regression controls that bypass their claimed
-boundary and the evidence/ledger reconciliation. See the
-[review](reports/CODEX-7d44724.md) for all findings and earlier dispositions.
+Independent standard check, application doctest, fresh CLI build and actual
+version-ingress probes pass. Live `cargo audit --deny warnings` passes.
+`cargo deny check` fails only the wildcard dependency ban; licenses, sources and
+advisories pass. The reviewed dev-only validator and its documented Zlib license
+allowance are supervisor-approved. No gate is waived. There is no implemented
+`cargo xtask supply-chain` command; use the actual component commands.
 
-EQM-P01 has 12 numbered steps recorded complete. EQM-P02 has S013–S014 complete
-and S015 implementation-complete pending acceptance; P03–P15 are pending.
-Corrective checkpoints retain S015 traceability and do not increase the 211
-numbered steps.
+All 22 v1 schemas remain unchanged; five v2 schemas have generated parity and
+real validator coverage. R6–R9 raw logs are available externally; limits on
+historical red-before-green claims are in the [review](reports/CODEX-121622f.md).
 
-Codex owns scope, contract, sequence and acceptance decisions; Pi implements.
-S015's objective R6–R9 gates passed, so S015 is recorded implementation-complete
-and dependency-unblocked work continues from S016 while supervisor acceptance of
-the new HEAD remains separately pending. No stop at S143 or invented approval
-gate. Existing external-evidence prerequisites and optional-native boundaries
-remain.
+S016 owns collection/text enforcement, S025/S059/S061 relationship acceptance,
+S027 full hash corpus, and S069 freshness arithmetic. AC/RA references do not
+close acceptance. Extended verification, Linux execution, live product evidence
+and operational authorization are unverified. This is not a release candidate;
+human release testing is not the next action.
 
-## Independent verification and limits
+Codex owns scope/representation/sequence/license/acceptance decisions. Pi generates
+implementation and records evidence, continuing through unblocked steps without
+another approval gate at S016, P02 or S143. Real external prerequisites still
+block their first dependent step. Optional native work remains unactivated.
 
-At the reviewed HEAD, `cargo xtask check`, application doctests and the CLI build
-passed. The actual-ingress CLI probe nevertheless accepted unsupported v2
-workspace/lock markers. Original v1 schemas are byte-identical. Pi's historical
-per-checkpoint command claims were reviewed; separate raw R1–R5 logs were not
-located, so they are not independently attested. Current-HEAD logs are retained
-externally. Planning verification is recorded with the supervisor receipt.
-
-AC001–AC064 and RA01–RA21 are not closed merely by test counts or references.
-Extended verification, Linux x86_64 execution, real product acceptance and
-operational authorization remain unverified. Initial execution/storage targets
-remain macOS arm64 and Linux x86_64. This is not a release candidate; human
-release testing is not the next action.
-
-## Governing artifacts
-
-COMMIT_SEQUENCE.md is the sole governing sequence; steps.json and chapter files
-are synchronized views. progress.json records live state; DEVIATIONS.md records
-DEV-001–DEV-003. Keep original delivery hashes unchanged. Use the structure-only
-package validator for intentional implementation/planning updates.
+COMMIT_SEQUENCE.md is the sole governing plan; steps.json/chapter files are
+synchronized views, progress.json is live state, and DEVIATIONS.md records
+DEV-001–DEV-004. Preserve original delivery hashes; use structure-only validation.

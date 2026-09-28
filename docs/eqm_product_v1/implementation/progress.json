@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S016",
  "implementation": "in_progress",
- "local_verification": "not_run",
+ "local_verification": "standard_passed_supply_chain_bans_failure_RF19",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -224,8 +224,8 @@
   },
   {
    "id": "S015",
-   "status": "implementation_complete_pending_supervisor_acceptance",
-   "commit_sha": "3da0b50aeb7cf7f8b23f8f5ebd47f043892ed00b",
+   "status": "complete",
+   "commit_sha": "121622ff61a18efb0afd1dc9a13264fc2a97f259",
    "report": "implementation/reports/S015.md",
    "verification": [
     "cargo fmt --all --check",
@@ -237,7 +237,7 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "supervisor_status": "acceptance_pending_review_of_new_HEAD",
+   "supervisor_status": "accepted_for_allocated_scope",
    "corrective_checkpoints": [
     {
      "id": "S015-R1",
@@ -254,7 +254,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed",
-     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R2",
@@ -272,7 +272,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed",
-     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R3",
@@ -290,7 +290,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed",
-     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R4",
@@ -306,7 +306,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed",
-     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R5",
@@ -326,7 +326,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed",
-     "supervisor_status": "reviewed_with_remaining_obligations_in_DEV_003"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R6",
@@ -341,7 +341,8 @@
       "cargo xtask check",
       "git diff --check"
      ],
-     "implementation_status": "committed"
+     "implementation_status": "committed",
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R7",
@@ -355,7 +356,8 @@
       "cargo xtask check",
       "git diff --check"
      ],
-     "implementation_status": "committed"
+     "implementation_status": "committed",
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R8",
@@ -371,12 +373,13 @@
       "cargo deny check licenses",
       "git diff --check"
      ],
-     "implementation_status": "committed"
+     "implementation_status": "committed",
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S015-R9",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "121622ff61a18efb0afd1dc9a13264fc2a97f259",
      "report": "implementation/reports/S015.md#s015-r9",
      "verification": [
       "cargo fmt --all --check",
@@ -389,10 +392,12 @@
       "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
       "git diff --check"
      ],
-     "implementation_status": "committed"
+     "implementation_status": "committed",
+     "supervisor_status": "accepted_for_allocated_scope"
     }
    ],
-   "implementation_status": "implementation_complete_pending_supervisor_acceptance"
+   "implementation_status": "complete",
+   "supervisor_review": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "S016",
@@ -400,7 +405,16 @@
    "commit_sha": null,
    "report": null,
    "verification": [],
-   "baseline_exceptions": []
+   "baseline_exceptions": [],
+   "preparatory_checkpoints": [
+    {
+     "id": "S016-P1",
+     "status": "pending",
+     "commit_sha": null,
+     "report": null,
+     "verification": []
+    }
+   ]
   },
   {
    "id": "S017",
@@ -2310,7 +2324,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 2,
+   "completed_steps": 3,
    "total_steps": 15
   },
   {
@@ -2565,21 +2579,21 @@
    "status": "fixed",
    "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
    "summary": "strict ingestion honors each caller bound",
-   "supervisor_status": "partial_remaining_in_RF13_RF16"
+   "supervisor_status": "accepted_for_original_scope"
   },
   {
    "id": "CR02",
    "status": "fixed",
    "commit": "ba883c62a34da477bf682b32e5a24bfbb8d3bc6c",
    "summary": "external inventory and release ingress use the strict boundary",
-   "supervisor_status": "partial_remaining_in_RF13_RF16"
+   "supervisor_status": "accepted_for_original_scope"
   },
   {
    "id": "CR03",
    "status": "fixed",
    "commit": "54bf3259cb1dc789b57c610db92320de8410e109",
    "summary": "concrete v2 representation vectors and synchronized ADR",
-   "supervisor_status": "partial_remaining_obligations_in_DEV_002"
+   "supervisor_status": "accepted_for_original_scope"
   },
   {
    "id": "CR04",
@@ -2600,7 +2614,7 @@
    "status": "fixed",
    "commit": "84435fb53ffc75b601dc94695143512eeb2fc219",
    "summary": "narrow ReadCapabilities view and corrected S012 claim",
-   "supervisor_status": "partial_remaining_in_RF13_RF16"
+   "supervisor_status": "accepted_for_original_scope"
   },
   {
    "id": "CR07",
@@ -2614,174 +2628,203 @@
    "status": "fixed",
    "commit": "cf9ea806f9408d86700816b4ca463327bb353391",
    "summary": "ledger and report reconciliation (this checkpoint)",
-   "supervisor_status": "partial_remaining_obligations_in_DEV_002"
+   "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S016",
+ "next_checkpoint": "S016-P1",
  "supervisor_review": {
-  "source_commit": "7d44724abba2fa90baf806563da0a692c5bb5857",
-  "report": "implementation/reports/CODEX-7d44724.md",
-  "status": "changes_required",
-  "amendment": "DEV-003",
+  "source_commit": "121622ff61a18efb0afd1dc9a13264fc2a97f259",
+  "report": "implementation/reports/CODEX-121622f.md",
+  "status": "accepted_S015_followup_RF19",
+  "amendment": "DEV-004",
   "standard_check": "passed",
   "application_doctest": "passed",
   "release_candidate": false,
-  "version_ingress_probe": "failed_closedness_v2_workspace_and_lock_accepted"
+  "version_ingress_probe": "passed_after_fresh_build",
+  "advisory_audit": "passed",
+  "dependency_policy": "bans_failed_RF19_licenses_sources_advisories_passed"
  },
  "execution_target": "S211 subject to predecessor and external evidence gates",
  "supervisor_findings": [
   {
    "id": "RF01",
-   "status": "accepted_for_original_scope",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R1",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF02",
-   "status": "partial_remaining_obligations_in_DEV_003",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R3",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF03",
-   "status": "accepted_for_original_scope",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R1",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF04",
-   "status": "accepted_for_original_scope",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R1",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF05",
-   "status": "partial_remaining_obligations_in_DEV_003",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R1",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF06",
-   "status": "partial_remaining_obligations_in_DEV_003",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R3",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF07",
-   "status": "accepted_for_original_scope",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R4",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF08",
-   "status": "partial_remaining_obligations_in_DEV_003",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R4",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF09",
-   "status": "partial_remaining_obligations_in_DEV_003",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R5",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF10",
-   "status": "partial_remaining_obligations_in_DEV_003",
+   "status": "accepted_for_allocated_scope",
    "owner": "S015",
    "report": "implementation/reports/CODEX-3da0b50.md",
    "checkpoint": "S015-R5",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF11",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P1",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R6",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF12",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P1",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R6",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF13",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P1",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R7",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF14",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R8",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF15",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R8",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF16",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R9",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF17",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R9",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
   },
   {
    "id": "RF18",
-   "status": "addressed_pending_supervisor_acceptance",
+   "status": "accepted_for_allocated_scope",
    "priority": "P1",
    "owner": "S015",
    "report": "implementation/reports/CODEX-7d44724.md",
    "checkpoint": "S015-R7",
-   "implementation_claim": "addressed"
+   "implementation_claim": "addressed",
+   "closure_report": "implementation/reports/CODEX-121622f.md"
+  },
+  {
+   "id": "RF19",
+   "status": "open",
+   "priority": "P2",
+   "owner": "S016",
+   "checkpoint": "S016-P1",
+   "report": "implementation/reports/CODEX-121622f.md",
+   "origin_step": "S005"
   }
  ],
- "s015_corrective_status": "R1_R9_committed_implementation_complete_pending_acceptance"
+ "s015_corrective_status": "accepted_R1_R9"
 }

@@ -143,3 +143,20 @@ digest consistency or trust. Conformance tests use an actual standards validator
 with date-time format assertions and local-only resolution. v2 UTC patterns
 still enforce minimal AutoSi groups; runtime validation retains exact calendar
 checks. No canonical input rule is relaxed by this clarification.
+
+## DEV-004 collection and text allocation
+
+S015 is accepted. DEV-004 in the governing COMMIT_SEQUENCE.md freezes S016's
+field classification and executable controls: semantic sets sort by complete
+canonical member JSON bytes, preserve existing logical-key uniqueness, and
+reject duplicates before collection; attempts, diagnostics and related locations
+retain sequence order. Strict object maps retain JCS key ordering. Preserve
+original bytes separately from canonical semantic representations and retain all
+S015 numeric/time/absence/bound checks. No v1 canonical projection is redefined.
+
+Authored metadata is NFC-validated without normalization; opaque source/payload
+bytes are preserved exactly. The text-vector input is JSON, its output canonical
+JSON; RV-TEXT-2's Unicode escape denotes accepted café and canonical output emits
+that literal UTF-8 text. A separate opaque-byte discipline includes decomposed
+and non-UTF-8 cases. The governing amendment specifies real-ingress integration
+and regression evidence; vector inventory alone is not implementation.

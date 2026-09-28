@@ -1,6 +1,6 @@
 # Chapter 02: Canonical identities and evidence provenance
 
-Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S015 remains open under DEV-003.
+Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S015 is accepted and S016-P1 is next under DEV-004.
 
 **Definition of green:** Canonical component/subject/raw/semantic/attempt identities and dirty-source provenance pass mutation vectors.
 
@@ -147,7 +147,7 @@ cargo test --locked -p eqm_application --doc
 git diff --check
 ```
 
-**Admission gate:** DEV-003: S015 remains open; complete S015-R6 through S015-R9 before S016. Once objective repair checks pass, proceed through dependency-unblocked S016–S211 with supervisor acceptance separately pending review. Codex owns scope/representation/dependency decisions; Pi cannot change them or waive gates.
+**Admission gate:** DEV-004: S015 accepted at 121622f for its allocated scope. Retain corrective history; proceed to S016-P1 and S016. Later semantic/product acceptance remains with its owning steps.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.
@@ -176,25 +176,35 @@ Add canonical set and Unicode vectors.
 Distinguish semantic unordered collections from ordered scenarios.
 
 ### 3. Exact scope of code changes
-Add shared canonicalization vectors and enforce approved sorting for semantic sets while preserving sequence order and Unicode data.
+Complete DEV-004 prerequisite S016-P1 to pin the existing engine test-support dependency without relaxing policy. Then execute set/sequence/authored-text/opaque-byte vectors and enforce the approved v2 field classifications, full canonical member-byte ordering and duplicate rejection at real ingress/serialization boundaries. Preserve v1 projections and original raw bytes; distinguish logical-key uniqueness from ordering and semantic canonicalization from raw identity.
 
 ### 4. Files/modules likely involved
-- `crates/eqm_manifest/src/canonical/`
+- `crates/eqm_manifest/src/canonical.rs`
 - `crates/eqm_protocol/src/`
+- `crates/eqm_domain/src/`
+- `crates/eqm_test_support/`
+- `crates/eqm_engine/Cargo.toml`
+- `schemas/v2/`
 - `tests/fixtures/`
 
 ### 5. Unit tests or integration tests required
-Input-order permutations of sets preserve identity; scenario-order changes differ; composed/decomposed Unicode follows the approved non-normalizing wire rule.
+Valid set permutations produce identical canonical bytes; exact and logical-key duplicates reject before collection. Ordered attempts/diagnostics/related locations preserve sequence and multiplicity. Escaped strings and object members test canonical-byte ordering. Authored NFC accepts, decomposed text rejects without normalization; opaque decomposed/non-UTF-8 bytes remain exact. Every applicable vector executes by explicit discipline with exact outputs. Existing S015 controls and v1 schema/byte preservation remain green; dependency audit/policy passes at S016-P1.
 
 ### 6. Verification commands
 ```sh
+cargo audit --deny warnings
+cargo deny check
+cargo xtask schemas generate
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_protocol
+cargo test --all-targets --locked -p eqm_manifest -p eqm_protocol -p eqm_domain -p eqm_test_support
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
+cargo xtask schemas check
 git diff --check
 ```
+
+**Admission gate:** DEV-004: first complete S016-P1 as one independently green prerequisite commit; then S016 itself and ordered unblocked successors through S211. Codex has settled collection/text classification and the reviewed license allowance; Pi cannot waive policy or change these contracts.
 
 ### 7. Expected result
 Canonicalization is executable protocol behavior rather than serializer convention.

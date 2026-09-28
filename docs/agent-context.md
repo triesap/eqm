@@ -108,7 +108,7 @@ unrun command as passing.
 ## Supervisor-owned decisions
 
 The owner delegates scope, representation, sequencing and acceptance decisions
-between implementation periods to the Codex supervisor. DEV-003 (with retained DEV-002 decisions) in the existing
+between implementation periods to the Codex supervisor. DEV-004 (with retained DEV-002/DEV-003 decisions) in the existing
 governing COMMIT_SEQUENCE.md is the current binding amendment. The implementation
 agent generates code and records verification/progress; it may select internal
 mechanics within the decided contract but may not defer required work, change

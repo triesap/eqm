@@ -1,6 +1,6 @@
 # Deviation register
 
-Revision 2 is the imported planning baseline. DEV-001, DEV-002 and DEV-003 record approved amendments; source implementation status is tracked separately in progress.json and STATUS.md.
+Revision 2 is the imported planning baseline. DEV-001–DEV-004 record approved amendments; source implementation status is tracked separately in progress.json and STATUS.md.
 
 The commit order and boundaries are mandatory. Do not skip, merge, reorder or broaden a step for convenience. Only inspected repository evidence that a step is obsolete or unsafe may justify a documented deviation; a product-intent/security change additionally needs owner approval.
 
@@ -77,3 +77,28 @@ S016–S211 with independent supervisor acceptance still pending; no gate waiver
 **Verification:** current-source standard check, application doctest and build
 passed; ingress probe demonstrates the defect. Package structure/diff checks
 are required on this planning update. Implementation is pending with Pi.
+
+## DEV-004 — S015 acceptance, dependency prerequisite and S016 decisions
+
+**Date/author:** 2026-09-28, Codex supervisor under owner delegation.
+**Reviewed HEAD:** 121622ff61a18efb0afd1dc9a13264fc2a97f259.
+**Affected scope:** S015 acceptance; S005-origin dependency correction allocated
+as S016-P1; S016 collection/text enforcement (R18/R19/R21/R43/R64 and its existing
+AC/RA contributions). **Evidence:** [review](reports/CODEX-121622f.md).
+
+R6–R9 close the S015 findings with source and independent standard/CLI/schema
+checks. The live advisory audit passes, but full dependency policy fails RF19.
+Leaving an unversioned dependency until release would preserve a known broken
+gate; one exact-pin prerequisite is the smallest repair. No policy threshold
+changes. Codex approves the reviewed validator's Zlib allowance after inspecting
+its manifest, license, resolved features and successful license/source checks.
+
+The governing DEV-004 text settles S016 field classification, duplicate-safe
+canonical ordering, text-versus-opaque disciplines and RV-TEXT-2's JCS expected
+output. Preserve v1 behavior and raw bytes. These are engineering closures of
+approved representations, not new product features or permission for trust.
+
+S016-P1 is one green commit; S016 follows separately, then ordered unblocked
+S017–S211. No renumbering, merged steps, paused S015 acceptance or human release
+approval is needed. Package structure and documentation diff checks validate the
+planning update; no source implementation is claimed by this amendment.
