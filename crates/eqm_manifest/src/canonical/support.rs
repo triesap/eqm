@@ -61,7 +61,10 @@ pub(super) fn canonical_strings(
 }
 
 /// Projects extensions with v2 integer forms, excluding only the display
-/// namespace. Nested extension arrays keep their declared order.
+/// namespace. Every extension value is recursively encoded as an object with
+/// exactly `type` and `value`, so an integer and a digit-containing string can
+/// never collapse to the same canonical bytes. Nested extension arrays keep
+/// their declared order; object members are JCS-keyed maps.
 pub(super) fn extensions_v2(
     values: &eqm_domain::Extensions,
 ) -> Result<Value, CanonicalizationError> {
@@ -75,23 +78,33 @@ pub(super) fn extensions_v2(
     Ok(Value::Object(projected))
 }
 
+fn tagged(kind: &str, payload: Value) -> Value {
+    let mut encoded = Map::new();
+    encoded.insert("type".to_owned(), Value::String(kind.to_owned()));
+    encoded.insert("value".to_owned(), payload);
+    Value::Object(encoded)
+}
+
 fn extension_value_v2(value: &ExtensionValue) -> Result<Value, CanonicalizationError> {
     Ok(match value {
-        ExtensionValue::Boolean(value) => json!(value),
-        ExtensionValue::Integer(value) => wire_int(*value),
-        ExtensionValue::String(value) => json!(value),
-        ExtensionValue::Array(values) => Value::Array(
-            values
-                .iter()
-                .map(extension_value_v2)
-                .collect::<Result<Vec<_>, _>>()?,
+        ExtensionValue::Boolean(value) => tagged("boolean", json!(value)),
+        ExtensionValue::Integer(value) => tagged("integer", wire_int(*value)),
+        ExtensionValue::String(value) => tagged("string", json!(value)),
+        ExtensionValue::Array(values) => tagged(
+            "array",
+            Value::Array(
+                values
+                    .iter()
+                    .map(extension_value_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            ),
         ),
         ExtensionValue::Object(values) => {
             let mut projected = Map::new();
             for (key, value) in values {
                 projected.insert(key.as_str().to_owned(), extension_value_v2(value)?);
             }
-            Value::Object(projected)
+            tagged("object", Value::Object(projected))
         }
     })
 }

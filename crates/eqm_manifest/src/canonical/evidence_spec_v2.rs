@@ -29,14 +29,25 @@
 
 use super::support::{canonical_strings, extensions_v2, wire_uint};
 use super::{CanonicalizationError, MAX_PROJECTION_BYTES, insert_optional, object};
-use eqm_domain::{DigestDomain, EvidenceSpecification, Sha256Digest};
+use eqm_domain::{EvidenceSpecification, EvidenceSpecificationDigest};
 use serde_json::{Value, json};
 
 /// Immutable canonical v2 evidence-specification bytes and digest.
+///
+/// The two component identities are distinct wrapper types, so a
+/// `BindingDigest` cannot be supplied where an
+/// [`EvidenceSpecificationDigest`](eqm_domain::EvidenceSpecificationDigest) is
+/// required:
+///
+/// ```compile_fail
+/// use eqm_domain::{BindingDigest, EvidenceSpecificationDigest};
+/// let binding = BindingDigest::hash_content(b"binding bytes");
+/// let spec: EvidenceSpecificationDigest = binding;
+/// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CanonicalEvidenceSpecV2 {
     bytes: Vec<u8>,
-    digest: Sha256Digest,
+    digest: EvidenceSpecificationDigest,
 }
 
 impl CanonicalEvidenceSpecV2 {
@@ -48,7 +59,7 @@ impl CanonicalEvidenceSpecV2 {
 
     /// Returns the domain-separated evidence-specification identity.
     #[must_use]
-    pub const fn digest(&self) -> Sha256Digest {
+    pub const fn digest(&self) -> EvidenceSpecificationDigest {
         self.digest
     }
 }
@@ -107,6 +118,6 @@ pub fn canonicalize_evidence_spec_v2(
     if bytes.len() > MAX_PROJECTION_BYTES {
         return Err(CanonicalizationError::ProjectionTooLarge);
     }
-    let digest = Sha256Digest::hash_domain(DigestDomain::EvidenceSpecification, &bytes);
+    let digest = EvidenceSpecificationDigest::hash_content(&bytes);
     Ok(CanonicalEvidenceSpecV2 { bytes, digest })
 }

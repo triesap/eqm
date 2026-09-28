@@ -9,11 +9,11 @@
 
 use eqm_domain::{
     Applicability, Artifact, ArtifactId, ArtifactRole, ArtifactSelector, Artifacts, Binding,
-    BindingId, ComparisonOperator, DimensionId, DurationMillis, EvidenceKind, EvidenceSelector,
-    EvidenceSpecId, EvidenceSpecification, Exposure, ExtensionKey, ExtensionNamespace,
-    ExtensionValue, Extensions, Facet, FullRequirementId, HttpMethod, IntendedExposureState,
-    MembershipOperator, OwnerRef, PositiveCount, RepoPath, Revision, RunnerId, SelectorText,
-    SurfaceId, SymbolicValueId, TargetId, UnitId,
+    BindingDigest, BindingId, ComparisonOperator, DimensionId, DurationMillis, EvidenceKind,
+    EvidenceSelector, EvidenceSpecId, EvidenceSpecification, Exposure, ExtensionKey,
+    ExtensionNamespace, ExtensionValue, Extensions, Facet, FullRequirementId, HttpMethod,
+    IntendedExposureState, MembershipOperator, OwnerRef, PositiveCount, RepoPath, Revision,
+    RunnerId, SelectorText, SurfaceId, SymbolicValueId, TargetId, UnitId,
 };
 use eqm_manifest::{canonicalize_binding_v2, project_binding_v2};
 use std::collections::BTreeMap;
@@ -27,10 +27,10 @@ const BASE_BYTES: &str = r#"{"artifacts":[{"extensions":{},"id":"signup","path":
 
 const BASE_DIGEST: &str = "sha256:b8154689fb2253814a3184f5e19436c6aaddfc4ecae0618a5c5a44b5a74f8c87";
 
-const BOUNDARY_BYTES: &str = r#"{"artifacts":[{"extensions":{},"id":"signup","path":"src/signup.rs","role":"route","selector":{"kind":"route","method":"get","path":"/signup"},"surface":"account.create.signup.start","symbol":"signup_handler"}],"evidence":[{"extensions":{},"facets":["behavior"],"freshness":"9007199254740992","id":"signup_test","kind":"test","minimum_count":"9007199254740992","requirements":["account.create.signup.start#visible"],"runner":"runner.cargo","selector":{"framework":"cargo","kind":"test","test_id":"signup"}}],"exposures":[{"applicability":{"always":true},"extensions":{},"state":"required","surface":"account.create.signup.start"}],"extensions":{"dev.equivalencematrix.extra":{"boundary":"-9223372036854775808"}},"id":"web.account","owners":["owner://team/web"],"revision":"9007199254740992","target":"web","unit":"account.create"}"#;
+const BOUNDARY_BYTES: &str = r#"{"artifacts":[{"extensions":{},"id":"signup","path":"src/signup.rs","role":"route","selector":{"kind":"route","method":"get","path":"/signup"},"surface":"account.create.signup.start","symbol":"signup_handler"}],"evidence":[{"extensions":{},"facets":["behavior"],"freshness":"9007199254740992","id":"signup_test","kind":"test","minimum_count":"9007199254740992","requirements":["account.create.signup.start#visible"],"runner":"runner.cargo","selector":{"framework":"cargo","kind":"test","test_id":"signup"}}],"exposures":[{"applicability":{"always":true},"extensions":{},"state":"required","surface":"account.create.signup.start"}],"extensions":{"dev.equivalencematrix.extra":{"type":"object","value":{"boundary":{"type":"integer","value":"-9223372036854775808"}}}},"id":"web.account","owners":["owner://team/web"],"revision":"9007199254740992","target":"web","unit":"account.create"}"#;
 
 const BOUNDARY_DIGEST: &str =
-    "sha256:d1ed8eacb6f2d61ddc847ae12bf6f7cd509d12071d36891dd307e8a1f626a619";
+    "sha256:d12c3f60e676d774449cdd600209af986e574fc920b88afffe4d44bdf201d1f6";
 
 fn route_selector(path: &str) -> Result<ArtifactSelector, Box<dyn Error>> {
     Ok(ArtifactSelector::Route {
@@ -486,16 +486,161 @@ fn ordered_extension_arrays_preserve_declared_order() -> Result<(), Box<dyn Erro
     let ascending = project_binding_v2(&ascending)?;
     let descending = project_binding_v2(&descending)?;
     assert_eq!(
-        ascending["extensions"]["dev.equivalencematrix.extra"]["ordered"],
-        serde_json::json!([1, 2])
+        ascending["extensions"]["dev.equivalencematrix.extra"]["value"]["ordered"],
+        serde_json::json!({
+            "type": "array",
+            "value": [
+                {"type": "integer", "value": 1},
+                {"type": "integer", "value": 2}
+            ]
+        })
     );
     assert_eq!(
-        descending["extensions"]["dev.equivalencematrix.extra"]["ordered"],
-        serde_json::json!([2, 1])
+        descending["extensions"]["dev.equivalencematrix.extra"]["value"]["ordered"],
+        serde_json::json!({
+            "type": "array",
+            "value": [
+                {"type": "integer", "value": 2},
+                {"type": "integer", "value": 1}
+            ]
+        })
     );
     assert_ne!(
         ascending, descending,
         "ordered extension arrays must not be sorted"
+    );
+    Ok(())
+}
+
+#[test]
+fn binding_identity_is_the_typed_domain_wrapper() -> Result<(), Box<dyn Error>> {
+    let canonical = canonicalize_binding_v2(&base_binding()?)?;
+    // The API returns the concrete `BindingDigest`, not a generic SHA-256 value.
+    let typed: BindingDigest = canonical.digest();
+    assert_eq!(typed, BindingDigest::hash_content(canonical.bytes()));
+    // Raw extraction is explicit and only at the wire/legacy boundary.
+    assert_eq!(typed.as_digest().to_string(), BASE_DIGEST);
+    Ok(())
+}
+
+fn extension_named(value: ExtensionValue) -> Result<Extensions, Box<dyn Error>> {
+    Ok(Extensions::new(BTreeMap::from([(
+        ExtensionNamespace::new("dev.equivalencematrix.extra")?,
+        ExtensionValue::Object(BTreeMap::from([(ExtensionKey::new("same_id")?, value)])),
+    )]))?)
+}
+
+fn binding_with_extension(value: ExtensionValue) -> Result<Binding, Box<dyn Error>> {
+    binding(
+        1,
+        &["owner://team/web"],
+        vec![artifact(
+            "signup",
+            "src/signup.rs",
+            Some(route_selector("/signup")?),
+            Extensions::default(),
+        )?],
+        vec![exposure(Applicability::always(true))?],
+        vec![evidence(Some(1), Some(60_000), Extensions::default())?],
+        extension_named(value)?,
+    )
+}
+
+#[test]
+fn extension_integer_and_text_with_same_digits_never_collide() -> Result<(), Box<dyn Error>> {
+    // Same binding ID and every other field fixed; only the extension value type
+    // differs. The recursive {type,value} encoding must keep them distinct.
+    for (integer, text) in [
+        (ExtensionValue::Integer(i64::MIN), "-9223372036854775808"),
+        (
+            ExtensionValue::Integer(MAX_SAFE_INTEGER_OVER as i64),
+            "9007199254740992",
+        ),
+    ] {
+        let integer = canonicalize_binding_v2(&binding_with_extension(integer)?)?;
+        let string = canonicalize_binding_v2(&binding_with_extension(ExtensionValue::String(
+            text.into(),
+        ))?)?;
+        assert_ne!(
+            integer.bytes(),
+            string.bytes(),
+            "integer {text} and text must not share canonical bytes"
+        );
+        assert_ne!(
+            integer.digest(),
+            string.digest(),
+            "integer {text} and text must not share identity"
+        );
+    }
+
+    // Nested array/object payloads retain the distinction at depth.
+    let nested_integer = ExtensionValue::Object(BTreeMap::from([(
+        ExtensionKey::new("nested")?,
+        ExtensionValue::Array(vec![
+            ExtensionValue::Integer(i64::MIN),
+            ExtensionValue::Integer(MAX_SAFE_INTEGER_OVER as i64),
+        ]),
+    )]));
+    let nested_text = ExtensionValue::Object(BTreeMap::from([(
+        ExtensionKey::new("nested")?,
+        ExtensionValue::Array(vec![
+            ExtensionValue::String("-9223372036854775808".into()),
+            ExtensionValue::String("9007199254740992".into()),
+        ]),
+    )]));
+    assert_ne!(
+        canonicalize_binding_v2(&binding_with_extension(nested_integer)?)?.bytes(),
+        canonicalize_binding_v2(&binding_with_extension(nested_text)?)?.bytes()
+    );
+
+    // An authored object that merely resembles a tag is not the typed integer it
+    // resembles: the object is tagged as `object`, not flattened into `integer`.
+    let tag_like = ExtensionValue::Object(BTreeMap::from([
+        (
+            ExtensionKey::new("type")?,
+            ExtensionValue::String("integer".into()),
+        ),
+        (
+            ExtensionKey::new("value")?,
+            ExtensionValue::String("-9223372036854775808".into()),
+        ),
+    ]));
+    assert_ne!(
+        canonicalize_binding_v2(&binding_with_extension(tag_like)?)?.bytes(),
+        canonicalize_binding_v2(&binding_with_extension(ExtensionValue::Integer(i64::MIN))?)?
+            .bytes()
+    );
+    Ok(())
+}
+
+#[test]
+fn extension_encoding_is_recursive_for_every_variant() -> Result<(), Box<dyn Error>> {
+    let projected = project_binding_v2(&binding_with_extension(ExtensionValue::Object(
+        BTreeMap::from([
+            (ExtensionKey::new("bool")?, ExtensionValue::Boolean(true)),
+            (ExtensionKey::new("int")?, ExtensionValue::Integer(7)),
+            (
+                ExtensionKey::new("str")?,
+                ExtensionValue::String("x".into()),
+            ),
+            (
+                ExtensionKey::new("arr")?,
+                ExtensionValue::Array(vec![ExtensionValue::Integer(1)]),
+            ),
+        ]),
+    ))?)?;
+    let root = &projected["extensions"]["dev.equivalencematrix.extra"]["value"]["same_id"];
+    assert_eq!(
+        root,
+        &serde_json::json!({
+            "type": "object",
+            "value": {
+                "arr": {"type": "array", "value": [{"type": "integer", "value": 1}]},
+                "bool": {"type": "boolean", "value": true},
+                "int": {"type": "integer", "value": 7},
+                "str": {"type": "string", "value": "x"}
+            }
+        })
     );
     Ok(())
 }

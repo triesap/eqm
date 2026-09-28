@@ -25,16 +25,14 @@
 
 use super::support::{canonical_set, canonical_strings, extensions_v2, wire_uint};
 use super::{CanonicalizationError, MAX_PROJECTION_BYTES, insert_optional, object};
-use eqm_domain::{
-    Applicability, ApplicabilityView, Artifact, Binding, DigestDomain, Exposure, Sha256Digest,
-};
+use eqm_domain::{Applicability, ApplicabilityView, Artifact, Binding, BindingDigest, Exposure};
 use serde_json::{Value, json};
 
 /// Immutable canonical v2 binding bytes and domain-separated digest.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CanonicalBindingV2 {
     bytes: Vec<u8>,
-    digest: Sha256Digest,
+    digest: BindingDigest,
 }
 
 impl CanonicalBindingV2 {
@@ -46,7 +44,7 @@ impl CanonicalBindingV2 {
 
     /// Returns the domain-separated `BindingDigest` identity.
     #[must_use]
-    pub const fn digest(&self) -> Sha256Digest {
+    pub const fn digest(&self) -> BindingDigest {
         self.digest
     }
 }
@@ -188,6 +186,6 @@ pub fn canonicalize_binding_v2(
     if bytes.len() > MAX_PROJECTION_BYTES {
         return Err(CanonicalizationError::ProjectionTooLarge);
     }
-    let digest = Sha256Digest::hash_domain(DigestDomain::Binding, &bytes);
+    let digest = BindingDigest::hash_content(&bytes);
     Ok(CanonicalBindingV2 { bytes, digest })
 }
