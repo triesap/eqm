@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S018",
+ "next_step": "S019",
  "implementation": "in_progress",
  "local_verification": "standard_passed_393_tests_repairs_required",
  "platform_verification": "not_run",
@@ -583,19 +583,30 @@
   },
   {
    "id": "S019",
-   "status": "pending",
+   "status": "in_progress",
    "commit_sha": null,
-   "report": null,
+   "report": "implementation/reports/S019.md",
    "verification": [],
    "baseline_exceptions": [],
    "decision_status": "resolved_by_Codex_DEV006",
    "implementation_checkpoints": [
     {
      "id": "S019-A",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": null,
-     "verification": []
+     "report": "implementation/reports/S019.md#s019-a--validated-policy-selection-provenance-inputs",
+     "implementation_status": "committed_supervisor_pending",
+     "verification": [
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_domain -p eqm_manifest -p eqm_engine -p eqm_application",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     },
     {
      "id": "S019-B",
@@ -2482,7 +2493,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S018",
+ "active_step": "S019",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2804,7 +2815,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S019-A",
+ "next_checkpoint": "S019-B",
  "supervisor_review": {
   "source_commit": "3469face3a88d280f2577f4ff936419408c1d248",
   "report": "implementation/reports/CODEX-3469fac.md",

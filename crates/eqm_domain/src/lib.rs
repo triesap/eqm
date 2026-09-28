@@ -53,6 +53,7 @@ mod policy;
 mod reference;
 mod runner;
 mod schema;
+mod selection;
 mod time;
 mod vocabulary;
 mod waiver;
@@ -112,6 +113,10 @@ pub use runner::{
 };
 pub use schema::{
     SchemaGroup, SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion,
+};
+pub use selection::{
+    PolicySelectionInputError, PolicySelectionInputV2, SelectedDimensionStateV2,
+    SelectedProfileInputV2,
 };
 pub use time::{
     CalendarDate, DurationMillis, TimeParseError, UtcInstant, UtcInstantV2, V2_UTC_PATTERN,
