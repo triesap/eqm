@@ -1,5 +1,150 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-005 — S016 review closure and binding projection decision
+
+**Date/author:** 2026-09-28, Codex supervisor under owner delegation.
+**Reviewed source:** `68378317044d49a121caff07e783573abdf3cd56`.
+**Disposition:** S016-P1 (`ed06989`) is accepted; RF19 is closed. S016's
+implementation commit is retained, but the numbered step is reopened for RF20–RF22.
+S001–S015 remain complete. The next checkpoint is **S016-R1**, then S016-R2,
+then dependency-unblocked S017–S211. This amendment supersedes older cursors and
+S016 completion claims, not the retained representation or authority contracts.
+See [the source and evidence review](reports/CODEX-6837831.md).
+
+### Findings and independently green repairs
+
+| Checkpoint | Required work | Verification and commit |
+| --- | --- | --- |
+| S016-R1 | Close RF20/RF21: shared structural validation of authored v2 fields using the field/type mapping below; call it from every existing owning `from_json` path, including embedded inventories. Retain S015 bounds, versions, vocabulary and temporal checks. Add valid controls and one-field negative mutations for each mapped field family. | S016's complete declared commands, schema generation/check if affected, actual package structure validation and diff check. Commit `fix: validate authored v2 metadata at ingress`. |
+| S016-R2 | Close RF22: execute the missing set/logical-key/sequence/text controls at real v2 roots, add independent literal runtime-facts canonical bytes/digest, and prove raw-byte preservation separately. Reconcile reports, exact SHAs, progress, cycle counts and current status. | S016's complete declared commands plus the evidence discipline below. Commit `test: complete v2 collection boundary regressions`. |
+
+Retain both existing commits; no amend, reset, renumbering, new product subsystem,
+weaker assertion, or successful receipt for a failing command. R1 carries its own
+behavioral regressions; R2 closes the remaining matrix rather than postponing all
+R1 tests. Each checkpoint is independently green. After R2 passes, Pi records
+implementation completion with supervisor acceptance pending and continues S017;
+there is no additional user-approval gate. S016 is not complete merely because
+CanonicalSet or an isolated NFC predicate passes tests.
+
+### Authored field/type mapping (RF20/RF21)
+
+Reuse the existing domain syntax/bounds, adding no v1 reader changes. NFC alone
+is insufficient: `café` is valid SelectorText but is not a valid UnitId. Tests
+must use valid typed IDs; demonstrate composed Unicode with a text field whose
+existing grammar permits it. Validation rejects rather than normalizes.
+
+| v2 field family | Required structural contract |
+| --- | --- |
+| Evidence target/unit/requirements/facets | TargetId, UnitId, FullRequirementId, Facet respectively, including existing vocabulary/grammar. |
+| Shared subject scope | TargetId for target and each target-set member; ProviderId for provider. Retain existing nonempty scope rules where the corresponding domain constructor requires them. |
+| Shared subject metadata | RepositoryIdentity, SourceCommit and digest syntax; optional build_id uses SelectorText. Share existing runtime-facts checks across the other owning roots without inventing relationship/trust acceptance. |
+| Profile values in evidence and runtime facts | ProfileId, positive Revision, DimensionId, SymbolicValueId; retain unique (profile, dimension) and consistent per-profile revision. |
+| Manual review | OwnerRef reviewer and existing outcome vocabulary; do not treat reviewer as an arbitrary NFC string. |
+| Attachments | SelectorText name/media_type and existing digest/size forms; preserve name uniqueness. Attachment content is opaque bytes, not either metadata string. |
+| Inventory, adapter request and response | AdapterId, TargetId where present, the shared subject checks where present, and shared embedded inventory validation. |
+| Inventory entries / fact symbolic metadata | SelectorText kind/key/attribute names; SymbolicValueId for Symbol values; retain SurfaceId/DimensionId/SelectorText rules for runtime-fact keys and existing restrictions on typed Text values. Source path uses its existing RepoPath contract. |
+| Selector helper | Existing EvidenceSelector field types (SelectorText, HttpMethod, ReleaseChannel as applicable), not NFC-only checks. No current v2 root owns this helper: mark its consumer integration pending until the first owning v2 selector ingress exists; wire validation there. Do not invent a schema family to manufacture a consumer. |
+| Diagnostic unit/target references | Existing UnitId/TargetId syntax when present; diagnostic prose and source-export content do not acquire blanket authored-text NFC rules. |
+
+Do not apply blanket NFC checks to observed text, diagnostic messages, source
+exports or attachment bytes. Existing domain fields explicitly modeled as
+SelectorText retain their own bounded/NFC rules; they do not redefine arbitrary
+observed bytes as authored metadata. Opaque request identifiers, filesystem roots
+and location URIs retain their existing contracts, not invented identifier types.
+Representation validation remains distinct from S025/S059/S061 relationship,
+trust or signature acceptance. A v2 record passing these checks is non-authorizing.
+
+### Regression closure and evidence discipline (RF22/RF23)
+
+Exercise subject target sets, requirements, facets, attachments, profile values,
+runtime facts and inventory entries through their actual owning `from_json`
+methods. For each applicable family show valid permutations produce identical
+canonical bytes and exact duplicates reject. Show differing records with the
+same logical key reject for attachment names, profile/dimension, facts and
+inventory; separately test conflicting revisions for one profile. Cover embedded
+adapter-response inventory as well as standalone inventory. Mutants retain all
+unrelated fields and recompute a required digest so an unrelated error cannot
+make a negative test pass.
+
+A deserialize-only execution payload with attempt numbers `[2,1,2]` does not
+prove valid evidence ingestion. Test valid numbered attempts at EvidenceResult
+root; reordered/duplicated indices reject under the existing index rule. Show
+order/multiplicity preservation for valid diagnostic and related-location lists,
+including different canonical outputs after reordering. Do not require invalid
+attempt numbering to pass merely to demonstrate sequence multiplicity.
+
+Keep the escaped-string/object-member ordering traps. Add a reviewed literal
+canonical runtime-facts byte string and fixed expected digest; the expected value
+must not be produced by a test copy of the production sorting algorithm. Retain
+permutation controls for both facts and profile_values. Exercise strict ingestion
+on an actual raw JSON input with formatting/escaping and verify the input bytes
+and raw identity remain exact while its semantic view canonicalizes separately.
+Use RawObjectDigest for literal decomposed UTF-8 and non-UTF-8 opaque vectors;
+compare fixed expected bytes/domain hashes. No storage/attachment subsystem is
+required now. A frozen-vector byte-literal decoder must reject malformed or
+truncated escapes rather than silently discard characters. Passing arbitrary
+non-UTF-8 through a JSON parser is not an opaque-byte preservation requirement.
+
+RF23 is a historical receipt discrepancy: the saved S016 package-structure log
+says FAIL while the receipt says exit 0; current independent validation passes.
+Codex has corrected the current report/status and recorded the distinction.
+Retain original logs. For subsequent checkpoints record each command's real exit
+status and unique log name, run structure validation after the final ledger/doc
+edit and before committing, and do not infer a command's result from the last
+command in a shell sequence. STATUS.md, progress.json and checkpoint receipts
+must agree. A later green run is new evidence, not retroactive proof of the
+historical receipt. Do not claim that every historical committed tree was green.
+
+### S017 decision: separate complete v2 binding projection
+
+The existing `eqm_manifest::canonical::binding` is a useful field inventory,
+not a v2 wire implementation. Hashing its unchanged v1 JSON under BindingDigest
+would retain numeric and collection encodings inconsistent with ADR-0013.
+Implement a separately named v2 binding projection in eqm_manifest, with immutable
+canonical bytes and the existing BindingDigest domain. Keep the v1 binding,
+fragment and graph APIs/bytes/hashes unchanged. No new digest domain or dependency
+from the manifest layer to protocol/transport is approved or needed.
+
+Include all existing binding semantics: id, revision, target, unit, owners,
+artifacts (including selectors), exposures (surface/state/applicability/route),
+evidence specifications (selectors, requirements, facets, runner references,
+counts/freshness) and semantic extensions at every existing level. Apply approved
+v2 integer wire rules to revisions/counts/freshness and extension integers.
+Apply full canonical-member byte ordering to owners, artifacts, exposures,
+evidence specifications, requirements, facets and applicability membership
+values. The remaining ordered expression/extension arrays preserve order; do
+not recursively sort every array. Reject exact duplicate set members rather than
+silently erasing them. Existing typed construction retains logical uniqueness.
+
+Exclude only the already defined `dev.equivalencematrix.display` extension
+namespace wherever the existing projection excludes it. Comments, whitespace,
+source spans and the manifest file's own location are parse provenance, absent
+from Binding. An artifact's declared path is semantics and remains included.
+Do not invent a Binding.description/comment field or exclude other extension
+namespaces. Test real display-extension changes and comment/formatting changes,
+plus same-ID selector/path/constraint/semantic-extension mutations, set
+permutations and large integer boundaries with literal byte/digest expectations.
+
+S017 delivers and tests this component projection; the later owning v2
+construction/relationship steps integrate it. Do not silently replace v1
+transport/runner identities or claim end-to-end evidence binding now. S018 uses
+the same decided representation rules for its separate specification identity.
+The complete cross-domain corpus remains S027. This resolves the handback's
+scope decision; ordinary function/module layout remains Pi's implementation choice.
+
+### Continuation and authority
+
+Proceed in the sole governing sequence through all dependency-unblocked work to
+S211; S143 is intermediate. Codex owns new scope, representations, sequencing,
+license exceptions and acceptance decisions. Pi may choose internal mechanics
+within this contract and maintain factual reports/progress; it may not change
+this scope, self-waive a gate or invent missing external facts. Newly evidenced
+contract decisions return to Codex. Preserve Q01–Q15 at their first dependent
+steps, keep one active step, checkpoint before context exhaustion, and use
+available compaction. A real session limit is INTERRUPTED, not task completion.
+No publication, deployment, signing, live enforcement or optional-native
+activation is authorized. Human release testing is not the next dependency.
+
 ## DEV-004 — Accept S015 and resume canonical collection work
 
 **Date/author:** 2026-09-28, Codex supervisor under owner delegation.
@@ -1098,7 +1243,7 @@ cargo test --locked -p eqm_application --doc
 git diff --check
 ```
 
-**Admission gate:** DEV-004: S015 accepted at 121622f for its allocated scope. Retain corrective history; proceed to S016-P1 and S016. Later semantic/product acceptance remains with its owning steps.
+**Admission gate:** DEV-005: S015 accepted for allocated scope; S016-P1 also accepted. Retain corrective history and proceed to S016-R1. Later semantic/product acceptance remains with its owning steps.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.
@@ -1127,7 +1272,7 @@ Add canonical set and Unicode vectors.
 Distinguish semantic unordered collections from ordered scenarios.
 
 ### 3. Exact scope of code changes
-Complete DEV-004 prerequisite S016-P1 to pin the existing engine test-support dependency without relaxing policy. Then execute set/sequence/authored-text/opaque-byte vectors and enforce the approved v2 field classifications, full canonical member-byte ordering and duplicate rejection at real ingress/serialization boundaries. Preserve v1 projections and original raw bytes; distinguish logical-key uniqueness from ordering and semantic canonicalization from raw identity.
+Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and S016-R2 to close authored v2 ingress/type validation and real-boundary collection/sequence/raw-byte regressions. Follow the explicit field mapping, independent literal canonical bytes/digest expectations and evidence discipline in DEV-005; preserve all retained DEV-004 rules and v1 bytes.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical.rs`
@@ -1139,7 +1284,7 @@ Complete DEV-004 prerequisite S016-P1 to pin the existing engine test-support de
 - `tests/fixtures/`
 
 ### 5. Unit tests or integration tests required
-Valid set permutations produce identical canonical bytes; exact and logical-key duplicates reject before collection. Ordered attempts/diagnostics/related locations preserve sequence and multiplicity. Escaped strings and object members test canonical-byte ordering. Authored NFC accepts, decomposed text rejects without normalization; opaque decomposed/non-UTF-8 bytes remain exact. Every applicable vector executes by explicit discipline with exact outputs. Existing S015 controls and v1 schema/byte preservation remain green; dependency audit/policy passes at S016-P1.
+Execute every DEV-005 mapped authored field family with valid typed controls and one-field mutants at owning roots; all set permutations/exact and logical-key duplicates, profile revision conflicts, valid attempt-index rules, diagnostic/related-location sequence order and multiplicity, independent literal runtime-facts bytes/hash, and strict/raw opaque identity controls. Preserve S015 regressions and v1 schema/hash bytes. Final ledger and current status must pass structure validation after edits.
 
 ### 6. Verification commands
 ```sh
@@ -1155,7 +1300,7 @@ cargo xtask schemas check
 git diff --check
 ```
 
-**Admission gate:** DEV-004: first complete S016-P1 as one independently green prerequisite commit; then S016 itself and ordered unblocked successors through S211. Codex has settled collection/text classification and the reviewed license allowance; Pi cannot waive policy or change these contracts.
+**Admission gate:** DEV-005: S016-P1 accepted, RF19 closed. Execute independently green S016-R1 then S016-R2 before S017. After their objective gates, record supervisor acceptance pending and continue ordered unblocked work through S211.
 
 ### 7. Expected result
 Canonicalization is executable protocol behavior rather than serializer convention.
@@ -1184,15 +1329,16 @@ Hash complete binding semantics.
 Correct the ID-only binding digest shortcut.
 
 ### 3. Exact scope of code changes
-Implement/reuse canonical binding projection with its own digest domain, including semantic artifact/evidence mappings and excluding display-only provenance deliberately.
+Implement a separate v2 complete binding projection and existing BindingDigest using DEV-005 numeric/set rules. Reuse the existing binding projection as a field inventory, not its v1 bytes. Include all binding/artifact/exposure/evidence semantics and semantic extensions; exclude only dev.equivalencematrix.display and absent parse provenance. Preserve v1 APIs/hashes and existing crate directions; later owning steps integrate v2 evidence construction.
 
 ### 4. Files/modules likely involved
+- `crates/eqm_manifest/src/canonical.rs`
 - `crates/eqm_manifest/src/canonical/`
 - `crates/eqm_domain/src/digest.rs`
 - `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
-Change selector/artifact semantics without changing binding ID and require a new digest; comments/display-only changes remain stable as specified.
+Same-ID selector/artifact path/constraint/semantic-extension changes alter identity; actual display-extension and comment/formatting changes remain stable. Set permutations agree, ordered extension/expression arrays retain order, and integer boundaries have literal canonical-byte/digest controls. All v1 projection/hash fixtures remain unchanged.
 
 ### 6. Verification commands
 ```sh

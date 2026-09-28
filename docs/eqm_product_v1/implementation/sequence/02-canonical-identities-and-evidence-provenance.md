@@ -1,6 +1,6 @@
 # Chapter 02: Canonical identities and evidence provenance
 
-Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S015 is accepted and S016-P1 is next under DEV-004.
+Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S015 and S016-P1 are accepted; S016-R1 is next under DEV-005.
 
 **Definition of green:** Canonical component/subject/raw/semantic/attempt identities and dirty-source provenance pass mutation vectors.
 
@@ -147,7 +147,7 @@ cargo test --locked -p eqm_application --doc
 git diff --check
 ```
 
-**Admission gate:** DEV-004: S015 accepted at 121622f for its allocated scope. Retain corrective history; proceed to S016-P1 and S016. Later semantic/product acceptance remains with its owning steps.
+**Admission gate:** DEV-005: S015 accepted for allocated scope; S016-P1 also accepted. Retain corrective history and proceed to S016-R1. Later semantic/product acceptance remains with its owning steps.
 
 ### 7. Expected result
 No consumer silently changes a number or time before hashing.
@@ -176,7 +176,7 @@ Add canonical set and Unicode vectors.
 Distinguish semantic unordered collections from ordered scenarios.
 
 ### 3. Exact scope of code changes
-Complete DEV-004 prerequisite S016-P1 to pin the existing engine test-support dependency without relaxing policy. Then execute set/sequence/authored-text/opaque-byte vectors and enforce the approved v2 field classifications, full canonical member-byte ordering and duplicate rejection at real ingress/serialization boundaries. Preserve v1 projections and original raw bytes; distinguish logical-key uniqueness from ordering and semantic canonicalization from raw identity.
+Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and S016-R2 to close authored v2 ingress/type validation and real-boundary collection/sequence/raw-byte regressions. Follow the explicit field mapping, independent literal canonical bytes/digest expectations and evidence discipline in DEV-005; preserve all retained DEV-004 rules and v1 bytes.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/canonical.rs`
@@ -188,7 +188,7 @@ Complete DEV-004 prerequisite S016-P1 to pin the existing engine test-support de
 - `tests/fixtures/`
 
 ### 5. Unit tests or integration tests required
-Valid set permutations produce identical canonical bytes; exact and logical-key duplicates reject before collection. Ordered attempts/diagnostics/related locations preserve sequence and multiplicity. Escaped strings and object members test canonical-byte ordering. Authored NFC accepts, decomposed text rejects without normalization; opaque decomposed/non-UTF-8 bytes remain exact. Every applicable vector executes by explicit discipline with exact outputs. Existing S015 controls and v1 schema/byte preservation remain green; dependency audit/policy passes at S016-P1.
+Execute every DEV-005 mapped authored field family with valid typed controls and one-field mutants at owning roots; all set permutations/exact and logical-key duplicates, profile revision conflicts, valid attempt-index rules, diagnostic/related-location sequence order and multiplicity, independent literal runtime-facts bytes/hash, and strict/raw opaque identity controls. Preserve S015 regressions and v1 schema/hash bytes. Final ledger and current status must pass structure validation after edits.
 
 ### 6. Verification commands
 ```sh
@@ -204,7 +204,7 @@ cargo xtask schemas check
 git diff --check
 ```
 
-**Admission gate:** DEV-004: first complete S016-P1 as one independently green prerequisite commit; then S016 itself and ordered unblocked successors through S211. Codex has settled collection/text classification and the reviewed license allowance; Pi cannot waive policy or change these contracts.
+**Admission gate:** DEV-005: S016-P1 accepted, RF19 closed. Execute independently green S016-R1 then S016-R2 before S017. After their objective gates, record supervisor acceptance pending and continue ordered unblocked work through S211.
 
 ### 7. Expected result
 Canonicalization is executable protocol behavior rather than serializer convention.
@@ -233,15 +233,16 @@ Hash complete binding semantics.
 Correct the ID-only binding digest shortcut.
 
 ### 3. Exact scope of code changes
-Implement/reuse canonical binding projection with its own digest domain, including semantic artifact/evidence mappings and excluding display-only provenance deliberately.
+Implement a separate v2 complete binding projection and existing BindingDigest using DEV-005 numeric/set rules. Reuse the existing binding projection as a field inventory, not its v1 bytes. Include all binding/artifact/exposure/evidence semantics and semantic extensions; exclude only dev.equivalencematrix.display and absent parse provenance. Preserve v1 APIs/hashes and existing crate directions; later owning steps integrate v2 evidence construction.
 
 ### 4. Files/modules likely involved
+- `crates/eqm_manifest/src/canonical.rs`
 - `crates/eqm_manifest/src/canonical/`
 - `crates/eqm_domain/src/digest.rs`
 - `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
-Change selector/artifact semantics without changing binding ID and require a new digest; comments/display-only changes remain stable as specified.
+Same-ID selector/artifact path/constraint/semantic-extension changes alter identity; actual display-extension and comment/formatting changes remain stable. Set permutations agree, ordered extension/expression arrays retain order, and integer boundaries have literal canonical-byte/digest controls. All v1 projection/hash fixtures remain unchanged.
 
 ### 6. Verification commands
 ```sh

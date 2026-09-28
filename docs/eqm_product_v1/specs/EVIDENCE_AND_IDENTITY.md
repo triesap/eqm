@@ -49,3 +49,15 @@ For local development, expose dirty/untracked source identity and confidence. Fo
 Validate byte bounds and syntax before normalization. Verify semantic digests and identity/subject relationships. Classify duplicate delivery, semantically identical alternate transport, and contradictory immutable attempt independently. Persist receipt/provenance relationships transactionally with the evidence index. A malicious unrelated file should be rejected without silently replacing a valid result; a conflict relevant to required scope must remain visible and non-authorizing.
 
 The database/index is not a source of trust. Imported statements that claim verified state cross the verification boundary again. Rebuilt indexes preserve identities and conflicts; they must not fabricate new successful verification receipts.
+
+## DEV-005 binding projection allocation
+
+S017's v2 projection includes every current binding, artifact, exposure and
+evidence-specification semantic field and extension, using ADR-0013 numeric
+forms and the explicit set/sequence classification in DEV-005 of the governing
+sequence. The existing v1 projection is a field inventory, not reusable v2 bytes.
+Only `dev.equivalencematrix.display` is an excluded extension namespace; declared
+artifact paths remain semantic. Comments, formatting and source spans do not
+enter Binding. Use the existing BindingDigest domain and preserve v1 projection
+APIs/hashes. Later owning v2 construction/relationship steps integrate the new
+component identity; S017 does not silently reinterpret existing v1 transports.

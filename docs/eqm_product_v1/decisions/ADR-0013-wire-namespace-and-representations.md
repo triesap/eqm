@@ -160,3 +160,15 @@ JSON; RV-TEXT-2's Unicode escape denotes accepted café and canonical output emi
 that literal UTF-8 text. A separate opaque-byte discipline includes decomposed
 and non-UTF-8 cases. The governing amendment specifies real-ingress integration
 and regression evidence; vector inventory alone is not implementation.
+
+## DEV-005 structural field validation clarification
+
+The governing sequence's DEV-005 field/type table is normative for S016. Exact
+NFC is necessary but does not replace typed identifier, vocabulary, text-length
+or positive-revision constraints. Shared validation covers each existing v2 root
+and embedded inventory. Opaque bytes and arbitrary diagnostic prose retain their
+separate classification. The unconsumed EvidenceSelectorV2Dto helper does not
+prove consumer validation; the first owning v2 selector ingress must call its
+typed validation. No extra schema family or relationship/trust acceptance is
+introduced to manufacture that integration. S017 uses a separate v2 binding
+projection under the existing BindingDigest domain; all v1 bytes stay frozen.

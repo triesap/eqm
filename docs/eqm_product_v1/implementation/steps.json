@@ -933,7 +933,7 @@
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": "DEV-004: S015 accepted at 121622f for its allocated scope. Retain corrective history; proceed to S016-P1 and S016. Later semantic/product acceptance remains with its owning steps.",
+      "gate": "DEV-005: S015 accepted for allocated scope; S016-P1 also accepted. Retain corrective history and proceed to S016-R1. Later semantic/product acceptance remains with its owning steps.",
       "initial_status": "pending",
       "review_regressions": [
         "RA13"
@@ -953,7 +953,7 @@
     {
       "title": "Add canonical set and Unicode vectors",
       "purpose": "Distinguish semantic unordered collections from ordered scenarios.",
-      "scope": "Complete DEV-004 prerequisite S016-P1 to pin the existing engine test-support dependency without relaxing policy. Then execute set/sequence/authored-text/opaque-byte vectors and enforce the approved v2 field classifications, full canonical member-byte ordering and duplicate rejection at real ingress/serialization boundaries. Preserve v1 projections and original raw bytes; distinguish logical-key uniqueness from ordering and semantic canonicalization from raw identity.",
+      "scope": "Retain accepted S016-P1 and implementation 6837831; complete DEV-005 S016-R1 and S016-R2 to close authored v2 ingress/type validation and real-boundary collection/sequence/raw-byte regressions. Follow the explicit field mapping, independent literal canonical bytes/digest expectations and evidence discipline in DEV-005; preserve all retained DEV-004 rules and v1 bytes.",
       "files": [
         "crates/eqm_manifest/src/canonical.rs",
         "crates/eqm_protocol/src/",
@@ -963,7 +963,7 @@
         "schemas/v2/",
         "tests/fixtures/"
       ],
-      "tests": "Valid set permutations produce identical canonical bytes; exact and logical-key duplicates reject before collection. Ordered attempts/diagnostics/related locations preserve sequence and multiplicity. Escaped strings and object members test canonical-byte ordering. Authored NFC accepts, decomposed text rejects without normalization; opaque decomposed/non-UTF-8 bytes remain exact. Every applicable vector executes by explicit discipline with exact outputs. Existing S015 controls and v1 schema/byte preservation remain green; dependency audit/policy passes at S016-P1.",
+      "tests": "Execute every DEV-005 mapped authored field family with valid typed controls and one-field mutants at owning roots; all set permutations/exact and logical-key duplicates, profile revision conflicts, valid attempt-index rules, diagnostic/related-location sequence order and multiplicity, independent literal runtime-facts bytes/hash, and strict/raw opaque identity controls. Preserve S015 regressions and v1 schema/hash bytes. Final ledger and current status must pass structure validation after edits.",
       "expected": "Canonicalization is executable protocol behavior rather than serializer convention.",
       "commit_message": "test: lock canonical collection and string semantics",
       "requirements": [
@@ -991,7 +991,8 @@
         "implementation/review_regressions.json",
         "decisions/ADR-0012-approved-review-closure.md",
         "decisions/ADR-0013-wire-namespace-and-representations.md",
-        "implementation/reports/CODEX-121622f.md"
+        "implementation/reports/CODEX-121622f.md",
+        "implementation/reports/CODEX-6837831.md"
       ],
       "verification_commands": [
         "cargo audit --deny warnings",
@@ -1006,25 +1007,30 @@
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": "DEV-004: first complete S016-P1 as one independently green prerequisite commit; then S016 itself and ordered unblocked successors through S211. Codex has settled collection/text classification and the reviewed license allowance; Pi cannot waive policy or change these contracts.",
+      "gate": "DEV-005: S016-P1 accepted, RF19 closed. Execute independently green S016-R1 then S016-R2 before S017. After their objective gates, record supervisor acceptance pending and continue ordered unblocked work through S211.",
       "initial_status": "pending",
       "review_regressions": [
         "RA13"
       ],
       "preparatory_checkpoints": [
         "S016-P1"
+      ],
+      "corrective_checkpoints": [
+        "S016-R1",
+        "S016-R2"
       ]
     },
     {
       "title": "Hash complete binding semantics",
       "purpose": "Correct the ID-only binding digest shortcut.",
-      "scope": "Implement/reuse canonical binding projection with its own digest domain, including semantic artifact/evidence mappings and excluding display-only provenance deliberately.",
+      "scope": "Implement a separate v2 complete binding projection and existing BindingDigest using DEV-005 numeric/set rules. Reuse the existing binding projection as a field inventory, not its v1 bytes. Include all binding/artifact/exposure/evidence semantics and semantic extensions; exclude only dev.equivalencematrix.display and absent parse provenance. Preserve v1 APIs/hashes and existing crate directions; later owning steps integrate v2 evidence construction.",
       "files": [
+        "crates/eqm_manifest/src/canonical.rs",
         "crates/eqm_manifest/src/canonical/",
         "crates/eqm_domain/src/digest.rs",
         "crates/eqm_manifest/tests/"
       ],
-      "tests": "Change selector/artifact semantics without changing binding ID and require a new digest; comments/display-only changes remain stable as specified.",
+      "tests": "Same-ID selector/artifact path/constraint/semantic-extension changes alter identity; actual display-extension and comment/formatting changes remain stable. Set permutations agree, ordered extension/expression arrays retain order, and integer boundaries have literal canonical-byte/digest controls. All v1 projection/hash fixtures remain unchanged.",
       "expected": "Binding identity binds actual approved semantics.",
       "commit_message": "fix: bind evidence to canonical binding semantics",
       "requirements": [
@@ -1038,7 +1044,9 @@
         "AC019"
       ],
       "contract_files": [
-        "specs/EVIDENCE_AND_IDENTITY.md"
+        "specs/EVIDENCE_AND_IDENTITY.md",
+        "decisions/ADR-0013-wire-namespace-and-representations.md",
+        "implementation/reports/CODEX-6837831.md"
       ],
       "verification_commands": [
         "cargo fmt --all --check",
@@ -13581,10 +13589,10 @@
   "supervision": {
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
-    "amendment": "DEV-004",
-    "next_checkpoint": "S016-P1",
+    "amendment": "DEV-005",
+    "next_checkpoint": "S016-R1",
     "execution_target": "S211 subject to explicit predecessor and external evidence gates",
     "intermediate_checkpoint": "S143 is not a stopping boundary",
-    "continuation": "S015 accepted. Complete S016-P1, then S016–S211 subject to actual dependency/external gates; S143 remains intermediate."
+    "continuation": "S016-P1 accepted. Complete S016-R1/R2, then S017–S211 subject to predecessor/external gates; S143 remains intermediate."
   }
 }

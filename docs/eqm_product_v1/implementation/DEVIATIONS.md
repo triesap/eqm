@@ -102,3 +102,19 @@ S016-P1 is one green commit; S016 follows separately, then ordered unblocked
 S017–S211. No renumbering, merged steps, paused S015 acceptance or human release
 approval is needed. Package structure and documentation diff checks validate the
 planning update; no source implementation is claimed by this amendment.
+
+## DEV-005 — Reopen S016 and settle S017 representation
+
+**Date/author:** 2026-09-28, Codex supervisor under owner delegation.
+**Reviewed source:** 68378317044d49a121caff07e783573abdf3cd56.
+**Affected contracts:** S016 R18/R19/R21/R43/R64 and S017 R19, with existing AC/RA links retained.
+
+[Review RF20–RF23](reports/CODEX-6837831.md) finds incomplete authored validation,
+NFC-only syntax acceptance, missing boundary controls and a historical receipt
+discrepancy. RF19 is accepted as fixed. The [DEV-005 amendment](COMMIT_SEQUENCE.md#dev-005--s016-review-closure-and-binding-projection-decision)
+allocates S016-R1/R2 before S017, retains all 211 step IDs, freezes the field/type
+mapping and separate v2 binding projection, and preserves v1 behavior. Current
+structure validation passes; the earlier failed log is retained as failed evidence.
+Codex reconciles status now; Pi implements the source/test repairs and continues
+all dependency-unblocked work through S211. No implementation fix, live product
+acceptance or release readiness is asserted by this planning amendment.
