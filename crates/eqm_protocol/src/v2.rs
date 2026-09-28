@@ -10,15 +10,19 @@
 
 #![allow(missing_docs)]
 
-use crate::{CanonicalSet, WireInt, WireUint, is_authored_nfc};
+use crate::{CanonicalSet, WireInt, WireUint};
 use eqm_domain::{
-    EvidenceCounts, PositiveCount, RepositoryIdentity, SelectorText, Sha256Digest, SourceCommit,
-    UtcInstantV2, V2_UTC_PATTERN,
+    AdapterId, AttemptOutcome, DimensionId, EvidenceCounts, EvidenceKind, Facet, FullRequirementId,
+    HttpMethod, InventoryCompleteness, OwnerRef, PositiveCount, ProducerRef, ProfileId, ProviderId,
+    ReleaseChannel, RepoPath, RepositoryIdentity, Revision, SelectorText, Sha256Digest,
+    SourceCommit, SurfaceId, SymbolicValueId, TargetId, TrustLevel, UnitId, UtcInstantV2,
+    V2_UTC_PATTERN,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, de};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
+use std::str::FromStr;
 
 /// Declared v2 runtime-facts byte envelope, honored at every parse.
 const MAX_RUNTIME_FACTS_BYTES: usize = 16 * 1024 * 1024;
@@ -57,6 +61,8 @@ pub enum V2DtoError {
     InvalidSubject,
     InvalidOrdering,
     InvalidFact,
+    InvalidProfile,
+    InvalidEntry,
 }
 
 impl std::fmt::Display for V2DtoError {
@@ -249,19 +255,26 @@ pub enum EvidenceSelectorV2Dto {
 }
 
 impl EvidenceSelectorV2Dto {
-    /// Validates authored selector metadata as exact NFC without normalizing.
+    /// Validates selector metadata with the existing domain field types:
+    /// [`SelectorText`] for authored names and [`HttpMethod`]/[`ReleaseChannel`]
+    /// for their closed vocabularies.
+    ///
+    /// No current v2 root owns an evidence selector, so this typed contract is
+    /// not yet integrated at a real ingress. Its consumer wiring belongs to the
+    /// first v2 step that introduces an owning selector root; this helper is not
+    /// proof of root integration today.
     pub fn validate(&self) -> Result<(), V2DtoError> {
         match self {
             Self::Symbol { name, language } => {
-                validate_authored(name)?;
+                validate_selector_text(name, V2DtoError::InvalidVocabulary)?;
                 if let Some(language) = language {
-                    validate_authored(language)?;
+                    validate_selector_text(language, V2DtoError::InvalidVocabulary)?;
                 }
             }
             Self::Route { path, method } => {
-                validate_authored(path)?;
+                validate_selector_text(path, V2DtoError::InvalidVocabulary)?;
                 if let Some(method) = method {
-                    validate_authored(method)?;
+                    parse_typed::<HttpMethod>(method, V2DtoError::InvalidVocabulary)?;
                 }
             }
             Self::Test {
@@ -269,10 +282,10 @@ impl EvidenceSelectorV2Dto {
                 test_id,
                 suite,
             } => {
-                validate_authored(framework)?;
-                validate_authored(test_id)?;
+                validate_selector_text(framework, V2DtoError::InvalidVocabulary)?;
+                validate_selector_text(test_id, V2DtoError::InvalidVocabulary)?;
                 if let Some(suite) = suite {
-                    validate_authored(suite)?;
+                    validate_selector_text(suite, V2DtoError::InvalidVocabulary)?;
                 }
             }
             Self::Inventory {
@@ -280,22 +293,24 @@ impl EvidenceSelectorV2Dto {
                 key,
                 value,
             } => {
-                validate_authored(record_type)?;
-                validate_authored(key)?;
+                validate_selector_text(record_type, V2DtoError::InvalidVocabulary)?;
+                validate_selector_text(key, V2DtoError::InvalidVocabulary)?;
                 if let Some(value) = value {
-                    validate_authored(value)?;
+                    validate_selector_text(value, V2DtoError::InvalidVocabulary)?;
                 }
             }
             Self::Snapshot {
                 snapshot_id,
                 variant,
             } => {
-                validate_authored(snapshot_id)?;
+                validate_selector_text(snapshot_id, V2DtoError::InvalidVocabulary)?;
                 if let Some(variant) = variant {
-                    validate_authored(variant)?;
+                    validate_selector_text(variant, V2DtoError::InvalidVocabulary)?;
                 }
             }
-            Self::Release { channel } => validate_authored(channel)?,
+            Self::Release { channel } => {
+                parse_typed::<ReleaseChannel>(channel, V2DtoError::InvalidVocabulary)?;
+            }
         }
         Ok(())
     }
@@ -331,6 +346,44 @@ pub struct EvidenceSubjectV2Dto {
     #[schemars(with = "String")]
     pub artifact_digest: Option<String>,
     pub target_configuration_digest: String,
+}
+
+impl EvidenceSubjectV2Dto {
+    /// Validates the shared subject metadata and typed scope members with the
+    /// existing domain grammars. This is structural authored validation only;
+    /// it confers no trust or relationship acceptance.
+    fn validate(&self) -> Result<(), V2DtoError> {
+        parse_typed::<RepositoryIdentity>(&self.repository, V2DtoError::InvalidSubject)?;
+        parse_typed::<Sha256Digest>(&self.repository_id_digest, V2DtoError::InvalidSubject)?;
+        parse_typed::<SourceCommit>(&self.source_commit, V2DtoError::InvalidSubject)?;
+        parse_typed::<Sha256Digest>(
+            &self.target_configuration_digest,
+            V2DtoError::InvalidSubject,
+        )?;
+        if let Some(build_id) = &self.build_id {
+            validate_selector_text(build_id, V2DtoError::InvalidSubject)?;
+        }
+        if let Some(artifact_digest) = &self.artifact_digest {
+            parse_typed::<Sha256Digest>(artifact_digest, V2DtoError::InvalidSubject)?;
+        }
+        match &self.scope {
+            ScopeSubjectV2Dto::Target { target } => {
+                parse_typed::<TargetId>(target, V2DtoError::InvalidSubject)?;
+            }
+            ScopeSubjectV2Dto::Provider { provider } => {
+                parse_typed::<ProviderId>(provider, V2DtoError::InvalidSubject)?;
+            }
+            ScopeSubjectV2Dto::TargetSet { targets } => {
+                if targets.is_empty() {
+                    return Err(V2DtoError::InvalidSubject);
+                }
+                for target in targets.iter() {
+                    parse_typed::<TargetId>(target, V2DtoError::InvalidSubject)?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
@@ -474,30 +527,76 @@ fn validate_execution(execution: &ExecutionPayloadV2Dto) -> Result<(), V2DtoErro
 }
 
 fn validate_digest(value: &str) -> Result<(), V2DtoError> {
-    value
-        .parse::<Sha256Digest>()
-        .map(|_| ())
-        .map_err(|_| V2DtoError::InvalidDigest)
+    parse_typed::<Sha256Digest>(value, V2DtoError::InvalidDigest)
 }
 
-/// Rejects non-NFC authored v2 metadata without normalizing it.
-fn validate_authored(value: &str) -> Result<(), V2DtoError> {
-    if is_authored_nfc(value) {
-        Ok(())
-    } else {
-        Err(V2DtoError::InvalidVocabulary)
+/// Parses one authored field with its existing domain grammar or vocabulary.
+///
+/// This reuses the domain constructors instead of an NFC-only predicate: an
+/// exact-NFC string can still violate a typed identifier's syntax or length.
+fn parse_typed<T>(value: &str, error: V2DtoError) -> Result<(), V2DtoError>
+where
+    T: FromStr,
+{
+    value.parse::<T>().map(|_| ()).map_err(|_| error)
+}
+
+/// Validates one bounded, normalized authored text field ([`SelectorText`]).
+fn validate_selector_text(value: &str, error: V2DtoError) -> Result<(), V2DtoError> {
+    SelectorText::new(value).map(|_| ()).map_err(|_| error)
+}
+
+/// Validates one typed v2 fact value with its existing domain restrictions.
+fn validate_fact_value(value: &FactValueV2Dto, error: V2DtoError) -> Result<(), V2DtoError> {
+    match value {
+        FactValueV2Dto::Boolean(_) | FactValueV2Dto::Integer(_) => Ok(()),
+        FactValueV2Dto::Symbol(value) => parse_typed::<SymbolicValueId>(value, error),
+        FactValueV2Dto::Text(value) => validate_selector_text(value, error),
     }
 }
 
-/// Rejects duplicate `(profile, dimension)` pairs and conflicting revisions
-/// within one profile. Ordering is handled separately by [`CanonicalSet`].
+/// Validates one runtime fact's key coordinates and typed value.
+fn validate_runtime_fact(fact: &RuntimeFactV2Dto) -> Result<(), V2DtoError> {
+    parse_typed::<SurfaceId>(&fact.surface, V2DtoError::InvalidFact)?;
+    parse_typed::<DimensionId>(&fact.dimension, V2DtoError::InvalidFact)?;
+    validate_selector_text(&fact.key, V2DtoError::InvalidFact)?;
+    validate_fact_value(&fact.value, V2DtoError::InvalidFact)
+}
+
+/// Validates one inventory entry's symbolic metadata and source path.
+fn validate_inventory_entry(entry: &InventoryEntryV2Dto) -> Result<(), V2DtoError> {
+    validate_selector_text(&entry.kind, V2DtoError::InvalidEntry)?;
+    validate_selector_text(&entry.key, V2DtoError::InvalidEntry)?;
+    for (name, value) in &entry.attributes {
+        validate_selector_text(name, V2DtoError::InvalidEntry)?;
+        validate_fact_value(value, V2DtoError::InvalidEntry)?;
+    }
+    parse_typed::<RepoPath>(&entry.source, V2DtoError::InvalidEntry)
+}
+
+/// Validates diagnostic unit/target references without restricting diagnostic
+/// prose, source exports or other observed text.
+fn validate_diagnostic(diagnostic: &DiagnosticV2Dto) -> Result<(), V2DtoError> {
+    if let Some(unit) = &diagnostic.unit {
+        parse_typed::<UnitId>(unit, V2DtoError::InvalidVocabulary)?;
+    }
+    if let Some(target) = &diagnostic.target {
+        parse_typed::<TargetId>(target, V2DtoError::InvalidVocabulary)?;
+    }
+    Ok(())
+}
+
+/// Validates profile-value metadata and rejects duplicate `(profile, dimension)`
+/// pairs and conflicting revisions within one profile. Ordering is handled
+/// separately by [`CanonicalSet`].
 fn validate_profile_values(values: &[ProfileValueV2Dto]) -> Result<(), V2DtoError> {
     let mut pairs = BTreeSet::new();
     let mut revisions: BTreeMap<&str, WireUint> = BTreeMap::new();
     for value in values {
-        validate_authored(&value.profile)?;
-        validate_authored(&value.dimension)?;
-        validate_authored(&value.value)?;
+        parse_typed::<ProfileId>(&value.profile, V2DtoError::InvalidProfile)?;
+        Revision::new(value.revision.get()).map_err(|_| V2DtoError::InvalidProfile)?;
+        parse_typed::<DimensionId>(&value.dimension, V2DtoError::InvalidProfile)?;
+        parse_typed::<SymbolicValueId>(&value.value, V2DtoError::InvalidProfile)?;
         if !pairs.insert((value.profile.as_str(), value.dimension.as_str())) {
             return Err(V2DtoError::InvalidOrdering);
         }
@@ -573,12 +672,15 @@ fn validate_payload(payload: &EvidencePayloadV2Dto) -> Result<(), V2DtoError> {
         EvidencePayloadV2Dto::ReleaseRecord {
             release_record_digest,
         } => validate_digest(release_record_digest),
-        EvidencePayloadV2Dto::ManualReview { outcome, .. } => match outcome
-            .parse::<eqm_domain::AttemptOutcome>(
-        ) {
-            Ok(eqm_domain::AttemptOutcome::Passed | eqm_domain::AttemptOutcome::Failed) => Ok(()),
-            _ => Err(V2DtoError::InvalidVocabulary),
-        },
+        EvidencePayloadV2Dto::ManualReview {
+            outcome, reviewer, ..
+        } => {
+            match outcome.parse::<AttemptOutcome>() {
+                Ok(AttemptOutcome::Passed | AttemptOutcome::Failed) => {}
+                _ => return Err(V2DtoError::InvalidVocabulary),
+            }
+            parse_typed::<OwnerRef>(reviewer, V2DtoError::InvalidVocabulary)
+        }
     }
 }
 
@@ -593,13 +695,14 @@ impl EvidenceResultV2Dto {
         if self.schema != crate::EVIDENCE_RESULT_SCHEMA_V2.to_string() {
             return Err(V2DtoError::InvalidSchema);
         }
-        validate_authored(&self.target)?;
-        validate_authored(&self.unit)?;
+        self.subject.validate()?;
+        parse_typed::<TargetId>(&self.target, V2DtoError::InvalidVocabulary)?;
+        parse_typed::<UnitId>(&self.unit, V2DtoError::InvalidVocabulary)?;
         for requirement in &self.requirements {
-            validate_authored(requirement)?;
+            parse_typed::<FullRequirementId>(requirement, V2DtoError::InvalidVocabulary)?;
         }
         for facet in &self.facets {
-            validate_authored(facet)?;
+            parse_typed::<Facet>(facet, V2DtoError::InvalidVocabulary)?;
         }
         validate_profile_values(&self.profile_values)?;
         let id = self
@@ -633,17 +736,18 @@ impl EvidenceResultV2Dto {
             validate_digest(digest)?;
         }
         self.kind
-            .parse::<eqm_domain::EvidenceKind>()
+            .parse::<EvidenceKind>()
             .map_err(|_| V2DtoError::InvalidVocabulary)?;
         self.claimed_trust
-            .parse::<eqm_domain::TrustLevel>()
+            .parse::<TrustLevel>()
             .map_err(|_| V2DtoError::InvalidVocabulary)?;
         self.producer
-            .parse::<eqm_domain::ProducerRef>()
+            .parse::<ProducerRef>()
             .map_err(|_| V2DtoError::InvalidVocabulary)?;
         let mut attachment_names = BTreeSet::new();
         for attachment in &self.attachments {
-            validate_authored(&attachment.name)?;
+            validate_selector_text(&attachment.name, V2DtoError::InvalidVocabulary)?;
+            validate_selector_text(&attachment.media_type, V2DtoError::InvalidVocabulary)?;
             validate_digest(&attachment.digest)?;
             if !attachment_names.insert(attachment.name.as_str()) {
                 return Err(V2DtoError::InvalidOrdering);
@@ -729,18 +833,10 @@ impl RuntimeFactsV2Dto {
     }
 
     fn validate(&self) -> Result<(), V2DtoError> {
-        self.provider
-            .parse::<eqm_domain::ProviderId>()
-            .map_err(|_| V2DtoError::InvalidSubject)?;
-        self.target
-            .parse::<eqm_domain::TargetId>()
-            .map_err(|_| V2DtoError::InvalidSubject)?;
-        self.producer
-            .parse::<eqm_domain::ProducerRef>()
-            .map_err(|_| V2DtoError::InvalidVocabulary)?;
-        self.claimed_trust
-            .parse::<eqm_domain::TrustLevel>()
-            .map_err(|_| V2DtoError::InvalidVocabulary)?;
+        parse_typed::<ProviderId>(&self.provider, V2DtoError::InvalidSubject)?;
+        parse_typed::<TargetId>(&self.target, V2DtoError::InvalidSubject)?;
+        parse_typed::<ProducerRef>(&self.producer, V2DtoError::InvalidVocabulary)?;
+        parse_typed::<TrustLevel>(&self.claimed_trust, V2DtoError::InvalidVocabulary)?;
         if self.expires_at <= self.observed_at {
             return Err(V2DtoError::InvalidTime);
         }
@@ -750,57 +846,17 @@ impl RuntimeFactsV2Dto {
         ) {
             return Err(V2DtoError::InvalidSubject);
         }
-        // v1 runtime facts already require these subject syntax checks; v2 must
-        // not regress to a scope-only check. This is structural validation, not
-        // later trust or lineage semantics.
-        self.subject
-            .repository
-            .parse::<RepositoryIdentity>()
-            .map_err(|_| V2DtoError::InvalidSubject)?;
-        self.subject
-            .repository_id_digest
-            .parse::<Sha256Digest>()
-            .map_err(|_| V2DtoError::InvalidSubject)?;
-        self.subject
-            .source_commit
-            .parse::<SourceCommit>()
-            .map_err(|_| V2DtoError::InvalidSubject)?;
-        self.subject
-            .target_configuration_digest
-            .parse::<Sha256Digest>()
-            .map_err(|_| V2DtoError::InvalidSubject)?;
-        if self
-            .subject
-            .build_id
-            .as_deref()
-            .is_some_and(|value| SelectorText::new(value).is_err())
-            || self
-                .subject
-                .artifact_digest
-                .as_deref()
-                .is_some_and(|value| value.parse::<Sha256Digest>().is_err())
-        {
-            return Err(V2DtoError::InvalidSubject);
-        }
+        // The shared subject checks are the same structural checks the other
+        // v2 roots apply (repository identity, commits, digests, build ID or
+        // artifact digest). They are not later trust or lineage semantics.
+        self.subject.validate()?;
         if self.facts.len() > MAX_RUNTIME_FACTS {
             return Err(V2DtoError::InvalidLimits);
         }
         validate_profile_values(&self.profile_values)?;
         validate_fact_keys(&self.facts)?;
         for fact in &self.facts {
-            eqm_domain::SurfaceId::new(fact.surface.as_str())
-                .map_err(|_| V2DtoError::InvalidFact)?;
-            eqm_domain::DimensionId::new(fact.dimension.as_str())
-                .map_err(|_| V2DtoError::InvalidFact)?;
-            eqm_domain::SelectorText::new(fact.key.as_str())
-                .map_err(|_| V2DtoError::InvalidFact)?;
-            match &fact.value {
-                FactValueV2Dto::Symbol(value) | FactValueV2Dto::Text(value) => {
-                    eqm_domain::SelectorText::new(value.as_str())
-                        .map_err(|_| V2DtoError::InvalidFact)?;
-                }
-                FactValueV2Dto::Boolean(_) | FactValueV2Dto::Integer(_) => {}
-            }
+            validate_runtime_fact(fact)?;
         }
         Ok(())
     }
@@ -894,9 +950,10 @@ impl InventoryV2Dto {
     }
 
     /// Structural checks shared by standalone ingestion and an embedded
-    /// adapter-response inventory: exact v2 marker, declared byte/entry bounds
-    /// and digest syntax. It confers no trust and does not pull in later
-    /// relationship or verification semantics.
+    /// adapter-response inventory: exact v2 marker, declared byte/entry bounds,
+    /// typed adapter/target/subject/completeness/entry metadata and digest
+    /// syntax. It confers no trust and does not pull in later relationship or
+    /// verification semantics.
     fn validate_structure(&self) -> Result<(), V2DtoError> {
         if self.schema != crate::INVENTORY_SCHEMA_V2.to_string() {
             return Err(V2DtoError::InvalidSchema);
@@ -904,8 +961,16 @@ impl InventoryV2Dto {
         if self.entries.len() > 250_000 {
             return Err(V2DtoError::InvalidLimits);
         }
+        parse_typed::<AdapterId>(&self.adapter, V2DtoError::InvalidVocabulary)?;
+        parse_typed::<TargetId>(&self.target, V2DtoError::InvalidVocabulary)?;
+        parse_typed::<InventoryCompleteness>(&self.completeness, V2DtoError::InvalidVocabulary)?;
+        self.subject.validate()?;
+        for diagnostic in &self.diagnostics {
+            validate_diagnostic(diagnostic)?;
+        }
         let mut keys = BTreeSet::new();
         for entry in &self.entries {
+            validate_inventory_entry(entry)?;
             if !keys.insert((entry.kind.as_str(), entry.key.as_str())) {
                 return Err(V2DtoError::InvalidOrdering);
             }
@@ -961,6 +1026,9 @@ impl AdapterRequestV2Dto {
         if value.schema != crate::ADAPTER_REQUEST_SCHEMA_V2.to_string() {
             return Err(V2DtoError::InvalidSchema);
         }
+        parse_typed::<AdapterId>(&value.adapter, V2DtoError::InvalidVocabulary)?;
+        parse_typed::<TargetId>(&value.target, V2DtoError::InvalidVocabulary)?;
+        value.subject.validate()?;
         validate_digest(&value.adapter_digest)?;
         let limits = &value.limits;
         if !(1_000..=3_600_000).contains(&limits.timeout_ms.get())
@@ -1018,6 +1086,10 @@ impl AdapterResponseV2Dto {
         }
         if matches!(value.status, AdapterStatusV2Dto::Error) == value.inventory.is_some() {
             return Err(V2DtoError::InvalidStatus);
+        }
+        parse_typed::<AdapterId>(&value.adapter, V2DtoError::InvalidVocabulary)?;
+        for diagnostic in &value.diagnostics {
+            validate_diagnostic(diagnostic)?;
         }
         // Validate the response's own adapter digest and, when present, the
         // nested inventory through the same structural checks standalone
@@ -1093,8 +1165,8 @@ mod tests {
             subject: subject(),
             target: "web".to_owned(),
             unit: "unit.test".to_owned(),
-            requirements: CanonicalSet::from_members(vec!["R18".to_owned()])?,
-            facets: CanonicalSet::from_members(vec!["facet.a".to_owned()])?,
+            requirements: CanonicalSet::from_members(vec!["unit.test#r18".to_owned()])?,
+            facets: CanonicalSet::from_members(vec!["behavior".to_owned()])?,
             kind: "test".to_owned(),
             evidence_spec_digest: digest("spec"),
             contract_digest: digest("contract"),

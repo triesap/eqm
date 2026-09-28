@@ -46,7 +46,7 @@ fn evidence_result() -> Value {
         "subject": subject(),
         "target": "web",
         "unit": "unit.test",
-        "requirements": ["R18", "R19"],
+        "requirements": ["unit.test#r18", "unit.test#r19"],
         "facets": ["behavior", "structure"],
         "kind": "release_record",
         "evidence_spec_digest": digest("spec"),
@@ -70,10 +70,10 @@ fn parse_evidence(value: &Value) -> Result<EvidenceResultV2Dto, V2DtoError> {
 #[test]
 fn semantic_set_permutations_are_equal_and_duplicates_reject() -> Result<(), Box<dyn Error>> {
     let mut first = evidence_result();
-    first["requirements"] = json!(["R18", "R19"]);
+    first["requirements"] = json!(["unit.test#r18", "unit.test#r19"]);
     first["facets"] = json!(["behavior", "structure"]);
     let mut second = evidence_result();
-    second["requirements"] = json!(["R19", "R18"]);
+    second["requirements"] = json!(["unit.test#r19", "unit.test#r18"]);
     second["facets"] = json!(["structure", "behavior"]);
 
     let first = parse_evidence(&first)?;
@@ -89,12 +89,12 @@ fn semantic_set_permutations_are_equal_and_duplicates_reject() -> Result<(), Box
     );
     assert_eq!(
         first.requirements.as_slice(),
-        &["R18".to_owned(), "R19".to_owned()]
+        &["unit.test#r18".to_owned(), "unit.test#r19".to_owned()]
     );
 
     // Nested exact duplicates reject before the set is collected.
     let mut duplicated = evidence_result();
-    duplicated["requirements"] = json!(["R18", "R18"]);
+    duplicated["requirements"] = json!(["unit.test#r18", "unit.test#r18"]);
     assert!(parse_evidence(&duplicated).is_err());
 
     // Duplicate attachment names are a logical-key collision even when the
@@ -184,16 +184,40 @@ fn ordered_sequences_preserve_order_and_multiplicity() -> Result<(), Box<dyn Err
 
 #[test]
 fn authored_metadata_rejects_non_nfc_without_normalizing() -> Result<(), Box<dyn Error>> {
-    let mut decomposed = evidence_result();
-    decomposed["unit"] = json!("cafe\u{0301}");
+    // `SelectorText` is Unicode-capable but must be exact NFC: attachment names
+    // and build IDs demonstrate the authored-text rule directly. Typed IDs such
+    // as `UnitId` are narrower than `SelectorText` and reject non-ASCII input on
+    // grammar, not on normalization.
+    let attachment = |name: &str| {
+        let mut value = evidence_result();
+        value["attachments"] = json!([
+            {"name": name, "media_type": "text/plain", "digest": zeros(), "size": 1},
+        ]);
+        value
+    };
     assert_eq!(
-        parse_evidence(&decomposed),
+        parse_evidence(&attachment("cafe\u{0301}.txt")),
         Err(V2DtoError::InvalidVocabulary)
     );
+    assert!(parse_evidence(&attachment("café.txt")).is_ok());
 
-    let mut composed = evidence_result();
-    composed["unit"] = json!("café");
-    assert!(parse_evidence(&composed).is_ok());
+    let mut decomposed_build = evidence_result();
+    decomposed_build["subject"]["build_id"] = json!("build-cafe\u{0301}");
+    assert_eq!(
+        parse_evidence(&decomposed_build),
+        Err(V2DtoError::InvalidSubject)
+    );
+    let mut composed_build = evidence_result();
+    composed_build["subject"]["build_id"] = json!("build-café");
+    assert!(parse_evidence(&composed_build).is_ok());
+
+    // Typed identifiers keep their own grammar: a decomposed `UnitId` and a
+    // non-ASCII `UnitId` both reject, and so does a single-segment unit.
+    for unit in ["cafe\u{0301}", "café", "single"] {
+        let mut value = evidence_result();
+        value["unit"] = json!(unit);
+        assert_eq!(parse_evidence(&value), Err(V2DtoError::InvalidVocabulary));
+    }
 
     assert_eq!(
         EvidenceSelectorV2Dto::Symbol {
@@ -210,6 +234,23 @@ fn authored_metadata_rejects_non_nfc_without_normalizing() -> Result<(), Box<dyn
         }
         .validate()
         .is_ok()
+    );
+    // The selector helper reuses the closed vocabularies, not an NFC predicate:
+    // an NFC `HttpMethod`/`ReleaseChannel` spelling outside the vocabulary fails.
+    assert_eq!(
+        EvidenceSelectorV2Dto::Route {
+            path: "/signup".to_owned(),
+            method: Some("head".to_owned()),
+        }
+        .validate(),
+        Err(V2DtoError::InvalidVocabulary)
+    );
+    assert_eq!(
+        EvidenceSelectorV2Dto::Release {
+            channel: "nightly".to_owned(),
+        }
+        .validate(),
+        Err(V2DtoError::InvalidVocabulary)
     );
     Ok(())
 }

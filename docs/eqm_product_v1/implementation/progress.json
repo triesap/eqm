@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S016",
  "implementation": "in_progress",
- "local_verification": "standard_passed_S016_changes_required",
+ "local_verification": "standard_passed_S016_R1_R2_pending",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -439,10 +439,24 @@
    "corrective_checkpoints": [
     {
      "id": "S016-R1",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/CODEX-6837831.md",
-     "verification": []
+     "report": "implementation/reports/S016.md#s016-r1",
+     "verification": [
+      "cargo audit --deny warnings",
+      "cargo deny check",
+      "cargo xtask schemas generate",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_manifest -p eqm_protocol -p eqm_domain -p eqm_test_support",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ],
+     "implementation_status": "committed",
+     "supervisor_status": "pending"
     },
     {
      "id": "S016-R2",
@@ -2668,7 +2682,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S016-R1",
+ "next_checkpoint": "S016-R2",
  "supervisor_review": {
   "source_commit": "68378317044d49a121caff07e783573abdf3cd56",
   "report": "implementation/reports/CODEX-6837831.md",
