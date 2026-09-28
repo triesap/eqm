@@ -22,12 +22,14 @@ Model product roles separately from targets.
 Support asymmetric CLI/control-tower/edge behavior.
 
 ### 3. Exact scope of code changes
-Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable.
+Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable. DEV-007: bind the newly modeled exact role ID in the target configuration projection in this same step; preserve v1 forms and prove same-target role mutation changes its v2 identity.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
 - `crates/eqm_domain/src/id.rs`
 - `crates/eqm_domain/tests/`
+- `crates/eqm_manifest/src/canonical/`
+- `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
 Distinct target outputs may share a role; role changes do not accidentally rename targets or imply participation.
@@ -36,7 +38,7 @@ Distinct target outputs may share a role; role changes do not accidentally renam
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_domain
+cargo test --all-targets --locked -p eqm_domain -p eqm_manifest
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -66,12 +68,14 @@ Model source components.
 Represent shared implementation input without duplicate target roots.
 
 ### 3. Exact scope of code changes
-Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation.
+Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation. DEV-007: bind newly modeled target-to-source-component ID references in the target projection as canonical ID sets in this same step; exact source content remains a separate subject axis.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
 - `crates/eqm_domain/src/graph.rs`
 - `crates/eqm_domain/tests/`
+- `crates/eqm_manifest/src/canonical/`
+- `crates/eqm_manifest/tests/`
 
 ### 5. Unit tests or integration tests required
 Shared components attach to multiple targets; duplicate authority and invalid path identities reject.
@@ -80,7 +84,7 @@ Shared components attach to multiple targets; duplicate authority and invalid pa
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_domain
+cargo test --all-targets --locked -p eqm_domain -p eqm_manifest
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -154,7 +158,7 @@ Extend authored target and source schemas.
 Expose the approved model through generated manifests.
 
 ### 3. Exact scope of code changes
-Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases.
+Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases. DEV-007: round-trip all new target role/source references into the target identity through authored schemas and the real loader; no new normative target field may be dropped from its projection.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/dto/`
@@ -466,7 +470,7 @@ Model exact multi-subject manifests.
 Bind each actor to its own source build artifact and configuration.
 
 ### 3. Exact scope of code changes
-Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases.
+Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -690,7 +694,7 @@ Verify target model schema and identity parity.
 Close graph-model changes before obligation routing.
 
 ### 3. Exact scope of code changes
-Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions.
+Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success.
 
 ### 4. Files/modules likely involved
 - `docs/concepts.md`

@@ -83,3 +83,20 @@ The governing DEV-006 amendment freezes exact JSON member names, array semantics
 carrier invariants and S019-A/B/C allocation. Recursive extension type tags retain
 integer-versus-text distinctions; v1 and unaffected component oracles remain exact.
 The workspace digest remains aggregate context, never a substitute identity.
+
+## DEV-007 target configuration and applicability
+
+Applicability all/any children are unordered semantic sets: recursively project
+and sort complete member JCS bytes, rejecting duplicates. Domain enum iteration
+is not the wire order. Preserve v1 and domain evaluation; journey surfaces and
+extension arrays remain ordered. DEV-007 supersedes earlier ordered-child claims.
+
+S020 hashes the complete current Target definition (id/root/platform/framework/
+owners/extensions), with typed TargetConfigurationDigest and exact same-session
+target lookup. Missing targets fail explicitly. No build/profile/source reference
+fields exist in Target at this stage; do not invent placeholders. Policy selection,
+source snapshot/component content and build artifact identities remain separate
+required subject axes. Later role/source modeling steps extend the target
+projection atomically with new normative fields; S031/S038/S043 prove linkage.
+Exact spellings, APIs, failures and regression controls are normative in DEV-007
+of the governing sequence. This component digest grants no trust or release authority.

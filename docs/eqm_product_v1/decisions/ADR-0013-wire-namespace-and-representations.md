@@ -189,3 +189,13 @@ PolicySelectionDigest internally, extracting raw digest text only at explicit
 boundaries. S019's exact composition, field spelling, set/sequence allocation and
 selection carrier invariants are normative in DEV-006 of COMMIT_SEQUENCE.md.
 Unknown selection is a tagged state without value, not null or an omitted dimension.
+
+## DEV-007 applicability classification correction
+
+The existing domain stores all/any children in BTreeSet and rejects duplicates.
+They are semantic sets, not authored sequences. All v2 component projections order
+recursively projected children by complete JCS member bytes, independent of Rust
+enum order. No flattening/simplification/deduplication is implied. Membership values
+are sets; not has one child; journey surfaces and extension arrays stay ordered.
+This supersedes contrary DEV-005/DEV-006 wording while preserving v1 and domain
+semantics. S019-R1 owns the correction and literal heterogeneous-order tests.

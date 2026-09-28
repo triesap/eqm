@@ -137,3 +137,18 @@ application. S019-A/B/C are independently green slices without renumbering the
 211 steps. The decision block is resolved; code/test changes remain Pi-owned.
 Continue ordered unblocked work to S211 after the objective gates. No external
 authority, release readiness or new operational/native activation is inferred.
+
+## DEV-007 — Correct applicability and finish provenance boundaries
+
+2026-09-28, Codex under owner delegation; reviewed HEAD
+`1512c9fa7e886781bdf2976dfaabde1d8328ac43`. Approved engineering correction.
+The [review](reports/CODEX-1512c9f.md) accepts RF22/RF24/RF26 and manifest portions
+of RF25; RF27 corrects the supervisor's impossible ordered all/any instruction
+to existing domain set semantics with explicit v2 JCS ordering. RF28 completes
+already-declared S019 evidence. RF29 reconciles cursors/receipts without invented
+historical exits. [DEV-007](COMMIT_SEQUENCE.md) defines S019-R1/R2 before S020,
+and freezes S020's current Target projection with no invented build/profile/source
+fields. Later role/source/subject owners extend projections and prove all axes.
+S001–S211 IDs/dependencies remain; these shared-boundary repairs precede ordinary
+advancement. No product scope, v1 contract, external gate or operational authority
+is waived. Source changes remain Pi-owned and unimplemented by this amendment.

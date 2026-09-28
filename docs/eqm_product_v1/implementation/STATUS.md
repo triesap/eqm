@@ -1,52 +1,38 @@
 # Verification and implementation status
 
-Current amendment DEV-006, 2026-09-28. Reviewed source:
-`3469face3a88d280f2577f4ff936419408c1d248`. Latest implementation commits:
-S016-R3 `test: close collection and diagnostic boundary evidence`, S018-R1
-`fix: preserve extension types in component identities`, then S018-R2
-`test: prove component projections at manifest boundaries` (SHAs recorded
-externally).
+Current binding amendment: DEV-007, 2026-09-28. Reviewed implementation HEAD:
+`1512c9fa7e886781bdf2976dfaabde1d8328ac43`. Six Pi checkpoints are retained and
+backfilled in progress.json; [Codex review](reports/CODEX-1512c9f.md) records
+source findings and evidence limits.
 
-S001–S015 and S016-P1/R1 behavior are accepted for allocated scope. RF01–RF21
-are closed for that scope. RF22's implementation matrix is complete pending
-supervisor review (S016-R3); S016's implementation contribution is complete.
-S017/S018 implementations are retained and their RF24/RF25/RF26 repairs are
-implementation-complete pending review (S018-R1/R2). S019-A/B/C are implemented
-pending review; S019 is complete as a numbered step (validated domain carriers,
-exact v2 contract projection, selected-policy/profile projection plus typed
-`PolicySelectionDigest`, and same-session application assembly). Next: **S020 →
-… → S211**.
+S001–S016 and S018 are accepted for allocated scope (17 numbered steps). S017
+retains implemented binding semantics but needs RF27; S019-A/B/C retain their
+implementation with RF27/RF28 corrections required. P01 is complete (12/12); P02
+has five accepted numbered steps (S013–S016, S018), with S017/S019 repairs and
+S020–S027 remaining. All later cycles are pending. No committed code is discarded.
 
-All 211 IDs remain. P01 has 12 complete steps; P02 has four complete steps
-(S013–S016), with S017/S018 changes required and S019 not yet started. Later
-cycles remain pending. Committed code is not discarded or represented as never
-implemented merely because review corrections remain.
+Next: **S019-R1 → S019-R2 → S020 → all ordered unblocked successors through S211**.
+S019-R1 also closes S017's remaining applicability contribution. S143 is an
+intermediate checkpoint. S020's current target-definition composition is resolved
+by Codex; missing future build/source metadata must not be invented.
 
-Independent standard check, full cargo deny, live cargo audit and current
-structure validation pass at S016-R3. Four existing binding/specification
-literal hashes were independently recomputed; that confirms their bytes, not
-absence of semantic collisions. All v1 / v2 schema files and Cargo.lock are
-unchanged in this batch. RF23's historical receipt discrepancy remains intact.
+RF22/RF24/RF26 are accepted. RF25's loader/display/duplicate controls are accepted;
+its ordered-child obligation is superseded by RF27's set semantics. RF27 and RF28
+remain open. RF29's status/receipt discrepancies are reconciled, with missing
+historical exits explicitly unverified. Prior RF23 history remains intact.
 
-S016-R3 closes the RF22 exact-duplicate, attachment-permutation, runtime-profile
-conflict and diagnostic-vector matrix at real v2 roots, removes the mutant-digest
-helper's silent `unwrap_or_default` fallback and corrects the earlier
-related-location/diagnostic-vector claim. S018-R1 returns the existing typed
-`BindingDigest`/`EvidenceSpecificationDigest` wrappers and recursively tags every
-v2 extension value with `{type,value}` so integer and digit-text cannot collide;
-a compile-fail doctest proves cross-domain substitution fails. Only the two
-affected extension `BOUNDARY_DIGEST` v2 goldens changed; base and all v1 bytes
-are unchanged. S018-R2 replaces the substituted parse-provenance proof with real
-`load_workspace` comment/formatting and semantic-mutation controls, exercises the
-reachable post-display-exclusion `DuplicateMember` path, and proves ordered
-all/any sensitivity. Selector helper consumer integration and end-to-end v2
-construction remain with their owning future steps; S025/S059/S061 retain
-relationships, S027 full provenance corpus and S069 freshness arithmetic. No
-whole AC/RA closure follows from referenced tests. Linux/extended verification,
-live product/crypto/host evidence and release/signing authorization are unverified.
-This is not a release candidate; human testing is not the next dependency.
+Codex independently ran the standard gate (exit 0, 428 successful test executions),
+locked domain/manifest/application doctests, live advisory audit and dependency
+policy checks at reviewed HEAD. Six component literal hashes recompute exactly.
+Schemas (22 v1, 5 v2) and Cargo.lock are unchanged across the batch. Current
+structure/doc checks are recorded in the supervisor receipt. These checks do not
+close whole acceptance or relationship cases: S025/S059/S061 retain relationship
+work, S027 provenance corpus, S069 precise freshness, later steps v2 consumers.
 
-Codex owns decisions, Pi generates implementation. Follow the sole governing
-COMMIT_SEQUENCE.md and synchronized views. Continue ordered unblocked work through
-S211, not merely S143, preserving Q01–Q15 at actual dependent steps. No publication,
-deployment, signing, live-enforcement or optional-native activation is authorized.
+Full xtask verify, Linux, coverage/mutation/fuzz/bench/release package, live product,
+crypto/host and operational authorization remain unverified. This is not a release
+candidate; human release testing is not the next dependency.
+
+Codex owns material decisions and acceptance; Pi generates implementation. Preserve
+Q01–Q15 at their first dependent step. No push, publication, deployment, signing,
+live enforcement or optional-native activation is authorized.

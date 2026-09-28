@@ -145,3 +145,14 @@ PolicySelectionDigest internally, extracting raw digest text only at explicit
 boundaries. S019's exact composition, field spelling, set/sequence allocation and
 selection carrier invariants are normative in DEV-006 of COMMIT_SEQUENCE.md.
 Unknown selection is a tagged state without value, not null or an omitted dimension.
+
+## DEV-007 target configuration API
+
+Manifest owns project_target_configuration_v2/canonicalize_target_configuration_v2
+over a validated Target; CanonicalTargetConfigurationV2 retains bytes and typed
+TargetConfigurationDigest. The root is exactly id/root/platform/framework/owners/
+extensions with approved v2 forms. Application accepts one PreparedSession and
+TargetId, performs exact graph lookup, and returns typed MissingTarget or causal
+Projection failure. No missing-target hash or aggregate fallback exists. Missing
+future build/source fields are not fabricated. DEV-007 in the governing sequence
+allocates the exact regression and later target-field extension obligations.
