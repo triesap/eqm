@@ -1,4 +1,12 @@
 //! Approved runner-definition resolution and deterministic identity.
+//!
+//! The resolved identity binds the complete semantic [`RunnerDefinition`] to
+//! the independently verified executable content and the approved execution
+//! context (the enforceable backend guarantees). A definition digest alone is
+//! insufficient: replacing the bytes at the same repository path must change
+//! the identity, and so must a semantic definition change. A repository
+//! executable without an independently verified digest stays unresolved and
+//! non-executable (`ProgramNotAuthorized`).
 
 use eqm_domain::{
     ArgumentTemplate, DurationMillis, EnvironmentSource, ExtensionValue, PositiveCount, RepoPath,
@@ -54,6 +62,7 @@ pub enum ResolvedProgram {
 pub struct ResolvedRunner {
     definition: RunnerDefinition,
     program: ResolvedProgram,
+    approved_guarantees: BTreeSet<RunnerGuarantee>,
     digest: Sha256Digest,
 }
 
@@ -70,7 +79,18 @@ impl ResolvedRunner {
         &self.program
     }
 
-    /// Returns the canonical semantic definition digest.
+    /// Returns the approved enforceable backend guarantees bound into the
+    /// runner identity.
+    #[must_use]
+    pub const fn approved_guarantees(&self) -> &BTreeSet<RunnerGuarantee> {
+        &self.approved_guarantees
+    }
+
+    /// Returns the canonical runner identity digest.
+    ///
+    /// This identity includes the semantic definition, the independently
+    /// verified executable content and the approved enforceable backend
+    /// guarantees. It is not a definition-only digest.
     #[must_use]
     pub const fn digest(&self) -> Sha256Digest {
         self.digest
@@ -121,32 +141,29 @@ pub fn resolve_runner(
         },
     };
     Ok(ResolvedRunner {
+        digest: canonical_runner_identity(definition, &program, &enforceable),
         definition: definition.clone(),
         program,
-        digest: canonical_runner_digest(definition),
+        approved_guarantees: enforceable,
     })
 }
 
-fn canonical_runner_digest(definition: &RunnerDefinition) -> Sha256Digest {
+/// Computes the domain-separated runner identity over the semantic definition,
+/// the resolved executable content and the approved enforceable backend
+/// guarantees.
+fn canonical_runner_identity(
+    definition: &RunnerDefinition,
+    program: &ResolvedProgram,
+    approved_guarantees: &BTreeSet<RunnerGuarantee>,
+) -> Sha256Digest {
     let mut encoder = Encoder::default();
-    encoder.text("eqm:v1:runner-definition");
+    encoder.text("eqm:v1:runner-identity");
     encoder.text(definition.id().as_str());
     encoder.u64(definition.revision().get());
     encoder.sequence(definition.owners().iter(), |value, encoder| {
         encoder.text(value.as_str());
     });
     encoder.text(definition.backend().as_str());
-    match definition.program() {
-        RunnerProgram::Repository(path) => {
-            encoder.byte(0);
-            encoder.text(path.as_str());
-        }
-        RunnerProgram::Locked { resolved, digest } => {
-            encoder.byte(1);
-            encoder.text(resolved.as_str());
-            encoder.bytes(digest.as_bytes());
-        }
-    }
     encoder.sequence(
         definition.args().iter(),
         |argument, encoder| match argument {
@@ -199,6 +216,24 @@ fn canonical_runner_digest(definition: &RunnerDefinition) -> Sha256Digest {
     encoder.sequence(semantic_extensions, |(namespace, value), encoder| {
         encoder.text(namespace.as_str());
         encode_extension(value, encoder);
+    });
+    // The resolved executable content, including the independently verified
+    // digest, is part of the identity.
+    match program {
+        ResolvedProgram::Repository { path, digest } => {
+            encoder.byte(0);
+            encoder.text(path.as_str());
+            encoder.bytes(digest.as_bytes());
+        }
+        ResolvedProgram::Locked { resolved, digest } => {
+            encoder.byte(1);
+            encoder.text(resolved.as_str());
+            encoder.bytes(digest.as_bytes());
+        }
+    }
+    // Relevant approved toolchain/execution context.
+    encoder.sequence(approved_guarantees.iter(), |guarantee, encoder| {
+        encoder.text(guarantee.as_str());
     });
     Sha256Digest::hash_content(&encoder.bytes)
 }
@@ -355,6 +390,77 @@ mod tests {
             maximum_output_bytes: PositiveCount::new(2_048)?,
             maximum_concurrency: PositiveCount::new(2)?,
         })
+    }
+
+    fn definition_with_timeout(timeout: u64) -> Result<RunnerDefinition, Box<dyn Error>> {
+        Ok(RunnerDefinition::new(
+            RunnerId::new("runner.tests")?,
+            Revision::new(1)?,
+            vec!["owner://team/platform".parse::<OwnerRef>()?],
+            RunnerBackend::Local,
+            RunnerProgram::Repository(RepoPath::new("tools/test-runner")?),
+            vec![ArgumentTemplate::SelectorJson, ArgumentTemplate::ResultPath],
+            None,
+            Vec::new(),
+            Vec::new(),
+            RunnerLimits::new(
+                DurationMillis::new(timeout)?,
+                PositiveCount::new(1_024)?,
+                None,
+            )?,
+            Vec::new(),
+            Extensions::default(),
+        )?)
+    }
+
+    #[test]
+    fn executable_replacement_changes_runner_identity() -> Result<(), Box<dyn Error>> {
+        let definition = definition(false)?;
+        let mut authority = authority_fixture()?;
+        let first = resolve_runner(&definition, &authority)?;
+        // Replace the bytes at the same repository path.
+        authority.repository_programs.insert(
+            RepoPath::new("tools/test-runner")?,
+            Sha256Digest::hash_content(b"runner-v2"),
+        );
+        let second = resolve_runner(&definition, &authority)?;
+        assert_ne!(
+            first.digest(),
+            second.digest(),
+            "replacing executable bytes at the same path must change the identity"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn definition_only_change_invalidates_runner_identity() -> Result<(), Box<dyn Error>> {
+        let authority = authority_fixture()?;
+        let first = resolve_runner(&definition_with_timeout(30_000)?, &authority)?;
+        let second = resolve_runner(&definition_with_timeout(31_000)?, &authority)?;
+        assert_ne!(
+            first.digest(),
+            second.digest(),
+            "a definition-only change must change the identity"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn approved_execution_context_changes_runner_identity() -> Result<(), Box<dyn Error>> {
+        let definition = definition(false)?;
+        let first = resolve_runner(&definition, &authority_fixture()?)?;
+        let mut widened = authority_fixture()?;
+        widened.backend_guarantees.insert(
+            RunnerBackend::Local,
+            BTreeSet::from([RunnerGuarantee::IsolatedProcess]),
+        );
+        let second = resolve_runner(&definition, &widened)?;
+        assert_ne!(
+            first.digest(),
+            second.digest(),
+            "a changed approved execution context must change the identity"
+        );
+        Ok(())
     }
 
     #[test]

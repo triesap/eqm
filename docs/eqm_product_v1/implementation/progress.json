@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S021",
+ "next_step": "S022",
  "implementation": "in_progress",
- "local_verification": "standard_passed_460_test_executions_S019_R1_R2_S020_green_S021_pending",
+ "local_verification": "standard_passed_463_test_executions_S019_R1_R2_S020_S021_green_S022_pending",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -704,7 +704,7 @@
   {
    "id": "S020",
    "status": "complete",
-   "commit_sha": null,
+   "commit_sha": "a9df2f1d76926ecd75f05dbae42c18f9bb111066",
    "report": "implementation/reports/S020.md",
    "verification": [
     "cargo fmt --all --check",
@@ -723,11 +723,23 @@
   },
   {
    "id": "S021",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S021.md",
+   "verification": [
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo test --all-targets --locked -p eqm_runner -p eqm_protocol",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo test --locked -p eqm_runner -p eqm_protocol --doc",
+    "cargo xtask check",
+    "cargo xtask schemas check",
+    "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+    "git diff --check"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "committed_supervisor_pending",
+   "supervisor_status": "pending_review"
   },
   {
    "id": "S022",
@@ -2582,7 +2594,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S021",
+ "active_step": "S022",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2597,7 +2609,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 8,
+   "completed_steps": 9,
    "total_steps": 15
   },
   {
