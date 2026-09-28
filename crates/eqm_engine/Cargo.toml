@@ -15,7 +15,7 @@ eqm_domain.workspace = true
 
 [dev-dependencies]
 eqm_manifest.workspace = true
-eqm_test_support = { path = "../eqm_test_support" }
+eqm_test_support = { path = "../eqm_test_support", version = "=0.1.0" }
 tempfile.workspace = true
 toml.workspace = true
 

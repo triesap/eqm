@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S016",
  "implementation": "in_progress",
- "local_verification": "standard_passed_supply_chain_bans_failure_RF19",
+ "local_verification": "standard_passed_RF19_pinned_pending_S016",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -409,10 +409,17 @@
    "preparatory_checkpoints": [
     {
      "id": "S016-P1",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": null,
-     "verification": []
+     "report": "implementation/reports/S016.md#prerequisite-checkpoint-s016-p1",
+     "verification": [
+      "cargo check --workspace --all-targets --locked",
+      "cargo deny check",
+      "cargo audit --deny warnings",
+      "cargo xtask check",
+      "git diff --check"
+     ],
+     "implementation_status": "committed"
     }
    ]
   },
@@ -2631,7 +2638,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S016-P1",
+ "next_checkpoint": "S016",
  "supervisor_review": {
   "source_commit": "121622ff61a18efb0afd1dc9a13264fc2a97f259",
   "report": "implementation/reports/CODEX-121622f.md",
@@ -2818,12 +2825,13 @@
   },
   {
    "id": "RF19",
-   "status": "open",
+   "status": "implementation_complete_pending_supervisor",
    "priority": "P2",
    "owner": "S016",
    "checkpoint": "S016-P1",
-   "report": "implementation/reports/CODEX-121622f.md",
-   "origin_step": "S005"
+   "report": "implementation/reports/S016.md#prerequisite-checkpoint-s016-p1",
+   "origin_step": "S005",
+   "implementation_claim": "addressed"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9"
