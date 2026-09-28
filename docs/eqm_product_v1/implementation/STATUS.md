@@ -13,8 +13,9 @@ supervisor review (S016-R3); S016's implementation contribution is complete.
 S017/S018 implementations are retained and their RF24/RF25/RF26 repairs are
 implementation-complete pending review (S018-R1/R2). S019's decision-required
 block is resolved by Codex, not a context interruption; S019-A validated the
-domain `PolicySelectionInputV2`/`SelectedProfileInputV2` carriers, with S019-B/C
-next. Next: **S019-B → S019-C → S020–S211**.
+domain `PolicySelectionInputV2`/`SelectedProfileInputV2` carriers and S019-B added
+the exact v2 `CanonicalContractV2` projection, with S019-C next. Next:
+**S019-C → S020–S211**.
 
 All 211 IDs remain. P01 has 12 complete steps; P02 has four complete steps
 (S013–S016), with S017/S018 changes required and S019 not yet started. Later

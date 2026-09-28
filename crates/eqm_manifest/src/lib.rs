@@ -15,10 +15,11 @@ mod parse;
 mod validation;
 
 pub use canonical::{
-    CanonicalBindingV2, CanonicalEvidenceSpecV2, CanonicalFragment, CanonicalGraph,
-    CanonicalizationError, binding as project_binding, binding_v2 as project_binding_v2,
-    canonicalize_binding_v2, canonicalize_evidence_spec_v2, canonicalize_fragment,
-    canonicalize_graph, capability as project_capability,
+    CanonicalBindingV2, CanonicalContractV2, CanonicalEvidenceSpecV2, CanonicalFragment,
+    CanonicalGraph, CanonicalizationError, binding as project_binding,
+    binding_v2 as project_binding_v2, canonicalize_binding_v2, canonicalize_contract_v2,
+    canonicalize_evidence_spec_v2, canonicalize_fragment, canonicalize_graph,
+    capability as project_capability, contract_v2 as project_contract_v2,
     evidence_spec_v2 as project_evidence_spec_v2, fragment as project_fragment,
     journey as project_journey, policy as project_policy, profile as project_profile,
     runner as project_runner, surface as project_surface, target as project_target,

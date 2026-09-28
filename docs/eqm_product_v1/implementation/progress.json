@@ -610,10 +610,21 @@
     },
     {
      "id": "S019-B",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": null,
-     "verification": []
+     "report": "implementation/reports/S019.md#s019-b--exact-v2-contract-authority",
+     "implementation_status": "committed_supervisor_pending",
+     "verification": [
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_domain -p eqm_manifest -p eqm_engine -p eqm_application",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     },
     {
      "id": "S019-C",
@@ -2815,7 +2826,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S019-B",
+ "next_checkpoint": "S019-C",
  "supervisor_review": {
   "source_commit": "3469face3a88d280f2577f4ff936419408c1d248",
   "report": "implementation/reports/CODEX-3469fac.md",
