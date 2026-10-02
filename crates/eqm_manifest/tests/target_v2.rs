@@ -7,7 +7,7 @@
 
 use eqm_domain::{
     ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, FrameworkId, OwnerRef,
-    PlatformId, RepoPath, RoleId, Target, TargetConfigurationDigest, TargetId,
+    PlatformId, RepoPath, RoleId, SourceComponentId, Target, TargetConfigurationDigest, TargetId,
 };
 use eqm_manifest::{canonicalize_target_configuration_v2, project_target_configuration_v2};
 use std::collections::BTreeMap;
@@ -336,5 +336,51 @@ fn distinct_targets_may_share_a_role_without_colliding() -> Result<(), Box<dyn E
     )?;
     assert_ne!(web.digest(), desktop.digest());
     assert_eq!(web.bytes(), web.bytes());
+    Ok(())
+}
+
+#[test]
+fn source_component_and_dependency_sets_are_projected_and_canonical() -> Result<(), Box<dyn Error>>
+{
+    let base = canonicalize_target_configuration_v2(&base_target()?)?;
+
+    // Empty sets are omitted, preserving the six-member literal identity.
+    let empty = project_target_configuration_v2(&base_target()?)?;
+    assert!(
+        !empty
+            .as_object()
+            .ok_or("target")?
+            .contains_key("source_components")
+    );
+    assert!(
+        !empty
+            .as_object()
+            .ok_or("target")?
+            .contains_key("depends_on")
+    );
+
+    let first = SourceComponentId::new("shared.kmp")?;
+    let second = SourceComponentId::new("shared.auth")?;
+    let forward = canonicalize_target_configuration_v2(
+        &base_target()?.with_source_components(vec![first.clone(), second.clone()])?,
+    )?;
+    let reversed = canonicalize_target_configuration_v2(
+        &base_target()?.with_source_components(vec![second, first])?,
+    )?;
+    let projected = project_target_configuration_v2(
+        &base_target()?.with_source_components(vec![SourceComponentId::new("shared.kmp")?])?,
+    )?;
+    assert_eq!(
+        projected["source_components"],
+        serde_json::json!(["shared.kmp"])
+    );
+    assert_eq!(forward, reversed, "reference-member order is canonical");
+    assert_ne!(base.digest(), forward.digest());
+
+    let depends = canonicalize_target_configuration_v2(
+        &base_target()?.with_depends_on(vec![TargetId::new("shared")?])?,
+    )?;
+    assert_ne!(base.digest(), depends.digest());
+    assert_ne!(forward.digest(), depends.digest());
     Ok(())
 }

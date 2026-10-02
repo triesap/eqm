@@ -4,8 +4,8 @@ use crate::{
     ArtifactId, ArtifactRole, BindingId, CapabilityId, DimensionId, EvidenceSpecId,
     EvidenceSpecification, Facet, FragmentId, FrameworkId, HttpMethod, IntendedExposureState,
     JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef, PlatformId, ProviderId, RepoPath,
-    RequirementLevel, RequirementScope, RiskClass, RoleId, Sha256Digest, SurfaceId,
-    SymbolicValueId, TargetId, UnitId,
+    RequirementLevel, RequirementScope, RiskClass, RoleId, Sha256Digest, SourceComponentId,
+    SurfaceId, SymbolicValueId, TargetId, UnitId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -1144,6 +1144,93 @@ impl Surface {
     }
 }
 
+/// A shared implementation source component with confined roots and owners.
+///
+/// A component is an authored authority shared by one or more targets. Its
+/// identity is independent of any target output root; exact source content is a
+/// separate subject axis. Dependencies are explicit component-ID edges and are
+/// resolved later by the engine; raw file content is never inspected here.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceComponent {
+    id: SourceComponentId,
+    roots: BTreeSet<RepoPath>,
+    owners: BTreeSet<OwnerRef>,
+    dependencies: BTreeSet<SourceComponentId>,
+    extensions: Extensions,
+}
+
+impl SourceComponent {
+    /// Creates a source component with nonempty roots and owners.
+    ///
+    /// Rejects duplicate roots, duplicate owners, a self-dependency and duplicate
+    /// dependencies. Referential integrity and transitive ownership stay with
+    /// the engine's graph resolution.
+    pub fn new(
+        id: SourceComponentId,
+        roots: Vec<RepoPath>,
+        owners: Vec<OwnerRef>,
+        dependencies: Vec<SourceComponentId>,
+        extensions: Extensions,
+    ) -> Result<Self, EntityBuildError> {
+        if roots.is_empty() {
+            return Err(EntityBuildError::SourceRootsRequired);
+        }
+        let root_count = roots.len();
+        let roots: BTreeSet<_> = roots.into_iter().collect();
+        if roots.len() != root_count {
+            return Err(EntityBuildError::DuplicateSourceRoot);
+        }
+        let mut seen = BTreeSet::new();
+        let mut dependencies_set = BTreeSet::new();
+        for dependency in dependencies {
+            if dependency == id {
+                return Err(EntityBuildError::SourceSelfDependency);
+            }
+            if !seen.insert(dependency.clone()) {
+                return Err(EntityBuildError::DuplicateSourceDependency);
+            }
+            dependencies_set.insert(dependency);
+        }
+        Ok(Self {
+            id,
+            roots,
+            owners: owner_set(owners)?,
+            dependencies: dependencies_set,
+            extensions,
+        })
+    }
+
+    /// Returns the component authority ID.
+    #[must_use]
+    pub const fn id(&self) -> &SourceComponentId {
+        &self.id
+    }
+
+    /// Returns the confined canonical roots in deterministic order.
+    #[must_use]
+    pub const fn roots(&self) -> &BTreeSet<RepoPath> {
+        &self.roots
+    }
+
+    /// Returns the nonempty owners in deterministic order.
+    #[must_use]
+    pub const fn owners(&self) -> &BTreeSet<OwnerRef> {
+        &self.owners
+    }
+
+    /// Returns the declared dependency component IDs in canonical order.
+    #[must_use]
+    pub const fn dependencies(&self) -> &BTreeSet<SourceComponentId> {
+        &self.dependencies
+    }
+
+    /// Returns normative extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
 /// A repository implementation target authority.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Target {
@@ -1152,6 +1239,8 @@ pub struct Target {
     platform: PlatformId,
     framework: FrameworkId,
     role: Option<RoleId>,
+    source_components: BTreeSet<SourceComponentId>,
+    depends_on: BTreeSet<TargetId>,
     owners: BTreeSet<OwnerRef>,
     extensions: Extensions,
 }
@@ -1175,6 +1264,8 @@ impl Target {
             platform,
             framework,
             role: None,
+            source_components: BTreeSet::new(),
+            depends_on: BTreeSet::new(),
             owners: owner_set(owners)?,
             extensions,
         })
@@ -1189,6 +1280,37 @@ impl Target {
     pub fn with_role(mut self, role: RoleId) -> Self {
         self.role = Some(role);
         self
+    }
+
+    /// Returns a copy of this target referencing the given source components.
+    ///
+    /// Duplicate references are rejected. Source content remains a separate
+    /// subject axis; this only models the shared-component relationship.
+    pub fn with_source_components(
+        mut self,
+        components: Vec<SourceComponentId>,
+    ) -> Result<Self, EntityBuildError> {
+        let count = components.len();
+        let set: BTreeSet<_> = components.into_iter().collect();
+        if set.len() != count {
+            return Err(EntityBuildError::DuplicateTargetSourceComponent);
+        }
+        self.source_components = set;
+        Ok(self)
+    }
+
+    /// Returns a copy of this target depending on the given target IDs.
+    ///
+    /// Duplicate dependencies are rejected; cycles are resolved later by the
+    /// engine's graph preparation.
+    pub fn with_depends_on(mut self, targets: Vec<TargetId>) -> Result<Self, EntityBuildError> {
+        let count = targets.len();
+        let set: BTreeSet<_> = targets.into_iter().collect();
+        if set.len() != count {
+            return Err(EntityBuildError::DuplicateTargetDependency);
+        }
+        self.depends_on = set;
+        Ok(self)
     }
     /// Returns the target ID.
     #[must_use]
@@ -1211,6 +1333,18 @@ impl Target {
     #[must_use]
     pub const fn role(&self) -> Option<&RoleId> {
         self.role.as_ref()
+    }
+
+    /// Returns any explicitly referenced source components in canonical order.
+    #[must_use]
+    pub const fn source_components(&self) -> &BTreeSet<SourceComponentId> {
+        &self.source_components
+    }
+
+    /// Returns any explicitly declared target dependencies in canonical order.
+    #[must_use]
+    pub const fn depends_on(&self) -> &BTreeSet<TargetId> {
+        &self.depends_on
     }
     /// Returns the extensible framework ID.
     #[must_use]
@@ -1573,6 +1707,18 @@ pub enum EntityBuildError {
     DuplicateFragmentUse,
     /// A user-visible artifact omitted every coverage locator.
     ArtifactLocatorRequired,
+    /// A source component did not declare any confined root.
+    SourceRootsRequired,
+    /// A source component declared the same root twice.
+    DuplicateSourceRoot,
+    /// A source component depended on itself.
+    SourceSelfDependency,
+    /// A source component declared the same dependency twice.
+    DuplicateSourceDependency,
+    /// A target declared the same source component twice.
+    DuplicateTargetSourceComponent,
+    /// A target declared the same target dependency twice.
+    DuplicateTargetDependency,
     /// A binding did not declare any artifacts.
     ArtifactsRequired,
     /// A local artifact ID appeared more than once.
@@ -1620,6 +1766,12 @@ impl Display for EntityBuildError {
             }
             Self::DuplicateFragmentUse => "surface fragments contain a duplicate exact pin",
             Self::ArtifactLocatorRequired => "user-visible artifact requires a coverage locator",
+            Self::SourceRootsRequired => "source component requires at least one root",
+            Self::DuplicateSourceRoot => "source component roots contain a duplicate",
+            Self::SourceSelfDependency => "source component depends on itself",
+            Self::DuplicateSourceDependency => "source component dependencies contain a duplicate",
+            Self::DuplicateTargetSourceComponent => "target source components contain a duplicate",
+            Self::DuplicateTargetDependency => "target dependencies contain a duplicate",
             Self::ArtifactsRequired => "binding requires at least one artifact",
             Self::DuplicateArtifact => "binding artifacts contain a duplicate local ID",
             Self::DuplicateExposure => "binding exposures contain a duplicate declaration",

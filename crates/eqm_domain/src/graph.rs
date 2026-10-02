@@ -4,7 +4,8 @@ use crate::{
     AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Extensions,
     Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId,
     RepositoryIdentity, Revision, RunnerDefinition, RunnerId, SelectorText, Sha256Digest,
-    SourceCommit, Surface, SurfaceId, Target, TargetId, TrustLevel, Waiver, WaiverId,
+    SourceCommit, SourceComponent, SourceComponentId, Surface, SurfaceId, Target, TargetId,
+    TrustLevel, Waiver, WaiverId,
 };
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -362,6 +363,53 @@ impl Display for WorkspaceGraphBuildError {
 }
 
 impl Error for WorkspaceGraphBuildError {}
+
+/// Source-component registry validation failure.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SourceComponentError {
+    /// Two components shared one authority ID.
+    DuplicateAuthority,
+    /// A component depended on an ID absent from the supplied registry.
+    DanglingDependency,
+}
+
+impl Display for SourceComponentError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::DuplicateAuthority => "duplicate source-component authority",
+            Self::DanglingDependency => "source-component dependency is missing",
+        })
+    }
+}
+
+impl Error for SourceComponentError {}
+
+/// Indexes one supplied source-component registry, rejecting duplicate authority
+/// and dependencies absent from that same registry.
+///
+/// Transitive ownership and dependency cycles remain the engine's graph
+/// resolution responsibility. This pure domain check never inspects file
+/// content.
+pub fn validate_source_components(
+    components: Vec<SourceComponent>,
+) -> Result<BTreeMap<SourceComponentId, SourceComponent>, SourceComponentError> {
+    let count = components.len();
+    let indexed: BTreeMap<SourceComponentId, SourceComponent> = components
+        .into_iter()
+        .map(|component| (component.id().clone(), component))
+        .collect();
+    if indexed.len() != count {
+        return Err(SourceComponentError::DuplicateAuthority);
+    }
+    for component in indexed.values() {
+        for dependency in component.dependencies() {
+            if !indexed.contains_key(dependency) {
+                return Err(SourceComponentError::DanglingDependency);
+            }
+        }
+    }
+    Ok(indexed)
+}
 
 #[cfg(test)]
 mod tests {

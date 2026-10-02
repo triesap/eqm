@@ -75,7 +75,7 @@ pub use entity::{
     Binding, Capability, ComparisonOperator, Description, EntityBuildError, Exposure, ExtensionKey,
     ExtensionNamespace, ExtensionValue, Extensions, Fragment, FragmentUse, Journey,
     MembershipOperator, Requirement, RequirementStatement, Revision, RouteSelector, SelectorText,
-    Surface, Target, Title, Transition, TransitionTrigger, is_nfc_text,
+    SourceComponent, Surface, Target, Title, Transition, TransitionTrigger, is_nfc_text,
 };
 pub use evidence::{
     EvidenceSelector, EvidenceSpecBuildError, EvidenceSpecification, PositiveCount,
@@ -88,14 +88,15 @@ pub use evidence_result::{
     ProfileSelection, RawEvidenceObject, RepositoryIdentity, SourceCommit,
 };
 pub use graph::{
-    AdapterLockIdentity, FinalizedWorkspaceGraph, ImportLockIdentity, WorkspaceGraph,
-    WorkspaceGraphBuildError, WorkspaceGraphInput,
+    AdapterLockIdentity, FinalizedWorkspaceGraph, ImportLockIdentity, SourceComponentError,
+    WorkspaceGraph, WorkspaceGraphBuildError, WorkspaceGraphInput, validate_source_components,
 };
 pub use id::{
     AdapterId, ArtifactId, AttemptId, BindingId, CampaignId, CapabilityId, DimensionId,
     EvidenceSpecId, FragmentId, FrameworkId, FullRequirementId, IdParseError, JourneyId,
     LocalRequirementId, LogicalCaseId, PlanId, PlatformId, PolicyId, ProfileId, ProviderId,
-    RecordId, RoleId, RunId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
+    RecordId, RoleId, RunId, RunnerId, SourceComponentId, SurfaceId, SymbolicValueId, TargetId,
+    UnitId, WaiverId,
 };
 pub use inventory::{
     AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,

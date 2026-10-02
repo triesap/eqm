@@ -3,11 +3,13 @@
 //! DEV-007 chooses an exact **target-definition component identity**, separate
 //! from selected-policy, source snapshot, build artifact and execution
 //! identities. At this step [`Target`] contains exactly `id`, `root`,
-//! `platform`, `framework`, optional `role`, `owners` and `extensions`. The
-//! internal JSON root therefore has those members, with `role` inserted only
-//! when the target declares one, without a schema URI or a nested `target`
-//! wrapper. An absent role is omitted; it is not a `null`, an invented default,
-//! a successful verification or a `"none"` authority.
+//! `platform`, `framework`, optional `role`, `owners` and `extensions`. When a
+//! target models them it also carries canonical `source_components` and
+//! `depends_on` ID sets. The internal JSON root therefore has those members,
+//! with `role` and the two ID sets inserted only when present, without a schema
+//! URI or a nested `target` wrapper. An absent role or empty set is omitted; it
+//! is not a `null`, an invented default, a successful verification or a `"none"`
+//! authority.
 //!
 //! Strings retain their validated exact values. `root` remains the authored
 //! [`RepoPath`](eqm_domain::RepoPath): no absolute expansion, filesystem
@@ -70,6 +72,30 @@ pub fn target_configuration_v2(value: &Target) -> Result<Value, Canonicalization
         "role",
         value.role().map(|role| json!(role.as_str())),
     );
+    if !value.source_components().is_empty() {
+        insert_optional(
+            &mut projected,
+            "source_components",
+            Some(canonical_strings(
+                value
+                    .source_components()
+                    .iter()
+                    .map(|component| component.as_str().to_owned()),
+            )?),
+        );
+    }
+    if !value.depends_on().is_empty() {
+        insert_optional(
+            &mut projected,
+            "depends_on",
+            Some(canonical_strings(
+                value
+                    .depends_on()
+                    .iter()
+                    .map(|target| target.as_str().to_owned()),
+            )?),
+        );
+    }
     Ok(projected)
 }
 

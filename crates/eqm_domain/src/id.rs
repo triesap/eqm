@@ -149,6 +149,12 @@ define_id!(
     None
 );
 define_id!(
+    /// A shared source-component authority ID.
+    SourceComponentId,
+    2,
+    None
+);
+define_id!(
     /// A locked adapter authority ID.
     AdapterId,
     2,
