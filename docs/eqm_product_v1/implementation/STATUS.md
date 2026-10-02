@@ -4,12 +4,13 @@ DEV-011 reviewed clean source `c774fe000bdecb50dd1b8ea4b16164900bd6032b`.
 24 numbered steps S001–S024 are accepted for allocated scope; prior acceptance
 preserved. S025 typed identities/chronology and S026 registry checks are retained
 contributions. S025-R2 adds real prepared-session projection-to-admission and
-temporal-matrix evidence for RF43 (acceptance pending). S026 still needs RF42
-definition history and legitimate later deployment-input support. RF44 final-tree
+temporal-matrix evidence for RF43 (acceptance pending). S026-R1 adds explicit
+definition-history ordering with the two historical deployment-input edges and
+canonical sorted references for RF42 (acceptance pending). RF44 final-tree
 gating and authority context are reconciled in current planning; implementation
 receipts must prove final trees, including reports/ledger.
 
-Next **S026-R1 → every ordered S027–S043**, pfc through EQM-P03.
+Next **every ordered S027–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly

@@ -9,7 +9,7 @@
 //! directed references are realizable; it implies no storage or publication.
 
 use crate::id::RecordId;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
@@ -61,7 +61,8 @@ impl RecordKind {
     ];
 
     /// Returns this kind's lifecycle row. A reference may not point to a later
-    /// row; evidence, worker and runtime observations share one row.
+    /// row, except for the approved historical deployment inputs; evidence,
+    /// worker and runtime observations share one row.
     #[must_use]
     pub const fn order(self) -> u8 {
         match self {
@@ -162,19 +163,23 @@ pub struct RecordDescriptor {
 
 impl RecordDescriptor {
     /// Builds one record, rejecting a self-reference or a repeated reference.
+    ///
+    /// The declared references are stored sorted by their complete typed
+    /// `(kind, id)` identity, so permuting the supplied member order is
+    /// equivalent and [`RecordDescriptor::references`] is canonical.
     pub fn new(
         kind: RecordKind,
         id: RecordId,
-        references: Vec<RecordRef>,
+        mut references: Vec<RecordRef>,
     ) -> Result<Self, RecordError> {
-        let mut seen = BTreeSet::new();
         for reference in &references {
             if reference.kind == kind && reference.id == id {
                 return Err(RecordError::SelfReference);
             }
-            if !seen.insert(reference.clone()) {
-                return Err(RecordError::DuplicateReference);
-            }
+        }
+        references.sort();
+        if references.windows(2).any(|pair| pair[0] == pair[1]) {
+            return Err(RecordError::DuplicateReference);
         }
         Ok(Self {
             kind,
@@ -195,7 +200,7 @@ impl RecordDescriptor {
         &self.id
     }
 
-    /// Returns the declared references in canonical order.
+    /// Returns the declared references in canonical complete-typed order.
     #[must_use]
     pub fn references(&self) -> &[RecordRef] {
         &self.references
@@ -218,30 +223,55 @@ impl ValidatedRecords {
 
 type Node = (RecordKind, RecordId);
 
+/// Returns whether a reference from `source` to `target` respects the approved
+/// lifecycle direction. Runtime and FrozenInput inputs may consume an
+/// already-defined DeploymentReceipt; every other reference may only point to
+/// its own or an earlier lifecycle row. Evidence, worker and runtime share a row.
+const fn direction_allowed(source: RecordKind, target: RecordKind) -> bool {
+    target.order() <= source.order()
+        || matches!(
+            (source, target),
+            (RecordKind::Runtime, RecordKind::DeploymentReceipt)
+                | (RecordKind::FrozenInput, RecordKind::DeploymentReceipt)
+        )
+}
+
 /// Validates one explicit registry against the acyclic lifecycle.
 ///
-/// Rejects duplicate records, missing references, a later-row (future)
-/// reference and any directed cycle. The checked result does not claim storage,
-/// publication or trust.
+/// The supplied `Vec` is the caller-declared **definition history**: its order
+/// is creation order, not a timestamp/path/kind sort, and it is preserved in
+/// the checked result. A checked record may reference only a definition that
+/// appears earlier in that history, so no reference points at a future
+/// definition.
+///
+/// Rejects duplicate records, missing or wrong-kind references, later-row
+/// (future) references, forbidden same-kind forward definitions and any
+/// directed cycle. Runtime and FrozenInput inputs may consume an
+/// already-defined DeploymentReceipt; initial readiness may not wait on its own
+/// future deployment. The checked result does not claim storage, publication or
+/// trust.
 pub fn validate_records(records: Vec<RecordDescriptor>) -> Result<ValidatedRecords, RecordError> {
-    let mut known = BTreeSet::new();
-    for record in &records {
-        if !known.insert((record.kind, record.id.clone())) {
+    let mut known: BTreeMap<Node, usize> = BTreeMap::new();
+    for (index, record) in records.iter().enumerate() {
+        if known
+            .insert((record.kind, record.id.clone()), index)
+            .is_some()
+        {
             return Err(RecordError::DuplicateRecord);
+        }
+    }
+
+    // Every reference must name a supplied definition before the graph walk.
+    for record in &records {
+        for reference in &record.references {
+            if !known.contains_key(&(reference.kind, reference.id.clone())) {
+                return Err(RecordError::MissingReference);
+            }
         }
     }
 
     let mut adjacency: BTreeMap<Node, Vec<Node>> = BTreeMap::new();
     for record in &records {
-        for reference in &record.references {
-            let target = (reference.kind, reference.id.clone());
-            if !known.contains(&target) {
-                return Err(RecordError::MissingReference);
-            }
-            if reference.kind.order() > record.kind.order() {
-                return Err(RecordError::FutureReference);
-            }
-        }
         adjacency.insert(
             (record.kind, record.id.clone()),
             record
@@ -282,6 +312,20 @@ pub fn validate_records(records: Vec<RecordDescriptor>) -> Result<ValidatedRecor
         }
     }
 
+    // Each reference must resolve to an earlier definition and respect the
+    // lifecycle direction (with the two approved historical deployment inputs).
+    for (index, record) in records.iter().enumerate() {
+        for reference in &record.references {
+            let target = (reference.kind, reference.id.clone());
+            if known.get(&target).is_some_and(|at| *at >= index) {
+                return Err(RecordError::FutureReference);
+            }
+            if !direction_allowed(record.kind, reference.kind) {
+                return Err(RecordError::FutureReference);
+            }
+        }
+    }
+
     Ok(ValidatedRecords { records })
 }
 
@@ -298,7 +342,7 @@ pub enum RecordError {
     SelfReference,
     /// A reference named a record absent from the supplied registry.
     MissingReference,
-    /// A reference pointed to a later lifecycle row.
+    /// A reference pointed to a later definition or a later lifecycle row.
     FutureReference,
     /// The directed reference graph contained a cycle.
     CyclicReference,
@@ -361,9 +405,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn candidate_to_evidence_to_decision_chain_validates() -> Result<(), Box<dyn Error>> {
-        let records = vec![
+    fn initial_lifecycle() -> Result<Vec<RecordDescriptor>, Box<dyn Error>> {
+        Ok(vec![
             record(RecordKind::Authority, "authority.baseline", vec![])?,
             record(
                 RecordKind::Candidate,
@@ -434,9 +477,42 @@ mod tests {
                 "deployment.one",
                 vec![reference(RecordKind::Authorization, "authorization.one")?],
             )?,
-        ];
-        let validated = validate_records(records)?;
+        ])
+    }
+
+    #[test]
+    fn candidate_to_evidence_to_decision_chain_validates() -> Result<(), Box<dyn Error>> {
+        let validated = validate_records(initial_lifecycle()?)?;
         assert_eq!(validated.records().len(), 12);
+        Ok(())
+    }
+
+    #[test]
+    fn historical_deployment_inputs_validate_after_an_initial_lifecycle()
+    -> Result<(), Box<dyn Error>> {
+        // A full initial lifecycle, then a post-deployment observation consumed
+        // by a later runtime input, a later frozen input and a later decision.
+        let mut records = initial_lifecycle()?;
+        records.push(record(
+            RecordKind::Runtime,
+            "runtime.post_deploy",
+            vec![reference(RecordKind::DeploymentReceipt, "deployment.one")?],
+        )?);
+        records.push(record(
+            RecordKind::FrozenInput,
+            "frozen.post_deploy",
+            vec![
+                reference(RecordKind::Runtime, "runtime.post_deploy")?,
+                reference(RecordKind::DeploymentReceipt, "deployment.one")?,
+            ],
+        )?);
+        records.push(record(
+            RecordKind::Decision,
+            "decision.post_deploy",
+            vec![reference(RecordKind::FrozenInput, "frozen.post_deploy")?],
+        )?);
+        let validated = validate_records(records)?;
+        assert_eq!(validated.records().len(), 15);
         Ok(())
     }
 
@@ -447,6 +523,24 @@ mod tests {
             "evidence.one",
             vec![reference(RecordKind::Plan, "plan.absent")?],
         )?];
+        assert_eq!(
+            validate_records(records),
+            Err(RecordError::MissingReference)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn wrong_kind_reference_rejects() -> Result<(), Box<dyn Error>> {
+        // A candidate exists, but the reference names it as a plan.
+        let records = vec![
+            record(RecordKind::Candidate, "candidate.one", vec![])?,
+            record(
+                RecordKind::Plan,
+                "plan.release",
+                vec![reference(RecordKind::Plan, "candidate.one")?],
+            )?,
+        ];
         assert_eq!(
             validate_records(records),
             Err(RecordError::MissingReference)
@@ -469,24 +563,118 @@ mod tests {
 
     #[test]
     fn future_reference_rejects() -> Result<(), Box<dyn Error>> {
+        // Evidence may not reference its future decision, even when the
+        // decision is present and the graph is acyclic.
         let records = vec![
             record(
                 RecordKind::Evidence,
                 "evidence.one",
                 vec![reference(RecordKind::Decision, "decision.one")?],
             )?,
+            record(RecordKind::Decision, "decision.one", vec![])?,
+        ];
+        assert_eq!(validate_records(records), Err(RecordError::FutureReference));
+        Ok(())
+    }
+
+    #[test]
+    fn same_kind_forward_definition_rejects() -> Result<(), Box<dyn Error>> {
+        let records = vec![
             record(
-                RecordKind::FrozenInput,
-                "frozen.one",
-                vec![reference(RecordKind::Evidence, "evidence.one")?],
+                RecordKind::Plan,
+                "plan.a",
+                vec![reference(RecordKind::Plan, "plan.b")?],
             )?,
+            record(RecordKind::Plan, "plan.b", vec![])?,
+        ];
+        assert_eq!(validate_records(records), Err(RecordError::FutureReference));
+        Ok(())
+    }
+
+    #[test]
+    fn future_receipt_rejects() -> Result<(), Box<dyn Error>> {
+        // A later runtime may consume an earlier receipt, but not one that is
+        // defined after it.
+        let records = vec![
+            record(
+                RecordKind::Runtime,
+                "runtime.one",
+                vec![reference(
+                    RecordKind::DeploymentReceipt,
+                    "deployment.later",
+                )?],
+            )?,
+            record(RecordKind::DeploymentReceipt, "deployment.later", vec![])?,
+        ];
+        assert_eq!(validate_records(records), Err(RecordError::FutureReference));
+        Ok(())
+    }
+
+    #[test]
+    fn initial_readiness_on_a_future_deployment_rejects() -> Result<(), Box<dyn Error>> {
+        // Decision may never reference a deployment receipt, even one defined
+        // earlier: initial readiness cannot wait on its own deployment.
+        let records = vec![
+            record(RecordKind::DeploymentReceipt, "deployment.one", vec![])?,
             record(
                 RecordKind::Decision,
                 "decision.one",
-                vec![reference(RecordKind::FrozenInput, "frozen.one")?],
+                vec![reference(RecordKind::DeploymentReceipt, "deployment.one")?],
             )?,
         ];
         assert_eq!(validate_records(records), Err(RecordError::FutureReference));
+        Ok(())
+    }
+
+    #[test]
+    fn evidence_to_decision_remains_forbidden() -> Result<(), Box<dyn Error>> {
+        let records = vec![
+            record(RecordKind::Decision, "decision.one", vec![])?,
+            record(
+                RecordKind::Evidence,
+                "evidence.one",
+                vec![reference(RecordKind::Decision, "decision.one")?],
+            )?,
+        ];
+        assert_eq!(validate_records(records), Err(RecordError::FutureReference));
+        Ok(())
+    }
+
+    #[test]
+    fn cyclic_history_rejects() -> Result<(), Box<dyn Error>> {
+        let records = vec![
+            record(
+                RecordKind::Plan,
+                "plan.a",
+                vec![reference(RecordKind::Plan, "plan.b")?],
+            )?,
+            record(
+                RecordKind::Plan,
+                "plan.b",
+                vec![reference(RecordKind::Plan, "plan.a")?],
+            )?,
+        ];
+        assert_eq!(validate_records(records), Err(RecordError::CyclicReference));
+        Ok(())
+    }
+
+    #[test]
+    fn initial_readiness_deployment_cycle_rejects() -> Result<(), Box<dyn Error>> {
+        // A frozen input waiting on a receipt that waits back on the frozen
+        // input is a directed cycle, not a realizable readiness history.
+        let records = vec![
+            record(
+                RecordKind::FrozenInput,
+                "frozen.one",
+                vec![reference(RecordKind::DeploymentReceipt, "deployment.one")?],
+            )?,
+            record(
+                RecordKind::DeploymentReceipt,
+                "deployment.one",
+                vec![reference(RecordKind::FrozenInput, "frozen.one")?],
+            )?,
+        ];
+        assert_eq!(validate_records(records), Err(RecordError::CyclicReference));
         Ok(())
     }
 
@@ -512,20 +700,88 @@ mod tests {
     }
 
     #[test]
-    fn cyclic_same_row_references_reject() -> Result<(), Box<dyn Error>> {
-        let records = vec![
-            record(
-                RecordKind::Plan,
-                "plan.a",
-                vec![reference(RecordKind::Plan, "plan.b")?],
-            )?,
+    fn reordered_definitions_into_forward_references_reject() -> Result<(), Box<dyn Error>> {
+        // The same records validate in definition order...
+        let ordered = vec![
+            record(RecordKind::Plan, "plan.a", vec![])?,
             record(
                 RecordKind::Plan,
                 "plan.b",
                 vec![reference(RecordKind::Plan, "plan.a")?],
             )?,
         ];
-        assert_eq!(validate_records(records), Err(RecordError::CyclicReference));
+        assert!(validate_records(ordered).is_ok());
+        // ... but moving the referenced definition later makes it a forward
+        // reference and must reject. History is never sorted to make it pass.
+        let reordered = vec![
+            record(
+                RecordKind::Plan,
+                "plan.b",
+                vec![reference(RecordKind::Plan, "plan.a")?],
+            )?,
+            record(RecordKind::Plan, "plan.a", vec![])?,
+        ];
+        assert_eq!(
+            validate_records(reordered),
+            Err(RecordError::FutureReference)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn permuted_reference_member_supply_is_equivalent() -> Result<(), Box<dyn Error>> {
+        let first = RecordDescriptor::new(
+            RecordKind::Campaign,
+            id("campaign.signup")?,
+            vec![
+                reference(RecordKind::Plan, "plan.release")?,
+                reference(RecordKind::Authority, "authority.baseline")?,
+            ],
+        )?;
+        let second = RecordDescriptor::new(
+            RecordKind::Campaign,
+            id("campaign.signup")?,
+            vec![
+                reference(RecordKind::Authority, "authority.baseline")?,
+                reference(RecordKind::Plan, "plan.release")?,
+            ],
+        )?;
+        assert_eq!(first, second);
+        assert_eq!(first.references(), second.references());
+        Ok(())
+    }
+
+    #[test]
+    fn references_are_stored_in_canonical_complete_typed_order() -> Result<(), Box<dyn Error>> {
+        let descriptor = RecordDescriptor::new(
+            RecordKind::Authorization,
+            id("authorization.one")?,
+            vec![
+                reference(RecordKind::Statement, "statement.one")?,
+                reference(RecordKind::Decision, "decision.one")?,
+                reference(RecordKind::Evidence, "evidence.one")?,
+            ],
+        )?;
+        let kinds: Vec<RecordKind> = descriptor
+            .references()
+            .iter()
+            .map(RecordRef::kind)
+            .collect();
+        // Complete typed order: kind first, then identity.
+        assert_eq!(
+            kinds,
+            vec![
+                RecordKind::Evidence,
+                RecordKind::Decision,
+                RecordKind::Statement
+            ]
+        );
+        assert!(
+            descriptor
+                .references()
+                .windows(2)
+                .all(|pair| pair[0] < pair[1])
+        );
         Ok(())
     }
 }

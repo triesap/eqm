@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S026",
+ "next_step": "S027",
  "implementation": "in_progress",
- "local_verification": "S025-R2_committed_verified_pending_acceptance;S026-R1_next",
+ "local_verification": "S025-R2_and_S026-R1_committed_verified_pending_acceptance;S027_next",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1023,7 +1023,7 @@
     {
      "id": "S025-R2",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "ac20f545127a7eb1daec2754eafbb819d40e9c7d",
      "supervisor_status": "pending_acceptance",
      "report": "implementation/reports/S025.md#corrective-checkpoint-s025-r2--production-projection-admission-evidence-dev-011-rf43",
      "implementation_status": "committed_pending_acceptance",
@@ -1067,9 +1067,22 @@
    "corrective_checkpoints": [
     {
      "id": "S026-R1",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "supervisor_status": "required_DEV011"
+     "supervisor_status": "pending_acceptance",
+     "report": "implementation/reports/S026.md#corrective-checkpoint-s026-r1--repeated-acyclic-evaluations-dev-011-rf42",
+     "implementation_status": "committed_pending_acceptance",
+     "verification": [
+      "cargo test --locked -p eqm_domain record::",
+      "cargo test --all-targets --locked -p eqm_domain -p eqm_protocol",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     }
    ]
   },
@@ -2886,7 +2899,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S026",
+ "active_step": "S027",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3210,7 +3223,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S026-R1",
+ "next_checkpoint": "S027",
  "supervisor_review": {
   "source_commit": "c774fe000bdecb50dd1b8ea4b16164900bd6032b",
   "report": "implementation/reports/CODEX-c774fe0.md",
