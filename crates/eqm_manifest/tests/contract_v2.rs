@@ -459,14 +459,6 @@ fn contract_extension_integer_and_text_never_collide() -> Result<(), Box<dyn Err
     Ok(())
 }
 
-fn boundary_expected(value: u64) -> serde_json::Value {
-    if value <= 9_007_199_254_740_991 {
-        serde_json::json!(value)
-    } else {
-        serde_json::json!(value.to_string())
-    }
-}
-
 fn journey_at(revision: u64) -> Result<Journey, Box<dyn Error>> {
     Ok(Journey::new(
         JourneyId::new("account.create.signup")?,
@@ -520,28 +512,26 @@ fn fragment_at(revision: u64) -> Result<Fragment, Box<dyn Error>> {
 
 #[test]
 fn contract_revisions_use_literal_v2_wire_forms() -> Result<(), Box<dyn Error>> {
-    for revision in [
-        9_007_199_254_740_991_u64,
-        9_007_199_254_740_992_u64,
-        u64::MAX,
-    ] {
+    // Reviewed literal (input revision, expected v2 JSON token) table. The value
+    // at the IEEE-754 safe integer stays an exact integer; the two above it are
+    // decimal strings.
+    let cases: [(u64, serde_json::Value); 3] = [
+        (
+            9_007_199_254_740_991,
+            serde_json::json!(9_007_199_254_740_991_u64),
+        ),
+        (9_007_199_254_740_992, serde_json::json!("9007199254740992")),
+        (u64::MAX, serde_json::json!("18446744073709551615")),
+    ];
+    for (revision, expected) in cases {
         let mut graph = input()?;
         graph.journeys = vec![journey_at(revision)?];
         graph.surfaces = vec![surface_at(revision)?];
         graph.fragments = vec![fragment_at(revision)?];
         let projected = project_contract_v2(&finalize(graph)?)?;
-        assert_eq!(
-            projected["journeys"][0]["revision"],
-            boundary_expected(revision)
-        );
-        assert_eq!(
-            projected["surfaces"][0]["revision"],
-            boundary_expected(revision)
-        );
-        assert_eq!(
-            projected["fragments"][0]["revision"],
-            boundary_expected(revision)
-        );
+        assert_eq!(projected["journeys"][0]["revision"], expected);
+        assert_eq!(projected["surfaces"][0]["revision"], expected);
+        assert_eq!(projected["fragments"][0]["revision"], expected);
     }
     Ok(())
 }

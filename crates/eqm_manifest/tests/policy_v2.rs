@@ -270,14 +270,6 @@ fn policy_selection_extension_integer_and_text_never_collide() -> Result<(), Box
     Ok(())
 }
 
-fn boundary_expected(value: u64) -> serde_json::Value {
-    if value <= 9_007_199_254_740_991 {
-        serde_json::json!(value)
-    } else {
-        serde_json::json!(value.to_string())
-    }
-}
-
 fn selected(profile: &Profile) -> Result<SelectedProfileInputV2<'_>, Box<dyn Error>> {
     Ok(SelectedProfileInputV2::new(
         profile,
@@ -296,11 +288,18 @@ fn selected(profile: &Profile) -> Result<SelectedProfileInputV2<'_>, Box<dyn Err
 
 #[test]
 fn policy_and_profile_revisions_use_literal_v2_wire_forms() -> Result<(), Box<dyn Error>> {
-    for revision in [
-        9_007_199_254_740_991_u64,
-        9_007_199_254_740_992_u64,
-        u64::MAX,
-    ] {
+    // Reviewed literal (input revision, expected v2 JSON token) table. The value
+    // at the IEEE-754 safe integer stays an exact integer; the two above it are
+    // decimal strings.
+    let cases: [(u64, serde_json::Value); 3] = [
+        (
+            9_007_199_254_740_991,
+            serde_json::json!(9_007_199_254_740_991_u64),
+        ),
+        (9_007_199_254_740_992, serde_json::json!("9007199254740992")),
+        (u64::MAX, serde_json::json!("18446744073709551615")),
+    ];
+    for (revision, expected) in cases {
         let profile = profile(revision, "Audience")?;
         let policy = Policy::new(
             PolicyId::new("policy.default")?,
@@ -329,64 +328,75 @@ fn policy_and_profile_revisions_use_literal_v2_wire_forms() -> Result<(), Box<dy
         )?;
         let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
         let projected = project_policy_selection_v2(&input)?;
-        assert_eq!(projected["policy"]["revision"], boundary_expected(revision));
-        assert_eq!(
-            projected["profiles"][0]["definition"]["revision"],
-            boundary_expected(revision)
-        );
+        assert_eq!(projected["policy"]["revision"], expected);
+        assert_eq!(projected["profiles"][0]["definition"]["revision"], expected);
     }
     Ok(())
 }
 
 #[test]
 fn policy_rule_endpoints_use_literal_v2_wire_forms() -> Result<(), Box<dyn Error>> {
-    let maximum_age = DurationMillis::new(DurationMillis::MAX)?;
-    let minimum_count = PositiveCount::new(u64::MAX)?;
     let profile = profile(1, "Audience")?;
-    let policy = Policy::new(
-        PolicyId::new("policy.default")?,
-        Revision::new(1)?,
-        Title::new("Default policy")?,
-        vec![owner("owner://team/security")?],
-        vec![profile.id().clone()],
-        vec![TargetId::new("web")?],
-        vec![PolicyRule::new(
-            PolicySelector::new(
-                Some(vec![UnitId::new("account.create")?]),
-                None,
-                None,
-                None,
-                None,
+    // Project actual minimum and legal maximum rules through the production
+    // projection, then assert reviewed literal expected JSON tokens for both the
+    // age and count axes rather than recomputing them with a helper.
+    let project = |maximum_age: u64, minimum_count: u64| -> Result<_, Box<dyn Error>> {
+        let policy = Policy::new(
+            PolicyId::new("policy.default")?,
+            Revision::new(1)?,
+            Title::new("Default policy")?,
+            vec![owner("owner://team/security")?],
+            vec![profile.id().clone()],
+            vec![TargetId::new("web")?],
+            vec![PolicyRule::new(
+                PolicySelector::new(
+                    Some(vec![UnitId::new("account.create")?]),
+                    None,
+                    None,
+                    None,
+                    None,
+                )?,
+                RequirementLevel::Recommended,
+                vec![Facet::Behavior],
+                TrustLevel::TrustedCi,
+                DurationMillis::new(maximum_age)?,
+                Some(PositiveCount::new(minimum_count)?),
+            )?],
+            WaiverPolicy::new(
+                true,
+                Some(PositiveDays::new(30)?),
+                Some(PositiveCount::new(2)?),
+                vec![Facet::Behavior],
             )?,
-            RequirementLevel::Recommended,
-            vec![Facet::Behavior],
-            TrustLevel::TrustedCi,
-            maximum_age,
-            Some(minimum_count),
-        )?],
-        WaiverPolicy::new(
-            true,
-            Some(PositiveDays::new(30)?),
-            Some(PositiveCount::new(2)?),
-            vec![Facet::Behavior],
-        )?,
-        None,
-        Extensions::default(),
-    )?;
-    let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
-    let projected = project_policy_selection_v2(&input)?;
-    let rule = &projected["policy"]["rules"][0];
-    assert_eq!(rule["maximum_age"], serde_json::json!(i64::MAX.to_string()));
+            None,
+            Extensions::default(),
+        )?;
+        let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
+        Ok(project_policy_selection_v2(&input)?)
+    };
+
+    // Minimum legal endpoints: age `0` and count `1` are exact integers.
+    let minimum = project(0, 1)?;
+    let minimum_rule = &minimum["policy"]["rules"][0];
+    assert_eq!(minimum_rule["maximum_age"], serde_json::json!(0));
+    assert_eq!(minimum_rule["minimum_count"], serde_json::json!(1));
+
+    // Maximum legal endpoints: both exceed the IEEE-754 safe integer and are
+    // emitted as decimal strings.
+    let maximum = project(DurationMillis::MAX, u64::MAX)?;
+    let maximum_rule = &maximum["policy"]["rules"][0];
     assert_eq!(
-        rule["minimum_count"],
-        serde_json::json!(u64::MAX.to_string())
+        maximum_rule["maximum_age"],
+        serde_json::json!("9223372036854775807")
     );
     assert_eq!(
-        projected["policy"]["waivers"]["maximum_days"],
+        maximum_rule["minimum_count"],
+        serde_json::json!("18446744073709551615")
+    );
+    assert_eq!(
+        maximum["policy"]["waivers"]["maximum_days"],
         serde_json::json!(30)
     );
-    // The minimum legal endpoints remain exact integers.
-    assert_eq!(boundary_expected(1), serde_json::json!(1));
     Ok(())
 }
 
@@ -495,35 +505,49 @@ fn populated_selector_axes_and_waiver_fields_are_fully_inventoried() -> Result<(
 
 #[test]
 fn populated_dimension_description_is_present_and_absent_exactly() -> Result<(), Box<dyn Error>> {
-    let with_description = Profile::new(
-        ProfileId::new("audience.default")?,
-        Revision::new(1)?,
-        Title::new("Audience")?,
-        vec![owner("owner://team/product")?],
-        vec![ProfileDimension::new(
-            DimensionId::new("region")?,
-            vec![SymbolicValueId::new("eu")?, SymbolicValueId::new("us")?],
-            Some(Description::new("Deployment region")?),
-        )?],
-        vec![(DimensionId::new("region")?, SymbolicValueId::new("us")?)],
-        None,
-        Extensions::default(),
-    )?;
-    let described_policy = policy(vec![with_description.id().clone()])?;
-    let input = PolicySelectionInputV2::new(
-        &described_policy,
-        vec![SelectedProfileInputV2::new(
-            &with_description,
-            vec![(
+    // Same-ingress builder so the populated and absent controls differ only in the
+    // optional dimension description.
+    let build = |description: Option<Description>| -> Result<_, Box<dyn Error>> {
+        let profile = Profile::new(
+            ProfileId::new("audience.default")?,
+            Revision::new(1)?,
+            Title::new("Audience")?,
+            vec![owner("owner://team/product")?],
+            vec![ProfileDimension::new(
                 DimensionId::new("region")?,
-                SelectedDimensionStateV2::Known(SymbolicValueId::new("us")?),
-            )],
-        )?],
-    )?;
-    let projected = project_policy_selection_v2(&input)?;
-    assert_eq!(
-        projected["profiles"][0]["definition"]["dimensions"][0]["description"],
-        "Deployment region"
+                vec![SymbolicValueId::new("eu")?, SymbolicValueId::new("us")?],
+                description,
+            )?],
+            vec![(DimensionId::new("region")?, SymbolicValueId::new("us")?)],
+            None,
+            Extensions::default(),
+        )?;
+        let selected_policy = policy(vec![profile.id().clone()])?;
+        let input = PolicySelectionInputV2::new(
+            &selected_policy,
+            vec![SelectedProfileInputV2::new(
+                &profile,
+                vec![(
+                    DimensionId::new("region")?,
+                    SelectedDimensionStateV2::Known(SymbolicValueId::new("us")?),
+                )],
+            )?],
+        )?;
+        Ok(project_policy_selection_v2(&input)?)
+    };
+
+    let present = build(Some(Description::new("Deployment region")?))?;
+    let dimension = &present["profiles"][0]["definition"]["dimensions"][0];
+    assert_eq!(dimension["description"], "Deployment region");
+
+    // A same-ingress absent description is omitted, not serialized as null.
+    let absent = build(None)?;
+    let dimension = absent["profiles"][0]["definition"]["dimensions"][0]
+        .as_object()
+        .ok_or("dimension object")?;
+    assert!(
+        !dimension.contains_key("description"),
+        "an absent dimension description must be omitted, not null"
     );
     Ok(())
 }
@@ -603,29 +627,37 @@ fn profile_set_order_uses_full_member_bytes_not_ids() -> Result<(), Box<dyn Erro
 
 #[test]
 fn rule_order_uses_full_member_bytes() -> Result<(), Box<dyn Error>> {
-    // Two rules whose `facets` sets differ; canonical order follows the projected
-    // member bytes regardless of supply order.
-    let rule = |facet: Facet| -> Result<PolicyRule, Box<dyn Error>> {
-        Ok(PolicyRule::new(
-            PolicySelector::new(
-                Some(vec![UnitId::new("account.create")?]),
-                None,
-                None,
-                None,
-                None,
-            )?,
-            RequirementLevel::Recommended,
-            vec![facet],
-            TrustLevel::TrustedCi,
-            DurationMillis::new(1)?,
+    // Heterogeneous two-rule trap. The rules differ both in optional selector
+    // presence and in the `maximum_age`/`minimum_count` wire forms. `maximum_age`
+    // is the first differing member byte after the shared `facets`, and the
+    // maximum rule's decimal string `"9223…"` sorts before the minimum rule's
+    // numeric `0` (`0x22 < 0x30`). Full JCS member-byte order (maximum first)
+    // therefore differs from numeric domain order (minimum first).
+    let maximum_rule = PolicyRule::new(
+        full_selector()?,
+        RequirementLevel::Recommended,
+        vec![Facet::Behavior],
+        TrustLevel::TrustedCi,
+        DurationMillis::new(DurationMillis::MAX)?,
+        Some(PositiveCount::new(u64::MAX)?),
+    )?;
+    let minimum_rule = PolicyRule::new(
+        PolicySelector::new(
+            Some(vec![UnitId::new("account.create")?]),
             None,
-        )?)
-    };
-    let alpha = rule(Facet::Behavior)?;
-    let zeta = rule(Facet::Visual)?;
+            None,
+            None,
+            None,
+        )?,
+        RequirementLevel::Recommended,
+        vec![Facet::Behavior],
+        TrustLevel::TrustedCi,
+        DurationMillis::new(0)?,
+        Some(PositiveCount::new(1)?),
+    )?;
     let profile = profile(1, "Audience")?;
-    let build = |first: PolicyRule, second: PolicyRule| -> Result<_, Box<dyn Error>> {
-        let policy = Policy::new(
+    let build_policy = |first: PolicyRule, second: PolicyRule| -> Result<_, Box<dyn Error>> {
+        Ok(Policy::new(
             PolicyId::new("policy.default")?,
             Revision::new(1)?,
             Title::new("Default policy")?,
@@ -636,13 +668,41 @@ fn rule_order_uses_full_member_bytes() -> Result<(), Box<dyn Error>> {
             WaiverPolicy::deny(),
             None,
             Extensions::default(),
-        )?;
-        let input = PolicySelectionInputV2::new(&policy, vec![selected(&profile)?])?;
-        Ok(canonicalize_policy_selection_v2(&input)?)
+        )?)
     };
+    let forward = build_policy(maximum_rule.clone(), minimum_rule.clone())?;
+    let reversed = build_policy(minimum_rule, maximum_rule)?;
+    let forward_input = PolicySelectionInputV2::new(&forward, vec![selected(&profile)?])?;
+    let reversed_input = PolicySelectionInputV2::new(&reversed, vec![selected(&profile)?])?;
+    let forward_bytes = canonicalize_policy_selection_v2(&forward_input)?;
+    let reversed_bytes = canonicalize_policy_selection_v2(&reversed_input)?;
+    assert_eq!(forward_bytes.bytes(), reversed_bytes.bytes());
+    assert_eq!(forward_bytes.digest(), reversed_bytes.digest());
+
+    // Reviewed literal member order: the maximum-valued rule precedes the
+    // minimum-valued rule under full JCS member-byte ordering.
+    let projected = project_policy_selection_v2(&forward_input)?;
+    let rules = projected["policy"]["rules"]
+        .as_array()
+        .ok_or("rules array")?;
+    assert_eq!(rules.len(), 2);
     assert_eq!(
-        build(alpha.clone(), zeta.clone())?.bytes(),
-        build(zeta, alpha)?.bytes()
+        rules[0]["maximum_age"],
+        serde_json::json!("9223372036854775807")
+    );
+    assert_eq!(
+        rules[0]["minimum_count"],
+        serde_json::json!("18446744073709551615")
+    );
+    assert_eq!(
+        rules[0]["selector"].as_object().map(|item| item.len()),
+        Some(5)
+    );
+    assert_eq!(rules[1]["maximum_age"], serde_json::json!(0));
+    assert_eq!(rules[1]["minimum_count"], serde_json::json!(1));
+    assert_eq!(
+        rules[1]["selector"].as_object().map(|item| item.len()),
+        Some(1)
     );
     Ok(())
 }

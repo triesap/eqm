@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_467_test_executions_dependency_policy_passed_yoke_derive_0_8_4_RF28_RF30_S022_remaining",
+ "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_committed_RF30_S022_remaining",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -586,7 +586,7 @@
   },
   {
    "id": "S019",
-   "status": "in_progress",
+   "status": "complete",
    "commit_sha": "1512c9fa7e886781bdf2976dfaabde1d8328ac43",
    "report": "implementation/reports/S019.md",
    "verification": [
@@ -601,8 +601,8 @@
    ],
    "baseline_exceptions": [],
    "decision_status": "resolved_by_Codex_DEV007",
-   "implementation_status": "committed_RF28_remaining_controls",
-   "supervisor_status": "S019_R3_required",
+   "implementation_status": "committed_R3_pending_review",
+   "supervisor_status": "S019_R3_pending_acceptance",
    "implementation_checkpoints": [
     {
      "id": "S019-A",
@@ -701,9 +701,9 @@
     },
     {
      "id": "S019-R3",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/S019.md",
+     "report": "implementation/reports/S019.md#corrective-checkpoint-s019-r3--finish-rf28-literal-policy-provenance-controls-dev-008",
      "verification": [
       "cargo fmt --all --check",
       "cargo check --workspace --all-targets --locked",
@@ -713,14 +713,16 @@
       "cargo xtask check",
       "cargo xtask schemas check",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed_pending_acceptance",
+     "supervisor_status": "pending_acceptance"
     }
    ],
    "prerequisite_checkpoints": [
     {
      "id": "DEV008-P1",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "ba04463862102130e192923a59278d427d4abcdc",
      "report": "implementation/reports/DEV008-P1.md",
      "implementation_status": "committed_supervisor_pending",
      "verification": [
@@ -2676,7 +2678,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 7,
+   "completed_steps": 8,
    "total_steps": 15
   },
   {
@@ -2983,7 +2985,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S019-R3",
+ "next_checkpoint": "S021-R1",
  "supervisor_review": {
   "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "report": "implementation/reports/CODEX-eb2f323.md",
@@ -2996,7 +2998,7 @@
   "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
   "release_candidate": false,
   "s019_decision": "resolved",
-  "next_checkpoint": "S019-R3",
+  "next_checkpoint": "S021-R1",
   "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "review_report": "implementation/reports/CODEX-eb2f323.md",
   "s020_decision": "resolved",
@@ -3282,13 +3284,13 @@
   },
   {
    "id": "RF28",
-   "status": "partial_remaining_controls",
+   "status": "fixed_pending_acceptance",
    "priority": "P2",
    "owner": "S019",
    "checkpoint": "S019-R3",
    "summary": "Missing declared S019 provenance boundary evidence",
    "report": "implementation/reports/CODEX-1512c9f.md",
-   "followup_report": "implementation/reports/CODEX-eb2f323.md"
+   "followup_report": "implementation/reports/S019.md"
   },
   {
    "id": "RF29",
