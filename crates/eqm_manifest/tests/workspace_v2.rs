@@ -145,3 +145,90 @@ fn v2_unknown_field_fails_closed_and_authored_dangling_reference_loads()
     assert_eq!(loaded.graph_input().source_components.len(), 1);
     Ok(())
 }
+
+fn shared_roots_workspace(extra_target: &str, extra_component: &str) -> String {
+    format!(
+        r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json"
+contract_sources = ["eqm/contracts/**/*.toml"]
+binding_sources = ["eqm/bindings/**/*.toml"]
+policy_sources = ["eqm/policies/**/*.toml"]
+profile_sources = ["eqm/profiles/**/*.toml"]
+runner_sources = ["eqm/runners/**/*.toml"]
+waiver_sources = ["eqm/waivers/**/*.toml"]
+
+[targets.web]
+root = "apps/web"
+platform = "web"
+framework = "sveltekit"
+source_components = ["shared.kmp"]
+owners = ["owner://team/web"]
+{extra_target}
+[source_components."shared.kmp"]
+roots = ["shared/kmp"]
+owners = ["owner://team/shared"]
+dependencies = []
+{extra_component}
+"#
+    )
+}
+
+#[test]
+fn declared_shared_component_root_is_not_an_output_collision() -> Result<(), Box<dyn Error>> {
+    let extra_target = r#"
+[targets.ios]
+root = "apps/ios"
+platform = "ios"
+framework = "swiftui"
+source_components = ["shared.kmp"]
+owners = ["owner://team/ios"]
+"#;
+    let repository = repository(&shared_roots_workspace(extra_target, ""))?;
+    let loaded = load_workspace(repository.path(), None)?;
+    assert_eq!(loaded.graph_input().targets.len(), 2);
+    assert_eq!(loaded.graph_input().source_components.len(), 1);
+    Ok(())
+}
+
+#[test]
+fn ambiguous_overlapping_component_roots_reject() -> Result<(), Box<dyn Error>> {
+    let extra_component = r#"
+[source_components."shared.other"]
+roots = ["shared/kmp/other"]
+owners = ["owner://team/other"]
+dependencies = []
+"#;
+    let repository = repository(&shared_roots_workspace("", extra_component))?;
+    assert_eq!(
+        load_workspace(repository.path(), None),
+        Err(eqm_manifest::LoadError::AmbiguousSourceOverlap)
+    );
+    Ok(())
+}
+
+#[test]
+fn undeclared_target_root_overlap_rejects() -> Result<(), Box<dyn Error>> {
+    let workspace = shared_roots_workspace("", "")
+        .replace("root = \"apps/web\"", "root = \"shared/kmp/app\"")
+        .replace(
+            "source_components = [\"shared.kmp\"]",
+            "source_components = []",
+        );
+    let repository = repository(&workspace)?;
+    assert_eq!(
+        load_workspace(repository.path(), None),
+        Err(eqm_manifest::LoadError::UndeclaredSourceOverlap)
+    );
+    Ok(())
+}
+
+#[test]
+fn escaped_component_root_rejects() -> Result<(), Box<dyn Error>> {
+    let workspace = shared_roots_workspace("", "")
+        .replace("roots = [\"shared/kmp\"]", "roots = [\"../escape\"]");
+    let repository = repository(&workspace)?;
+    assert_eq!(
+        load_workspace(repository.path(), None),
+        Err(eqm_manifest::LoadError::WorkspaceTarget)
+    );
+    Ok(())
+}

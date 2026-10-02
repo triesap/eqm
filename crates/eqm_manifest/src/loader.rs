@@ -223,6 +223,8 @@ pub fn load_workspace(
         }
     }
 
+    validate_shared_source_overlaps(&input)?;
+
     for document in &documents {
         match document.document() {
             DocumentDto::Capability(_)
@@ -369,6 +371,11 @@ pub enum LoadError {
     WorkspaceTarget,
     /// Target roots collided portably.
     DuplicateTargetRoot,
+    /// Distinct source components claimed overlapping roots without a declared
+    /// dependency relationship, so ownership is ambiguous.
+    AmbiguousSourceOverlap,
+    /// A target root overlapped a source component it did not declare.
+    UndeclaredSourceOverlap,
     /// Domain conversion failed, retaining source and invalid field path.
     Conversion(ConversionError),
     /// Exact lockfile loading failed.
@@ -387,6 +394,12 @@ impl Display for LoadError {
             Self::DuplicateTargetRoot => {
                 formatter.write_str("workspace target roots collided portably")
             }
+            Self::AmbiguousSourceOverlap => {
+                formatter.write_str("workspace source-component roots overlap ambiguously")
+            }
+            Self::UndeclaredSourceOverlap => {
+                formatter.write_str("workspace target root overlaps an undeclared source component")
+            }
         }
     }
 }
@@ -399,9 +412,91 @@ impl Error for LoadError {
             Self::Validation(error) => Some(error),
             Self::Conversion(error) => Some(error),
             Self::Lock(error) => Some(error),
-            Self::WorkspaceTarget | Self::DuplicateTargetRoot => None,
+            Self::WorkspaceTarget
+            | Self::DuplicateTargetRoot
+            | Self::AmbiguousSourceOverlap
+            | Self::UndeclaredSourceOverlap => None,
         }
     }
+}
+
+/// Returns whether two repository-relative roots overlap (one contains the
+/// other). Distinct output roots never overlap; shared component roots may.
+fn roots_overlap(left: &RepoPath, right: &RepoPath) -> bool {
+    let left = left.as_str();
+    let right = right.as_str();
+    left == right
+        || left
+            .strip_prefix(right)
+            .is_some_and(|rest| rest.starts_with('/'))
+        || right
+            .strip_prefix(left)
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+/// Rejects ambiguous source-component root overlaps and undeclared target/root
+/// overlaps. Output identity (the target root) stays distinct from shared
+/// source roots, so a declared shared component is not a target-root collision.
+fn validate_shared_source_overlaps(input: &WorkspaceGraphInput) -> Result<(), LoadError> {
+    let components: BTreeMap<&str, &SourceComponent> = input
+        .source_components
+        .iter()
+        .map(|component| (component.id().as_str(), component))
+        .collect();
+    let reachable = |from: &str, to: &str| -> bool {
+        let mut stack = vec![from];
+        let mut seen = BTreeSet::new();
+        while let Some(current) = stack.pop() {
+            if current == to {
+                return true;
+            }
+            if !seen.insert(current) {
+                continue;
+            }
+            if let Some(component) = components.get(current) {
+                stack.extend(
+                    component
+                        .dependencies()
+                        .iter()
+                        .map(SourceComponentId::as_str),
+                );
+            }
+        }
+        false
+    };
+    let ids: Vec<&str> = components.keys().copied().collect();
+    for (index, left) in ids.iter().enumerate() {
+        let left_component = components[left];
+        for right in &ids[index + 1..] {
+            let right_component = components[right];
+            let overlaps = left_component.roots().iter().any(|left_root| {
+                right_component
+                    .roots()
+                    .iter()
+                    .any(|right_root| roots_overlap(left_root, right_root))
+            });
+            if overlaps && !reachable(left, right) && !reachable(right, left) {
+                return Err(LoadError::AmbiguousSourceOverlap);
+            }
+        }
+    }
+    for target in &input.targets {
+        for (id, component) in &components {
+            let overlaps = component
+                .roots()
+                .iter()
+                .any(|root| roots_overlap(root, target.root()));
+            if overlaps
+                && !target
+                    .source_components()
+                    .iter()
+                    .any(|declared| declared.as_str() == *id)
+            {
+                return Err(LoadError::UndeclaredSourceOverlap);
+            }
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
