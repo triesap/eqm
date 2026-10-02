@@ -5,8 +5,9 @@ S001–S021 plus S023/S024, are accepted for allocated scope:
 23 numbered steps (S001–S018/S020 prior acceptance preserved, S019/S021/
 S023/S024 accepted now). S022 recursive concealment repair is retained; RF40
 confinement is implemented and verified by S022-R2 (acceptance pending). S025
-checked admission is retained, RF38 typed context and RF39 retry chronology
-remain. Next repair: S025-R1.
+checked admission is retained; RF38 typed context and RF39 retry chronology are
+implemented and verified by S025-R1 (acceptance pending). Next eligible step:
+S026.
 
 Next every ordered eligible **S026–S043**, `pfc through EQM-P03`; independent
 integration review at S043 before S044. Full MVP remains S211. No arbitrary

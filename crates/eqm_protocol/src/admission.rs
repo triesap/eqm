@@ -19,13 +19,14 @@ use crate::v2::{
     ExecutionPayloadV2Dto, ProfileValueV2Dto, ScopeSubjectV2Dto,
 };
 use eqm_domain::{
-    AttemptOutcome, DimensionId, EvidenceAttachment, EvidenceAttempt, EvidenceCounts,
-    EvidenceExecution, EvidenceKind, EvidenceLineage, EvidencePayload, EvidenceResult,
-    EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject, ExecutionPayload,
-    ExpectedLineageAuthority, Facet, FullRequirementId, OwnerRef, PositiveCount, ProfileId,
-    ProfileSelection, ProviderId, RepositoryIdentity, Revision, SelectorText,
-    SemanticEvidenceDigest, Sha256Digest, SourceCommit, SymbolicValueId, TargetId, TrustLevel,
-    UnitId, UtcInstant,
+    AdapterDigest, AttemptOutcome, BindingDigest, ContractDigest, DimensionId, EvidenceAttachment,
+    EvidenceAttempt, EvidenceCounts, EvidenceExecution, EvidenceKind, EvidenceLineage,
+    EvidencePayload, EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject,
+    EvidenceSpecificationDigest, EvidenceSubject, ExecutionPayload, ExpectedLineageAuthority,
+    Facet, FullRequirementId, OwnerRef, PolicySelectionDigest, PositiveCount, ProfileId,
+    ProfileSelection, ProviderId, RepositoryIdentity, Revision, RunnerDigest, SelectorText,
+    SemanticEvidenceDigest, Sha256Digest, SourceCommit, SymbolicValueId, TargetConfigurationDigest,
+    TargetId, TrustLevel, UnitId, UtcInstant,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -35,7 +36,31 @@ use std::fmt::{self, Display, Formatter};
 ///
 /// Every axis is explicit input. The record's references must match this
 /// context exactly; nothing is defaulted, zero-filled or derived from a
-/// workspace digest.
+/// workspace digest. Approved component identities use their existing typed
+/// digest newtypes, not interchangeable generic SHA values.
+///
+/// The distinct newtypes cannot be substituted for each other:
+///
+/// ```compile_fail
+/// use eqm_domain::{AdapterDigest, RunnerDigest};
+/// fn expects_adapter(_: AdapterDigest) {}
+/// expects_adapter(RunnerDigest::hash_content(b"runner"));
+/// ```
+///
+/// ```compile_fail
+/// use eqm_domain::{BindingDigest, ContractDigest};
+/// fn expects_binding(_: BindingDigest) {}
+/// expects_binding(ContractDigest::hash_content(b"contract"));
+/// ```
+///
+/// Each identity remains constructible under its documented domain, and its
+/// exact SHA is its wire encoding:
+///
+/// ```
+/// use eqm_domain::ContractDigest;
+/// let contract = ContractDigest::hash_content(b"contract");
+/// assert_eq!(contract.as_digest().to_string(), contract.to_string());
+/// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EvidenceAdmissionContext {
     /// Expected replay-bound subject (repository/commit/build/artifact/configuration/scope).
@@ -50,21 +75,26 @@ pub struct EvidenceAdmissionContext {
     pub facets: BTreeSet<Facet>,
     /// Expected envelope kind.
     pub kind: EvidenceKind,
-    /// Expected evidence-specification digest.
-    pub evidence_spec_digest: Sha256Digest,
-    /// Expected contract digest.
-    pub contract_digest: Sha256Digest,
-    /// Expected binding digest.
-    pub binding_digest: Sha256Digest,
-    /// Expected policy digest.
-    pub policy_digest: Sha256Digest,
-    /// Expected present or absent runner reference.
-    pub runner_digest: Option<Sha256Digest>,
-    /// Expected present or absent adapter reference.
-    pub adapter_digest: Option<Sha256Digest>,
-    /// Expected present or absent runtime-facts reference.
+    /// Expected evidence-specification identity.
+    pub evidence_spec_digest: EvidenceSpecificationDigest,
+    /// Expected contract identity.
+    pub contract_digest: ContractDigest,
+    /// Expected binding identity.
+    pub binding_digest: BindingDigest,
+    /// Expected selected-policy identity.
+    pub policy_digest: PolicySelectionDigest,
+    /// Expected target-configuration identity, whose exact SHA must equal the
+    /// subject configuration field.
+    pub target_configuration_digest: TargetConfigurationDigest,
+    /// Expected present or absent runner identity.
+    pub runner_digest: Option<RunnerDigest>,
+    /// Expected present or absent adapter identity.
+    pub adapter_digest: Option<AdapterDigest>,
+    /// Expected present or absent runtime-facts reference (exact structural SHA;
+    /// no distinct wrapper exists).
     pub runtime_facts_digest: Option<Sha256Digest>,
-    /// Expected present or absent release-record reference.
+    /// Expected present or absent release-record reference (exact structural SHA;
+    /// no distinct wrapper exists).
     pub release_record_digest: Option<Sha256Digest>,
     /// Expected exact selected profiles and their revisions/values.
     pub profiles: BTreeMap<ProfileId, ProfileSelection>,
@@ -86,6 +116,13 @@ pub struct AdmittedEvidenceV2 {
     execution: EvidenceExecution,
     semantic_identity: SemanticEvidenceDigest,
     raw_bytes: Vec<u8>,
+    evidence_spec_digest: EvidenceSpecificationDigest,
+    contract_digest: ContractDigest,
+    binding_digest: BindingDigest,
+    policy_digest: PolicySelectionDigest,
+    target_configuration_digest: TargetConfigurationDigest,
+    runner_digest: Option<RunnerDigest>,
+    adapter_digest: Option<AdapterDigest>,
 }
 
 impl AdmittedEvidenceV2 {
@@ -117,6 +154,48 @@ impl AdmittedEvidenceV2 {
     #[must_use]
     pub fn raw_bytes(&self) -> &[u8] {
         &self.raw_bytes
+    }
+
+    /// Returns the retained typed evidence-specification expectation.
+    #[must_use]
+    pub const fn evidence_spec_digest(&self) -> EvidenceSpecificationDigest {
+        self.evidence_spec_digest
+    }
+
+    /// Returns the retained typed contract expectation.
+    #[must_use]
+    pub const fn contract_digest(&self) -> ContractDigest {
+        self.contract_digest
+    }
+
+    /// Returns the retained typed binding expectation.
+    #[must_use]
+    pub const fn binding_digest(&self) -> BindingDigest {
+        self.binding_digest
+    }
+
+    /// Returns the retained typed selected-policy expectation.
+    #[must_use]
+    pub const fn policy_digest(&self) -> PolicySelectionDigest {
+        self.policy_digest
+    }
+
+    /// Returns the retained typed target-configuration expectation.
+    #[must_use]
+    pub const fn target_configuration_digest(&self) -> TargetConfigurationDigest {
+        self.target_configuration_digest
+    }
+
+    /// Returns the retained typed runner expectation, if any.
+    #[must_use]
+    pub const fn runner_digest(&self) -> Option<RunnerDigest> {
+        self.runner_digest
+    }
+
+    /// Returns the retained typed adapter expectation, if any.
+    #[must_use]
+    pub const fn adapter_digest(&self) -> Option<AdapterDigest> {
+        self.adapter_digest
     }
 }
 
@@ -153,6 +232,9 @@ pub enum EvidenceAdmissionError {
     ReleaseReferenceMismatch,
     /// Asserted counts contradicted the recorded attempt outcomes.
     CountOutcomeContradiction,
+    /// Numbered retry windows were not chronological (a retry began before the
+    /// preceding retry finished).
+    RetryChronology,
     /// A lineage relationship did not match its declared execution or authority.
     Lineage(EvidenceResultBuildError),
     /// A typed domain value could not be built from the parsed record.
@@ -402,6 +484,14 @@ fn counts_match_outcomes(counts: EvidenceCounts, attempts: &[EvidenceAttempt]) -
         && (counts.quarantined > 0) == present(AttemptOutcome::Quarantined)
 }
 
+/// Requires each numbered retry to begin at or after the preceding retry's
+/// finish. Equal boundaries are allowed; the comparison preserves nanoseconds.
+fn retries_are_ordered(attempts: &[EvidenceAttempt]) -> bool {
+    attempts
+        .windows(2)
+        .all(|pair| pair[1].started_at() >= pair[0].finished_at())
+}
+
 /// Admits one parsed v2 evidence record against explicit lineage, a declared
 /// execution and an independently supplied expected context.
 #[allow(clippy::too_many_lines)]
@@ -484,20 +574,27 @@ pub fn admit_evidence(
         return Err(EvidenceAdmissionError::FacetMismatch);
     }
 
-    if digest(&record.evidence_spec_digest)? != context.evidence_spec_digest
-        || digest(&record.contract_digest)? != context.contract_digest
-        || digest(&record.binding_digest)? != context.binding_digest
-        || digest(&record.policy_digest)? != context.policy_digest
+    if digest(&record.evidence_spec_digest)? != context.evidence_spec_digest.as_digest()
+        || digest(&record.contract_digest)? != context.contract_digest.as_digest()
+        || digest(&record.binding_digest)? != context.binding_digest.as_digest()
+        || digest(&record.policy_digest)? != context.policy_digest.as_digest()
     {
         return Err(EvidenceAdmissionError::DigestMismatch);
+    }
+    // The explicit target-configuration identity must equal the subject
+    // configuration field; it is never inferred from the workspace digest.
+    if context.subject.target_configuration_digest()
+        != context.target_configuration_digest.as_digest()
+    {
+        return Err(EvidenceAdmissionError::SubjectMismatch);
     }
 
     let optional =
         |value: &Option<String>| -> Result<Option<Sha256Digest>, EvidenceAdmissionError> {
             value.as_deref().map(digest).transpose()
         };
-    if optional(&record.runner_digest)? != context.runner_digest
-        || optional(&record.adapter_digest)? != context.adapter_digest
+    if optional(&record.runner_digest)? != context.runner_digest.map(RunnerDigest::as_digest)
+        || optional(&record.adapter_digest)? != context.adapter_digest.map(AdapterDigest::as_digest)
         || optional(&record.runtime_facts_digest)? != context.runtime_facts_digest
         || optional(&record.release_record_digest)? != context.release_record_digest
     {
@@ -525,10 +622,13 @@ pub fn admit_evidence(
     {
         return Err(EvidenceAdmissionError::ReleaseReferenceMismatch);
     }
-    if let Some(attempted) = execution_of(&admitted_payload)
-        && !counts_match_outcomes(attempted.counts(), attempted.attempts())
-    {
-        return Err(EvidenceAdmissionError::CountOutcomeContradiction);
+    if let Some(attempted) = execution_of(&admitted_payload) {
+        if !counts_match_outcomes(attempted.counts(), attempted.attempts()) {
+            return Err(EvidenceAdmissionError::CountOutcomeContradiction);
+        }
+        if !retries_are_ordered(attempted.attempts()) {
+            return Err(EvidenceAdmissionError::RetryChronology);
+        }
     }
 
     let admitted_attachments = attachments(&record.attachments)?;
@@ -555,12 +655,12 @@ pub fn admit_evidence(
         admitted_requirements.into_iter().collect(),
         admitted_facets.into_iter().collect(),
         kind,
-        context.evidence_spec_digest,
-        context.contract_digest,
-        context.binding_digest,
-        context.policy_digest,
-        context.runner_digest,
-        context.adapter_digest,
+        context.evidence_spec_digest.as_digest(),
+        context.contract_digest.as_digest(),
+        context.binding_digest.as_digest(),
+        context.policy_digest.as_digest(),
+        context.runner_digest.map(RunnerDigest::as_digest),
+        context.adapter_digest.map(AdapterDigest::as_digest),
         context.runtime_facts_digest,
         context.release_record_digest,
         admitted_profiles.into_values().collect(),
@@ -580,6 +680,13 @@ pub fn admit_evidence(
         execution: execution.clone(),
         semantic_identity: checked.semantic_identity(),
         raw_bytes: checked.raw_bytes().to_vec(),
+        evidence_spec_digest: context.evidence_spec_digest,
+        contract_digest: context.contract_digest,
+        binding_digest: context.binding_digest,
+        policy_digest: context.policy_digest,
+        target_configuration_digest: context.target_configuration_digest,
+        runner_digest: context.runner_digest,
+        adapter_digest: context.adapter_digest,
     })
 }
 
@@ -647,17 +754,18 @@ mod tests {
                 source_commit: "a".repeat(40),
                 build_id: None,
                 artifact_digest: None,
-                target_configuration_digest: digest("config"),
+                target_configuration_digest: TargetConfigurationDigest::hash_content(b"config")
+                    .to_string(),
             },
             target: "web".to_owned(),
             unit: "unit.test".to_owned(),
             requirements: CanonicalSet::from_members(vec!["unit.test#r18".to_owned()])?,
             facets: CanonicalSet::from_members(vec!["behavior".to_owned()])?,
             kind: "test".to_owned(),
-            evidence_spec_digest: digest("spec"),
-            contract_digest: digest("contract"),
-            binding_digest: digest("binding"),
-            policy_digest: digest("policy"),
+            evidence_spec_digest: EvidenceSpecificationDigest::hash_content(b"spec").to_string(),
+            contract_digest: ContractDigest::hash_content(b"contract").to_string(),
+            binding_digest: BindingDigest::hash_content(b"binding").to_string(),
+            policy_digest: PolicySelectionDigest::hash_content(b"policy").to_string(),
             runner_digest: None,
             adapter_digest: None,
             runtime_facts_digest: None,
@@ -715,17 +823,18 @@ mod tests {
                 "a".repeat(40).parse()?,
                 None,
                 None,
-                Sha256Digest::hash_content(b"config"),
+                TargetConfigurationDigest::hash_content(b"config").as_digest(),
             ),
             target: TargetId::new("web")?,
             unit: UnitId::new("unit.test")?,
             requirement: FullRequirementId::new("unit.test#r18")?,
             facets: BTreeSet::from([Facet::Behavior]),
             kind: EvidenceKind::Test,
-            evidence_spec_digest: Sha256Digest::hash_content(b"spec"),
-            contract_digest: Sha256Digest::hash_content(b"contract"),
-            binding_digest: Sha256Digest::hash_content(b"binding"),
-            policy_digest: Sha256Digest::hash_content(b"policy"),
+            evidence_spec_digest: EvidenceSpecificationDigest::hash_content(b"spec"),
+            contract_digest: ContractDigest::hash_content(b"contract"),
+            binding_digest: BindingDigest::hash_content(b"binding"),
+            policy_digest: PolicySelectionDigest::hash_content(b"policy"),
+            target_configuration_digest: TargetConfigurationDigest::hash_content(b"config"),
             runner_digest: None,
             adapter_digest: None,
             runtime_facts_digest: None,
@@ -845,7 +954,7 @@ mod tests {
             "a".repeat(40).parse()?,
             None,
             None,
-            Sha256Digest::hash_content(b"config"),
+            TargetConfigurationDigest::hash_content(b"config").as_digest(),
         );
         assert_eq!(
             admit_evidence(&checked, &lineage()?, &execution_record()?, &expected),
@@ -935,6 +1044,338 @@ mod tests {
                 EvidenceResultBuildError::PlanMismatch
             ))
         );
+        Ok(())
+    }
+
+    fn attempt_dto(
+        number: u64,
+        started: &str,
+        finished: &str,
+    ) -> Result<AttemptV2Dto, Box<dyn Error>> {
+        Ok(AttemptV2Dto {
+            number: WireUint::new(number),
+            outcome: "passed".to_owned(),
+            started_at: instant(started)?,
+            finished_at: instant(finished)?,
+            message: None,
+        })
+    }
+
+    fn record_with_attempts(
+        attempts: Vec<AttemptV2Dto>,
+    ) -> Result<EvidenceResultV2Dto, Box<dyn Error>> {
+        let mut value = record()?;
+        value.payload = EvidencePayloadV2Dto::Test {
+            execution: ExecutionPayloadV2Dto {
+                attempts,
+                counts: CountsV2Dto {
+                    selected: WireUint::new(1),
+                    passed: WireUint::new(1),
+                    failed: WireUint::new(0),
+                    skipped: WireUint::new(0),
+                    filtered: WireUint::new(0),
+                    quarantined: WireUint::new(0),
+                },
+                started_at: instant("2026-01-02T03:00:00Z")?,
+                finished_at: instant("2026-01-02T04:00:00Z")?,
+            },
+        };
+        Ok(value)
+    }
+
+    #[test]
+    fn retained_typed_expectations_are_exposed() -> Result<(), Box<dyn Error>> {
+        let checked = seal(record()?)?;
+        let expected = context()?;
+        let admitted = admit_evidence(&checked, &lineage()?, &execution_record()?, &expected)?;
+        assert_eq!(admitted.contract_digest(), expected.contract_digest);
+        assert_eq!(admitted.binding_digest(), expected.binding_digest);
+        assert_eq!(
+            admitted.evidence_spec_digest(),
+            expected.evidence_spec_digest
+        );
+        assert_eq!(admitted.policy_digest(), expected.policy_digest);
+        assert_eq!(
+            admitted.target_configuration_digest(),
+            expected.target_configuration_digest
+        );
+        assert_eq!(admitted.runner_digest(), None);
+        assert_eq!(admitted.adapter_digest(), None);
+        Ok(())
+    }
+
+    #[test]
+    fn subject_core_reference_and_scope_mutants_reject() -> Result<(), Box<dyn Error>> {
+        let mut cases: Vec<(&str, EvidenceResultV2Dto, EvidenceAdmissionError)> = Vec::new();
+
+        let mut value = record()?;
+        value.subject.repository = "https://example.com/team/other".to_owned();
+        cases.push(("repository", value, EvidenceAdmissionError::SubjectMismatch));
+
+        let mut value = record()?;
+        value.subject.repository_id_digest = digest("repo-2");
+        cases.push((
+            "repository-id",
+            value,
+            EvidenceAdmissionError::SubjectMismatch,
+        ));
+
+        let mut value = record()?;
+        value.subject.source_commit = "b".repeat(40);
+        cases.push((
+            "source-commit",
+            value,
+            EvidenceAdmissionError::SubjectMismatch,
+        ));
+
+        let mut value = record()?;
+        value.subject.build_id = Some("build-2".to_owned());
+        cases.push(("build", value, EvidenceAdmissionError::SubjectMismatch));
+
+        let mut value = record()?;
+        value.subject.artifact_digest = Some(digest("artifact"));
+        cases.push(("artifact", value, EvidenceAdmissionError::SubjectMismatch));
+
+        let mut value = record()?;
+        value.subject.target_configuration_digest =
+            TargetConfigurationDigest::hash_content(b"config-2").to_string();
+        cases.push((
+            "target-configuration",
+            value,
+            EvidenceAdmissionError::SubjectMismatch,
+        ));
+
+        let mut value = record()?;
+        value.subject.scope = ScopeSubjectV2Dto::TargetSet {
+            targets: CanonicalSet::from_members(vec!["web".to_owned(), "ios".to_owned()])?,
+        };
+        cases.push(("scope", value, EvidenceAdmissionError::SubjectMismatch));
+
+        let mut value = record()?;
+        value.contract_digest = ContractDigest::hash_content(b"contract-2").to_string();
+        cases.push(("contract", value, EvidenceAdmissionError::DigestMismatch));
+
+        let mut value = record()?;
+        value.binding_digest = BindingDigest::hash_content(b"binding-2").to_string();
+        cases.push(("binding", value, EvidenceAdmissionError::DigestMismatch));
+
+        let mut value = record()?;
+        value.policy_digest = PolicySelectionDigest::hash_content(b"policy-2").to_string();
+        cases.push(("policy", value, EvidenceAdmissionError::DigestMismatch));
+
+        let mut value = record()?;
+        value.runner_digest = Some(RunnerDigest::hash_content(b"runner").to_string());
+        cases.push((
+            "runner-present",
+            value,
+            EvidenceAdmissionError::DigestMismatch,
+        ));
+
+        let mut value = record()?;
+        value.adapter_digest = Some(AdapterDigest::hash_content(b"adapter").to_string());
+        cases.push((
+            "adapter-present",
+            value,
+            EvidenceAdmissionError::DigestMismatch,
+        ));
+
+        for (name, value, expected) in cases {
+            let checked = seal(value)?;
+            assert_eq!(
+                admit_evidence(&checked, &lineage()?, &execution_record()?, &context()?),
+                Err(expected),
+                "{name}"
+            );
+        }
+
+        // A present typed context expectation against an absent record reference.
+        for context_with in ["runner", "adapter"] {
+            let mut expected = context()?;
+            if context_with == "runner" {
+                expected.runner_digest = Some(RunnerDigest::hash_content(b"runner"));
+            } else {
+                expected.adapter_digest = Some(AdapterDigest::hash_content(b"adapter"));
+            }
+            assert_eq!(
+                admit_evidence(
+                    &seal(record()?)?,
+                    &lineage()?,
+                    &execution_record()?,
+                    &expected
+                ),
+                Err(EvidenceAdmissionError::DigestMismatch),
+                "absent record {context_with}"
+            );
+        }
+
+        // Positive counterparts: an exact present typed runner/adapter identity admits.
+        let mut value = record()?;
+        value.runner_digest = Some(RunnerDigest::hash_content(b"runner").to_string());
+        value.adapter_digest = Some(AdapterDigest::hash_content(b"adapter").to_string());
+        let checked = seal(value)?;
+        let mut expected = context()?;
+        expected.runner_digest = Some(RunnerDigest::hash_content(b"runner"));
+        expected.adapter_digest = Some(AdapterDigest::hash_content(b"adapter"));
+        let admitted = admit_evidence(&checked, &lineage()?, &execution_record()?, &expected)?;
+        assert_eq!(admitted.runner_digest(), expected.runner_digest);
+        assert_eq!(admitted.adapter_digest(), expected.adapter_digest);
+        Ok(())
+    }
+
+    #[test]
+    fn profile_revision_and_value_are_exact() -> Result<(), Box<dyn Error>> {
+        let profile_id = ProfileId::new("audience.default")?;
+        let mut expected = context()?;
+        expected.profiles.insert(
+            profile_id.clone(),
+            ProfileSelection::new(
+                profile_id,
+                Revision::new(1)?,
+                vec![(DimensionId::new("locale")?, SymbolicValueId::new("en")?)],
+            )?,
+        );
+        // Exact match admits.
+        let mut value = record()?;
+        value.profile_values = CanonicalSet::from_members(vec![ProfileValueV2Dto {
+            profile: "audience.default".to_owned(),
+            revision: WireUint::new(1),
+            dimension: "locale".to_owned(),
+            value: "en".to_owned(),
+        }])?;
+        assert!(
+            admit_evidence(&seal(value)?, &lineage()?, &execution_record()?, &expected).is_ok()
+        );
+        // A different value rejects.
+        let mut value = record()?;
+        value.profile_values = CanonicalSet::from_members(vec![ProfileValueV2Dto {
+            profile: "audience.default".to_owned(),
+            revision: WireUint::new(1),
+            dimension: "locale".to_owned(),
+            value: "fr".to_owned(),
+        }])?;
+        assert_eq!(
+            admit_evidence(&seal(value)?, &lineage()?, &execution_record()?, &expected),
+            Err(EvidenceAdmissionError::ProfileMismatch)
+        );
+        // A different revision rejects.
+        let mut value = record()?;
+        value.profile_values = CanonicalSet::from_members(vec![ProfileValueV2Dto {
+            profile: "audience.default".to_owned(),
+            revision: WireUint::new(2),
+            dimension: "locale".to_owned(),
+            value: "en".to_owned(),
+        }])?;
+        assert_eq!(
+            admit_evidence(&seal(value)?, &lineage()?, &execution_record()?, &expected),
+            Err(EvidenceAdmissionError::ProfileMismatch)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn payload_kind_must_agree_with_envelope_kind() -> Result<(), Box<dyn Error>> {
+        let mut value = record()?;
+        value.payload = EvidencePayloadV2Dto::Snapshot {
+            execution: execution()?,
+        };
+        assert!(matches!(
+            admit_evidence(
+                &seal(value)?,
+                &lineage()?,
+                &execution_record()?,
+                &context()?
+            ),
+            Err(EvidenceAdmissionError::Domain(
+                EvidenceResultBuildError::PayloadKindMismatch
+            ))
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn retry_chronology_control_accepts_ordered_and_rejects_reversed() -> Result<(), Box<dyn Error>>
+    {
+        // Strictly sequential.
+        let sequential = vec![
+            attempt_dto(1, "2026-01-02T03:04:05Z", "2026-01-02T03:04:06Z")?,
+            attempt_dto(2, "2026-01-02T03:04:07Z", "2026-01-02T03:04:08Z")?,
+        ];
+        assert!(
+            admit_evidence(
+                &seal(record_with_attempts(sequential)?)?,
+                &lineage()?,
+                &execution_record()?,
+                &context()?
+            )
+            .is_ok()
+        );
+        // Equal boundaries are allowed and nanoseconds are retained.
+        let equal = vec![
+            attempt_dto(
+                1,
+                "2026-01-02T03:04:05.000000001Z",
+                "2026-01-02T03:04:05.000000002Z",
+            )?,
+            attempt_dto(
+                2,
+                "2026-01-02T03:04:05.000000002Z",
+                "2026-01-02T03:04:05.000000003Z",
+            )?,
+        ];
+        assert!(
+            admit_evidence(
+                &seal(record_with_attempts(equal)?)?,
+                &lineage()?,
+                &execution_record()?,
+                &context()?
+            )
+            .is_ok()
+        );
+        // Reversed: retry 2 begins before retry 1 finishes.
+        let reversed = vec![
+            attempt_dto(1, "2026-01-02T03:04:09Z", "2026-01-02T03:04:10Z")?,
+            attempt_dto(2, "2026-01-02T03:04:05Z", "2026-01-02T03:04:06Z")?,
+        ];
+        assert_eq!(
+            admit_evidence(
+                &seal(record_with_attempts(reversed)?)?,
+                &lineage()?,
+                &execution_record()?,
+                &context()?
+            ),
+            Err(EvidenceAdmissionError::RetryChronology)
+        );
+        // Overlapping: retry 2 begins before retry 1 finishes.
+        let overlapping = vec![
+            attempt_dto(1, "2026-01-02T03:04:05Z", "2026-01-02T03:04:08Z")?,
+            attempt_dto(2, "2026-01-02T03:04:07Z", "2026-01-02T03:04:09Z")?,
+        ];
+        assert_eq!(
+            admit_evidence(
+                &seal(record_with_attempts(overlapping)?)?,
+                &lineage()?,
+                &execution_record()?,
+                &context()?
+            ),
+            Err(EvidenceAdmissionError::RetryChronology)
+        );
+        // Out of the aggregate window: domain attempt-window containment rejects.
+        let out_of_window = vec![attempt_dto(
+            1,
+            "2026-01-02T02:59:00Z",
+            "2026-01-02T02:59:30Z",
+        )?];
+        assert!(matches!(
+            admit_evidence(
+                &seal(record_with_attempts(out_of_window)?)?,
+                &lineage()?,
+                &execution_record()?,
+                &context()?
+            ),
+            Err(EvidenceAdmissionError::Domain(
+                EvidenceResultBuildError::InvalidAttemptSequence
+            ))
+        ));
         Ok(())
     }
 }

@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S025",
+ "next_step": "S026",
  "implementation": "in_progress",
- "local_verification": "S022-R2_committed_verified_pending_acceptance;S025-R1_next",
+ "local_verification": "S022-R2_and_S025-R1_committed_verified_pending_acceptance;S026_next",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -885,7 +885,7 @@
      "id": "S022-R2",
      "status": "complete",
      "supervisor_status": "pending_acceptance",
-     "commit_sha": null,
+     "commit_sha": "9ecbe00d214afe79065d75ac1571cede5227da3c",
      "report": "implementation/reports/S022.md#corrective-checkpoint-s022-r2--confine-nested-source-inspection-dev-010-rf40",
      "implementation_status": "committed_pending_acceptance",
      "verification": [
@@ -995,16 +995,30 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
+   "implementation_status": "implemented_verified_pending_acceptance",
    "supervisor_status": "changes_required_DEV010",
    "commit_message": "fix: validate evidence envelope relationships",
    "review_report": "implementation/reports/CODEX-49541e3.md",
    "corrective_checkpoints": [
     {
      "id": "S025-R1",
-     "status": "pending",
-     "supervisor_status": "required_DEV010",
-     "commit_sha": null
+     "status": "complete",
+     "supervisor_status": "pending_acceptance",
+     "commit_sha": null,
+     "report": "implementation/reports/S025.md#corrective-checkpoint-s025-r1--typed-context-and-retry-chronology-dev-010-rf38rf39",
+     "implementation_status": "committed_pending_acceptance",
+     "verification": [
+      "cargo test --locked -p eqm_protocol admission",
+      "cargo test --locked -p eqm_protocol -p eqm_domain --doc",
+      "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     }
    ]
   },
