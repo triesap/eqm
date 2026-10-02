@@ -202,6 +202,36 @@ define_id!(
     1,
     None
 );
+define_id!(
+    /// An approved acquisition plan ID.
+    PlanId,
+    2,
+    None
+);
+define_id!(
+    /// An authorized campaign ID.
+    CampaignId,
+    2,
+    None
+);
+define_id!(
+    /// One campaign execution run ID.
+    RunId,
+    1,
+    None
+);
+define_id!(
+    /// One logical case ID within an execution.
+    LogicalCaseId,
+    1,
+    None
+);
+define_id!(
+    /// One uniquely named attempt ID within a logical case.
+    AttemptId,
+    1,
+    None
+);
 
 /// A fully qualified requirement identity: `<unit>#<local>`.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

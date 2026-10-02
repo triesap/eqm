@@ -8,9 +8,9 @@ identity (RF30); S022 completion now enforces the conservative repository-wide
 clean gate and repairs the reserved-output fixture. Codex resolved the S022
 decision, preserving original release acceptance.
 
-Next **all eligible S024–S211**. The full approved batch ends at S211;
-commits/reports are not stop conditions. P01 complete; P02 eleven tracked steps
-(S013–S023), remaining S024–S027. Later cycles pending. No history is rewritten.
+Next **all eligible S025–S211**. The full approved batch ends at S211;
+commits/reports are not stop conditions. P01 complete; P02 twelve tracked steps
+(S013–S024), remaining S025–S027. Later cycles pending. No history is rewritten.
 
 DEV008-P1 is complete: the yanked `yoke-derive` 0.8.3 was replaced by the narrow
 transitive 0.8.4 in `Cargo.lock` (one entry, no direct pin change). Fresh

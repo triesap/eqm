@@ -80,20 +80,21 @@ pub use evidence::{
     EvidenceSelector, EvidenceSpecBuildError, EvidenceSpecification, PositiveCount,
 };
 pub use evidence_result::{
-    AttemptAggregate, EvidenceAttachment, EvidenceAttempt, EvidenceCounts,
-    EvidenceIdentityRelation, EvidencePayload, EvidenceResult, EvidenceResultBuildError,
-    EvidenceScopeSubject, EvidenceSubject, ExecutionPayload, MAX_RAW_EVIDENCE_BYTES, ProducerRef,
-    ProfileSelection, RawEvidenceObject, RepositoryIdentity, SourceCommit,
+    AttemptAggregate, EvidenceAttachment, EvidenceAttempt, EvidenceCounts, EvidenceExecution,
+    EvidenceIdentityRelation, EvidenceLineage, EvidenceLineageParts, EvidencePayload,
+    EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject,
+    ExecutionPayload, MAX_RAW_EVIDENCE_BYTES, ProducerRef, ProfileSelection, RawEvidenceObject,
+    RepositoryIdentity, SourceCommit,
 };
 pub use graph::{
     AdapterLockIdentity, FinalizedWorkspaceGraph, ImportLockIdentity, WorkspaceGraph,
     WorkspaceGraphBuildError, WorkspaceGraphInput,
 };
 pub use id::{
-    AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
-    FrameworkId, FullRequirementId, IdParseError, JourneyId, LocalRequirementId, PlatformId,
-    PolicyId, ProfileId, ProviderId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId,
-    WaiverId,
+    AdapterId, ArtifactId, AttemptId, BindingId, CampaignId, CapabilityId, DimensionId,
+    EvidenceSpecId, FragmentId, FrameworkId, FullRequirementId, IdParseError, JourneyId,
+    LocalRequirementId, LogicalCaseId, PlanId, PlatformId, PolicyId, ProfileId, ProviderId, RunId,
+    RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
 };
 pub use inventory::{
     AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,

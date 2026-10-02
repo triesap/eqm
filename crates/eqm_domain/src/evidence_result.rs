@@ -1,10 +1,10 @@
 //! Immutable, replay-bound evidence result values.
 
 use crate::{
-    AttemptOutcome, DimensionId, EvidenceKind, Extensions, Facet, FullRequirementId, OwnerRef,
-    PositiveCount, ProfileId, ProviderId, RawObjectDigest, Revision, SelectorText,
-    SemanticEvidenceDigest, Sha256Digest, SymbolicValueId, TargetId, TrustLevel, UnitId,
-    UtcInstant,
+    AttemptId, AttemptOutcome, CampaignId, DimensionId, EvidenceKind, Extensions, Facet,
+    FullRequirementId, LogicalCaseId, OwnerRef, PlanId, PositiveCount, ProfileId, ProviderId,
+    RawObjectDigest, Revision, RunId, SelectorText, SemanticEvidenceDigest, Sha256Digest,
+    SymbolicValueId, TargetId, TrustLevel, UnitId, UtcInstant,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -885,6 +885,20 @@ pub enum EvidenceResultBuildError {
     DuplicateAttachment,
     /// Raw evidence object was empty or exceeded the declared bound.
     RawObjectBound,
+    /// Required plan lineage was missing.
+    MissingPlan,
+    /// Required campaign lineage was missing.
+    MissingCampaign,
+    /// Required run lineage was missing.
+    MissingRun,
+    /// Required logical-case lineage was missing.
+    MissingLogicalCase,
+    /// Required attempt lineage was missing.
+    MissingAttempt,
+    /// An execution declared no attempts.
+    AttemptsRequired,
+    /// An execution repeated an attempt name.
+    DuplicateAttemptId,
 }
 
 impl Display for EvidenceResultBuildError {
@@ -968,6 +982,128 @@ impl EvidenceIdentityRelation {
     #[must_use]
     pub const fn semantic_identity(&self) -> SemanticEvidenceDigest {
         self.semantic
+    }
+}
+
+/// Optional lineage parts as received, before required-lineage validation.
+///
+/// Missing parts are errors, never derived from timestamps or directory order.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct EvidenceLineageParts {
+    /// Approved acquisition plan.
+    pub plan: Option<PlanId>,
+    /// Authorized campaign.
+    pub campaign: Option<CampaignId>,
+    /// Campaign execution run.
+    pub run: Option<RunId>,
+    /// Logical case within the run.
+    pub logical_case: Option<LogicalCaseId>,
+    /// Attempt within the logical case.
+    pub attempt: Option<AttemptId>,
+}
+
+/// Explicit, complete evidence execution lineage.
+///
+/// All five identities are required. Holding a lineage record confers no trust
+/// and is not derived from timestamps, file counts or directory ordering.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EvidenceLineage {
+    plan: PlanId,
+    campaign: CampaignId,
+    run: RunId,
+    logical_case: LogicalCaseId,
+    attempt: AttemptId,
+}
+
+impl EvidenceLineage {
+    /// Validates that every required lineage part is present.
+    pub fn from_parts(parts: EvidenceLineageParts) -> Result<Self, EvidenceResultBuildError> {
+        Ok(Self {
+            plan: parts.plan.ok_or(EvidenceResultBuildError::MissingPlan)?,
+            campaign: parts
+                .campaign
+                .ok_or(EvidenceResultBuildError::MissingCampaign)?,
+            run: parts.run.ok_or(EvidenceResultBuildError::MissingRun)?,
+            logical_case: parts
+                .logical_case
+                .ok_or(EvidenceResultBuildError::MissingLogicalCase)?,
+            attempt: parts
+                .attempt
+                .ok_or(EvidenceResultBuildError::MissingAttempt)?,
+        })
+    }
+
+    /// Returns the approved plan.
+    #[must_use]
+    pub const fn plan(&self) -> &PlanId {
+        &self.plan
+    }
+    /// Returns the authorized campaign.
+    #[must_use]
+    pub const fn campaign(&self) -> &CampaignId {
+        &self.campaign
+    }
+    /// Returns the execution run.
+    #[must_use]
+    pub const fn run(&self) -> &RunId {
+        &self.run
+    }
+    /// Returns the logical case.
+    #[must_use]
+    pub const fn logical_case(&self) -> &LogicalCaseId {
+        &self.logical_case
+    }
+    /// Returns the attempt.
+    #[must_use]
+    pub const fn attempt(&self) -> &AttemptId {
+        &self.attempt
+    }
+}
+
+/// One logical-case execution with uniquely named attempts.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EvidenceExecution {
+    run: RunId,
+    logical_case: LogicalCaseId,
+    attempts: BTreeSet<AttemptId>,
+}
+
+impl EvidenceExecution {
+    /// Creates an execution and rejects missing or duplicate attempt names.
+    pub fn new(
+        run: RunId,
+        logical_case: LogicalCaseId,
+        attempts: Vec<AttemptId>,
+    ) -> Result<Self, EvidenceResultBuildError> {
+        if attempts.is_empty() {
+            return Err(EvidenceResultBuildError::AttemptsRequired);
+        }
+        let declared = attempts.len();
+        let attempts: BTreeSet<_> = attempts.into_iter().collect();
+        if attempts.len() != declared {
+            return Err(EvidenceResultBuildError::DuplicateAttemptId);
+        }
+        Ok(Self {
+            run,
+            logical_case,
+            attempts,
+        })
+    }
+
+    /// Returns the execution run.
+    #[must_use]
+    pub const fn run(&self) -> &RunId {
+        &self.run
+    }
+    /// Returns the logical case.
+    #[must_use]
+    pub const fn logical_case(&self) -> &LogicalCaseId {
+        &self.logical_case
+    }
+    /// Returns the unique attempt names in canonical order.
+    #[must_use]
+    pub const fn attempts(&self) -> &BTreeSet<AttemptId> {
+        &self.attempts
     }
 }
 
@@ -1159,6 +1295,70 @@ mod tests {
             ),
             Err(EvidenceResultBuildError::DuplicateRequirement)
         ));
+        Ok(())
+    }
+
+    type LineageIds = (PlanId, CampaignId, RunId, LogicalCaseId, AttemptId);
+
+    fn lineage_ids() -> Result<LineageIds, Box<dyn Error>> {
+        Ok((
+            PlanId::new("plan.release")?,
+            CampaignId::new("campaign.signup")?,
+            RunId::new("run.one")?,
+            LogicalCaseId::new("case.identifier")?,
+            AttemptId::new("attempt.one")?,
+        ))
+    }
+
+    #[test]
+    fn missing_lineage_parts_are_rejected_not_derived() -> Result<(), Box<dyn Error>> {
+        let (plan, campaign, run, logical_case, attempt) = lineage_ids()?;
+        let complete = EvidenceLineageParts {
+            plan: Some(plan),
+            campaign: Some(campaign),
+            run: Some(run),
+            logical_case: Some(logical_case),
+            attempt: Some(attempt),
+        };
+        assert!(EvidenceLineage::from_parts(complete.clone()).is_ok());
+        assert_eq!(
+            EvidenceLineage::from_parts(EvidenceLineageParts {
+                plan: None,
+                ..complete
+            }),
+            Err(EvidenceResultBuildError::MissingPlan)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn duplicate_attempt_names_reject_and_runs_are_independent() -> Result<(), Box<dyn Error>> {
+        let (_, _, run, logical_case, attempt) = lineage_ids()?;
+        let other = AttemptId::new("attempt.two")?;
+        assert_eq!(
+            EvidenceExecution::new(run.clone(), logical_case.clone(), Vec::new()),
+            Err(EvidenceResultBuildError::AttemptsRequired)
+        );
+        assert_eq!(
+            EvidenceExecution::new(
+                run.clone(),
+                logical_case.clone(),
+                vec![attempt.clone(), attempt.clone()]
+            ),
+            Err(EvidenceResultBuildError::DuplicateAttemptId)
+        );
+        let first = EvidenceExecution::new(
+            run.clone(),
+            logical_case.clone(),
+            vec![attempt.clone(), other.clone()],
+        )?;
+        let second = EvidenceExecution::new(
+            RunId::new("run.two")?,
+            LogicalCaseId::new("case.other")?,
+            vec![attempt, other],
+        )?;
+        assert_ne!(first, second);
+        assert_eq!(first.attempts().len(), 2);
         Ok(())
     }
 }

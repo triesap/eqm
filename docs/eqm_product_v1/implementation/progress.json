@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_S022_S023_committed_S024_remaining",
+ "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_S022_S023_S024_committed_S025_remaining",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -824,7 +824,7 @@
   {
    "id": "S023",
    "status": "complete",
-   "commit_sha": null,
+   "commit_sha": "9f000b683579426b194d10e94a2f5d5b96516a49",
    "report": "implementation/reports/S023.md",
    "verification": [
     "cargo fmt --all --check",
@@ -840,11 +840,20 @@
   },
   {
    "id": "S024",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S024.md",
+   "verification": [
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo test --all-targets --locked -p eqm_domain -p eqm_protocol",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "git diff --check"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "committed_pending_acceptance",
+   "supervisor_status": "pending_acceptance"
   },
   {
    "id": "S025",
@@ -2690,7 +2699,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 11,
+   "completed_steps": 12,
    "total_steps": 15
   },
   {
@@ -2999,7 +3008,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S024",
+ "next_checkpoint": "S025",
  "supervisor_review": {
   "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "report": "implementation/reports/CODEX-eb2f323.md",
@@ -3012,7 +3021,7 @@
   "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
   "release_candidate": false,
   "s019_decision": "resolved",
-  "next_checkpoint": "S024",
+  "next_checkpoint": "S025",
   "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "review_report": "implementation/reports/CODEX-eb2f323.md",
   "s020_decision": "resolved",
