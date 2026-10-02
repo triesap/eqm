@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_committed_S022_remaining",
+ "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_S022_committed_S023_remaining",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -802,7 +802,7 @@
   },
   {
    "id": "S022",
-   "status": "changes_required",
+   "status": "complete",
    "commit_sha": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
    "report": "implementation/reports/S022.md",
    "verification": [
@@ -816,9 +816,10 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "partial_committed",
-   "supervisor_status": "decision_resolved_implementation_required",
-   "decision_status": "resolved_by_Codex_DEV008"
+   "implementation_status": "committed_pending_review",
+   "supervisor_status": "S022_completion_pending_acceptance",
+   "decision_status": "resolved_by_Codex_DEV008",
+   "closure_report": "implementation/reports/S022.md"
   },
   {
    "id": "S023",
@@ -2680,7 +2681,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 9,
+   "completed_steps": 10,
    "total_steps": 15
   },
   {
@@ -2987,7 +2988,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S022",
+ "next_checkpoint": "S023",
  "supervisor_review": {
   "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "report": "implementation/reports/CODEX-eb2f323.md",
@@ -3000,7 +3001,7 @@
   "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
   "release_candidate": false,
   "s019_decision": "resolved",
-  "next_checkpoint": "S022",
+  "next_checkpoint": "S023",
   "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "review_report": "implementation/reports/CODEX-eb2f323.md",
   "s020_decision": "resolved",

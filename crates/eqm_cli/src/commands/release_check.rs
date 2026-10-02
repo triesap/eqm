@@ -125,6 +125,7 @@ fn execute_with_authority(
     let context_complete = !matching.is_empty()
         && runtime_digest.is_some()
         && record_dto.source_commit == current_commit
+        && provenance.clean()
         && matching.iter().all(|value| {
             value.contract_digest == session.workspace_digest().to_string()
                 && value.policy_digest == session.workspace_digest().to_string()
@@ -663,7 +664,7 @@ pub(crate) mod tests {
         let request =
             SessionRequest::new(Default::default(), crate::cli::CommandName::ReleaseCheck);
         let session = prepare(&request, root)?;
-        let relative = "releases/pass.generated.json";
+        let relative = ".eqm/releases/pass.generated.json";
         let path = root.join(relative);
         let base = fs::read(&path)?;
         for (size, expected_ok) in [(LIMIT - 1, true), (LIMIT, true), (LIMIT + 1, false)] {
@@ -784,8 +785,85 @@ pub(crate) mod tests {
         Ok(())
     }
 
+    #[test]
+    fn generated_output_tree_is_neutral_for_a_clean_pass() -> Result<(), Box<dyn Error>> {
+        let repository = release_fixture("pass", false, "signed_ci")?;
+        // Additional generated output below `.eqm/` is neutral.
+        fs::create_dir_all(repository.path().join(".eqm/extra"))?;
+        fs::write(repository.path().join(".eqm/extra/more.json"), "{}")?;
+        let execution = execute_with_authority(
+            release_invocation("pass")?,
+            repository.path(),
+            "2026-08-08T12:00:00Z".parse()?,
+            &SyntheticSignedTrust,
+        )?;
+        assert_eq!(execution.payload.json["result"]["status"], "pass");
+        assert_eq!(execution.exit_code, 0);
+        Ok(())
+    }
+
+    #[test]
+    fn dirty_source_inspection_cannot_produce_pass_or_conditional() -> Result<(), Box<dyn Error>> {
+        for mutation in [
+            "tracked",
+            "staged",
+            "deleted",
+            "untracked",
+            "ignored",
+            "tracked_output",
+        ] {
+            let repository = release_fixture("pass", false, "signed_ci")?;
+            let root = repository.path();
+            match mutation {
+                "tracked" => fs::write(root.join("releases/pass.json"), "changed")?,
+                "staged" => {
+                    fs::write(root.join("releases/pass.json"), "changed")?;
+                    git(root, &["add", "releases/pass.json"])?;
+                }
+                "deleted" => fs::remove_file(root.join("releases/pass.json"))?,
+                "untracked" => fs::write(root.join("untracked.txt"), "new\n")?,
+                "ignored" => {
+                    fs::create_dir_all(root.join("generated"))?;
+                    fs::write(root.join("generated/source.txt"), "x")?;
+                }
+                "tracked_output" => fs::write(root.join(".eqm/tracked.json"), "changed")?,
+                _ => return Err("unknown mutation".into()),
+            }
+            let parsed = release_invocation("pass")?;
+            let execution = execute_with_authority(
+                parsed,
+                root,
+                "2026-08-08T12:00:00Z".parse()?,
+                &SyntheticSignedTrust,
+            )?;
+            let status = execution.payload.json["result"]["status"].as_str();
+            assert_ne!(status, Some("pass"), "{mutation} must not pass");
+            assert_ne!(status, Some("conditional"), "{mutation} must not condition");
+            assert_ne!(execution.exit_code, 0, "{mutation}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn concealed_index_entries_are_non_authorizing() -> Result<(), Box<dyn Error>> {
+        for flag in ["--skip-worktree", "--assume-unchanged"] {
+            let repository = release_fixture("pass", false, "signed_ci")?;
+            let root = repository.path();
+            git(root, &["update-index", flag, "releases/pass.json"])?;
+            let parsed = release_invocation("pass")?;
+            let result = execute_with_authority(
+                parsed,
+                root,
+                "2026-08-08T12:00:00Z".parse()?,
+                &SyntheticSignedTrust,
+            );
+            assert!(result.is_err(), "{flag} must not authorize a clean claim");
+        }
+        Ok(())
+    }
+
     fn release_invocation(name: &str) -> Result<ParsedCli, Box<dyn Error>> {
-        let path = format!("releases/{name}.generated.json");
+        let path = format!(".eqm/releases/{name}.generated.json");
         let ParseOutcome::Run(parsed) = parse([
             "release",
             "check",
@@ -821,7 +899,12 @@ pub(crate) mod tests {
                 "git@github.com:example/signup-fixture.git",
             ],
         )?;
+        // A tracked file inside the reserved output tree exists so tests can prove
+        // that a tracked change there is still non-authorizing.
+        fs::create_dir_all(repository.path().join(".eqm"))?;
+        fs::write(repository.path().join(".eqm/tracked.json"), "fixture")?;
         git(repository.path(), &["add", "."])?;
+        git(repository.path(), &["add", "-f", ".eqm/tracked.json"])?;
         git(
             repository.path(),
             &[
@@ -857,11 +940,11 @@ pub(crate) mod tests {
             "claimed_trust":claim
         });
         let record_digest = seal_field(&mut record, "record_digest")?;
-        fs::create_dir_all(repository.path().join("releases"))?;
+        fs::create_dir_all(repository.path().join(".eqm/releases"))?;
         fs::write(
             repository
                 .path()
-                .join(format!("releases/{name}.generated.json")),
+                .join(format!(".eqm/releases/{name}.generated.json")),
             serde_json::to_vec(&record)?,
         )?;
 

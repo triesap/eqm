@@ -417,7 +417,7 @@ mod tests {
                     "release",
                     "check",
                     "--release-record",
-                    "releases/pass.generated.json",
+                    ".eqm/releases/pass.generated.json",
                 ],
                 release_repository.path(),
             ),
