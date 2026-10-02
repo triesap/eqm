@@ -16,11 +16,14 @@ source-component authorities and canonical target source-component/dependency
 ID sets in the target v2 identity, with domain-only registry validation
 (acceptance pending). S030 indexes source components in the workspace graph and
 resolves source-component and target dependencies deterministically, rejecting
-missing or cyclic references at graph preparation (acceptance pending). RF44
-final-tree gating and authority context are reconciled in current planning;
-implementation receipts must prove final trees, including reports/ledger.
+missing or cyclic references at graph preparation (acceptance pending). S031
+adds the additive v2 workspace reader/DTO and generated schema carrying source
+components and target role/source/dependency references through the real loader
+while v1 stays frozen (acceptance pending). RF44 final-tree gating and authority
+context are reconciled in current planning; implementation receipts must prove
+final trees, including reports/ledger.
 
-Next **every ordered S031–S043**, pfc through EQM-P03.
+Next **every ordered S032–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly

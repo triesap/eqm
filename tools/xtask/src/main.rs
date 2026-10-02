@@ -338,7 +338,7 @@ fn check_no_legacy_names(include_negative: bool, roots: &[PathBuf]) -> Result<()
 fn generate_schemas(root: &Path) -> Result<()> {
     for version in SchemaVersion::ALL {
         let version_root = root.join(version.as_str());
-        if version == SchemaVersion::V1 {
+        if matches!(version, SchemaVersion::V1 | SchemaVersion::V2) {
             execute(
                 "cargo",
                 [
@@ -351,6 +351,7 @@ fn generate_schemas(root: &Path) -> Result<()> {
                     OsStr::new("generate_manifest_schemas"),
                     OsStr::new("--"),
                     version_root.join("manifest").as_os_str(),
+                    OsStr::new(version.as_str()),
                 ],
             )?;
         }

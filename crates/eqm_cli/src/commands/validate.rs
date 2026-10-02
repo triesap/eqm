@@ -151,10 +151,10 @@ mod tests {
         let repository = crate::test_support::example_repository()?;
         assert_eq!(run_validate(repository.path())?, 0);
 
-        // Workspace-only URI mutation to v2/v3/wrong kind must reject through
-        // the real CLI preparation boundary, not only a unit helper.
+        // Workspace-only URI mutation to v3/wrong kind must reject through the
+        // real CLI preparation boundary, not only a unit helper. The additive
+        // v2 workspace family is accepted by its own reader.
         for mutation in [
-            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/manifest/workspace.schema.json",
             V1_LOCK,
         ] {

@@ -1,7 +1,9 @@
 //! Repository-bound workspace configuration selection.
 
-use crate::{ParseError, dto::WorkspaceDto, parse_toml};
+use crate::{ParseError, dto::WorkspaceDto, dto::v2::WorkspaceV2Dto, parse_toml};
 use eqm_domain::{RepoPath, SchemaKind, SchemaUri, SchemaVersion, SourceName};
+use serde::Deserialize;
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
@@ -13,6 +15,7 @@ pub struct WorkspaceConfig {
     repository_root: PathBuf,
     config_path: PathBuf,
     dto: WorkspaceDto,
+    v2: Option<WorkspaceV2Dto>,
 }
 
 impl WorkspaceConfig {
@@ -30,6 +33,12 @@ impl WorkspaceConfig {
     #[must_use]
     pub const fn dto(&self) -> &WorkspaceDto {
         &self.dto
+    }
+
+    /// Returns the explicit v2 workspace document, if this config declared one.
+    #[must_use]
+    pub const fn workspace_v2(&self) -> Option<&WorkspaceV2Dto> {
+        self.v2.as_ref()
     }
 }
 
@@ -75,14 +84,54 @@ pub fn select_workspace_config(
         .map_err(|_| ConfigError::InvalidSourceName)?;
     let bytes = fs::read(&config_path).map_err(|_| ConfigError::ConfigUnavailable)?;
     let parsed = parse_toml(source, &bytes).map_err(ConfigError::Parse)?;
-    let dto: WorkspaceDto =
+    let probe: SchemaProbe =
         toml::from_str(parsed.text()).map_err(|_| ConfigError::InvalidConfig)?;
+    let schema: SchemaUri = probe
+        .schema
+        .parse()
+        .map_err(|_| ConfigError::InvalidConfig)?;
+    if schema.kind() != SchemaKind::Workspace {
+        return Err(ConfigError::InvalidConfig);
+    }
+    // Decode under the exact declared version's field rules; a v2 document is
+    // never read with v1 semantics and vice versa.
+    let (dto, v2) = match schema.version() {
+        SchemaVersion::V1 => {
+            let dto: WorkspaceDto =
+                toml::from_str(parsed.text()).map_err(|_| ConfigError::InvalidConfig)?;
+            (dto, None)
+        }
+        SchemaVersion::V2 => {
+            let v2: WorkspaceV2Dto =
+                toml::from_str(parsed.text()).map_err(|_| ConfigError::InvalidConfig)?;
+            let dto = WorkspaceDto {
+                schema: v2.schema.clone(),
+                contract_sources: v2.contract_sources.clone(),
+                binding_sources: v2.binding_sources.clone(),
+                policy_sources: v2.policy_sources.clone(),
+                profile_sources: v2.profile_sources.clone(),
+                runner_sources: v2.runner_sources.clone(),
+                waiver_sources: v2.waiver_sources.clone(),
+                lockfile: v2.lockfile.clone(),
+                generated_root: v2.generated_root.clone(),
+                targets: BTreeMap::new(),
+                extensions: v2.extensions.clone(),
+            };
+            (dto, Some(v2))
+        }
+    };
     validate_declarations(&dto)?;
     Ok(WorkspaceConfig {
         repository_root,
         config_path,
         dto,
+        v2,
     })
+}
+
+#[derive(Deserialize)]
+struct SchemaProbe {
+    schema: String,
 }
 
 fn find_repository_root(start: &Path) -> Result<PathBuf, ConfigError> {
@@ -127,10 +176,13 @@ fn find_configs(
 
 fn validate_declarations(dto: &WorkspaceDto) -> Result<(), ConfigError> {
     let schema: SchemaUri = dto.schema.parse().map_err(|_| ConfigError::InvalidConfig)?;
-    // Workspace discovery accepts only the exact current v1 contract: a
-    // version-qualified successor URI is a different, not-yet-allocated
-    // contract and must fail rather than decode under v1 field rules.
-    if schema.kind() != SchemaKind::Workspace || schema.version() != SchemaVersion::CURRENT {
+    // Workspace discovery accepts only an explicit workspace schema URI. Both
+    // v1 and the additive v2 workspace family are explicit; an unsupported or
+    // wrong-kind version still fails rather than decoding under another
+    // version's field rules.
+    if schema.kind() != SchemaKind::Workspace
+        || !matches!(schema.version(), SchemaVersion::V1 | SchemaVersion::V2)
+    {
         return Err(ConfigError::InvalidConfig);
     }
     if dto.contract_sources.is_empty()
@@ -235,12 +287,13 @@ waiver_sources = ["eqm/waivers/**/*.toml"]
     }
 
     #[test]
-    fn successor_version_and_wrong_kind_workspace_uris_fail_closed() -> Result<(), Box<dyn Error>> {
+    fn unsupported_version_and_wrong_kind_workspace_uris_fail_closed() -> Result<(), Box<dyn Error>>
+    {
         let repository = repository()?;
-        // Only the URI changes; the remaining v1 fields stay valid. A v2 (or
-        // v3/wrong-kind) declaration must not be read with v1 semantics.
+        // Only the URI changes; the remaining v1 fields stay valid. A v3 or
+        // wrong-kind declaration must not be read with v1 semantics. The
+        // additive v2 workspace family is exercised separately.
         for schema in [
-            "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/manifest/workspace.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/protocol/workspace.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json",

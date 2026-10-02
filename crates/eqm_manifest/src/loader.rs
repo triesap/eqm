@@ -8,8 +8,8 @@ use crate::{
     load_lockfile, select_workspace_config,
 };
 use eqm_domain::{
-    AdapterLockIdentity, ImportLockIdentity, OwnerRef, RepoPath, Target, TargetId, TrustLevel,
-    WorkspaceGraphInput,
+    AdapterLockIdentity, ImportLockIdentity, OwnerRef, RepoPath, RoleId, SourceComponent,
+    SourceComponentId, Target, TargetId, TrustLevel, WorkspaceGraphInput,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -109,6 +109,118 @@ pub fn load_workspace(
             config_source.clone(),
         );
         input.targets.push(authority);
+    }
+
+    // The additive v2 workspace family carries source components and explicit
+    // target role/source/dependency references. There is no implicit v1/v2
+    // conversion: the v2 document is decoded by its own reader above.
+    if let Some(v2) = config.workspace_v2() {
+        for (id, target) in &v2.targets {
+            let id: TargetId = id.parse().map_err(|_| LoadError::WorkspaceTarget)?;
+            let root = RepoPath::new(&target.root).map_err(|_| LoadError::WorkspaceTarget)?;
+            if !portable_roots.insert(root.portable_collision_key()) {
+                return Err(LoadError::DuplicateTargetRoot);
+            }
+            let mut authority = Target::new(
+                id.clone(),
+                root.clone(),
+                target
+                    .platform
+                    .parse()
+                    .map_err(|_| LoadError::WorkspaceTarget)?,
+                target
+                    .framework
+                    .parse()
+                    .map_err(|_| LoadError::WorkspaceTarget)?,
+                target
+                    .owners
+                    .iter()
+                    .map(|owner| {
+                        owner
+                            .parse::<OwnerRef>()
+                            .map_err(|_| LoadError::WorkspaceTarget)
+                    })
+                    .collect::<Result<_, _>>()?,
+                extensions(&target.extensions, "eqm.toml")
+                    .map_err(|_| LoadError::WorkspaceTarget)?,
+            )
+            .map_err(|_| LoadError::WorkspaceTarget)?;
+            if let Some(role) = &target.role {
+                authority = authority.with_role(
+                    role.parse::<RoleId>()
+                        .map_err(|_| LoadError::WorkspaceTarget)?,
+                );
+            }
+            authority = authority
+                .with_source_components(
+                    target
+                        .source_components
+                        .iter()
+                        .map(|component| {
+                            component
+                                .parse::<SourceComponentId>()
+                                .map_err(|_| LoadError::WorkspaceTarget)
+                        })
+                        .collect::<Result<_, _>>()?,
+                )
+                .map_err(|_| LoadError::WorkspaceTarget)?;
+            authority = authority
+                .with_depends_on(
+                    target
+                        .depends_on
+                        .iter()
+                        .map(|dependency| {
+                            dependency
+                                .parse::<TargetId>()
+                                .map_err(|_| LoadError::WorkspaceTarget)
+                        })
+                        .collect::<Result<_, _>>()?,
+                )
+                .map_err(|_| LoadError::WorkspaceTarget)?;
+            target_roots.insert(id, root);
+            source_map.insert(
+                format!("target:{}", authority.id()).into(),
+                config_source.clone(),
+            );
+            input.targets.push(authority);
+        }
+        for (id, component) in &v2.source_components {
+            let id: SourceComponentId = id.parse().map_err(|_| LoadError::WorkspaceTarget)?;
+            let authority = SourceComponent::new(
+                id.clone(),
+                component
+                    .roots
+                    .iter()
+                    .map(|root| RepoPath::new(root).map_err(|_| LoadError::WorkspaceTarget))
+                    .collect::<Result<_, _>>()?,
+                component
+                    .owners
+                    .iter()
+                    .map(|owner| {
+                        owner
+                            .parse::<OwnerRef>()
+                            .map_err(|_| LoadError::WorkspaceTarget)
+                    })
+                    .collect::<Result<_, _>>()?,
+                component
+                    .dependencies
+                    .iter()
+                    .map(|dependency| {
+                        dependency
+                            .parse::<SourceComponentId>()
+                            .map_err(|_| LoadError::WorkspaceTarget)
+                    })
+                    .collect::<Result<_, _>>()?,
+                extensions(&component.extensions, "eqm.toml")
+                    .map_err(|_| LoadError::WorkspaceTarget)?,
+            )
+            .map_err(|_| LoadError::WorkspaceTarget)?;
+            source_map.insert(
+                format!("source_component:{}", authority.id()).into(),
+                config_source.clone(),
+            );
+            input.source_components.push(authority);
+        }
     }
 
     for document in &documents {
