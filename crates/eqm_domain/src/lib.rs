@@ -80,9 +80,10 @@ pub use evidence::{
     EvidenceSelector, EvidenceSpecBuildError, EvidenceSpecification, PositiveCount,
 };
 pub use evidence_result::{
-    AttemptAggregate, EvidenceAttachment, EvidenceAttempt, EvidenceCounts, EvidencePayload,
-    EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject,
-    ExecutionPayload, ProducerRef, ProfileSelection, RepositoryIdentity, SourceCommit,
+    AttemptAggregate, EvidenceAttachment, EvidenceAttempt, EvidenceCounts,
+    EvidenceIdentityRelation, EvidencePayload, EvidenceResult, EvidenceResultBuildError,
+    EvidenceScopeSubject, EvidenceSubject, ExecutionPayload, MAX_RAW_EVIDENCE_BYTES, ProducerRef,
+    ProfileSelection, RawEvidenceObject, RepositoryIdentity, SourceCommit,
 };
 pub use graph::{
     AdapterLockIdentity, FinalizedWorkspaceGraph, ImportLockIdentity, WorkspaceGraph,

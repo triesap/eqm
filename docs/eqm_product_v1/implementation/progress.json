@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_S022_committed_S023_remaining",
+ "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_S022_S023_committed_S024_remaining",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -702,7 +702,7 @@
     {
      "id": "S019-R3",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "9fd4e9efd7db2122c4e3ee461601aa7b90d89e02",
      "report": "implementation/reports/S019.md#corrective-checkpoint-s019-r3--finish-rf28-literal-policy-provenance-controls-dev-008",
      "verification": [
       "cargo fmt --all --check",
@@ -784,7 +784,7 @@
     {
      "id": "S021-R1",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "5e42c46d8ea6dfbc9fbc33a380656237b80c988c",
      "report": "implementation/reports/S021.md#corrective-checkpoint-s021-r1--approved-v2-runner-identity-dev-008-rf30",
      "verification": [
       "cargo fmt --all --check",
@@ -803,7 +803,7 @@
   {
    "id": "S022",
    "status": "complete",
-   "commit_sha": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
+   "commit_sha": "af5aab620ee5d66b32f3de689f421e5fa0ea0853",
    "report": "implementation/reports/S022.md",
    "verification": [
     "cargo fmt --all --check",
@@ -823,11 +823,20 @@
   },
   {
    "id": "S023",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S023.md",
+   "verification": [
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo test --all-targets --locked -p eqm_domain -p eqm_protocol",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "git diff --check"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "committed_pending_acceptance",
+   "supervisor_status": "pending_acceptance"
   },
   {
    "id": "S024",
@@ -2681,7 +2690,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 10,
+   "completed_steps": 11,
    "total_steps": 15
   },
   {
@@ -2862,8 +2871,10 @@
   },
   {
    "id": "RA15",
-   "status": "not_run",
-   "evidence": []
+   "status": "partially_implemented_pending_acceptance",
+   "evidence": [
+    "implementation/reports/S023.md"
+   ]
   },
   {
    "id": "RA16",
@@ -2988,7 +2999,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S023",
+ "next_checkpoint": "S024",
  "supervisor_review": {
   "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "report": "implementation/reports/CODEX-eb2f323.md",
@@ -3001,7 +3012,7 @@
   "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
   "release_candidate": false,
   "s019_decision": "resolved",
-  "next_checkpoint": "S023",
+  "next_checkpoint": "S024",
   "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "review_report": "implementation/reports/CODEX-eb2f323.md",
   "s020_decision": "resolved",

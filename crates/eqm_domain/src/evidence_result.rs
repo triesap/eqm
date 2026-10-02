@@ -2,8 +2,9 @@
 
 use crate::{
     AttemptOutcome, DimensionId, EvidenceKind, Extensions, Facet, FullRequirementId, OwnerRef,
-    PositiveCount, ProfileId, ProviderId, Revision, SelectorText, Sha256Digest, SymbolicValueId,
-    TargetId, TrustLevel, UnitId, UtcInstant,
+    PositiveCount, ProfileId, ProviderId, RawObjectDigest, Revision, SelectorText,
+    SemanticEvidenceDigest, Sha256Digest, SymbolicValueId, TargetId, TrustLevel, UnitId,
+    UtcInstant,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -882,6 +883,8 @@ pub enum EvidenceResultBuildError {
     DuplicateProfile,
     /// Attachment list repeated a name.
     DuplicateAttachment,
+    /// Raw evidence object was empty or exceeded the declared bound.
+    RawObjectBound,
 }
 
 impl Display for EvidenceResultBuildError {
@@ -891,6 +894,82 @@ impl Display for EvidenceResultBuildError {
 }
 
 impl Error for EvidenceResultBuildError {}
+
+/// Declared exact raw evidence-object byte bound, matching the 16 MiB envelope.
+pub const MAX_RAW_EVIDENCE_BYTES: usize = 16 * 1024 * 1024;
+
+/// Exact original evidence-object bytes and their raw-object identity.
+///
+/// This preserves the received transport bytes (including whitespace and member
+/// order) and identifies them under the `eqm:v2:raw-object` domain. It confers no
+/// trust, normalizes nothing, and never replaces a signed original.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RawEvidenceObject {
+    bytes: Vec<u8>,
+    digest: RawObjectDigest,
+}
+
+impl RawEvidenceObject {
+    /// Preserves exact non-empty bytes within the declared bound.
+    pub fn new(bytes: impl Into<Vec<u8>>) -> Result<Self, EvidenceResultBuildError> {
+        let bytes = bytes.into();
+        if bytes.is_empty() || bytes.len() > MAX_RAW_EVIDENCE_BYTES {
+            return Err(EvidenceResultBuildError::RawObjectBound);
+        }
+        let digest = RawObjectDigest::hash_content(&bytes);
+        Ok(Self { bytes, digest })
+    }
+
+    /// Returns the exact original bytes.
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Returns the raw-object identity.
+    #[must_use]
+    pub const fn digest(&self) -> RawObjectDigest {
+        self.digest
+    }
+}
+
+/// Validated relation between exact raw bytes and the normalized semantic
+/// identity of one evidence assertion.
+///
+/// Holding both identities does not promote trust, persist anything, or prove
+/// what executed; receipt/storage and execution-subject semantics remain with
+/// their owning steps.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EvidenceIdentityRelation {
+    raw: RawEvidenceObject,
+    semantic: SemanticEvidenceDigest,
+}
+
+impl EvidenceIdentityRelation {
+    /// Binds one preserved raw object to its normalized semantic identity.
+    #[must_use]
+    pub const fn new(raw: RawEvidenceObject, semantic: SemanticEvidenceDigest) -> Self {
+        Self { raw, semantic }
+    }
+
+    /// Returns the preserved raw object.
+    #[must_use]
+    pub const fn raw(&self) -> &RawEvidenceObject {
+        &self.raw
+    }
+
+    /// Returns the raw-object identity.
+    #[must_use]
+    pub const fn raw_digest(&self) -> RawObjectDigest {
+        self.raw.digest()
+    }
+
+    /// Returns the normalized semantic evidence identity.
+    #[must_use]
+    pub const fn semantic_identity(&self) -> SemanticEvidenceDigest {
+        self.semantic
+    }
+}
 
 #[cfg(test)]
 mod tests {
