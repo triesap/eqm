@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_committed_RF30_S022_remaining",
+ "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_committed_S022_remaining",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -763,7 +763,7 @@
   },
   {
    "id": "S021",
-   "status": "changes_required",
+   "status": "complete",
    "commit_sha": "0e6584fa3aa86b13836c98aa6a016dd575691704",
    "report": "implementation/reports/S021.md",
    "verification": [
@@ -778,14 +778,14 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_v2_repair_required",
-   "supervisor_status": "RF30_S021_R1_required",
+   "implementation_status": "committed_R1_pending_review",
+   "supervisor_status": "S021_R1_pending_acceptance",
    "corrective_checkpoints": [
     {
      "id": "S021-R1",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/S021.md",
+     "report": "implementation/reports/S021.md#corrective-checkpoint-s021-r1--approved-v2-runner-identity-dev-008-rf30",
      "verification": [
       "cargo fmt --all --check",
       "cargo check --workspace --all-targets --locked",
@@ -794,7 +794,9 @@
       "cargo test --locked -p eqm_runner --doc",
       "cargo xtask check",
       "git diff --check"
-     ]
+     ],
+     "implementation_status": "committed_pending_acceptance",
+     "supervisor_status": "pending_acceptance"
     }
    ]
   },
@@ -2678,7 +2680,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 8,
+   "completed_steps": 9,
    "total_steps": 15
   },
   {
@@ -2985,7 +2987,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S021-R1",
+ "next_checkpoint": "S022",
  "supervisor_review": {
   "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "report": "implementation/reports/CODEX-eb2f323.md",
@@ -2998,7 +3000,7 @@
   "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
   "release_candidate": false,
   "s019_decision": "resolved",
-  "next_checkpoint": "S021-R1",
+  "next_checkpoint": "S022",
   "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "review_report": "implementation/reports/CODEX-eb2f323.md",
   "s020_decision": "resolved",
@@ -3304,11 +3306,12 @@
   {
    "id": "RF30",
    "priority": "P2",
-   "status": "open",
+   "status": "fixed_pending_acceptance",
    "owner": "S021",
    "checkpoint": "S021-R1",
    "summary": "Runner identity differs from frozen typed v2 canonical contract",
-   "report": "implementation/reports/CODEX-eb2f323.md"
+   "report": "implementation/reports/CODEX-eb2f323.md",
+   "followup_report": "implementation/reports/S021.md"
   },
   {
    "id": "RF31",

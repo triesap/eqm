@@ -8,10 +8,10 @@
 //! executable without an independently verified digest stays unresolved and
 //! non-executable (`ProgramNotAuthorized`).
 
+use crate::identity::{CanonicalRunnerIdentity, RunnerIdentityError, canonical_runner_identity_v2};
 use eqm_domain::{
-    ArgumentTemplate, DurationMillis, EnvironmentSource, ExtensionValue, PositiveCount, RepoPath,
-    RepositoryIdentity, Revision, RunnerBackend, RunnerDefinition, RunnerGuarantee, RunnerId,
-    RunnerProgram, Sha256Digest, WorkingDirectoryTemplate,
+    DurationMillis, PositiveCount, RepoPath, RepositoryIdentity, Revision, RunnerBackend,
+    RunnerDefinition, RunnerGuarantee, RunnerId, RunnerProgram, Sha256Digest,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -63,7 +63,7 @@ pub struct ResolvedRunner {
     definition: RunnerDefinition,
     program: ResolvedProgram,
     approved_guarantees: BTreeSet<RunnerGuarantee>,
-    digest: Sha256Digest,
+    identity: CanonicalRunnerIdentity,
 }
 
 impl ResolvedRunner {
@@ -86,14 +86,53 @@ impl ResolvedRunner {
         &self.approved_guarantees
     }
 
-    /// Returns the canonical runner identity digest.
+    /// Returns the immutable canonical v2 runner identity bytes.
     ///
-    /// This identity includes the semantic definition, the independently
-    /// verified executable content and the approved enforceable backend
-    /// guarantees. It is not a definition-only digest.
+    /// These are the exact JCS bytes hashed under `eqm:v2:runner` by
+    /// [`Self::identity_v2`]. They include the complete definition, the
+    /// resolved program and the approved enforceable guarantees.
+    #[must_use]
+    pub fn canonical_bytes(&self) -> &[u8] {
+        self.identity.bytes()
+    }
+
+    /// Returns the typed domain-separated v2 runner identity.
+    ///
+    /// The returned [`RunnerDigest`](eqm_domain::RunnerDigest) cannot be
+    /// substituted where another domain identity is required:
+    ///
+    /// ```compile_fail
+    /// use eqm_domain::{RunnerDigest, TargetConfigurationDigest};
+    /// fn requires_target(_: TargetConfigurationDigest) {}
+    /// requires_target(RunnerDigest::hash_content(b"definition"));
+    /// ```
+    ///
+    /// The positive typed form constructs and compares under its own domain:
+    ///
+    /// ```
+    /// use eqm_domain::{RunnerDigest, Sha256Digest};
+    /// let first = RunnerDigest::hash_content(b"definition");
+    /// let second = RunnerDigest::hash_content(b"definition");
+    /// let other = RunnerDigest::hash_content(b"other");
+    /// assert_eq!(first, second);
+    /// assert_ne!(first, other);
+    /// let plain: Sha256Digest = first.as_digest();
+    /// assert_eq!(plain.to_string(), first.to_string());
+    /// ```
+    #[must_use]
+    pub const fn identity_v2(&self) -> eqm_domain::RunnerDigest {
+        self.identity.digest()
+    }
+
+    /// Legacy/wire adapter returning the underlying digest for the existing
+    /// evidence DTO field.
+    ///
+    /// This is exactly [`Self::identity_v2`]'s digest. New v2 consumers must use
+    /// [`Self::identity_v2`]; this adapter exists only to feed the established
+    /// `runner_digest` string without adding a v1 wire field.
     #[must_use]
     pub const fn digest(&self) -> Sha256Digest {
-        self.digest
+        self.identity_v2().as_digest()
     }
 }
 
@@ -140,165 +179,21 @@ pub fn resolve_runner(
             digest: *digest,
         },
     };
+    let identity = canonical_runner_identity_v2(definition, &program, &enforceable)
+        .map_err(map_identity_error)?;
     Ok(ResolvedRunner {
-        digest: canonical_runner_identity(definition, &program, &enforceable),
+        identity,
         definition: definition.clone(),
         program,
         approved_guarantees: enforceable,
     })
 }
 
-/// Computes the domain-separated runner identity over the semantic definition,
-/// the resolved executable content and the approved enforceable backend
-/// guarantees.
-fn canonical_runner_identity(
-    definition: &RunnerDefinition,
-    program: &ResolvedProgram,
-    approved_guarantees: &BTreeSet<RunnerGuarantee>,
-) -> Sha256Digest {
-    let mut encoder = Encoder::default();
-    encoder.text("eqm:v1:runner-identity");
-    encoder.text(definition.id().as_str());
-    encoder.u64(definition.revision().get());
-    encoder.sequence(definition.owners().iter(), |value, encoder| {
-        encoder.text(value.as_str());
-    });
-    encoder.text(definition.backend().as_str());
-    encoder.sequence(
-        definition.args().iter(),
-        |argument, encoder| match argument {
-            ArgumentTemplate::Literal(value) => {
-                encoder.byte(0);
-                encoder.text(value.as_str());
-            }
-            ArgumentTemplate::TargetRoot => encoder.byte(1),
-            ArgumentTemplate::SelectorJson => encoder.byte(2),
-            ArgumentTemplate::ResultPath => encoder.byte(3),
-        },
-    );
-    match definition.cwd() {
-        WorkingDirectoryTemplate::TargetRoot => encoder.byte(0),
-        WorkingDirectoryTemplate::Repository(path) => {
-            encoder.byte(1);
-            encoder.text(path.as_str());
-        }
-        WorkingDirectoryTemplate::ResultPath => encoder.byte(2),
-    }
-    encoder.sequence(definition.environment().values(), |binding, encoder| {
-        encoder.text(binding.name().as_str());
-        match binding.source() {
-            EnvironmentSource::Literal(value) => {
-                encoder.byte(0);
-                encoder.text(value.as_str());
-            }
-            EnvironmentSource::TrustedPath => encoder.byte(1),
-            EnvironmentSource::CanonicalLocale => encoder.byte(2),
-            EnvironmentSource::UtcTimezone => encoder.byte(3),
-        }
-    });
-    encoder.sequence(definition.secrets().values(), |binding, encoder| {
-        encoder.text(binding.name().as_str());
-        encoder.text(binding.provider().as_str());
-    });
-    let limits = definition.limits();
-    encoder.u64(limits.timeout().get());
-    encoder.u64(limits.max_output_bytes().get());
-    encoder.u64(limits.max_concurrency().get());
-    encoder.sequence(definition.guarantees().iter(), |guarantee, encoder| {
-        encoder.text(guarantee.as_str());
-    });
-    let semantic_extensions: Vec<_> = definition
-        .extensions()
-        .values()
-        .iter()
-        .filter(|(namespace, _)| !namespace.is_display_only())
-        .collect();
-    encoder.sequence(semantic_extensions, |(namespace, value), encoder| {
-        encoder.text(namespace.as_str());
-        encode_extension(value, encoder);
-    });
-    // The resolved executable content, including the independently verified
-    // digest, is part of the identity.
-    match program {
-        ResolvedProgram::Repository { path, digest } => {
-            encoder.byte(0);
-            encoder.text(path.as_str());
-            encoder.bytes(digest.as_bytes());
-        }
-        ResolvedProgram::Locked { resolved, digest } => {
-            encoder.byte(1);
-            encoder.text(resolved.as_str());
-            encoder.bytes(digest.as_bytes());
-        }
-    }
-    // Relevant approved toolchain/execution context.
-    encoder.sequence(approved_guarantees.iter(), |guarantee, encoder| {
-        encoder.text(guarantee.as_str());
-    });
-    Sha256Digest::hash_content(&encoder.bytes)
-}
-
-fn encode_extension(value: &ExtensionValue, encoder: &mut Encoder) {
-    match value {
-        ExtensionValue::Boolean(value) => {
-            encoder.byte(0);
-            encoder.byte(u8::from(*value));
-        }
-        ExtensionValue::Integer(value) => {
-            encoder.byte(1);
-            encoder.bytes(&value.to_be_bytes());
-        }
-        ExtensionValue::String(value) => {
-            encoder.byte(2);
-            encoder.text(value);
-        }
-        ExtensionValue::Array(values) => {
-            encoder.byte(3);
-            encoder.sequence(values, encode_extension);
-        }
-        ExtensionValue::Object(values) => {
-            encoder.byte(4);
-            encoder.sequence(values, |(key, value), encoder| {
-                encoder.text(key.as_str());
-                encode_extension(value, encoder);
-            });
-        }
-    }
-}
-
-#[derive(Default)]
-struct Encoder {
-    bytes: Vec<u8>,
-}
-
-impl Encoder {
-    fn byte(&mut self, value: u8) {
-        self.bytes.push(value);
-    }
-
-    fn bytes(&mut self, value: &[u8]) {
-        self.u64(value.len() as u64);
-        self.bytes.extend_from_slice(value);
-    }
-
-    fn text(&mut self, value: &str) {
-        self.bytes(value.as_bytes());
-    }
-
-    fn u64(&mut self, value: u64) {
-        self.bytes.extend_from_slice(&value.to_be_bytes());
-    }
-
-    fn sequence<T>(
-        &mut self,
-        values: impl IntoIterator<Item = T>,
-        mut encode: impl FnMut(T, &mut Self),
-    ) {
-        let values: Vec<_> = values.into_iter().collect();
-        self.u64(values.len() as u64);
-        for value in values {
-            encode(value, self);
-        }
+fn map_identity_error(error: RunnerIdentityError) -> RunnerResolutionError {
+    match error {
+        RunnerIdentityError::TooLarge => RunnerResolutionError::IdentityTooLarge,
+        RunnerIdentityError::Serialization => RunnerResolutionError::IdentitySerialization,
+        RunnerIdentityError::DuplicateMember => RunnerResolutionError::IdentityDuplicateMember,
     }
 }
 
@@ -319,6 +214,12 @@ pub enum RunnerResolutionError {
     GuaranteeNotEnforceable,
     /// Repository executable has no independently verified digest.
     ProgramNotAuthorized,
+    /// Canonical runner-identity projection exceeded the component byte bound.
+    IdentityTooLarge,
+    /// Canonical runner-identity projection could not be serialized.
+    IdentitySerialization,
+    /// Canonical runner-identity projection rejected a duplicate set member.
+    IdentityDuplicateMember,
 }
 
 impl Display for RunnerResolutionError {
@@ -333,7 +234,8 @@ impl Error for RunnerResolutionError {}
 mod tests {
     use super::*;
     use eqm_domain::{
-        EnvironmentBinding, EnvironmentName, Extensions, OwnerRef, RunnerLimits, SelectorText,
+        ArgumentTemplate, EnvironmentBinding, EnvironmentName, EnvironmentSource, Extensions,
+        OwnerRef, RunnerLimits, SelectorText,
     };
     use std::error::Error;
 
@@ -477,31 +379,117 @@ mod tests {
     }
 
     #[test]
-    fn authority_backend_resource_and_program_mismatches_fail() -> Result<(), Box<dyn Error>> {
-        let definition = definition(false)?;
-        let mut authority = authority_fixture()?;
-        authority.revision = Revision::new(2)?;
+    fn literal_v2_runner_identity_bytes_and_digest_match_independent_oracle()
+    -> Result<(), Box<dyn Error>> {
+        // Reviewed literal bytes, independently recomputed as
+        // SHA256("eqm:v2:runner" || 0x00 || bytes).
+        const BYTES: &str = r#"{"approved_guarantees":[],"definition":{"args":[{"kind":"selector_json"},{"kind":"result_path"}],"backend":"local","cwd":{"kind":"target_root"},"environment":[{"name":"LANG","source":"canonical_locale"},{"name":"MODE","source":"literal","value":"test"}],"extensions":{},"guarantees":[],"id":"runner.tests","max_concurrency":1,"max_output_bytes":1024,"owners":["owner://role/reviewer","owner://team/platform"],"program":{"kind":"repository","path":"tools/test-runner"},"revision":1,"secrets":[],"timeout_ms":30000},"program":{"digest":"sha256:527aa9f431539da8e151d5434d1d5e611d973f601d8e970790882624554146b0","kind":"repository","path":"tools/test-runner"}}"#;
+        const DIGEST: &str =
+            "sha256:fe1510783141a3e0978460e70c06506cc1b7580404c1b4468e3bd2860885d428";
+        let runner = resolve_runner(&definition(false)?, &authority_fixture()?)?;
+        assert_eq!(std::str::from_utf8(runner.canonical_bytes())?, BYTES);
+        assert_eq!(runner.identity_v2().to_string(), DIGEST);
+        // The wire adapter must remain exactly the typed v2 digest.
+        assert_eq!(runner.digest().to_string(), DIGEST);
+        Ok(())
+    }
+
+    #[test]
+    fn actual_executable_replacement_changes_identity_through_acquisition()
+    -> Result<(), Box<dyn Error>> {
+        // Mirrors the CLI repository-authority acquisition: a regular repository
+        // file is read with `fs::read` and hashed with `Sha256Digest::hash_content`.
+        let root = tempfile::tempdir()?;
+        let program = RepoPath::new("bin/runner")?;
+        let absolute = root.path().join(program.as_str());
+        std::fs::create_dir_all(absolute.parent().ok_or("program parent")?)?;
+        std::fs::write(&absolute, b"#!/bin/sh\nexit 0\n")?;
+        let definition = RunnerDefinition::new(
+            RunnerId::new("runner.tests")?,
+            Revision::new(1)?,
+            vec!["owner://team/platform".parse::<OwnerRef>()?],
+            RunnerBackend::Local,
+            RunnerProgram::Repository(program.clone()),
+            vec![ArgumentTemplate::SelectorJson],
+            None,
+            Vec::new(),
+            Vec::new(),
+            RunnerLimits::new(
+                DurationMillis::new(30_000)?,
+                PositiveCount::new(1_024)?,
+                None,
+            )?,
+            Vec::new(),
+            Extensions::default(),
+        )?;
+        let authority = |path: &std::path::Path| -> Result<_, Box<dyn Error>> {
+            Ok(RunnerResolutionAuthority {
+                id: RunnerId::new("runner.tests")?,
+                revision: Revision::new(1)?,
+                backends: BTreeSet::from([RunnerBackend::Local]),
+                repository_programs: BTreeMap::from([(
+                    program.clone(),
+                    Sha256Digest::hash_content(&std::fs::read(path)?),
+                )]),
+                backend_guarantees: BTreeMap::from([(RunnerBackend::Local, BTreeSet::new())]),
+                maximum_timeout: DurationMillis::new(30_000)?,
+                maximum_output_bytes: PositiveCount::new(1_024)?,
+                maximum_concurrency: PositiveCount::ONE,
+            })
+        };
+        let first = resolve_runner(&definition, &authority(&absolute)?)?;
+        // Replace the actual bytes on disk and re-observe the digest.
+        std::fs::write(&absolute, b"#!/bin/sh\nexit 1\n")?;
+        let second = resolve_runner(&definition, &authority(&absolute)?)?;
+        assert_ne!(first.identity_v2(), second.identity_v2());
+        assert_ne!(first.canonical_bytes(), second.canonical_bytes());
+        Ok(())
+    }
+
+    #[test]
+    fn locked_program_identity_binds_locked_resolution_and_digest() -> Result<(), Box<dyn Error>> {
+        let image: RepositoryIdentity = "https://registry.example/images/test".parse()?;
+        let digest = Sha256Digest::hash_content(b"image");
+        let definition = RunnerDefinition::new(
+            RunnerId::new("runner.container")?,
+            Revision::new(1)?,
+            vec!["owner://team/platform".parse::<OwnerRef>()?],
+            RunnerBackend::Container,
+            RunnerProgram::Locked {
+                resolved: image.clone(),
+                digest,
+            },
+            vec![ArgumentTemplate::SelectorJson],
+            None,
+            Vec::new(),
+            Vec::new(),
+            RunnerLimits::new(
+                DurationMillis::new(30_000)?,
+                PositiveCount::new(1_024)?,
+                None,
+            )?,
+            vec![RunnerGuarantee::NetworkDenied],
+            Extensions::default(),
+        )?;
+        let authority = RunnerResolutionAuthority {
+            id: RunnerId::new("runner.container")?,
+            revision: Revision::new(1)?,
+            backends: BTreeSet::from([RunnerBackend::Container]),
+            repository_programs: BTreeMap::new(),
+            backend_guarantees: BTreeMap::from([(
+                RunnerBackend::Container,
+                BTreeSet::from([RunnerGuarantee::NetworkDenied]),
+            )]),
+            maximum_timeout: DurationMillis::new(30_000)?,
+            maximum_output_bytes: PositiveCount::new(1_024)?,
+            maximum_concurrency: PositiveCount::ONE,
+        };
+        let resolved = resolve_runner(&definition, &authority)?;
+        assert!(matches!(resolved.program(), ResolvedProgram::Locked { .. }));
+        // The same locked definition resolves to a stable identity.
         assert_eq!(
-            resolve_runner(&definition, &authority),
-            Err(RunnerResolutionError::AuthorityMismatch)
-        );
-        let mut authority = authority_fixture()?;
-        authority.backends.clear();
-        assert_eq!(
-            resolve_runner(&definition, &authority),
-            Err(RunnerResolutionError::BackendNotAuthorized)
-        );
-        let mut authority = authority_fixture()?;
-        authority.maximum_timeout = DurationMillis::new(1_000)?;
-        assert_eq!(
-            resolve_runner(&definition, &authority),
-            Err(RunnerResolutionError::TimeoutExceedsAuthority)
-        );
-        let mut authority = authority_fixture()?;
-        authority.repository_programs.clear();
-        assert_eq!(
-            resolve_runner(&definition, &authority),
-            Err(RunnerResolutionError::ProgramNotAuthorized)
+            resolved.identity_v2(),
+            resolve_runner(&definition, &authority)?.identity_v2()
         );
         Ok(())
     }

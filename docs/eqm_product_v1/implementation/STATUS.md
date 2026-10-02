@@ -2,16 +2,16 @@
 
 DEV-008, 2026-10-02; reviewed source `eb2f323e459423fd06d25beffa7f6f85a1077af4`.
 S001–S018 and S020 independently accepted for allocated scope (19 numbered steps).
-RF27 closes S017's applicability contribution. S019-R3 now completes the
-remaining RF28 literal/production controls; S021 retains code with the RF30
-repair pending; S022 centralization is committed but its clean gate is
+RF27 closes S017's applicability contribution. S019-R3 completes the remaining
+RF28 literal/production controls; S021-R1 now implements the frozen v2 runner
+identity (RF30); S022 centralization is committed but its clean gate is
 incomplete. Codex resolves the S022 decision here, preserving original release
 acceptance.
 
-Next **S021-R1 → S022 → all eligible S023–S211**. The full approved batch ends at
-S211; commits/reports are not stop conditions. P01 complete; P02 seven accepted
-steps (S013–S018, S020), remaining S019/S021/S022 and S023–S027. Later cycles
-pending. No history is rewritten.
+Next **S022 → all eligible S023–S211**. The full approved batch ends at S211;
+commits/reports are not stop conditions. P01 complete; P02 nine tracked steps
+(S013–S021), remaining S022 and S023–S027. Later cycles pending. No history is
+rewritten.
 
 DEV008-P1 is complete: the yanked `yoke-derive` 0.8.3 was replaced by the narrow
 transitive 0.8.4 in `Cargo.lock` (one entry, no direct pin change). Fresh

@@ -6,6 +6,7 @@ mod adapter;
 mod ci;
 mod container;
 mod execution;
+mod identity;
 mod inventory;
 mod normalized;
 mod persistence;
