@@ -4,14 +4,12 @@
 
 use crate::{EVIDENCE_RESULT_SCHEMA, ProfileValueDto, TEST_RESULT_SCHEMA};
 use eqm_domain::{
-    AttemptOutcome, EvidenceAttachment, EvidenceAttempt, EvidenceCounts, EvidenceIdentityRelation,
-    EvidenceKind, EvidencePayload, EvidenceResult, EvidenceScopeSubject, EvidenceSelector,
-    EvidenceSubject, ExecutionPayload, PositiveCount, ProducerRef, RawEvidenceObject,
-    SemanticEvidenceDigest, Sha256Digest, TrustLevel, UtcInstant,
+    AttemptOutcome, EvidenceAttachment, EvidenceAttempt, EvidenceCounts, EvidenceKind,
+    EvidencePayload, EvidenceResult, EvidenceScopeSubject, EvidenceSelector, EvidenceSubject,
+    ExecutionPayload, PositiveCount, ProducerRef, Sha256Digest, TrustLevel, UtcInstant,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
@@ -476,56 +474,6 @@ impl EvidenceResultDto {
         }
         Ok(value)
     }
-
-    /// Binds exact original bytes to the normalized semantic evidence identity.
-    ///
-    /// The semantic identity is the canonical JCS projection of the parsed
-    /// record with the transport-only `id` and `result_digest` members removed
-    /// and the semantic `profile_values` set canonicalized. Alternate whitespace
-    /// or object member order therefore yields a different raw-object identity
-    /// but the same semantic identity. This grants no trust and persists nothing.
-    pub fn identity_relation(
-        &self,
-        raw_bytes: &[u8],
-    ) -> Result<EvidenceIdentityRelation, EvidenceDtoError> {
-        let raw =
-            RawEvidenceObject::new(raw_bytes).map_err(|_| EvidenceDtoError::RawObjectBound)?;
-        let mut value = serde_json::to_value(self).map_err(|_| EvidenceDtoError::Json)?;
-        let object = value.as_object_mut().ok_or(EvidenceDtoError::Json)?;
-        object.remove("id");
-        object.remove("result_digest");
-        canonicalize_evidence_set(&mut value)?;
-        let semantic_bytes =
-            serde_json_canonicalizer::to_vec(&value).map_err(|_| EvidenceDtoError::Json)?;
-        Ok(EvidenceIdentityRelation::new(
-            raw,
-            SemanticEvidenceDigest::hash_content(&semantic_bytes),
-        ))
-    }
-}
-
-/// Canonically orders the semantic `profile_values` set (array order is not
-/// semantic) and rejects exact duplicates.
-fn canonicalize_evidence_set(value: &mut Value) -> Result<(), EvidenceDtoError> {
-    let Some(items) = value
-        .get_mut("profile_values")
-        .and_then(Value::as_array_mut)
-    else {
-        return Ok(());
-    };
-    let mut encoded: Vec<(Vec<u8>, Value)> = Vec::with_capacity(items.len());
-    for item in items.drain(..) {
-        let bytes = serde_json_canonicalizer::to_vec(&item).map_err(|_| EvidenceDtoError::Json)?;
-        encoded.push((bytes, item));
-    }
-    encoded.sort_by(|left, right| left.0.cmp(&right.0));
-    for window in encoded.windows(2) {
-        if window[0].0 == window[1].0 {
-            return Err(EvidenceDtoError::InvalidOrdering);
-        }
-    }
-    *items = encoded.into_iter().map(|(_, item)| item).collect();
-    Ok(())
 }
 
 fn validate_counts(value: &CountsDto) -> Result<EvidenceCounts, EvidenceDtoError> {
@@ -646,90 +594,19 @@ impl std::error::Error for EvidenceDtoError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
-    use std::error::Error;
-
-    fn sample_evidence() -> Value {
-        let digest = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-        json!({
-            "schema": EVIDENCE_RESULT_SCHEMA.to_string(),
-            "id": digest,
-            "subject": {
-                "repository": "https://example.com/product",
-                "repository_id_digest": digest,
-                "scope": {"kind": "target", "target": "web"},
-                "source_commit": "a".repeat(40),
-                "build_id": null,
-                "artifact_digest": null,
-                "target_configuration_digest": digest
-            },
-            "target": "web",
-            "unit": "unit.one",
-            "requirements": ["unit.one#works"],
-            "facets": ["behavior"],
-            "kind": "release_record",
-            "evidence_spec_digest": digest,
-            "contract_digest": digest,
-            "binding_digest": digest,
-            "policy_digest": digest,
-            "runner_digest": null,
-            "adapter_digest": null,
-            "runtime_facts_digest": null,
-            "release_record_digest": digest,
-            "profile_values": [],
-            "producer": "producer://ci/run/test",
-            "claimed_trust": "signed_ci",
-            "observed_at": "2026-08-08T00:00:00Z",
-            "payload": {"kind": "release_record", "release_record_digest": digest},
-            "attachments": [],
-            "result_digest": digest
-        })
-    }
+    use eqm_domain::RawEvidenceObject;
 
     #[test]
-    fn alternate_transport_bytes_share_semantic_identity() -> Result<(), Box<dyn Error>> {
-        let compact = serde_json::to_vec(&sample_evidence())?;
-        let pretty = serde_json::to_vec_pretty(&sample_evidence())?;
-        assert_ne!(compact, pretty);
-        let compact_dto = EvidenceResultDto::from_json(&compact)?;
-        let pretty_dto = EvidenceResultDto::from_json(&pretty)?;
-        let compact_identity = compact_dto.identity_relation(&compact)?;
-        let pretty_identity = pretty_dto.identity_relation(&pretty)?;
-        // Exact bytes differ, but the semantic assertion agrees.
-        assert_ne!(compact_identity.raw_digest(), pretty_identity.raw_digest());
-        assert_eq!(
-            compact_identity.semantic_identity(),
-            pretty_identity.semantic_identity()
-        );
-        // Signed originals are returned unchanged.
-        assert_eq!(compact_identity.raw().bytes(), compact.as_slice());
-        assert_eq!(pretty_identity.raw().bytes(), pretty.as_slice());
-        Ok(())
-    }
-
-    #[test]
-    fn changed_assertion_changes_semantic_identity() -> Result<(), Box<dyn Error>> {
-        let original_bytes = serde_json::to_vec(&sample_evidence())?;
-        let mut changed = sample_evidence();
-        changed["unit"] = json!("unit.two");
-        let changed_bytes = serde_json::to_vec(&changed)?;
-        let original = EvidenceResultDto::from_json(&original_bytes)?;
-        let changed = EvidenceResultDto::from_json(&changed_bytes)?;
-        assert_ne!(
-            original
-                .identity_relation(&original_bytes)?
-                .semantic_identity(),
-            changed
-                .identity_relation(&changed_bytes)?
-                .semantic_identity()
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn raw_object_bound_is_enforced() {
+    fn raw_object_carrier_bound_is_enforced_separately_from_evidence_ingress() {
         assert_eq!(
             RawEvidenceObject::new(Vec::new()),
+            Err(eqm_domain::EvidenceResultBuildError::RawObjectBound)
+        );
+        // The generic raw carrier admits up to its own 16 MiB envelope; the
+        // evidence JSON ingress enforces the separate 8 MiB strict bound.
+        assert!(RawEvidenceObject::new(vec![b' '; 16 * 1024 * 1024]).is_ok());
+        assert_eq!(
+            RawEvidenceObject::new(vec![b' '; 16 * 1024 * 1024 + 1]),
             Err(eqm_domain::EvidenceResultBuildError::RawObjectBound)
         );
     }

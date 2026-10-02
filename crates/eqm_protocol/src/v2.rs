@@ -14,9 +14,9 @@ use crate::{CanonicalSet, WireInt, WireUint};
 use eqm_domain::{
     AdapterId, AttemptOutcome, DimensionId, EvidenceCounts, EvidenceKind, Facet, FullRequirementId,
     HttpMethod, InventoryCompleteness, OwnerRef, ProducerRef, ProfileId, ProviderId,
-    ReleaseChannel, RepoPath, RepositoryIdentity, Revision, SelectorText, Sha256Digest,
-    SourceCommit, SurfaceId, SymbolicValueId, TargetId, TrustLevel, UnitId, UtcInstantV2,
-    V2_UTC_PATTERN,
+    RawObjectDigest, ReleaseChannel, RepoPath, RepositoryIdentity, Revision, SelectorText,
+    SemanticEvidenceDigest, Sha256Digest, SourceCommit, SurfaceId, SymbolicValueId, TargetId,
+    TrustLevel, UnitId, UtcInstantV2, V2_UTC_PATTERN,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, de};
@@ -63,6 +63,9 @@ pub enum V2DtoError {
     InvalidFact,
     InvalidProfile,
     InvalidEntry,
+    /// Bytes supplied to a receiver-plus-bytes convenience method did not parse
+    /// to the receiver's record.
+    RecordMismatch,
 }
 
 impl std::fmt::Display for V2DtoError {
@@ -761,6 +764,101 @@ impl EvidenceResultV2Dto {
     }
 }
 
+/// A bytes-first checked v2 evidence record.
+///
+/// Construction parses the exact input once through the strict v2 reader,
+/// validates it and retains both the original bytes and the canonical semantic
+/// projection. The fields are private, so an arbitrary [`EvidenceResultV2Dto`]
+/// cannot be promoted to a checked identity without revalidation; the only
+/// entry points are [`CheckedEvidenceResultV2::from_bytes`] and
+/// [`EvidenceResultV2Dto::checked_identity`]. Holding one confers no trust,
+/// proves no storage and does not establish what executed.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CheckedEvidenceResultV2 {
+    record: EvidenceResultV2Dto,
+    raw_bytes: Vec<u8>,
+    semantic_bytes: Vec<u8>,
+    raw_identity: RawObjectDigest,
+    semantic_identity: SemanticEvidenceDigest,
+}
+
+impl CheckedEvidenceResultV2 {
+    /// Parses exact bytes once through the strict v2 reader and retains them.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, V2DtoError> {
+        let record = EvidenceResultV2Dto::from_json(bytes)?;
+        Self::from_validated(record, bytes.to_vec())
+    }
+
+    fn from_validated(record: EvidenceResultV2Dto, raw_bytes: Vec<u8>) -> Result<Self, V2DtoError> {
+        let semantic_bytes = canonical_semantic_bytes(&record)?;
+        Ok(Self {
+            raw_identity: RawObjectDigest::hash_content(&raw_bytes),
+            semantic_identity: SemanticEvidenceDigest::hash_content(&semantic_bytes),
+            record,
+            raw_bytes,
+            semantic_bytes,
+        })
+    }
+
+    /// Returns the validated v2 record.
+    #[must_use]
+    pub const fn record(&self) -> &EvidenceResultV2Dto {
+        &self.record
+    }
+
+    /// Returns the exact original bytes, unchanged.
+    #[must_use]
+    pub fn raw_bytes(&self) -> &[u8] {
+        &self.raw_bytes
+    }
+
+    /// Returns the raw-object identity of the exact original bytes.
+    #[must_use]
+    pub const fn raw_identity(&self) -> RawObjectDigest {
+        self.raw_identity
+    }
+
+    /// Returns the canonical semantic assertion bytes.
+    #[must_use]
+    pub fn semantic_bytes(&self) -> &[u8] {
+        &self.semantic_bytes
+    }
+
+    /// Returns the semantic evidence identity.
+    #[must_use]
+    pub const fn semantic_identity(&self) -> SemanticEvidenceDigest {
+        self.semantic_identity
+    }
+}
+
+/// Builds the canonical semantic projection of every assertion member except
+/// the transport-only `schema`, `id` and `result_digest`, using the v2 DTO's own
+/// explicit representations (WireUint, CanonicalInstant, absence by omission,
+/// canonical sets and ordered attempts). This never uses the v1 serializer.
+fn canonical_semantic_bytes(record: &EvidenceResultV2Dto) -> Result<Vec<u8>, V2DtoError> {
+    let mut value = serde_json::to_value(record).map_err(|_| V2DtoError::Json)?;
+    let object = value.as_object_mut().ok_or(V2DtoError::Json)?;
+    object.remove("schema");
+    object.remove("id");
+    object.remove("result_digest");
+    serde_json_canonicalizer::to_vec(&value).map_err(|_| V2DtoError::Json)
+}
+
+impl EvidenceResultV2Dto {
+    /// Revalidates this receiver's fields and binds them to the exact supplied
+    /// bytes, which must parse to an equal record.
+    pub fn checked_identity(
+        &self,
+        raw_bytes: &[u8],
+    ) -> Result<CheckedEvidenceResultV2, V2DtoError> {
+        let reparsed = EvidenceResultV2Dto::from_json(raw_bytes)?;
+        if &reparsed != self {
+            return Err(V2DtoError::RecordMismatch);
+        }
+        CheckedEvidenceResultV2::from_validated(reparsed, raw_bytes.to_vec())
+    }
+}
+
 // ---------------------------------------------------------------------------
 // runtime-facts
 // ---------------------------------------------------------------------------
@@ -1117,6 +1215,29 @@ mod tests {
         Sha256Digest::hash_content(seed.as_bytes()).to_string()
     }
 
+    // Reviewed literal semantic bytes for the `evidence_result()` fixture and
+    // the independently recomputed digest `sha256("eqm:v2:semantic-evidence" ||
+    // 0x00 || bytes)`.
+    const CHECKED_SEMANTIC_BYTES: &str = r##"{"attachments":[],"binding_digest":"sha256:80f70afeef3caa57646fd20afb95be9c3f2c03d38e091906de31838813dcc22e","claimed_trust":"signed_ci","contract_digest":"sha256:cc8321d6375c494d043fdd0260f21bc0ec51dacc9f6abb7f909cdcd3041b78bf","evidence_spec_digest":"sha256:d4f02eaafd1a9e9de7d10972ca8e47fa7a985825c3c9c1e249c72683cb3e4f19","facets":["behavior"],"kind":"test","observed_at":"2026-01-02T03:04:05Z","payload":{"execution":{"attempts":[{"finished_at":"2026-01-02T03:04:06Z","number":1,"outcome":"passed","started_at":"2026-01-02T03:04:05Z"}],"counts":{"failed":0,"filtered":0,"passed":1,"quarantined":0,"selected":1,"skipped":0},"finished_at":"2026-01-02T03:04:06Z","started_at":"2026-01-02T03:04:05Z"},"kind":"test"},"policy_digest":"sha256:823412d1eacb67956220e532959f0104603057c88704863ca38e7cd188fda812","producer":"producer://ci/runner/1","profile_values":[],"requirements":["unit.test#r18"],"subject":{"repository":"https://example.com/team/project","repository_id_digest":"sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e","scope":{"kind":"target","target":"web"},"source_commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","target_configuration_digest":"sha256:b79606fb3afea5bd1609ed40b622142f1c98125abcfe89a76a661b0e8e343910"},"target":"web","unit":"unit.test"}"##;
+    const CHECKED_SEMANTIC_DIGEST: &str =
+        "sha256:ac16d29887befa9ca8f5dbe8ab3379c3478858d248b573582f752e33e91c7f5f";
+
+    #[test]
+    fn checked_v2_literal_semantic_bytes_and_digest_match_independent_oracle()
+    -> Result<(), Box<dyn Error>> {
+        let bytes = serde_json::to_vec(&evidence_result()?)?;
+        let checked = CheckedEvidenceResultV2::from_bytes(&bytes)?;
+        assert_eq!(
+            std::str::from_utf8(checked.semantic_bytes())?,
+            CHECKED_SEMANTIC_BYTES
+        );
+        assert_eq!(
+            checked.semantic_identity().to_string(),
+            CHECKED_SEMANTIC_DIGEST
+        );
+        Ok(())
+    }
+
     fn instant(value: &str) -> Result<CanonicalInstant, Box<dyn Error>> {
         Ok(CanonicalInstant::new(value.parse::<UtcInstantV2>()?))
     }
@@ -1328,6 +1449,335 @@ mod tests {
         assert!(!text.contains("build_id"));
         assert!(!text.contains("runner_digest"));
         assert!(EvidenceResultV2Dto::from_json(text.as_bytes()).is_ok());
+        Ok(())
+    }
+
+    fn checked(bytes: &[u8]) -> Result<CheckedEvidenceResultV2, V2DtoError> {
+        CheckedEvidenceResultV2::from_bytes(bytes)
+    }
+
+    fn identity_of(record: &EvidenceResultV2Dto) -> Result<SemanticEvidenceDigest, Box<dyn Error>> {
+        Ok(checked(&serde_json::to_vec(record)?)?.semantic_identity())
+    }
+
+    fn attempt(number: u64, outcome: &str) -> Result<AttemptV2Dto, Box<dyn Error>> {
+        Ok(AttemptV2Dto {
+            number: WireUint::new(number),
+            outcome: outcome.to_owned(),
+            started_at: instant("2026-01-02T03:04:05Z")?,
+            finished_at: instant("2026-01-02T03:04:06Z")?,
+            message: None,
+        })
+    }
+
+    fn profile_value(dimension: &str, value: &str) -> ProfileValueV2Dto {
+        ProfileValueV2Dto {
+            profile: "audience.default".to_owned(),
+            revision: WireUint::new(1),
+            dimension: dimension.to_owned(),
+            value: value.to_owned(),
+        }
+    }
+
+    #[test]
+    fn checked_v2_separates_raw_and_semantic_identity() -> Result<(), Box<dyn Error>> {
+        let record = evidence_result()?;
+        let compact = serde_json::to_vec(&record)?;
+        let pretty = serde_json::to_vec_pretty(&record)?;
+        assert_ne!(compact, pretty);
+        let compact_checked = checked(&compact)?;
+        let pretty_checked = checked(&pretty)?;
+        // Exact bytes differ, but the semantic assertion agrees.
+        assert_ne!(
+            compact_checked.raw_identity(),
+            pretty_checked.raw_identity()
+        );
+        assert_eq!(
+            compact_checked.semantic_bytes(),
+            pretty_checked.semantic_bytes()
+        );
+        assert_eq!(
+            compact_checked.semantic_identity(),
+            pretty_checked.semantic_identity()
+        );
+        // Signed originals are returned unchanged.
+        assert_eq!(compact_checked.raw_bytes(), compact.as_slice());
+        assert_eq!(pretty_checked.raw_bytes(), pretty.as_slice());
+        Ok(())
+    }
+
+    #[test]
+    fn checked_v2_rejects_unrelated_bytes_and_mismatched_receiver() -> Result<(), Box<dyn Error>> {
+        // Valid JSON from a different v2 family is not an evidence record.
+        assert!(checked(&serde_json::to_vec(&inventory()?)?).is_err());
+        // Non-JSON bytes reject.
+        assert!(checked(b"{not json").is_err());
+        // A foreign exact schema rejects.
+        let mut value = serde_json::to_value(evidence_result()?)?;
+        value["schema"] = serde_json::json!(crate::EVIDENCE_RESULT_SCHEMA.to_string());
+        assert_eq!(
+            checked(&serde_json::to_vec(&value)?),
+            Err(V2DtoError::InvalidSchema)
+        );
+        // A receiver-plus-bytes mismatch rejects rather than trusting the pair.
+        let record = evidence_result()?;
+        let mut changed = record.clone();
+        changed.unit = "unit.other".to_owned();
+        assert_eq!(
+            record.checked_identity(&serde_json::to_vec(&changed)?),
+            Err(V2DtoError::RecordMismatch)
+        );
+        assert!(
+            record
+                .checked_identity(&serde_json::to_vec(&record)?)
+                .is_ok()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn checked_v2_large_values_stay_distinct_as_literal_decimals() -> Result<(), Box<dyn Error>> {
+        let build = |value: u64| -> Result<CheckedEvidenceResultV2, Box<dyn Error>> {
+            let mut record = evidence_result()?;
+            record.attachments = CanonicalSet::from_members(vec![AttachmentV2Dto {
+                name: "log".to_owned(),
+                media_type: "text/plain".to_owned(),
+                digest: digest("attachment"),
+                size: WireUint::new(value),
+            }])?;
+            record.payload = EvidencePayloadV2Dto::Test {
+                execution: ExecutionPayloadV2Dto {
+                    counts: counts(value),
+                    ..execution()?
+                },
+            };
+            Ok(checked(&serde_json::to_vec(&record)?)?)
+        };
+        let lower = build(9_007_199_254_740_992)?;
+        let upper = build(9_007_199_254_740_993)?;
+        assert_ne!(lower.semantic_bytes(), upper.semantic_bytes());
+        assert_ne!(lower.semantic_identity(), upper.semantic_identity());
+        let lower_text = std::str::from_utf8(lower.semantic_bytes())?;
+        let upper_text = std::str::from_utf8(upper.semantic_bytes())?;
+        assert!(lower_text.contains("\"size\":\"9007199254740992\""));
+        assert!(lower_text.contains("\"selected\":\"9007199254740992\""));
+        assert!(upper_text.contains("\"size\":\"9007199254740993\""));
+        assert!(upper_text.contains("\"selected\":\"9007199254740993\""));
+        Ok(())
+    }
+
+    #[test]
+    fn checked_v2_every_semantic_axis_changes_identity_but_transport_members_do_not()
+    -> Result<(), Box<dyn Error>> {
+        let base = evidence_result()?;
+        let baseline = identity_of(&base)?;
+
+        let mut record = base.clone();
+        record.subject.repository = "https://example.com/team/other".to_owned();
+        assert_ne!(identity_of(&record)?, baseline, "subject");
+
+        let mut record = base.clone();
+        record.target = "ios".to_owned();
+        assert_ne!(identity_of(&record)?, baseline, "target");
+
+        let mut record = base.clone();
+        record.unit = "unit.other".to_owned();
+        assert_ne!(identity_of(&record)?, baseline, "unit");
+
+        let mut record = base.clone();
+        record.requirements = CanonicalSet::from_members(vec!["unit.test#r19".to_owned()])?;
+        assert_ne!(identity_of(&record)?, baseline, "requirements");
+
+        let mut record = base.clone();
+        record.facets = CanonicalSet::from_members(vec!["structure".to_owned()])?;
+        assert_ne!(identity_of(&record)?, baseline, "facets");
+
+        let mut record = base.clone();
+        record.kind = "snapshot".to_owned();
+        assert_ne!(identity_of(&record)?, baseline, "kind");
+
+        let mut record = base.clone();
+        record.evidence_spec_digest = digest("spec-2");
+        assert_ne!(identity_of(&record)?, baseline, "evidence_spec_digest");
+
+        let mut record = base.clone();
+        record.contract_digest = digest("contract-2");
+        assert_ne!(identity_of(&record)?, baseline, "contract_digest");
+
+        let mut record = base.clone();
+        record.binding_digest = digest("binding-2");
+        assert_ne!(identity_of(&record)?, baseline, "binding_digest");
+
+        let mut record = base.clone();
+        record.policy_digest = digest("policy-2");
+        assert_ne!(identity_of(&record)?, baseline, "policy_digest");
+
+        let mut record = base.clone();
+        record.runner_digest = Some(digest("runner"));
+        assert_ne!(identity_of(&record)?, baseline, "runner_digest");
+
+        let mut record = base.clone();
+        record.adapter_digest = Some(digest("adapter"));
+        assert_ne!(identity_of(&record)?, baseline, "adapter_digest");
+
+        let mut record = base.clone();
+        record.runtime_facts_digest = Some(digest("runtime"));
+        assert_ne!(identity_of(&record)?, baseline, "runtime_facts_digest");
+
+        let mut record = base.clone();
+        record.release_record_digest = Some(digest("release"));
+        assert_ne!(identity_of(&record)?, baseline, "release_record_digest");
+
+        let mut record = base.clone();
+        record.profile_values = CanonicalSet::from_members(vec![profile_value("locale", "en")])?;
+        assert_ne!(identity_of(&record)?, baseline, "profile_values");
+
+        let mut record = base.clone();
+        record.producer = "producer://ci/runner/2".to_owned();
+        assert_ne!(identity_of(&record)?, baseline, "producer");
+
+        let mut record = base.clone();
+        record.claimed_trust = "trusted_ci".to_owned();
+        assert_ne!(identity_of(&record)?, baseline, "claimed_trust");
+
+        let mut record = base.clone();
+        record.observed_at = instant("2026-01-02T03:04:06Z")?;
+        assert_ne!(identity_of(&record)?, baseline, "observed_at");
+
+        let mut record = base.clone();
+        record.payload = EvidencePayloadV2Dto::Test {
+            execution: ExecutionPayloadV2Dto {
+                counts: counts(2),
+                ..execution()?
+            },
+        };
+        assert_ne!(identity_of(&record)?, baseline, "payload");
+
+        let mut record = base.clone();
+        record.attachments = CanonicalSet::from_members(vec![AttachmentV2Dto {
+            name: "log".to_owned(),
+            media_type: "text/plain".to_owned(),
+            digest: digest("attachment"),
+            size: WireUint::new(1),
+        }])?;
+        assert_ne!(identity_of(&record)?, baseline, "attachments");
+
+        // The transport-only members (`schema`, `id`, `result_digest`) are
+        // excluded: changing both self-identifiers together keeps the semantic
+        // identity while moving the raw identity is checked separately.
+        let mut transport = base.clone();
+        transport.id = digest("transport");
+        transport.result_digest = digest("transport");
+        let transport_checked = checked(&serde_json::to_vec(&transport)?)?;
+        assert_eq!(transport_checked.semantic_identity(), baseline);
+        assert_ne!(
+            transport_checked.raw_identity(),
+            checked(&serde_json::to_vec(&base)?)?.raw_identity()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn checked_v2_set_permutations_agree_and_attempt_order_is_bound() -> Result<(), Box<dyn Error>>
+    {
+        let requirement_digest =
+            |items: Vec<String>| -> Result<SemanticEvidenceDigest, Box<dyn Error>> {
+                let mut record = evidence_result()?;
+                record.requirements = CanonicalSet::from_members(items)?;
+                identity_of(&record)
+            };
+        assert_eq!(
+            requirement_digest(vec!["unit.test#r18".to_owned(), "unit.test#r19".to_owned()])?,
+            requirement_digest(vec!["unit.test#r19".to_owned(), "unit.test#r18".to_owned()])?
+        );
+
+        let profile_digest =
+            |items: Vec<ProfileValueV2Dto>| -> Result<SemanticEvidenceDigest, Box<dyn Error>> {
+                let mut record = evidence_result()?;
+                record.profile_values = CanonicalSet::from_members(items)?;
+                identity_of(&record)
+            };
+        assert_eq!(
+            profile_digest(vec![
+                profile_value("locale", "en"),
+                profile_value("region", "eu")
+            ])?,
+            profile_digest(vec![
+                profile_value("region", "eu"),
+                profile_value("locale", "en")
+            ])?
+        );
+
+        // Ordered attempts are semantic: a reversed attempt sequence differs.
+        let execution_digest =
+            |first: &str, second: &str| -> Result<SemanticEvidenceDigest, Box<dyn Error>> {
+                let mut record = evidence_result()?;
+                record.payload = EvidencePayloadV2Dto::Test {
+                    execution: ExecutionPayloadV2Dto {
+                        attempts: vec![attempt(1, first)?, attempt(2, second)?],
+                        counts: CountsV2Dto {
+                            selected: WireUint::new(2),
+                            passed: WireUint::new(1),
+                            failed: WireUint::new(1),
+                            skipped: WireUint::new(0),
+                            filtered: WireUint::new(0),
+                            quarantined: WireUint::new(0),
+                        },
+                        started_at: instant("2026-01-02T03:04:05Z")?,
+                        finished_at: instant("2026-01-02T03:04:07Z")?,
+                    },
+                };
+                identity_of(&record)
+            };
+        assert_ne!(
+            execution_digest("passed", "failed")?,
+            execution_digest("failed", "passed")?
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn checked_v2_rejects_duplicate_null_and_noncanonical_tokens() -> Result<(), Box<dyn Error>> {
+        let base = serde_json::to_vec(&evidence_result()?)?;
+        // Duplicate object member.
+        assert!(checked(br#"{"schema":"a","schema":"b"}"#).is_err());
+        // Explicit null for a v2 optional member.
+        let mut value: Value = serde_json::from_slice(&base)?;
+        value["subject"]["build_id"] = Value::Null;
+        assert!(checked(&serde_json::to_vec(&value)?).is_err());
+        // A small integer encoded as a string is not a canonical WireUint.
+        let mut value: Value = serde_json::from_slice(&base)?;
+        value["payload"]["execution"]["counts"]["selected"] = serde_json::json!("1");
+        assert!(checked(&serde_json::to_vec(&value)?).is_err());
+        // Duplicate attachment names reject at the record validator.
+        let mut record = evidence_result()?;
+        record.attachments = CanonicalSet::from_members(vec![
+            AttachmentV2Dto {
+                name: "log".to_owned(),
+                media_type: "text/plain".to_owned(),
+                digest: digest("a"),
+                size: WireUint::new(1),
+            },
+            AttachmentV2Dto {
+                name: "log".to_owned(),
+                media_type: "text/plain".to_owned(),
+                digest: digest("b"),
+                size: WireUint::new(2),
+            },
+        ])?;
+        assert!(checked(&serde_json::to_vec(&record)?).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn checked_v2_honors_evidence_ingress_bound_not_raw_carrier() -> Result<(), Box<dyn Error>> {
+        let base = serde_json::to_vec(&evidence_result()?)?;
+        let mut at_bound = base.clone();
+        at_bound.resize(8 * 1024 * 1024, b' ');
+        assert!(checked(&at_bound).is_ok());
+        let mut over = base;
+        over.resize(8 * 1024 * 1024 + 1, b' ');
+        assert_eq!(checked(&over), Err(V2DtoError::Json));
         Ok(())
     }
 
