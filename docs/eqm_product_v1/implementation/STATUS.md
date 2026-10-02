@@ -7,15 +7,17 @@ S023 and S024. DEV008-P1/RF31 accepted; direct pins unchanged. Remaining correct
 are not discarded implementation: S019 literal oracle, S021 actual acquisition proof,
 S022 nested concealment, S023 raw/lossless-v2 identity and S024 lineage relationships.
 
-S019-R4 and S021-R2 are committed pending acceptance. S019-R4 asserts a reviewed
-1,129-byte literal ordering-trap projection and the independently recomputed
-`sha256:99030afca7ed3a3ae1752fc4350a6752cc6bf6f43feb3c1cb37d9a03c9e6f8fc`.
+S019-R4, S021-R2 and S022-R1 are committed pending acceptance. S019-R4 asserts a
+reviewed 1,129-byte literal ordering-trap projection and the independently
+recomputed `sha256:99030afca7ed3a3ae1752fc4350a6752cc6bf6f43feb3c1cb37d9a03c9e6f8fc`.
 S021-R2 exercises the production CLI `runner_authority` + `resolve_runner`
 acquisition path before/after real temporary executable replacement, isolates
-argv reversal, and adds per-field, nested-extension and set-permutation controls
-(commit `46ca282`; S021-R2 SHA backfilled next).
+argv reversal, and adds per-field, nested-extension and set-permutation controls.
+S022-R1 recursively inspects populated nested Gitlinks, rejects child
+concealment, HEAD mismatch, ignored/untracked child content and unavailable or
+bounded inspection, with source and release-boundary tests.
 
-Next **S022-R1 → S023-R1 → S024-R1 → S025–S043**,
+Next **S023-R1 → S024-R1 → S025–S043**,
 `pfc through EQM-P03`. Independent integration review at S043 precedes S044 routing.
 Full governing MVP remains S211. P01 complete; P02 seven complete accepted steps,
 five retained steps require corrections; later cycles pending. Cursor/acceptance

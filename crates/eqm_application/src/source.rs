@@ -21,10 +21,16 @@
 //! `eqm_application` layer, not in `eqm_domain` or `eqm_engine`.
 
 use eqm_domain::{EvidenceResultBuildError, RepositoryIdentity, SourceCommit};
+use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+/// Maximum nested populated-repository depth inspected below the owning root.
+const MAX_NESTED_DEPTH: u32 = 16;
+/// Maximum number of repositories inspected in one provenance pass.
+const MAX_NESTED_REPOSITORIES: usize = 256;
 
 /// Exact inspected source-tree provenance for one repository root.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -85,6 +91,15 @@ pub enum SourceProvenanceError {
     /// A tracked entry is marked assume-unchanged or skip-worktree, so normal
     /// status cannot authorize a clean provenance claim.
     ConcealedIndex,
+    /// A populated nested repository could not be inspected (missing,
+    /// uninitialized, not its own root, non-regular or failed Git).
+    NestedUnavailable,
+    /// A nested repository conceals modified bytes from normal status.
+    NestedConcealed,
+    /// A nested repository's `HEAD` does not match its declared Gitlink.
+    NestedHeadMismatch,
+    /// Nested repository traversal exceeded its bound or revisited a path.
+    NestedLimit,
 }
 
 impl Display for SourceProvenanceError {
@@ -100,6 +115,27 @@ impl Display for SourceProvenanceError {
                 write!(
                     formatter,
                     "tracked entries conceal changes from normal status"
+                )
+            }
+            Self::NestedUnavailable => {
+                write!(formatter, "a nested repository could not be inspected")
+            }
+            Self::NestedConcealed => {
+                write!(
+                    formatter,
+                    "a nested repository conceals changes from normal status"
+                )
+            }
+            Self::NestedHeadMismatch => {
+                write!(
+                    formatter,
+                    "a nested repository HEAD differs from its declared Gitlink"
+                )
+            }
+            Self::NestedLimit => {
+                write!(
+                    formatter,
+                    "nested repository traversal exceeded its bounded inspection"
                 )
             }
         }
@@ -181,8 +217,9 @@ fn git_bytes(root: &Path, arguments: &[&str]) -> Result<Vec<u8>, SourceProvenanc
     Ok(output.stdout)
 }
 
-/// Rejects tracked entries that normal status may conceal.
-fn reject_concealed_entries(root: &Path) -> Result<(), SourceProvenanceError> {
+/// Returns whether any tracked entry is marked assume-unchanged or
+/// skip-worktree, which conceals modified bytes from normal status.
+fn concealed_entries_present(root: &Path) -> Result<bool, SourceProvenanceError> {
     let listing = git_bytes(root, &["ls-files", "-v", "-z"])?;
     for entry in listing.split(|byte| *byte == 0) {
         let Some(tag) = entry.first() else {
@@ -191,10 +228,10 @@ fn reject_concealed_entries(root: &Path) -> Result<(), SourceProvenanceError> {
         // `H` is a normal cached entry; `S` is skip-worktree and any lowercase
         // tag is assume-unchanged. Both conceal modified bytes from status.
         if *tag == b'S' || tag.is_ascii_lowercase() {
-            return Err(SourceProvenanceError::ConcealedIndex);
+            return Ok(true);
         }
     }
-    Ok(())
+    Ok(false)
 }
 
 /// Returns whether one reported path is below the reserved generated output
@@ -207,9 +244,10 @@ fn is_reserved_output_path(path: &[u8]) -> bool {
 /// Returns whether a NUL-delimited porcelain status has any non-authorizing
 /// entry. Tracked/index changes (including renames and copies) are always dirty;
 /// untracked and ignored entries are neutral only inside the reserved `.eqm/`
-/// output tree. A rename/copy record's extra original-path field lacks the
-/// `XY ` prefix and is ignored by the status-code check.
-fn status_has_dirty_content(status: &[u8]) -> bool {
+/// output tree of the owning inspected root (set `reserved`). A nested
+/// repository has no reserved tree. A rename/copy record's extra original-path
+/// field lacks the `XY ` prefix and is ignored by the status-code check.
+fn status_has_dirty_content(status: &[u8], reserved: bool) -> bool {
     for token in status
         .split(|byte| *byte == 0)
         .filter(|token| !token.is_empty())
@@ -222,7 +260,7 @@ fn status_has_dirty_content(status: &[u8]) -> bool {
         match (index, worktree) {
             (b'R', _) | (b'C', _) => return true,
             (b'?', b'?') | (b'!', b'!') => {
-                if !is_reserved_output_path(path) {
+                if !(reserved && is_reserved_output_path(path)) {
                     return true;
                 }
             }
@@ -232,20 +270,79 @@ fn status_has_dirty_content(status: &[u8]) -> bool {
     false
 }
 
-/// Returns the exact inspected source-tree provenance for one repository root.
+/// Returns the declared Gitlink entries (path plus recorded object id) in the
+/// index of one repository root, parsed NUL-delimited so paths with spaces or
+/// newlines cannot be misread.
+fn gitlink_entries(root: &Path) -> Result<Vec<(PathBuf, String)>, SourceProvenanceError> {
+    let listing = git_bytes(root, &["ls-files", "--stage", "-z"])?;
+    let mut entries = Vec::new();
+    for entry in listing
+        .split(|byte| *byte == 0)
+        .filter(|entry| !entry.is_empty())
+    {
+        let Some(tab) = entry.iter().position(|byte| *byte == b'\t') else {
+            continue;
+        };
+        let metadata = &entry[..tab];
+        let path = &entry[tab + 1..];
+        let mut fields = metadata.split(|byte| *byte == b' ');
+        let Some(mode) = fields.next() else {
+            continue;
+        };
+        if mode != b"160000" {
+            continue;
+        }
+        let Some(object) = fields.next() else {
+            continue;
+        };
+        let object = std::str::from_utf8(object)
+            .map_err(|_| SourceProvenanceError::NestedUnavailable)?
+            .to_owned();
+        let path =
+            std::str::from_utf8(path).map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+        entries.push((PathBuf::from(path), object));
+    }
+    Ok(entries)
+}
+
+/// Tracks canonicalized repository roots and the inspected-repository count so
+/// traversal is bounded and cannot revisit or cycle.
+#[derive(Default)]
+struct InspectionState {
+    visited: BTreeSet<PathBuf>,
+    repositories: usize,
+}
+
+/// Inspects one repository root and every populated nested Gitlink recursively.
 ///
-/// The inspection is repository-wide and conservative: it disables status
-/// shortcuts (`--untracked-files=all`, `--ignored=matching`,
-/// `--ignore-submodules=none`), parses NUL-delimited paths, rejects concealed
-/// index entries and treats only untracked or ignored content below `.eqm/` as
-/// neutral. Missing or failed Git, unsupported identity and concealed entries are
-/// typed errors that never default to clean. `dirty` is true, and [`clean`] false,
-/// when any non-authorizing content is present.
-pub fn inspect_source_provenance(root: &Path) -> Result<SourceProvenance, SourceProvenanceError> {
-    let repository = repository_identity(root)?;
-    let commit = git_stdout(root, &["rev-parse", "HEAD"])?;
-    let source_commit: SourceCommit = commit.parse().map_err(SourceProvenanceError::Commit)?;
-    reject_concealed_entries(root)?;
+/// `reserved` is true only for the owning inspected root, whose untracked or
+/// ignored generated `.eqm/` output is neutral; nested repositories have no
+/// reserved path. Concealment, a child `HEAD` that differs from its declared
+/// Gitlink, an unavailable/uninitialized child and any traversal bound are typed
+/// unavailable inspections, never clean.
+fn inspect_repository(
+    root: &Path,
+    reserved: bool,
+    depth: u32,
+    state: &mut InspectionState,
+) -> Result<bool, SourceProvenanceError> {
+    if depth > MAX_NESTED_DEPTH || state.repositories >= MAX_NESTED_REPOSITORIES {
+        return Err(SourceProvenanceError::NestedLimit);
+    }
+    state.repositories += 1;
+    let canonical_root = root
+        .canonicalize()
+        .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+    if !state.visited.insert(canonical_root) {
+        return Err(SourceProvenanceError::NestedLimit);
+    }
+    if concealed_entries_present(root)? {
+        return Err(if depth == 0 {
+            SourceProvenanceError::ConcealedIndex
+        } else {
+            SourceProvenanceError::NestedConcealed
+        });
+    }
     let status = git_bytes(
         root,
         &[
@@ -257,10 +354,60 @@ pub fn inspect_source_provenance(root: &Path) -> Result<SourceProvenance, Source
             "--ignore-submodules=none",
         ],
     )?;
+    let mut dirty = status_has_dirty_content(&status, reserved);
+    for (path, declared) in gitlink_entries(root)? {
+        let child = root.join(&path);
+        let metadata = std::fs::symlink_metadata(&child)
+            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            return Err(SourceProvenanceError::NestedUnavailable);
+        }
+        // A populated submodule is its own repository root; an empty or
+        // uninitialized directory would otherwise resolve to the parent root.
+        let top = git_stdout(&child, &["rev-parse", "--show-toplevel"])
+            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+        let top = Path::new(&top)
+            .canonicalize()
+            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+        let canonical_child = child
+            .canonicalize()
+            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+        if top != canonical_child {
+            return Err(SourceProvenanceError::NestedUnavailable);
+        }
+        let head = git_stdout(&child, &["rev-parse", "HEAD"])
+            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+        if !head.eq_ignore_ascii_case(&declared) {
+            return Err(SourceProvenanceError::NestedHeadMismatch);
+        }
+        if inspect_repository(&child, false, depth + 1, state)? {
+            dirty = true;
+        }
+    }
+    Ok(dirty)
+}
+
+/// Returns the exact inspected source-tree provenance for one repository root.
+///
+/// The inspection is repository-wide and conservative: it disables status
+/// shortcuts (`--untracked-files=all`, `--ignored=matching`,
+/// `--ignore-submodules=none`), parses NUL-delimited paths, recursively inspects
+/// every populated nested Gitlink, rejects concealed index entries and treats
+/// only untracked or ignored content below the owning root's `.eqm/` as neutral.
+/// Missing or failed Git, unsupported identity, concealed entries, nested
+/// concealment, Gitlink `HEAD` mismatch, unavailable nested inspection and
+/// traversal bounds are typed errors that never default to clean. `dirty` is
+/// true, and [`clean`] false, when any non-authorizing content is present.
+pub fn inspect_source_provenance(root: &Path) -> Result<SourceProvenance, SourceProvenanceError> {
+    let repository = repository_identity(root)?;
+    let commit = git_stdout(root, &["rev-parse", "HEAD"])?;
+    let source_commit: SourceCommit = commit.parse().map_err(SourceProvenanceError::Commit)?;
+    let mut state = InspectionState::default();
+    let dirty = inspect_repository(root, true, 0, &mut state)?;
     Ok(SourceProvenance {
         repository,
         source_commit,
-        dirty: status_has_dirty_content(&status),
+        dirty,
     })
 }
 
@@ -305,6 +452,54 @@ mod tests {
         git(root, &["add", "."])?;
         git(root, &["commit", "-qm", "fixture"])?;
         Ok(directory)
+    }
+
+    /// Adds and commits one local submodule. Setup failure is returned, never
+    /// silently treated as a passed regression.
+    fn add_submodule(parent: &Path, source: &Path, name: &str) -> Result<(), Box<dyn Error>> {
+        let source = source.to_str().ok_or("submodule source path")?;
+        let status = Command::new("git")
+            .args([
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.invalid",
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "add",
+                source,
+                name,
+            ])
+            .current_dir(parent)
+            .status()?;
+        if !status.success() {
+            return Err(format!("submodule add {name} failed").into());
+        }
+        git(parent, &["commit", "-qm", &format!("add submodule {name}")])?;
+        Ok(())
+    }
+
+    fn update_submodules_recursive(root: &Path) -> Result<(), Box<dyn Error>> {
+        let status = Command::new("git")
+            .args([
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.invalid",
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "update",
+                "--init",
+                "--recursive",
+            ])
+            .current_dir(root)
+            .status()?;
+        if !status.success() {
+            return Err("recursive submodule update failed".into());
+        }
+        Ok(())
     }
 
     #[test]
@@ -442,40 +637,155 @@ mod tests {
     }
 
     #[test]
-    fn submodule_dirtiness_is_reported_where_constructible() -> Result<(), Box<dyn Error>> {
+    fn populated_nested_repository_is_inspected_and_clean() -> Result<(), Box<dyn Error>> {
         let directory = repository()?;
         let root = directory.path();
-        let child = tempfile::tempdir()?;
-        git(child.path(), &["init", "-q"])?;
-        fs::write(child.path().join("child.txt"), "one\n")?;
-        git(child.path(), &["add", "."])?;
-        git(child.path(), &["commit", "-qm", "child"])?;
-        let child_path = child.path().to_str().ok_or("child path")?.to_owned();
-        let added = Command::new("git")
-            .args([
-                "-c",
-                "user.name=Fixture",
-                "-c",
-                "user.email=fixture@example.invalid",
-                "-c",
-                "protocol.file.allow=always",
-                "submodule",
-                "add",
-                child_path.as_str(),
-                "sub",
-            ])
-            .current_dir(root)
-            .status()?;
-        if !added.success() {
-            // Submodule construction is not available in every environment.
-            return Ok(());
-        }
-        git(root, &["commit", "-qm", "add submodule"])?;
+        let child = repository()?;
+        add_submodule(root, child.path(), "sub")?;
         assert!(inspect_source_provenance(root)?.clean());
-        fs::write(root.join("sub/child.txt"), "two\n")?;
-        assert!(
-            inspect_source_provenance(root)?.dirty(),
-            "submodule dirtiness must be reported"
+        Ok(())
+    }
+
+    #[test]
+    fn concealed_nested_modification_is_rejected_for_each_flag() -> Result<(), Box<dyn Error>> {
+        for flag in ["--skip-worktree", "--assume-unchanged"] {
+            let directory = repository()?;
+            let root = directory.path();
+            let child = repository()?;
+            add_submodule(root, child.path(), "sub")?;
+            let child_root = root.join("sub");
+            fs::write(child_root.join("tracked.txt"), "two\n")?;
+            git(&child_root, &["update-index", flag, "tracked.txt"])?;
+            assert_eq!(
+                inspect_source_provenance(root),
+                Err(SourceProvenanceError::NestedConcealed),
+                "{flag} must not conceal nested source"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn nested_untracked_ignored_and_output_content_is_not_neutral() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        let child = repository()?;
+        add_submodule(root, child.path(), "sub")?;
+        assert!(inspect_source_provenance(root)?.clean());
+        // Untracked nested source.
+        fs::write(root.join("sub/untracked.txt"), "x\n")?;
+        assert!(inspect_source_provenance(root)?.dirty());
+        fs::remove_file(root.join("sub/untracked.txt"))?;
+        // Ignored nested source is not concealed.
+        fs::create_dir_all(root.join("sub/generated"))?;
+        fs::write(root.join("sub/generated/source.txt"), "x\n")?;
+        assert!(inspect_source_provenance(root)?.dirty());
+        // The nested `.eqm/` tree is not the owning root's reserved output.
+        fs::create_dir_all(root.join("sub/.eqm"))?;
+        fs::write(root.join("sub/.eqm/one.json"), "{}")?;
+        assert!(inspect_source_provenance(root)?.dirty());
+        Ok(())
+    }
+
+    #[test]
+    fn nested_head_mismatch_is_rejected() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        let child = repository()?;
+        fs::write(child.path().join("tracked.txt"), "two\n")?;
+        git(child.path(), &["commit", "-qam", "second"])?;
+        add_submodule(root, child.path(), "sub")?;
+        // Move the populated child off its declared Gitlink commit.
+        git(&root.join("sub"), &["checkout", "-q", "HEAD~1"])?;
+        assert_eq!(
+            inspect_source_provenance(root),
+            Err(SourceProvenanceError::NestedHeadMismatch)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn uninitialized_nested_gitlink_is_unavailable() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        let head = Command::new("git")
+            .args(["rev-parse", "HEAD"])
+            .current_dir(root)
+            .output()?;
+        let head = String::from_utf8(head.stdout)?.trim().to_owned();
+        git(
+            root,
+            &[
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                &format!("160000,{head},sub"),
+            ],
+        )?;
+        git(root, &["commit", "-qm", "add uninitialized gitlink"])?;
+        assert_eq!(
+            inspect_source_provenance(root),
+            Err(SourceProvenanceError::NestedUnavailable)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nested_depth_is_traversed_and_concealed_grandchild_is_rejected() -> Result<(), Box<dyn Error>>
+    {
+        let directory = repository()?;
+        let root = directory.path();
+        let child = repository()?;
+        let grandchild = repository()?;
+        add_submodule(child.path(), grandchild.path(), "inner")?;
+        add_submodule(root, child.path(), "sub")?;
+        update_submodules_recursive(root)?;
+        assert!(inspect_source_provenance(root)?.clean());
+        let inner = root.join("sub/inner");
+        fs::write(inner.join("tracked.txt"), "two\n")?;
+        git(&inner, &["update-index", "--skip-worktree", "tracked.txt"])?;
+        assert_eq!(
+            inspect_source_provenance(root),
+            Err(SourceProvenanceError::NestedConcealed)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nested_traversal_bounds_are_typed_unavailable() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        let mut counted = InspectionState {
+            visited: BTreeSet::new(),
+            repositories: MAX_NESTED_REPOSITORIES,
+        };
+        assert_eq!(
+            inspect_repository(root, true, 0, &mut counted),
+            Err(SourceProvenanceError::NestedLimit)
+        );
+        let mut revisited = InspectionState {
+            visited: BTreeSet::from([root.canonicalize()?]),
+            repositories: 0,
+        };
+        assert_eq!(
+            inspect_repository(root, true, 0, &mut revisited),
+            Err(SourceProvenanceError::NestedLimit)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn root_clean_dirty_and_unconfigured_controls_are_preserved() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        assert!(inspect_source_provenance(root)?.clean());
+        fs::write(root.join("tracked.txt"), "two\n")?;
+        assert!(inspect_source_provenance(root)?.dirty());
+        let no_remote = tempfile::tempdir()?;
+        git(no_remote.path(), &["init", "-q"])?;
+        assert_eq!(
+            inspect_source_provenance(no_remote.path()),
+            Err(SourceProvenanceError::GitFailed)
         );
         Ok(())
     }

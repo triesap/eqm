@@ -862,6 +862,36 @@ pub(crate) mod tests {
         Ok(())
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn nested_concealed_source_cannot_produce_pass_or_conditional() -> Result<(), Box<dyn Error>> {
+        for flag in ["--skip-worktree", "--assume-unchanged"] {
+            let repository = release_fixture("pass", false, "signed_ci")?;
+            let root = repository.path();
+            let child = tempfile::tempdir()?;
+            fixture_git(child.path(), &["init", "-q"])?;
+            fs::write(child.path().join("child.txt"), "one\n")?;
+            fixture_git(child.path(), &["add", "child.txt"])?;
+            fixture_git(child.path(), &["commit", "-qm", "child"])?;
+            add_fixture_submodule(root, child.path(), "sub")?;
+            let child_root = root.join("sub");
+            fs::write(child_root.join("child.txt"), "two\n")?;
+            fixture_git(&child_root, &["update-index", flag, "child.txt"])?;
+            let parsed = release_invocation("pass")?;
+            let result = execute_with_authority(
+                parsed,
+                root,
+                "2026-08-08T12:00:00Z".parse()?,
+                &SyntheticSignedTrust,
+            );
+            assert!(
+                result.is_err(),
+                "{flag}: nested concealment must not authorize a release"
+            );
+        }
+        Ok(())
+    }
+
     fn release_invocation(name: &str) -> Result<ParsedCli, Box<dyn Error>> {
         let path = format!(".eqm/releases/{name}.generated.json");
         let ParseOutcome::Run(parsed) = parse([
@@ -1102,5 +1132,49 @@ pub(crate) mod tests {
         } else {
             Err("Git fixture command failed".into())
         }
+    }
+
+    #[cfg(unix)]
+    fn fixture_git(root: &Path, arguments: &[&str]) -> Result<(), Box<dyn Error>> {
+        if Command::new("git")
+            .args([
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.invalid",
+            ])
+            .args(arguments)
+            .current_dir(root)
+            .env("GIT_AUTHOR_DATE", "2026-08-08T00:00:00Z")
+            .env("GIT_COMMITTER_DATE", "2026-08-08T00:00:00Z")
+            .status()?
+            .success()
+        {
+            Ok(())
+        } else {
+            Err("Git fixture command failed".into())
+        }
+    }
+
+    #[cfg(unix)]
+    fn add_fixture_submodule(
+        parent: &Path,
+        source: &Path,
+        name: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        let source = source.to_str().ok_or("submodule source path")?;
+        fixture_git(
+            parent,
+            &[
+                "-c",
+                "protocol.file.allow=always",
+                "submodule",
+                "add",
+                source,
+                name,
+            ],
+        )?;
+        fixture_git(parent, &["commit", "-qm", &format!("add submodule {name}")])?;
+        Ok(())
     }
 }
