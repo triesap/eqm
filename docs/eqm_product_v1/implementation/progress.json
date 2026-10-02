@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S022",
+ "next_step": "S025",
  "implementation": "in_progress",
- "local_verification": "independent_check_passed_515_test_executions;runner_protocol_doctests_passed;RF39_RF40_isolated_defect_probes_confirmed",
+ "local_verification": "S022-R2_committed_verified_pending_acceptance;S025-R1_next",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -857,7 +857,7 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
+   "implementation_status": "implemented_verified_pending_acceptance",
    "supervisor_status": "changes_required_DEV010",
    "decision_status": "resolved_by_Codex_DEV008",
    "closure_report": "implementation/reports/S022.md",
@@ -883,9 +883,23 @@
     },
     {
      "id": "S022-R2",
-     "status": "pending",
-     "supervisor_status": "required_DEV010",
-     "commit_sha": null
+     "status": "complete",
+     "supervisor_status": "pending_acceptance",
+     "commit_sha": null,
+     "report": "implementation/reports/S022.md#corrective-checkpoint-s022-r2--confine-nested-source-inspection-dev-010-rf40",
+     "implementation_status": "committed_pending_acceptance",
+     "verification": [
+      "cargo test --locked -p eqm_application --lib source::",
+      "cargo test --locked -p eqm release_check::",
+      "cargo test --all-targets --locked -p eqm_application -p eqm",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     }
    ]
   },

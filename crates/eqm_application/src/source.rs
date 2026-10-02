@@ -313,6 +313,46 @@ struct InspectionState {
     repositories: usize,
 }
 
+/// Resolves one declared Gitlink path to a canonical directory confined strictly
+/// below the inspected canonical root.
+///
+/// Every path component below the inspected root must be a non-symlink
+/// directory (the final entry included), the path may not escape through `..`,
+/// and the canonicalized result must be a strict descendant of `canonical_root`.
+/// This runs before any child `git` invocation, so a symlinked or replaced
+/// ancestor cannot redirect nested inspection to an external repository.
+fn confined_child(
+    root: &Path,
+    canonical_root: &Path,
+    path: &Path,
+) -> Result<PathBuf, SourceProvenanceError> {
+    let mut current = root.to_path_buf();
+    let mut seen = false;
+    for component in path.components() {
+        let std::path::Component::Normal(name) = component else {
+            return Err(SourceProvenanceError::NestedUnavailable);
+        };
+        seen = true;
+        current.push(name);
+        let metadata = std::fs::symlink_metadata(&current)
+            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+        let file_type = metadata.file_type();
+        if file_type.is_symlink() || !file_type.is_dir() {
+            return Err(SourceProvenanceError::NestedUnavailable);
+        }
+    }
+    if !seen {
+        return Err(SourceProvenanceError::NestedUnavailable);
+    }
+    let canonical_child = current
+        .canonicalize()
+        .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
+    if canonical_child == canonical_root || !canonical_child.starts_with(canonical_root) {
+        return Err(SourceProvenanceError::NestedUnavailable);
+    }
+    Ok(canonical_child)
+}
+
 /// Inspects one repository root and every populated nested Gitlink recursively.
 ///
 /// `reserved` is true only for the owning inspected root, whose untracked or
@@ -333,8 +373,18 @@ fn inspect_repository(
     let canonical_root = root
         .canonicalize()
         .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
-    if !state.visited.insert(canonical_root) {
+    if !state.visited.insert(canonical_root.clone()) {
         return Err(SourceProvenanceError::NestedLimit);
+    }
+    // Confine every declared Gitlink path strictly below the inspected root
+    // before invoking parent status or any child Git. A symlinked or replaced
+    // ancestor/final entry cannot then redirect nested inspection to an
+    // external repository.
+    let mut children = Vec::new();
+    for (path, declared) in gitlink_entries(root)? {
+        let child = root.join(&path);
+        let canonical_child = confined_child(root, &canonical_root, &path)?;
+        children.push((child, declared, canonical_child));
     }
     if concealed_entries_present(root)? {
         return Err(if depth == 0 {
@@ -355,21 +405,12 @@ fn inspect_repository(
         ],
     )?;
     let mut dirty = status_has_dirty_content(&status, reserved);
-    for (path, declared) in gitlink_entries(root)? {
-        let child = root.join(&path);
-        let metadata = std::fs::symlink_metadata(&child)
-            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
-        if metadata.file_type().is_symlink() || !metadata.is_dir() {
-            return Err(SourceProvenanceError::NestedUnavailable);
-        }
+    for (child, declared, canonical_child) in children {
         // A populated submodule is its own repository root; an empty or
         // uninitialized directory would otherwise resolve to the parent root.
         let top = git_stdout(&child, &["rev-parse", "--show-toplevel"])
             .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
         let top = Path::new(&top)
-            .canonicalize()
-            .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
-        let canonical_child = child
             .canonicalize()
             .map_err(|_| SourceProvenanceError::NestedUnavailable)?;
         if top != canonical_child {
@@ -643,6 +684,104 @@ mod tests {
         let child = repository()?;
         add_submodule(root, child.path(), "sub")?;
         assert!(inspect_source_provenance(root)?.clean());
+        Ok(())
+    }
+
+    #[test]
+    fn nested_ingress_handles_spaces_and_newlines_in_gitlink_paths() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        // A spaced submodule name registers through the ordinary path.
+        let spaced = repository()?;
+        add_submodule(root, spaced.path(), "sub module")?;
+        assert!(inspect_source_provenance(root)?.clean());
+        // Git rejects a newline in a `.gitmodules` key, so the newline path is a
+        // populated nested repository bound by a direct index Gitlink entry.
+        let newline_name = "sub\nmodule";
+        let newline_root = root.join(newline_name);
+        fs::create_dir_all(&newline_root)?;
+        git(&newline_root, &["init", "-q"])?;
+        fs::write(newline_root.join("inner.txt"), "one\n")?;
+        git(&newline_root, &["add", "."])?;
+        git(&newline_root, &["commit", "-qm", "inner"])?;
+        let head = git_stdout(&newline_root, &["rev-parse", "HEAD"])?;
+        git(
+            root,
+            &[
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                &format!("160000,{head},{newline_name}"),
+            ],
+        )?;
+        git(root, &["commit", "-qm", "bind newline gitlink"])?;
+        assert!(
+            inspect_source_provenance(root)?.clean(),
+            "a populated nested repository with a newline in its path must inspect"
+        );
+        // A nested modification is still observed through the odd path name.
+        fs::write(root.join("sub\nmodule/untracked.txt"), "x\n")?;
+        assert!(inspect_source_provenance(root)?.dirty());
+        fs::remove_file(root.join("sub\nmodule/untracked.txt"))?;
+        assert!(inspect_source_provenance(root)?.clean());
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn intermediate_symlink_escape_is_rejected_before_child_git() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        // An external directory containing a populated nested repository.
+        let external = tempfile::tempdir()?;
+        let inner = external.path().join("sub");
+        fs::create_dir_all(&inner)?;
+        git(&inner, &["init", "-q"])?;
+        fs::write(inner.join("inner.txt"), "one\n")?;
+        git(&inner, &["add", "."])?;
+        git(&inner, &["commit", "-qm", "inner"])?;
+        let head = git_stdout(&inner, &["rev-parse", "HEAD"])?;
+        // The declared Gitlink path descends through a symlinked ancestor; the
+        // external child has a matching HEAD, so the only reason to reject is
+        // the confinement check, not a Gitlink mismatch.
+        std::os::unix::fs::symlink(external.path(), root.join("escape"))?;
+        git(
+            root,
+            &[
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                &format!("160000,{head},escape/sub"),
+            ],
+        )?;
+        assert_eq!(
+            inspect_source_provenance(root),
+            Err(SourceProvenanceError::NestedUnavailable)
+        );
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn final_symlink_escape_is_rejected_before_child_git() -> Result<(), Box<dyn Error>> {
+        let directory = repository()?;
+        let root = directory.path();
+        let external = repository()?;
+        let head = git_stdout(external.path(), &["rev-parse", "HEAD"])?;
+        std::os::unix::fs::symlink(external.path(), root.join("link"))?;
+        git(
+            root,
+            &[
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                &format!("160000,{head},link"),
+            ],
+        )?;
+        assert_eq!(
+            inspect_source_provenance(root),
+            Err(SourceProvenanceError::NestedUnavailable)
+        );
         Ok(())
     }
 

@@ -892,6 +892,47 @@ pub(crate) mod tests {
         Ok(())
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn nested_symlink_escape_cannot_authorize_a_release() -> Result<(), Box<dyn Error>> {
+        // The parent is dirty here, so this is deliberately a confinement
+        // control, not a claimed clean-release exploit: the escaped nested
+        // repository must surface as a typed unavailable inspection (Err),
+        // rather than only ordinary dirty content.
+        let repository = release_fixture("pass", false, "signed_ci")?;
+        let root = repository.path();
+        let external = tempfile::tempdir()?;
+        let inner = external.path().join("sub");
+        fs::create_dir_all(&inner)?;
+        fixture_git(&inner, &["init", "-q"])?;
+        fs::write(inner.join("inner.txt"), "one\n")?;
+        fixture_git(&inner, &["add", "inner.txt"])?;
+        fixture_git(&inner, &["commit", "-qm", "inner"])?;
+        let head = git_output(&inner, &["rev-parse", "HEAD"])?;
+        std::os::unix::fs::symlink(external.path(), root.join("escape"))?;
+        fixture_git(
+            root,
+            &[
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                &format!("160000,{head},escape/sub"),
+            ],
+        )?;
+        let parsed = release_invocation("pass")?;
+        let result = execute_with_authority(
+            parsed,
+            root,
+            "2026-08-08T12:00:00Z".parse()?,
+            &SyntheticSignedTrust,
+        );
+        assert!(
+            result.is_err(),
+            "a symlinked nested ancestor must not authorize a release"
+        );
+        Ok(())
+    }
+
     fn release_invocation(name: &str) -> Result<ParsedCli, Box<dyn Error>> {
         let path = format!(".eqm/releases/{name}.generated.json");
         let ParseOutcome::Run(parsed) = parse([
