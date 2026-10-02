@@ -11,7 +11,9 @@ record dependency model is implemented and verified (acceptance pending). Next
 eligible step: S027, then every ordered eligible S027-S043 before the S043
 independent integration review.
 
-Next every ordered eligible **S026–S043**, `pfc through EQM-P03`; independent
+Frontier: S022-R2 `9ecbe00`, S025-R1 `75eb084` and S026 `61e0200` are
+implemented and verified (acceptance pending). Remaining in this approved range:
+every ordered eligible **S027–S043**, `pfc through EQM-P03`; independent
 integration review at S043 before S044. Full MVP remains S211. No arbitrary
 commit-count or conversation-length stopping boundary.
 

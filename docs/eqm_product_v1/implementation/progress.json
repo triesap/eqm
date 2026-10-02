@@ -1025,7 +1025,7 @@
   {
    "id": "S026",
    "status": "complete",
-   "commit_sha": null,
+   "commit_sha": "61e02002dd82b324fb0935e101e064a1fad4a5b7",
    "report": "implementation/reports/S026.md",
    "verification": [
     "cargo test --locked -p eqm_domain record::",
