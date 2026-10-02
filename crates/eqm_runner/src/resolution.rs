@@ -395,58 +395,6 @@ mod tests {
     }
 
     #[test]
-    fn actual_executable_replacement_changes_identity_through_acquisition()
-    -> Result<(), Box<dyn Error>> {
-        // Mirrors the CLI repository-authority acquisition: a regular repository
-        // file is read with `fs::read` and hashed with `Sha256Digest::hash_content`.
-        let root = tempfile::tempdir()?;
-        let program = RepoPath::new("bin/runner")?;
-        let absolute = root.path().join(program.as_str());
-        std::fs::create_dir_all(absolute.parent().ok_or("program parent")?)?;
-        std::fs::write(&absolute, b"#!/bin/sh\nexit 0\n")?;
-        let definition = RunnerDefinition::new(
-            RunnerId::new("runner.tests")?,
-            Revision::new(1)?,
-            vec!["owner://team/platform".parse::<OwnerRef>()?],
-            RunnerBackend::Local,
-            RunnerProgram::Repository(program.clone()),
-            vec![ArgumentTemplate::SelectorJson],
-            None,
-            Vec::new(),
-            Vec::new(),
-            RunnerLimits::new(
-                DurationMillis::new(30_000)?,
-                PositiveCount::new(1_024)?,
-                None,
-            )?,
-            Vec::new(),
-            Extensions::default(),
-        )?;
-        let authority = |path: &std::path::Path| -> Result<_, Box<dyn Error>> {
-            Ok(RunnerResolutionAuthority {
-                id: RunnerId::new("runner.tests")?,
-                revision: Revision::new(1)?,
-                backends: BTreeSet::from([RunnerBackend::Local]),
-                repository_programs: BTreeMap::from([(
-                    program.clone(),
-                    Sha256Digest::hash_content(&std::fs::read(path)?),
-                )]),
-                backend_guarantees: BTreeMap::from([(RunnerBackend::Local, BTreeSet::new())]),
-                maximum_timeout: DurationMillis::new(30_000)?,
-                maximum_output_bytes: PositiveCount::new(1_024)?,
-                maximum_concurrency: PositiveCount::ONE,
-            })
-        };
-        let first = resolve_runner(&definition, &authority(&absolute)?)?;
-        // Replace the actual bytes on disk and re-observe the digest.
-        std::fs::write(&absolute, b"#!/bin/sh\nexit 1\n")?;
-        let second = resolve_runner(&definition, &authority(&absolute)?)?;
-        assert_ne!(first.identity_v2(), second.identity_v2());
-        assert_ne!(first.canonical_bytes(), second.canonical_bytes());
-        Ok(())
-    }
-
-    #[test]
     fn locked_program_identity_binds_locked_resolution_and_digest() -> Result<(), Box<dyn Error>> {
         let image: RepositoryIdentity = "https://registry.example/images/test".parse()?;
         let digest = Sha256Digest::hash_content(b"image");

@@ -294,8 +294,9 @@ pub(crate) fn canonical_runner_identity_v2(
 mod tests {
     use super::*;
     use eqm_domain::{
-        DurationMillis, ExtensionNamespace, OwnerRef, PositiveCount, RepoPath, Revision,
-        RunnerBackend, RunnerGuarantee, RunnerId, RunnerLimits, SecretProviderRef, SelectorText,
+        DurationMillis, EnvironmentName, ExtensionNamespace, OwnerRef, PositiveCount, RepoPath,
+        Revision, RunnerBackend, RunnerGuarantee, RunnerId, RunnerLimits, SecretProviderRef,
+        SelectorText,
     };
     use std::collections::{BTreeMap, BTreeSet};
     use std::error::Error;
@@ -362,31 +363,247 @@ mod tests {
         )?)
     }
 
-    #[test]
-    fn set_permutations_and_argv_order_are_bound() -> Result<(), Box<dyn Error>> {
-        let program = repository_program(eqm_domain::Sha256Digest::hash_content(b"runner"))?;
-        let forward = identity(&base_definition(false)?, &program, &BTreeSet::new())?;
-        let reversed = identity(&base_definition(true)?, &program, &BTreeSet::new())?;
-        assert_eq!(forward.bytes(), reversed.bytes());
+    /// Owned copy of every definition field so a single field can be changed in
+    /// isolation and rebuilt without disturbing the others.
+    struct Fields {
+        id: RunnerId,
+        revision: Revision,
+        owners: Vec<OwnerRef>,
+        backend: RunnerBackend,
+        program: RunnerProgram,
+        args: Vec<ArgumentTemplate>,
+        cwd: WorkingDirectoryTemplate,
+        environment: Vec<EnvironmentBinding>,
+        secrets: Vec<SecretBinding>,
+        limits: RunnerLimits,
+        guarantees: Vec<RunnerGuarantee>,
+        extensions: Extensions,
+    }
 
-        // Ordered argv is not a set: reversing it changes the identity.
-        let swapped = RunnerDefinition::new(
-            RunnerId::new("runner.tests")?,
+    fn fields(base: &RunnerDefinition) -> Fields {
+        Fields {
+            id: base.id().clone(),
+            revision: base.revision(),
+            owners: base.owners().iter().cloned().collect(),
+            backend: base.backend(),
+            program: base.program().clone(),
+            args: base.args().to_vec(),
+            cwd: base.cwd().clone(),
+            environment: base.environment().values().cloned().collect(),
+            secrets: base.secrets().values().cloned().collect(),
+            limits: base.limits(),
+            guarantees: base.guarantees().iter().cloned().collect(),
+            extensions: base.extensions().clone(),
+        }
+    }
+
+    impl Fields {
+        fn rebuild(self) -> Result<RunnerDefinition, Box<dyn Error>> {
+            Ok(RunnerDefinition::new(
+                self.id,
+                self.revision,
+                self.owners,
+                self.backend,
+                self.program,
+                self.args,
+                Some(self.cwd),
+                self.environment,
+                self.secrets,
+                self.limits,
+                self.guarantees,
+                self.extensions,
+            )?)
+        }
+    }
+
+    fn container_definition() -> Result<RunnerDefinition, Box<dyn Error>> {
+        Ok(RunnerDefinition::new(
+            RunnerId::new("runner.container")?,
             Revision::new(1)?,
             vec!["owner://team/platform".parse()?],
-            RunnerBackend::Local,
-            RunnerProgram::Repository(RepoPath::new("tools/test-runner")?),
-            vec![ArgumentTemplate::ResultPath, ArgumentTemplate::SelectorJson],
+            RunnerBackend::Container,
+            locked_program()?,
+            vec![ArgumentTemplate::SelectorJson],
             None,
             Vec::new(),
             Vec::new(),
             limits()?,
             Vec::new(),
             Extensions::default(),
-        )?;
+        )?)
+    }
+
+    fn locked_program() -> Result<RunnerProgram, Box<dyn Error>> {
+        Ok(RunnerProgram::Locked {
+            resolved: "https://registry.example/images/test".parse()?,
+            digest: eqm_domain::Sha256Digest::hash_content(b"image"),
+        })
+    }
+
+    #[test]
+    fn set_permutations_and_argv_order_are_bound() -> Result<(), Box<dyn Error>> {
+        let program = repository_program(eqm_domain::Sha256Digest::hash_content(b"runner"))?;
+        // Reversing only the owner and environment set supply order leaves the
+        // identity unchanged because both are semantic sets.
+        let forward = identity(&base_definition(false)?, &program, &BTreeSet::new())?;
+        let reversed = identity(&base_definition(true)?, &program, &BTreeSet::new())?;
+        assert_eq!(forward.bytes(), reversed.bytes());
+
+        // Ordered argv is not a set: reversing only the argv order, with every
+        // other field identical, changes the identity.
+        let base = base_definition(false)?;
+        let mut swapped_fields = fields(&base);
+        swapped_fields.args = vec![ArgumentTemplate::ResultPath, ArgumentTemplate::SelectorJson];
+        let swapped = swapped_fields.rebuild()?;
+        assert_eq!(swapped.owners(), base.owners());
+        assert_eq!(swapped.environment(), base.environment());
+        assert_eq!(swapped.secrets(), base.secrets());
+        assert_eq!(swapped.program(), base.program());
         assert_ne!(
             identity(&swapped, &program, &BTreeSet::new())?.bytes(),
-            identity(&base_definition(false)?, &program, &BTreeSet::new())?.bytes()
+            identity(&base, &program, &BTreeSet::new())?.bytes(),
+            "argv order must be bound while every other field stays identical"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn every_definition_field_family_changes_identity_in_isolation() -> Result<(), Box<dyn Error>> {
+        let program = repository_program(eqm_domain::Sha256Digest::hash_content(b"runner"))?;
+        let none = BTreeSet::new();
+        let base = base_definition(false)?;
+        let baseline = identity(&base, &program, &none)?.bytes().to_vec();
+        let changed = |definition: RunnerDefinition| -> Result<bool, Box<dyn Error>> {
+            Ok(identity(&definition, &program, &none)?.bytes() != baseline.as_slice())
+        };
+
+        let mut f = fields(&base);
+        f.id = RunnerId::new("runner.other")?;
+        assert!(changed(f.rebuild()?)?, "runner id must be bound");
+
+        let mut f = fields(&base);
+        f.revision = Revision::new(2)?;
+        assert!(changed(f.rebuild()?)?, "revision must be bound");
+
+        let mut f = fields(&base);
+        f.owners = vec!["owner://team/security".parse()?];
+        assert!(changed(f.rebuild()?)?, "owners must be bound");
+
+        let mut f = fields(&base);
+        f.backend = RunnerBackend::Container;
+        assert!(changed(f.rebuild()?)?, "backend must be bound");
+
+        let mut f = fields(&base);
+        f.program = RunnerProgram::Repository(RepoPath::new("tools/other-runner")?);
+        assert!(changed(f.rebuild()?)?, "declared program must be bound");
+
+        let mut f = fields(&base);
+        f.cwd = WorkingDirectoryTemplate::Repository(RepoPath::new("tools")?);
+        assert!(changed(f.rebuild()?)?, "cwd template must be bound");
+
+        let mut f = fields(&base);
+        f.environment = vec![
+            EnvironmentBinding::new(
+                EnvironmentName::new("LANG")?,
+                EnvironmentSource::CanonicalLocale,
+            )?,
+            EnvironmentBinding::new(
+                EnvironmentName::new("MODE")?,
+                EnvironmentSource::Literal(SelectorText::new("other")?),
+            )?,
+        ];
+        assert!(changed(f.rebuild()?)?, "environment value must be bound");
+
+        let mut f = fields(&base);
+        f.secrets = vec![SecretBinding::new(
+            EnvironmentName::new("TOKEN")?,
+            SecretProviderRef::new("secret://vault/token")?,
+        )];
+        assert!(changed(f.rebuild()?)?, "secret reference must be bound");
+
+        let mut f = fields(&base);
+        f.limits = RunnerLimits::new(
+            DurationMillis::new(31_000)?,
+            PositiveCount::new(1_024)?,
+            None,
+        )?;
+        assert!(changed(f.rebuild()?)?, "resource limits must be bound");
+
+        let mut f = fields(&base);
+        f.extensions = Extensions::new(BTreeMap::from([(
+            ExtensionNamespace::new("dev.equivalencematrix.extra")?,
+            ExtensionValue::String("x".into()),
+        )]))?;
+        assert!(changed(f.rebuild()?)?, "semantic extensions must be bound");
+
+        // Guarantees require a container backend; change only the guarantee
+        // collections on an otherwise identical container definition.
+        let container = container_definition()?;
+        let resolved_locked = ResolvedProgram::Locked {
+            resolved: "https://registry.example/images/test".parse()?,
+            digest: eqm_domain::Sha256Digest::hash_content(b"image"),
+        };
+        let container_baseline = identity(&container, &resolved_locked, &BTreeSet::new())?
+            .bytes()
+            .to_vec();
+        let mut f = fields(&container);
+        f.guarantees = vec![RunnerGuarantee::NetworkDenied];
+        assert_ne!(
+            identity(
+                &f.rebuild()?,
+                &resolved_locked,
+                &BTreeSet::from([RunnerGuarantee::NetworkDenied])
+            )?
+            .bytes(),
+            container_baseline.as_slice(),
+            "guarantees must be bound"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nested_extension_tags_and_order_are_bound() -> Result<(), Box<dyn Error>> {
+        let program = repository_program(eqm_domain::Sha256Digest::hash_content(b"runner"))?;
+        let with_extension = |value: ExtensionValue| -> Result<_, Box<dyn Error>> {
+            let mut f = fields(&base_definition(false)?);
+            f.extensions = Extensions::new(BTreeMap::from([(
+                ExtensionNamespace::new("dev.equivalencematrix.extra")?,
+                value,
+            )]))?;
+            f.rebuild()
+        };
+        let nested = ExtensionValue::Array(vec![
+            ExtensionValue::Integer(i64::MIN),
+            ExtensionValue::String("1".into()),
+            ExtensionValue::Object(BTreeMap::from([(
+                eqm_domain::ExtensionKey::new("inner")?,
+                ExtensionValue::Boolean(true),
+            )])),
+        ]);
+        let canonical =
+            canonical_runner_identity_v2(&with_extension(nested)?, &program, &BTreeSet::new())?;
+        let projected: serde_json::Value = serde_json::from_slice(canonical.bytes())?;
+        assert_eq!(
+            projected["definition"]["extensions"]["dev.equivalencematrix.extra"],
+            json!({
+                "type": "array",
+                "value": [
+                    {"type": "integer", "value": "-9223372036854775808"},
+                    {"type": "string", "value": "1"},
+                    {"type": "object", "value": {"inner": {"type": "boolean", "value": true}}}
+                ]
+            })
+        );
+
+        // Extension arrays are ordered: reversing nested members changes identity.
+        let reversed = ExtensionValue::Array(vec![
+            ExtensionValue::String("1".into()),
+            ExtensionValue::Integer(i64::MIN),
+        ]);
+        assert_ne!(
+            canonical.bytes(),
+            canonical_runner_identity_v2(&with_extension(reversed)?, &program, &BTreeSet::new())?
+                .bytes()
         );
         Ok(())
     }
@@ -647,6 +864,37 @@ mod tests {
             &BTreeSet::from([RunnerGuarantee::IsolatedProcess]),
         )?;
         assert_ne!(without.digest(), with.digest());
+        Ok(())
+    }
+
+    #[test]
+    fn each_semantic_set_family_permutes_independently() -> Result<(), Box<dyn Error>> {
+        let program = repository_program(eqm_domain::Sha256Digest::hash_content(b"runner"))?;
+        // Owners and environment are supplied in opposite orders through the
+        // domain constructors; both are semantic sets and must hash equally.
+        assert_eq!(
+            identity(&base_definition(false)?, &program, &BTreeSet::new())?.bytes(),
+            identity(&base_definition(true)?, &program, &BTreeSet::new())?.bytes()
+        );
+        // Secret references are a semantic set: opposite supply order is equal.
+        let base = base_definition(false)?;
+        let secret = |name: &str, provider: &str| -> Result<SecretBinding, Box<dyn Error>> {
+            Ok(SecretBinding::new(
+                EnvironmentName::new(name)?,
+                SecretProviderRef::new(provider)?,
+            ))
+        };
+        let a = secret("ALPHA", "secret://vault/alpha")?;
+        let b = secret("BETA", "secret://vault/beta")?;
+        let order = |first: &SecretBinding, second: &SecretBinding| -> Result<_, Box<dyn Error>> {
+            let mut f = fields(&base);
+            f.secrets = vec![first.clone(), second.clone()];
+            f.rebuild()
+        };
+        assert_eq!(
+            identity(&order(&a, &b)?, &program, &BTreeSet::new())?.bytes(),
+            identity(&order(&b, &a)?, &program, &BTreeSet::new())?.bytes()
+        );
         Ok(())
     }
 }

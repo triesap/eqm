@@ -455,6 +455,56 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn runner_authority_binds_actual_repository_bytes_before_and_after_replacement()
+    -> Result<(), Box<dyn Error>> {
+        use eqm_domain::{
+            ArgumentTemplate, DurationMillis, Extensions, PositiveCount, RepoPath, Revision,
+            RunnerBackend, RunnerDefinition, RunnerId, RunnerLimits, RunnerProgram,
+        };
+
+        let directory = tempfile::tempdir()?;
+        let root = directory.path();
+        let relative = "bin/runner";
+        let absolute = root.join(relative);
+        fs::create_dir_all(absolute.parent().ok_or("program parent")?)?;
+        fs::write(&absolute, b"#!/bin/sh\nexit 0\n")?;
+        let definition = RunnerDefinition::new(
+            RunnerId::new("runner.tests")?,
+            Revision::new(1)?,
+            vec!["owner://team/platform".parse()?],
+            RunnerBackend::Local,
+            RunnerProgram::Repository(RepoPath::new(relative)?),
+            vec![ArgumentTemplate::SelectorJson],
+            None,
+            Vec::new(),
+            Vec::new(),
+            RunnerLimits::new(
+                DurationMillis::new(30_000)?,
+                PositiveCount::new(1_024)?,
+                None,
+            )?,
+            Vec::new(),
+            Extensions::default(),
+        )?;
+
+        // Actual production acquisition plus resolution, holding the definition
+        // and authority context identical and replacing only the real bytes on
+        // disk between observations.
+        let first = resolve_runner(&definition, &runner_authority(root, &definition)?)?;
+        fs::write(&absolute, b"#!/bin/sh\nexit 1\n")?;
+        let second = resolve_runner(&definition, &runner_authority(root, &definition)?)?;
+        assert_ne!(first.identity_v2(), second.identity_v2());
+        assert_ne!(first.canonical_bytes(), second.canonical_bytes());
+
+        // A non-regular repository executable is refused by acquisition.
+        fs::remove_file(&absolute)?;
+        std::os::unix::fs::symlink(root.join("missing"), &absolute)?;
+        assert!(runner_authority(root, &definition).is_err());
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn fake_runner_writes_one_valid_immutable_result() -> Result<(), Box<dyn Error>> {
         use std::os::unix::fs::PermissionsExt as _;
 
