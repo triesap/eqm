@@ -236,6 +236,7 @@ name = "eqm_domain"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "eqm_test_support",
  "sha2",
  "unicode-normalization",
 ]
@@ -284,6 +285,7 @@ name = "eqm_protocol"
 version = "0.1.0"
 dependencies = [
  "eqm_domain",
+ "eqm_test_support",
  "jsonschema",
  "regex-lite",
  "schemars",

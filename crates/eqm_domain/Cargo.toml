@@ -15,5 +15,8 @@ chrono.workspace = true
 sha2.workspace = true
 unicode-normalization.workspace = true
 
+[dev-dependencies]
+eqm_test_support = { path = "../eqm_test_support", version = "=0.1.0" }
+
 [lints]
 workspace = true

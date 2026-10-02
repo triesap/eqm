@@ -16,6 +16,8 @@ pub mod clock;
 pub mod error;
 /// Deterministic synthetic evidence helpers.
 pub mod evidence;
+/// Shared cross-domain provenance regression corpus.
+pub mod provenance;
 /// Deterministic exact subject builders.
 pub mod subject;
 /// Normative representation and rule vectors frozen by ADR-0013.
@@ -29,6 +31,11 @@ pub use error::FixtureError;
 pub use evidence::{
     attempt, counts, execution_payload, failing_counts, failing_execution, manual_review,
     passing_counts, passing_execution, profile_selection, timed_out_execution, unstable_execution,
+};
+pub use provenance::{
+    EvidenceAxis, RecordHistoryOutcome, RecordHistoryVector, STANDARD_EVIDENCE_SEMANTIC_BYTES,
+    STANDARD_EVIDENCE_SEMANTIC_DIGEST, mutate_axis, record_history_vectors,
+    standard_evidence_record,
 };
 pub use subject::{
     FIXTURE_COMMIT, FIXTURE_REPOSITORY, SubjectBuilder, provider_subject, target_set_subject,

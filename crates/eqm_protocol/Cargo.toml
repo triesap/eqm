@@ -18,6 +18,7 @@ serde_json_canonicalizer.workspace = true
 schemars.workspace = true
 
 [dev-dependencies]
+eqm_test_support = { path = "../eqm_test_support", version = "=0.1.0" }
 regex-lite.workspace = true
 # Exact-pinned Draft 2020-12 conformance validator for the protocol schema
 # tests. `default-features = false` disables resolve-http/resolve-file and the

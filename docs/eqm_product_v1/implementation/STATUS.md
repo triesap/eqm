@@ -6,11 +6,14 @@ preserved. S025 typed identities/chronology and S026 registry checks are retaine
 contributions. S025-R2 adds real prepared-session projection-to-admission and
 temporal-matrix evidence for RF43 (acceptance pending). S026-R1 adds explicit
 definition-history ordering with the two historical deployment-input edges and
-canonical sorted references for RF42 (acceptance pending). RF44 final-tree
-gating and authority context are reconciled in current planning; implementation
-receipts must prove final trees, including reports/ledger.
+canonical sorted references for RF42 (acceptance pending). S027 adds a shared
+deterministic cross-domain provenance corpus with literal raw/semantic oracles,
+bound-axis mutation controls and real-loader component identity controls
+(acceptance pending). RF44 final-tree gating and authority context are reconciled
+in current planning; implementation receipts must prove final trees, including
+reports/ledger.
 
-Next **every ordered S027–S043**, pfc through EQM-P03.
+Next **every ordered S028–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly
