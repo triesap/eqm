@@ -67,6 +67,13 @@ fn duplicate_findings(
         let id = value.id().as_str();
         (format!("target:{id}"), format!("target:{id}"))
     }));
+    entries.extend(input.source_components.iter().map(|value| {
+        let id = value.id().as_str();
+        (
+            format!("source_component:{id}"),
+            format!("source_component:{id}"),
+        )
+    }));
     entries.extend(input.bindings.iter().map(|value| {
         let id = value.id().as_str();
         (format!("binding:{id}"), format!("binding:{id}"))
@@ -156,6 +163,11 @@ fn dangling_findings(
         )
         .collect();
     let target_ids: BTreeSet<_> = graph.targets().keys().map(|id| id.as_str()).collect();
+    let source_component_ids: BTreeSet<_> = graph
+        .source_components()
+        .keys()
+        .map(|id| id.as_str())
+        .collect();
     let profile_ids: BTreeSet<_> = graph.profiles().keys().map(|(id, _)| id.as_str()).collect();
     let policy_ids: BTreeSet<_> = graph.policies().keys().map(|(id, _)| id.as_str()).collect();
     let runner_ids: BTreeSet<_> = graph.runners().keys().map(|(id, _)| id.as_str()).collect();
@@ -428,9 +440,146 @@ fn dangling_findings(
             EvidenceScopeSubject::Provider(_) => {}
         }
     }
+    for target in graph.targets().values() {
+        let owner = format!("target:{}", target.id());
+        for component in target.source_components() {
+            require(
+                source_component_ids.contains(component.as_str()),
+                &owner,
+                "source component",
+                component.as_str(),
+                sources,
+                &mut findings,
+            )?;
+        }
+        for dependency in target.depends_on() {
+            require(
+                target_ids.contains(dependency.as_str()),
+                &owner,
+                "target",
+                dependency.as_str(),
+                sources,
+                &mut findings,
+            )?;
+        }
+    }
+    for component in graph.source_components().values() {
+        let owner = format!("source_component:{}", component.id());
+        for dependency in component.dependencies() {
+            require(
+                source_component_ids.contains(dependency.as_str()),
+                &owner,
+                "source component",
+                dependency.as_str(),
+                sources,
+                &mut findings,
+            )?;
+        }
+    }
+    findings.extend(dependency_cycles(graph, sources)?);
     findings.sort();
     findings.dedup();
     Ok(findings)
+}
+
+/// Reports every node still participating in a source-component or target
+/// dependency cycle. Kahn's algorithm is deterministic over the sorted
+/// authority keys.
+fn dependency_cycles(
+    graph: &WorkspaceGraph,
+    sources: &BTreeMap<Box<str>, RepoPath>,
+) -> Result<Vec<Diagnostic>, ResolutionError> {
+    let mut findings = Vec::new();
+    for node in cyclic_nodes(
+        &graph
+            .source_components()
+            .values()
+            .map(|component| {
+                (
+                    component.id().as_str(),
+                    component
+                        .dependencies()
+                        .iter()
+                        .map(eqm_domain::SourceComponentId::as_str)
+                        .collect(),
+                )
+            })
+            .collect(),
+    ) {
+        findings.push(diagnostic(
+            302,
+            format!("source-component dependency cycle includes `{node}`"),
+            Some(&format!("source_component:{node}")),
+            std::iter::empty(),
+            sources,
+        )?);
+    }
+    for node in cyclic_nodes(
+        &graph
+            .targets()
+            .values()
+            .map(|target| {
+                (
+                    target.id().as_str(),
+                    target.depends_on().iter().map(|id| id.as_str()).collect(),
+                )
+            })
+            .collect(),
+    ) {
+        findings.push(diagnostic(
+            302,
+            format!("target dependency cycle includes `{node}`"),
+            Some(&format!("target:{node}")),
+            std::iter::empty(),
+            sources,
+        )?);
+    }
+    Ok(findings)
+}
+
+/// Returns the sorted keys that remain after a topological peel, i.e. every
+/// node caught in or downstream of a directed cycle.
+fn cyclic_nodes(nodes: &BTreeMap<&str, Vec<&str>>) -> Vec<String> {
+    let mut indegree: BTreeMap<&str, usize> = nodes.keys().map(|key| (*key, 0_usize)).collect();
+    let mut adjacency: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for (node, dependencies) in nodes {
+        let mut kept = Vec::new();
+        for dependency in dependencies {
+            if let Some(entry) = indegree.get_mut(dependency) {
+                *entry += 1;
+                kept.push(*dependency);
+            }
+        }
+        adjacency.insert(*node, kept);
+    }
+    let mut queue: Vec<&str> = indegree
+        .iter()
+        .filter(|(_, count)| **count == 0)
+        .map(|(key, _)| *key)
+        .collect();
+    queue.sort_unstable();
+    let mut remaining = nodes.len();
+    while let Some(node) = queue.pop() {
+        remaining -= 1;
+        for next in adjacency.get(node).into_iter().flatten() {
+            if let Some(entry) = indegree.get_mut(next) {
+                *entry -= 1;
+                if *entry == 0 {
+                    queue.push(next);
+                }
+            }
+        }
+    }
+    if remaining == 0 {
+        return Vec::new();
+    }
+    let mut cyclic: Vec<String> = indegree
+        .iter()
+        .filter(|(_, count)| **count > 0)
+        .map(|(key, _)| (*key).to_owned())
+        .collect();
+    cyclic.sort();
+    cyclic
 }
 
 fn require(

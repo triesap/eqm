@@ -64,6 +64,8 @@ pub struct WorkspaceGraphInput {
     pub fragments: Vec<Fragment>,
     /// Workspace target authorities.
     pub targets: Vec<Target>,
+    /// Shared source-component authorities.
+    pub source_components: Vec<SourceComponent>,
     /// Target-to-unit bindings.
     pub bindings: Vec<Binding>,
     /// Exact policy revisions.
@@ -95,6 +97,7 @@ pub struct WorkspaceGraph {
     surfaces: BTreeMap<SurfaceId, Surface>,
     fragments: BTreeMap<(FragmentId, Revision), Fragment>,
     targets: BTreeMap<TargetId, Target>,
+    source_components: BTreeMap<SourceComponentId, SourceComponent>,
     bindings: BTreeMap<BindingId, Binding>,
     binding_coordinates: BTreeMap<(TargetId, crate::UnitId), BindingId>,
     policies: BTreeMap<(PolicyId, Revision), Policy>,
@@ -122,6 +125,8 @@ impl WorkspaceGraph {
         .map_err(|()| WorkspaceGraphBuildError::DuplicateFragment)?;
         let targets = unique_index(input.targets, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateTarget)?;
+        let source_components = unique_index(input.source_components, |value| value.id().clone())
+            .map_err(|()| WorkspaceGraphBuildError::DuplicateSourceComponent)?;
         let bindings = unique_index(input.bindings, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateBinding)?;
         let mut binding_coordinates = BTreeMap::new();
@@ -170,6 +175,7 @@ impl WorkspaceGraph {
             surfaces,
             fragments,
             targets,
+            source_components,
             bindings,
             binding_coordinates,
             policies,
@@ -207,6 +213,11 @@ impl WorkspaceGraph {
     #[must_use]
     pub const fn targets(&self) -> &BTreeMap<TargetId, Target> {
         &self.targets
+    }
+    /// Returns source components in authority-ID order.
+    #[must_use]
+    pub const fn source_components(&self) -> &BTreeMap<SourceComponentId, SourceComponent> {
+        &self.source_components
     }
     /// Returns bindings in authority-ID order.
     #[must_use]
@@ -276,6 +287,7 @@ impl WorkspaceGraph {
             surfaces: self.surfaces.into_values().collect(),
             fragments: self.fragments.into_values().collect(),
             targets: self.targets.into_values().collect(),
+            source_components: self.source_components.into_values().collect(),
             bindings: self.bindings.into_values().collect(),
             policies: self.policies.into_values().collect(),
             profiles: self.profiles.into_values().collect(),
@@ -336,6 +348,8 @@ pub enum WorkspaceGraphBuildError {
     DuplicateFragment,
     /// Target ID repeated.
     DuplicateTarget,
+    /// Source-component authority ID repeated.
+    DuplicateSourceComponent,
     /// Binding authority ID repeated.
     DuplicateBinding,
     /// More than one binding claimed a target/unit pair.

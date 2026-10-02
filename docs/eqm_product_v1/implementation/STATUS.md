@@ -14,11 +14,13 @@ projected into the target v2 identity only when present, leaving legacy targets
 and the v1 projection unchanged (acceptance pending). S029 adds shared
 source-component authorities and canonical target source-component/dependency
 ID sets in the target v2 identity, with domain-only registry validation
-(acceptance pending). RF44 final-tree gating and authority context are reconciled
-in current planning; implementation receipts must prove final trees, including
-reports/ledger.
+(acceptance pending). S030 indexes source components in the workspace graph and
+resolves source-component and target dependencies deterministically, rejecting
+missing or cyclic references at graph preparation (acceptance pending). RF44
+final-tree gating and authority context are reconciled in current planning;
+implementation receipts must prove final trees, including reports/ledger.
 
-Next **every ordered S030–S043**, pfc through EQM-P03.
+Next **every ordered S031–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly

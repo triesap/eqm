@@ -57,3 +57,200 @@ fn resolution_diagnostic_registry_is_complete_and_sorted() -> Result<(), Box<dyn
     assert_eq!(registry[5].code.to_string(), "EQM-E0305");
     Ok(())
 }
+
+use eqm_domain::{
+    Extensions, FrameworkId, OwnerRef, PlatformId, RepoPath, SourceComponent, SourceComponentId,
+    Target, TargetId, WorkspaceGraphInput,
+};
+use std::collections::BTreeMap;
+use std::str::FromStr;
+
+fn owner() -> Result<OwnerRef, Box<dyn Error>> {
+    Ok(OwnerRef::from_str("owner://team/shared")?)
+}
+
+fn component(
+    id: &str,
+    roots: &[&str],
+    dependencies: &[&str],
+) -> Result<SourceComponent, Box<dyn Error>> {
+    Ok(SourceComponent::new(
+        SourceComponentId::new(id)?,
+        roots
+            .iter()
+            .map(|root| RepoPath::new(*root))
+            .collect::<Result<Vec<_>, _>>()?,
+        vec![owner()?],
+        dependencies
+            .iter()
+            .map(|dependency| SourceComponentId::new(*dependency))
+            .collect::<Result<Vec<_>, _>>()?,
+        Extensions::default(),
+    )?)
+}
+
+fn target(id: &str, components: &[&str], depends_on: &[&str]) -> Result<Target, Box<dyn Error>> {
+    let target = Target::new(
+        TargetId::new(id)?,
+        RepoPath::new("apps/target")?,
+        PlatformId::new("kmp")?,
+        FrameworkId::new("compose")?,
+        vec![owner()?],
+        Extensions::default(),
+    )?;
+    let target = target.with_source_components(
+        components
+            .iter()
+            .map(|component| SourceComponentId::new(*component))
+            .collect::<Result<Vec<_>, _>>()?,
+    )?;
+    Ok(target.with_depends_on(
+        depends_on
+            .iter()
+            .map(|dependency| TargetId::new(*dependency))
+            .collect::<Result<Vec<_>, _>>()?,
+    )?)
+}
+
+fn input(components: Vec<SourceComponent>, targets: Vec<Target>) -> WorkspaceGraphInput {
+    WorkspaceGraphInput {
+        source_components: components,
+        targets,
+        ..WorkspaceGraphInput::default()
+    }
+}
+
+#[test]
+fn shared_source_dependency_dag_resolves() -> Result<(), Box<dyn Error>> {
+    let graph = resolve_graph(
+        input(
+            vec![
+                component("shared.base", &["shared/base"], &[])?,
+                component("shared.kmp", &["shared/kmp"], &["shared.base"])?,
+            ],
+            vec![
+                target("android", &["shared.kmp"], &[])?,
+                target("ios", &["shared.kmp"], &["android"])?,
+            ],
+        ),
+        &BTreeMap::new(),
+    )?;
+    assert_eq!(graph.source_components().len(), 2);
+    assert_eq!(
+        graph
+            .targets()
+            .get(&TargetId::new("android")?)
+            .and_then(|target| target.source_components().iter().next())
+            .map(SourceComponentId::as_str),
+        Some("shared.kmp")
+    );
+    Ok(())
+}
+
+#[test]
+fn missing_source_component_is_stable() -> Result<(), Box<dyn Error>> {
+    let first = resolve_graph(
+        input(vec![], vec![target("android", &["shared.absent"], &[])?]),
+        &BTreeMap::new(),
+    )
+    .err()
+    .ok_or("missing component accepted")?;
+    assert_eq!(first.diagnostics()[0].code().to_string(), "EQM-E0301");
+    let second = resolve_graph(
+        input(vec![], vec![target("android", &["shared.absent"], &[])?]),
+        &BTreeMap::new(),
+    )
+    .err()
+    .ok_or("missing component accepted")?;
+    assert_eq!(first.diagnostics(), second.diagnostics());
+    Ok(())
+}
+
+#[test]
+fn missing_component_dependency_is_stable() -> Result<(), Box<dyn Error>> {
+    let error = resolve_graph(
+        input(
+            vec![component(
+                "shared.kmp",
+                &["shared/kmp"],
+                &["shared.absent"],
+            )?],
+            vec![],
+        ),
+        &BTreeMap::new(),
+    )
+    .err()
+    .ok_or("missing dependency accepted")?;
+    assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0301");
+    Ok(())
+}
+
+#[test]
+fn component_dependency_cycle_reports_a_stable_diagnostic() -> Result<(), Box<dyn Error>> {
+    let error = resolve_graph(
+        input(
+            vec![
+                component("shared.a", &["shared/a"], &["shared.b"])?,
+                component("shared.b", &["shared/b"], &["shared.a"])?,
+            ],
+            vec![],
+        ),
+        &BTreeMap::new(),
+    )
+    .err()
+    .ok_or("component cycle accepted")?;
+    assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0302");
+    let first = error.diagnostics().to_vec();
+    let second = resolve_graph(
+        input(
+            vec![
+                component("shared.a", &["shared/a"], &["shared.b"])?,
+                component("shared.b", &["shared/b"], &["shared.a"])?,
+            ],
+            vec![],
+        ),
+        &BTreeMap::new(),
+    )
+    .err()
+    .ok_or("component cycle accepted")?
+    .diagnostics()
+    .to_vec();
+    assert_eq!(first, second);
+    Ok(())
+}
+
+#[test]
+fn target_dependency_cycle_reports_a_stable_diagnostic() -> Result<(), Box<dyn Error>> {
+    let error = resolve_graph(
+        input(
+            vec![],
+            vec![
+                target("android", &[], &["ios"])?,
+                target("ios", &[], &["android"])?,
+            ],
+        ),
+        &BTreeMap::new(),
+    )
+    .err()
+    .ok_or("target cycle accepted")?;
+    assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0302");
+    Ok(())
+}
+
+#[test]
+fn duplicate_source_component_authority_rejects() -> Result<(), Box<dyn Error>> {
+    let error = resolve_graph(
+        input(
+            vec![
+                component("shared.kmp", &["shared/a"], &[])?,
+                component("shared.kmp", &["shared/b"], &[])?,
+            ],
+            vec![],
+        ),
+        &BTreeMap::new(),
+    )
+    .err()
+    .ok_or("duplicate component accepted")?;
+    assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0300");
+    Ok(())
+}
