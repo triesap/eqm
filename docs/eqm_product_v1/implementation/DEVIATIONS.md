@@ -173,3 +173,15 @@ criteria and dependency order remain. Next batch through S043, independent
 model/schema/identity review before S044; full MVP S211 unchanged. Representation
 allocation is frozen before new code; no owner-only question, policy waiver, v1
 wire rewrite, operational activation or product implementation by Codex.
+
+## DEV-010 — Independent provenance acceptance and remaining range
+
+Codex, 2026-10-02, reviewed source `49541e3`. Retain all six returned commits;
+accept S019/S021/S023/S024 for allocated scope, preserve earlier acceptance.
+RF38/RF39 require S025-R1 typed context and cross-retry chronology; RF40 requires
+S022-R2 ancestor/canonical confinement before nested Git. The sole governing
+sequence above freezes the mechanics and two separate green repairs before
+S026–S043. No step renumbering, original acceptance change, v1 narrowing, policy
+waiver or external mutation. Independent standard/doctest checks pass; isolated
+probes establish the defects. S043 remains the independent integration boundary;
+full S211 MVP and all original gates remain. See reports/CODEX-49541e3.md.

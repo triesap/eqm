@@ -1,34 +1,24 @@
 # Verification and implementation status
 
-DEV-009, reviewed source `d6261c4c0c3fdcc082d8d7902642d364b687d7af`.
-S001–S018 and S020 accepted for allocated scope (19 numbered steps); prior acceptance
-is preserved. Six new commits retained: dependency repair, S019-R3, S021-R1, S022,
-S023 and S024. DEV008-P1/RF31 accepted; direct pins unchanged. Remaining corrections
-are not discarded implementation: S019 literal oracle, S021 actual acquisition proof,
-S022 nested concealment, S023 raw/lossless-v2 identity and S024 lineage relationships.
+DEV-010 reviewed source `49541e36942bc0649be59a065479e559fc34e1cd`.
+S001–S021 plus S023/S024, are accepted for allocated scope:
+23 numbered steps (S001–S018/S020 prior acceptance preserved, S019/S021/
+S023/S024 accepted now). S022 recursive concealment repair is retained, RF40
+confinement remains. S025 checked admission is retained, RF38 typed context and
+RF39 retry chronology remain. New repairs: S022-R2 then S025-R1.
 
-S019-R4, S021-R2, S022-R1, S023-R1, S024-R1 and S025 are committed pending
-acceptance. S025 adds the protocol `admit_evidence` boundary: explicit lineage,
-declared execution and an independently supplied `EvidenceAdmissionContext`,
-`id == result_digest == recomputed semantic identity`, subject/scope/target/unit/
-requirement/facet/digest/profile/provider-reference cross-checks, payload
-runtime/release references, and RA02 count/outcome consistency, before
-constructing the private-field `AdmittedEvidenceV2`.
+Next every ordered eligible **S026–S043**, `pfc through EQM-P03`; independent
+integration review at S043 before S044. Full MVP remains S211. No arbitrary
+commit-count or conversation-length stopping boundary.
 
-Next **S026–S043**, `pfc through EQM-P03`. Independent integration review at S043
-precedes S044 routing.
-Full governing MVP remains S211. P01 complete; P02 seven complete accepted steps,
-five retained steps require corrections; later cycles pending. Cursor/acceptance
-states are distinct and earlier SHAs retained, S024 backfilled.
+Independent current-source standard check: exit 0, 515 successful test executions.
+Runner/protocol positive and compile-fail doctests passed. Isolated source-revision
+probes demonstrate reversed retry chronology admitted and symlinked ancestor
+escape traversed; the latter returns dirty, not a clean-release bypass. No product
+code changed by Codex. See [review](reports/CODEX-49541e3.md).
 
-Independent source standard gate passed (489 successful test executions), runner
-positive/compile-fail doctests passed, fresh deny and audit passed. Isolated probes
-confirmed unrelated raw bytes accepted, neighboring large attachment sizes sharing
-a semantic hash and concealed modified submodule source reported clean. See
-[review](reports/CODEX-d6261c4.md). No product code changed by the supervisor.
-
-No release readiness. Full verify/Linux/extended/live product/crypto/host/signing/
-operational acceptance remains unverified. Q02/Q06 real host/cohort evidence does
-not block synthetic graph/schema software implementation but is not established
-by it. Q01–Q15 and all original acceptance/regression obligations remain at owning
-dependencies. No optional-native activation or publication/deployment authority.
+No release readiness or human release-testing gate reached. Full verify/Linux/
+extended/live product/crypto/host/signing/operational acceptance remains unverified.
+Audit/deny was not rerun this review; prior receipts are historical. Q01–Q15 and
+original R/AC/RA remain at owning dependencies; Q02/Q06 real host/cohort evidence
+is not established by synthetic software and does not blanket-block it.

@@ -1,5 +1,108 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-010 — Accept repaired provenance and finish the P03 implementation range
+
+**Date/author:** 2026-10-02, Codex under owner delegation.
+**Reviewed source:** `49541e36942bc0649be59a065479e559fc34e1cd`.
+[Independent review](reports/CODEX-49541e3.md) accepts S019/S021/S023/S024 for
+allocated scope and preserves earlier acceptance: 23 numbered steps accepted.
+S022's recursive concealment fix is accepted as a contribution, but RF40 remains;
+S025's checked admission is retained with RF38/RF39 corrections required.
+All six returned commits remain. S026–S043 were not implemented. No whole
+requirement, release readiness or external fact is accepted by association.
+
+Execute **S022-R2 → S025-R1 → every ordered eligible S026–S043** using
+**pfc through EQM-P03**, endpoint S043 inclusive. Independent integration review
+before S044 remains a hard boundary; full MVP remains S211. This authorizes the
+entire 18-step implementation remainder plus two repairs, not a repair-only batch.
+Do not stop after a commit or small group of commits. Context growth or an
+estimated safe budget is not proof of a runtime limit: use supported native
+compaction/context management and retain the batch range. Report an actual
+forced limit precisely; never misstate a discretionary stop as observed exhaustion.
+Preserve user stops, genuine external blockers and required independent gates.
+No unresolved owner-only decision is needed for this allocated batch.
+
+### S022-R2 — confine recursive Gitlink inspection (RF40)
+
+Commit `fix: confine nested source inspection to declared roots`.
+Retain all accepted root/nested dirty/concealment/HEAD/ignored/unavailable controls.
+Before any child Git invocation, check every path component under the inspected
+root, rejecting a symlink/non-directory ancestor or final entry, and require the
+canonical child to be a strict descendant of the canonical inspected root.
+Keep NUL-safe path parsing, depth/repository limits, visited roots and typed
+non-authorizing errors. No network/init. Test normal nested source positively,
+final and intermediate symlink escape negatively, and path names with spaces and
+newlines at actual source ingress. Add a release-boundary negative control;
+a dirty parent is already non-authorizing, so do not claim a clean-release exploit.
+R19/R22/R30/R58 and existing S022 acceptance contributions remain unchanged.
+Run application/CLI owning tests, all standard/check/clippy/schema/structure/diff
+lanes before the separate commit.
+
+### S025-R1 — preserve typed identities and ordered temporal admission (RF38/RF39)
+
+Commit `fix: retain typed evidence context and validate retry chronology`.
+Use existing ContractDigest, BindingDigest, EvidenceSpecificationDigest,
+PolicySelectionDigest, RunnerDigest and AdapterDigest for their expected context
+fields and checked typed access. Also bind the expected TargetConfigurationDigest
+explicitly and verify its exact SHA equals the subject configuration field.
+Context identities originate from already approved canonical projection/acquisition
+APIs. Parse transport strings as structural SHA, compare with each typed expected
+identity's as_digest, then retain/expose the respective typed expectation in the
+private checked result. No public unchecked generic SHA cast, cross-type
+conversion, digest-string rehash, invented digest domain or v1 representation change.
+Runtime-facts/release/repository references without an existing distinct wrapper
+remain exact structural SHA references and must not be called newly typed domains.
+Legacy EvidenceResult generic fields may remain inside the checked wrapper for
+v1 compatibility; new v2 typed consumers must use the retained typed access.
+Execute positive projection-to-admission integration and compile-fail cross-domain
+context/accessor controls, including runner versus adapter and contract versus
+binding. Do not merely replace fixture plain hashes with unrelated constants.
+
+For execution-bearing v2 payloads, require each numbered retry start to be at or
+after the preceding retry finish; equal boundaries are allowed, comparisons retain
+nanoseconds. Validate individual windows and aggregate containment as before.
+Put this check at the new admission boundary (with a narrow helper if useful),
+preserving established v1 constructors/readers. Add positive sequential/equal/
+subsecond controls and reversed, overlapping and out-of-window negatives through
+real bytes-first admission after recomputing the semantic seal. Exercise every
+execution-bearing kind. Include complete one-axis context mutations: each subject
+axis, optional present/absent reference, core digest, profile revision/value,
+target-set membership, payload kind, unit/requirement/facet and temporal lineage.
+Mutable DTO convenience entry must revalidate; raw bytes and v2 forms remain exact.
+No new rule relating observed_at to execution finish is invented here; freshness
+and evaluation-time eligibility remain with their owning later steps.
+Counts are not retries or case-level mapping. Preserve mixed history and explicit
+non-success; checked structure/context does not establish trust or minimum credit.
+S059/S062–S066 still own complete case selection/count evaluation, RA02 remains
+open globally. S025/S059/S061 together still own full RA13 ingress integration.
+Run protocol/domain tests and doctests, all standard/check/clippy/schema/structure/
+diff lanes before this separate commit. No dependency/policy waiver is authorized.
+
+### Evidence reconciliation (RF41)
+
+In S022-R2's planning/report portion correct S021's claim of full failed-output
+retention: a successful retry overwrote the failed standard-gate destination;
+only an excerpt remains in native records. Do not fabricate/relabel an excerpt as
+an original full log. Use an exclusive unique attempt-numbered destination for
+EVERY command invocation (including generation, failed checks and final checks),
+record real process exits, and fail if a destination already exists. Keep every
+failure and retry; ordinary passing checks need not be repeated without changes.
+
+### Substantial continuation and single authority
+
+After the repairs continue S026/S027 then S028–S043 without another routine pause.
+The exact DEV-009 lifecycle and P03 field/kind/domain/source routing allocations
+below remain binding. Read only the active step and its owning source/contracts;
+keep compact durable progress and use native context management rather than
+re-reading all history. No intermediate arbitrary commit-count endpoint.
+Update progress/status/reports and sequence mirrors with exact implemented,
+verified and supervisor-accepted states and a single frontier. Backfill preceding
+commit SHAs. Historical receipts remain historical; do not mix an older supervisor
+revision with new independent claims. Preserve all 64 R/AC and 21 RA obligations,
+Q01–Q15, boundaries and original hard predecessors. Q02/Q06 actual host/cohort
+facts are still unverified; they do not block synthetic P03 software work.
+
+
 ## DEV-009 — Checked evidence identities and complete shared-subject modeling
 
 **Date/author:** 2026-10-02, Codex under owner delegation.
@@ -2463,7 +2566,7 @@ Normalize repository and source provenance explicitly.
 Prevent display remote strings and dirty HEAD from implying exact clean source.
 
 ### 3. Exact scope of code changes
-Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims.
+Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims. DEV-010 S022-R2 requires ancestor symlink and canonical descendant confinement before any nested Git invocation, preserving recursive conservative provenance.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -2601,7 +2704,7 @@ Validate evidence identity relationships.
 Catch contradictions among envelope and payload subjects.
 
 ### 3. Exact scope of code changes
-Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion.
+Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion. DEV-010 S025-R1 retains existing typed component expectations and checked access, validates ordered retry chronology at v2 admission, with full one-axis real-ingress controls; v1 stays unchanged.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`

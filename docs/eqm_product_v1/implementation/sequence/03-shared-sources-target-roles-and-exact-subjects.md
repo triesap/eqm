@@ -1,5 +1,10 @@
 # Chapter 03: Shared sources target roles and exact subjects
 
+
+**Current authority:** DEV-010 in the sole COMMIT_SEQUENCE; 23 numbered steps
+accepted for allocated scope. S022-R2 → S025-R1 → S026–S043; independent
+integration review before S044. Historical amendment text below is subordinate
+to that current frontier. All original criteria remain.
 Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P03, containing 16 separate ordered commits, S028–S043; it is not one combined commit. All implementation steps are pending.
 
 **Definition of green:** Shared-source dependencies, participant roles and exact multi-subject records validate without forced target symmetry.

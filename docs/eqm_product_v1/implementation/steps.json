@@ -1275,7 +1275,7 @@
     {
       "title": "Normalize repository and source provenance explicitly",
       "purpose": "Prevent display remote strings and dirty HEAD from implying exact clean source.",
-      "scope": "Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims.",
+      "scope": "Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims. DEV-010 S022-R2 requires ancestor symlink and canonical descendant confinement before any nested Git invocation, preserving recursive conservative provenance.",
       "files": [
         "crates/eqm_domain/src/evidence_result.rs",
         "crates/eqm_application/src/authority.rs",
@@ -1409,7 +1409,7 @@
     {
       "title": "Validate evidence identity relationships",
       "purpose": "Catch contradictions among envelope and payload subjects.",
-      "scope": "Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion.",
+      "scope": "Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion. DEV-010 S025-R1 retains existing typed component expectations and checked access, validates ordered retry chronology at v2 admission, with full one-axis real-ingress controls; v1 stays unchanged.",
       "files": [
         "crates/eqm_protocol/src/",
         "crates/eqm_domain/src/evidence_result.rs",
@@ -13645,10 +13645,10 @@
   "supervision": {
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
-    "amendment": "DEV-009",
-    "next_checkpoint": "S019-R4",
+    "amendment": "DEV-010",
+    "next_checkpoint": "S022-R2",
     "execution_target": "S043 / EQM-P03 integration review; full MVP remains S211",
     "intermediate_checkpoint": "S143 is not a stopping boundary",
-    "continuation": "pfc through EQM-P03: S019-R4, S021-R2, S022-R1, S023-R1, S024-R1, every ordered eligible S025-S043; stop for independent model/schema/identity review before S044."
+    "continuation": "pfc through EQM-P03: S022-R2, S025-R1, every ordered eligible S026-S043; independent integration review before S044."
   }
 }

@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S026",
+ "next_step": "S022",
  "implementation": "in_progress",
- "local_verification": "S019-R4..S024-R1_committed_pending_acceptance;S025_checked_admission_committed_pending_acceptance",
+ "local_verification": "independent_check_passed_515_test_executions;runner_protocol_doctests_passed;RF39_RF40_isolated_defect_probes_confirmed",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -586,7 +586,7 @@
   },
   {
    "id": "S019",
-   "status": "in_progress",
+   "status": "complete",
    "commit_sha": "1512c9fa7e886781bdf2976dfaabde1d8328ac43",
    "report": "implementation/reports/S019.md",
    "verification": [
@@ -601,8 +601,8 @@
    ],
    "baseline_exceptions": [],
    "decision_status": "resolved_by_Codex_DEV007",
-   "implementation_status": "retained_committed_changes_required",
-   "supervisor_status": "changes_required_DEV009",
+   "implementation_status": "implemented_verified",
+   "supervisor_status": "accepted_for_allocated_scope",
    "implementation_checkpoints": [
     {
      "id": "S019-A",
@@ -697,7 +697,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed_supervisor_pending",
-     "supervisor_status": "RF28_partial_remaining_controls"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S019-R3",
@@ -715,7 +715,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed_pending_acceptance",
-     "supervisor_status": "pending_acceptance"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S019-R4",
@@ -735,7 +735,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed_pending_acceptance",
-     "supervisor_status": "pending_acceptance"
+     "supervisor_status": "accepted_for_allocated_scope"
     }
    ],
    "prerequisite_checkpoints": [
@@ -759,7 +759,7 @@
      ]
     }
    ],
-   "review_report": "implementation/reports/CODEX-d6261c4.md"
+   "review_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "S020",
@@ -784,7 +784,7 @@
   },
   {
    "id": "S021",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": "0e6584fa3aa86b13836c98aa6a016dd575691704",
    "report": "implementation/reports/S021.md",
    "verification": [
@@ -799,8 +799,8 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
-   "supervisor_status": "changes_required_DEV009",
+   "implementation_status": "implemented_verified",
+   "supervisor_status": "accepted_for_allocated_scope",
    "corrective_checkpoints": [
     {
      "id": "S021-R1",
@@ -817,7 +817,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed_pending_acceptance",
-     "supervisor_status": "pending_acceptance"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S021-R2",
@@ -836,10 +836,10 @@
       "git diff --check"
      ],
      "implementation_status": "committed_pending_acceptance",
-     "supervisor_status": "pending_acceptance"
+     "supervisor_status": "accepted_for_allocated_scope"
     }
    ],
-   "review_report": "implementation/reports/CODEX-d6261c4.md"
+   "review_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "S022",
@@ -858,10 +858,10 @@
    ],
    "baseline_exceptions": [],
    "implementation_status": "retained_committed_changes_required",
-   "supervisor_status": "changes_required_DEV009",
+   "supervisor_status": "changes_required_DEV010",
    "decision_status": "resolved_by_Codex_DEV008",
    "closure_report": "implementation/reports/S022.md",
-   "review_report": "implementation/reports/CODEX-d6261c4.md",
+   "review_report": "implementation/reports/CODEX-49541e3.md",
    "corrective_checkpoints": [
     {
      "id": "S022-R1",
@@ -880,12 +880,18 @@
      ],
      "implementation_status": "committed_pending_acceptance",
      "supervisor_status": "pending_acceptance"
+    },
+    {
+     "id": "S022-R2",
+     "status": "pending",
+     "supervisor_status": "required_DEV010",
+     "commit_sha": null
     }
    ]
   },
   {
    "id": "S023",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": "9f000b683579426b194d10e94a2f5d5b96516a49",
    "report": "implementation/reports/S023.md",
    "verification": [
@@ -897,9 +903,9 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
-   "supervisor_status": "changes_required_DEV009",
-   "review_report": "implementation/reports/CODEX-d6261c4.md",
+   "implementation_status": "implemented_verified",
+   "supervisor_status": "accepted_for_allocated_scope",
+   "review_report": "implementation/reports/CODEX-49541e3.md",
    "corrective_checkpoints": [
     {
      "id": "S023-R1",
@@ -917,13 +923,13 @@
       "git diff --check"
      ],
      "implementation_status": "committed_pending_acceptance",
-     "supervisor_status": "pending_acceptance"
+     "supervisor_status": "accepted_for_allocated_scope"
     }
    ]
   },
   {
    "id": "S024",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": "d6261c4c0c3fdcc082d8d7902642d364b687d7af",
    "report": "implementation/reports/S024.md",
    "verification": [
@@ -935,9 +941,9 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
-   "supervisor_status": "changes_required_DEV009",
-   "review_report": "implementation/reports/CODEX-d6261c4.md",
+   "implementation_status": "implemented_verified",
+   "supervisor_status": "accepted_for_allocated_scope",
+   "review_report": "implementation/reports/CODEX-49541e3.md",
    "corrective_checkpoints": [
     {
      "id": "S024-R1",
@@ -955,14 +961,14 @@
       "git diff --check"
      ],
      "implementation_status": "committed_pending_acceptance",
-     "supervisor_status": "pending_acceptance"
+     "supervisor_status": "accepted_for_allocated_scope"
     }
    ]
   },
   {
    "id": "S025",
-   "status": "complete",
-   "commit_sha": null,
+   "status": "pending",
+   "commit_sha": "49541e36942bc0649be59a065479e559fc34e1cd",
    "report": "implementation/reports/S025.md",
    "verification": [
     "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain",
@@ -975,9 +981,18 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_pending_acceptance",
-   "supervisor_status": "pending_acceptance",
-   "commit_message": "fix: validate evidence envelope relationships"
+   "implementation_status": "retained_committed_changes_required",
+   "supervisor_status": "changes_required_DEV010",
+   "commit_message": "fix: validate evidence envelope relationships",
+   "review_report": "implementation/reports/CODEX-49541e3.md",
+   "corrective_checkpoints": [
+    {
+     "id": "S025-R1",
+     "status": "pending",
+     "supervisor_status": "required_DEV010",
+     "commit_sha": null
+    }
+   ]
   },
   {
    "id": "S026",
@@ -2800,7 +2815,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S026",
+ "active_step": "S022",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2815,7 +2830,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 8,
+   "completed_steps": 11,
    "total_steps": 15
   },
   {
@@ -3124,17 +3139,16 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S026",
+ "next_checkpoint": "S022-R2",
  "supervisor_review": {
-  "source_commit": "d6261c4c0c3fdcc082d8d7902642d364b687d7af",
-  "report": "implementation/reports/CODEX-d6261c4.md",
-  "status": "RF31_accepted_RF28_RF30_partial_RF32_RF37_changes_required",
-  "amendment": "DEV-009",
-  "standard_check": "passed_489_test_executions",
-  "advisory_audit": "passed",
-  "dependency_policy": "passed",
+  "source_commit": "49541e36942bc0649be59a065479e559fc34e1cd",
+  "report": "implementation/reports/CODEX-49541e3.md",
+  "status": "23_numbered_steps_accepted;S022_S025_changes_required",
+  "amendment": "DEV-010",
+  "standard_check": "passed_515_test_executions",
+  "doctests": "runner_protocol_passed",
   "release_candidate": false,
-  "next_checkpoint": "S019-R4"
+  "next_checkpoint": "S022-R2"
  },
  "execution_target": "S043 / EQM-P03 independent integration review; full MVP S211 remains",
  "supervisor_findings": [
@@ -3416,13 +3430,14 @@
   },
   {
    "id": "RF28",
-   "status": "partial_literal_digest_remaining",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S019",
    "checkpoint": "S019-R4",
    "summary": "Missing declared S019 provenance boundary evidence",
    "report": "implementation/reports/CODEX-1512c9f.md",
-   "followup_report": "implementation/reports/CODEX-d6261c4.md"
+   "followup_report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "RF29",
@@ -3436,12 +3451,13 @@
   {
    "id": "RF30",
    "priority": "P2",
-   "status": "projection_accepted_acquisition_evidence_remaining",
+   "status": "accepted_for_allocated_scope",
    "owner": "S021",
    "checkpoint": "S021-R2",
    "summary": "Runner identity differs from frozen typed v2 canonical contract",
    "report": "implementation/reports/CODEX-eb2f323.md",
-   "followup_report": "implementation/reports/CODEX-d6261c4.md"
+   "followup_report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "RF31",
@@ -3459,56 +3475,98 @@
    "owner": "S023",
    "checkpoint": "S023-R1",
    "priority": "P1",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "summary": "Raw evidence relation accepts unrelated non-JSON bytes",
-   "report": "implementation/reports/CODEX-d6261c4.md"
+   "report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "RF33",
    "owner": "S023",
    "checkpoint": "S023-R1",
    "priority": "P1",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "summary": "V1 serialization under v2 semantic domain collapses different large numeric values",
-   "report": "implementation/reports/CODEX-d6261c4.md"
+   "report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "RF34",
    "owner": "S021",
    "checkpoint": "S021-R2",
    "priority": "P2",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "summary": "Acquisition regression mirrors CLI code rather than executing production path; argv mutation is confounded",
-   "report": "implementation/reports/CODEX-d6261c4.md"
+   "report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "RF35",
    "owner": "S024",
    "checkpoint": "S024-R1",
    "priority": "P2",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "summary": "Lineage presence carrier does not validate declared execution relationships; test matrix incomplete",
-   "report": "implementation/reports/CODEX-d6261c4.md"
+   "report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "RF36",
    "owner": "S022",
    "checkpoint": "S022-R1",
    "priority": "P1",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "summary": "Concealed modified nested submodule bytes pass clean source inspection",
-   "report": "implementation/reports/CODEX-d6261c4.md"
+   "report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
   },
   {
    "id": "RF37",
    "owner": "S024",
    "checkpoint": "DEV-009",
    "priority": "P2",
-   "status": "open",
+   "status": "reconciled_by_supervisor",
    "summary": "Stale execution cursors and supervisor metadata mix self-verification with historical independent evidence",
-   "report": "implementation/reports/CODEX-d6261c4.md"
+   "report": "implementation/reports/CODEX-d6261c4.md",
+   "closure_report": "implementation/reports/CODEX-49541e3.md"
+  },
+  {
+   "id": "RF38",
+   "priority": "P2",
+   "owner": "S025",
+   "checkpoint": "S025-R1",
+   "status": "open",
+   "summary": "V2 admission context erases distinct component digest types",
+   "report": "implementation/reports/CODEX-49541e3.md"
+  },
+  {
+   "id": "RF39",
+   "priority": "P1",
+   "owner": "S025",
+   "checkpoint": "S025-R1",
+   "status": "open",
+   "summary": "V2 admission accepts reversed retry chronology",
+   "report": "implementation/reports/CODEX-49541e3.md"
+  },
+  {
+   "id": "RF40",
+   "priority": "P2",
+   "owner": "S022",
+   "checkpoint": "S022-R2",
+   "status": "open",
+   "summary": "Nested Gitlink ancestor symlink escapes inspection confinement",
+   "report": "implementation/reports/CODEX-49541e3.md"
+  },
+  {
+   "id": "RF41",
+   "priority": "P2",
+   "owner": "S022",
+   "checkpoint": "S022-R2",
+   "status": "open",
+   "summary": "Failed standard-gate output overwritten by successful retry; stale supervisor frontier",
+   "report": "implementation/reports/CODEX-49541e3.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
- "supervisor_amendment": "DEV-009"
+ "supervisor_amendment": "DEV-010"
 }

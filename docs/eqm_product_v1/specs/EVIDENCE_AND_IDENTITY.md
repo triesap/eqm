@@ -118,3 +118,14 @@ criteria, v1 contracts and signed bytes. Parsed identifiers/digests are not trus
 synthetic combinations are not real cohort certification, and new target fields
 extend their canonical projection atomically. S043 is the next independent
 integration review boundary before routing; full MVP remains S211.
+
+## DEV-010 checked v2 admission closure
+
+Expected component context and checked access retain existing distinct digest
+types; exact structural wire SHA comparison binds independently computed typed
+expectations without an unchecked cast or digest-string rehash. Preserve legacy
+v1 domain carriers. V2 numbered retries have non-overlapping chronological
+windows (next start >= previous finish), equality allowed and nanos preserved,
+checked before admission. No added observed_at/freshness rule. Recursive Gitlink
+inspection rejects symlinked ancestors and canonical-root escape before child
+Git. Exact controls and two repair checkpoints live in the sole governing plan.

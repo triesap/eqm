@@ -1,5 +1,10 @@
 # Chapter 02: Canonical identities and evidence provenance
 
+
+**Current authority:** DEV-010 in the sole COMMIT_SEQUENCE; 23 numbered steps
+accepted for allocated scope. S022-R2 → S025-R1 → S026–S043; independent
+integration review before S044. Historical amendment text below is subordinate
+to that current frontier. All original criteria remain.
 Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S001–S018 and S020 accepted. DEV-008 dependency repair, S019-R3/S021-R1 and S022 precede all eligible successors to S211.
 
 **Definition of green:** Canonical component/subject/raw/semantic/attempt identities and dirty-source provenance pass mutation vectors.
@@ -467,7 +472,7 @@ Normalize repository and source provenance explicitly.
 Prevent display remote strings and dirty HEAD from implying exact clean source.
 
 ### 3. Exact scope of code changes
-Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims.
+Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims. DEV-010 S022-R2 requires ancestor symlink and canonical descendant confinement before any nested Git invocation, preserving recursive conservative provenance.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -605,7 +610,7 @@ Validate evidence identity relationships.
 Catch contradictions among envelope and payload subjects.
 
 ### 3. Exact scope of code changes
-Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion.
+Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion. DEV-010 S025-R1 retains existing typed component expectations and checked access, validates ordered retry chronology at v2 admission, with full one-axis real-ingress controls; v1 stays unchanged.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
