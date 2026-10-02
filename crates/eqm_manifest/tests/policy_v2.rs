@@ -19,6 +19,16 @@ const POLICY_BYTES: &str = r#"{"policy":{"description":"Baseline policy","extens
 const POLICY_DIGEST: &str =
     "sha256:0ba1fc91cb154a5b5b6d57d80e379c55f6bf0588d6cd2dfbaefcab2611fde60f";
 
+// Reviewed literal complete bytes for the heterogeneous ordering trap used by
+// `rule_order_uses_full_member_bytes`: a maximum-valued rule (all five selector
+// axes, decimal-string `maximum_age`/`minimum_count`) followed by a
+// minimum-valued rule (narrow selector, numeric `maximum_age`/`minimum_count`).
+// The digest was independently recomputed as
+// `sha256("eqm:v2:policy-selection" || 0x00 || bytes)` from these exact bytes.
+const RULE_ORDER_TRAP_BYTES: &str = r#"{"policy":{"extensions":{},"id":"policy.default","owners":["owner://team/security"],"profiles":["audience.default"],"required_targets":["web"],"revision":1,"rules":[{"facets":["behavior"],"maximum_age":"9223372036854775807","minimum_count":"18446744073709551615","minimum_level":"recommended","minimum_trust":"trusted_ci","selector":{"facets":["behavior"],"requirements":["account.create.signup#visible"],"risk_classes":["high"],"scopes":["each_target"],"units":["account.create"]}},{"facets":["behavior"],"maximum_age":0,"minimum_count":1,"minimum_level":"recommended","minimum_trust":"trusted_ci","selector":{"units":["account.create"]}}],"title":"Default policy","waivers":{"allowed":false,"minimum_approvers":1,"required_controls":[]}},"profiles":[{"definition":{"defaults":{"locale":"en"},"description":"Default audience","dimensions":[{"id":"locale","values":["en","fr"]},{"id":"region","values":["eu","us"]}],"extensions":{},"id":"audience.default","owners":["owner://team/product"],"revision":1,"title":"Audience"},"values":[{"dimension":"locale","state":"known","value":"en"},{"dimension":"region","state":"unknown"}]}]}"#;
+const RULE_ORDER_TRAP_DIGEST: &str =
+    "sha256:99030afca7ed3a3ae1752fc4350a6752cc6bf6f43feb3c1cb37d9a03c9e6f8fc";
+
 fn owner(value: &str) -> Result<OwnerRef, Box<dyn Error>> {
     Ok(value.parse()?)
 }
@@ -678,6 +688,15 @@ fn rule_order_uses_full_member_bytes() -> Result<(), Box<dyn Error>> {
     let reversed_bytes = canonicalize_policy_selection_v2(&reversed_input)?;
     assert_eq!(forward_bytes.bytes(), reversed_bytes.bytes());
     assert_eq!(forward_bytes.digest(), reversed_bytes.digest());
+
+    // Reviewed literal complete bytes and independently recomputed digest. This
+    // freezes the exact ordering trap identity rather than only comparing two
+    // production outputs to each other.
+    assert_eq!(
+        std::str::from_utf8(forward_bytes.bytes())?,
+        RULE_ORDER_TRAP_BYTES
+    );
+    assert_eq!(forward_bytes.digest().to_string(), RULE_ORDER_TRAP_DIGEST);
 
     // Reviewed literal member order: the maximum-valued rule precedes the
     // minimum-valued rule under full JCS member-byte ordering.

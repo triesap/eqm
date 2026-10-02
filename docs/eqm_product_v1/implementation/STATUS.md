@@ -7,7 +7,13 @@ S023 and S024. DEV008-P1/RF31 accepted; direct pins unchanged. Remaining correct
 are not discarded implementation: S019 literal oracle, S021 actual acquisition proof,
 S022 nested concealment, S023 raw/lossless-v2 identity and S024 lineage relationships.
 
-Next **S019-R4 → S021-R2 → S022-R1 → S023-R1 → S024-R1 → S025–S043**,
+S019-R4 is committed pending acceptance: `rule_order_uses_full_member_bytes` now
+asserts a reviewed 1,129-byte literal trap projection and the independently
+recomputed `sha256:99030afca7ed3a3ae1752fc4350a6752cc6bf6f43feb3c1cb37d9a03c9e6f8fc`,
+retaining the R3 member-order and permutation controls. Standard, schema, structure
+and diff lanes are green; the R4 commit SHA is backfilled in the next ledger update.
+
+Next **S021-R2 → S022-R1 → S023-R1 → S024-R1 → S025–S043**,
 `pfc through EQM-P03`. Independent integration review at S043 precedes S044 routing.
 Full governing MVP remains S211. P01 complete; P02 seven complete accepted steps,
 five retained steps require corrections; later cycles pending. Cursor/acceptance

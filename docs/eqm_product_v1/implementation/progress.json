@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S019",
+ "next_step": "S021",
  "implementation": "in_progress",
- "local_verification": "standard_passed_489_test_executions_deny_audit_runner_doctests_passed_three_isolated_defect_probes_confirmed",
+ "local_verification": "S019-R4_literal_policy_ordering_identity_committed_pending_acceptance;S019-R4_standard_and_schema_lanes_green",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -712,6 +712,26 @@
       "cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc",
       "cargo xtask check",
       "cargo xtask schemas check",
+      "git diff --check"
+     ],
+     "implementation_status": "committed_pending_acceptance",
+     "supervisor_status": "pending_acceptance"
+    },
+    {
+     "id": "S019-R4",
+     "status": "complete",
+     "commit_sha": null,
+     "report": "implementation/reports/S019.md#corrective-checkpoint-s019-r4--free-heterogeneous-policy-ordering-identity-dev-009",
+     "verification": [
+      "cargo test --locked -p eqm_manifest --test policy_v2",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_domain -p eqm_manifest -p eqm_engine -p eqm_application",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
       "git diff --check"
      ],
      "implementation_status": "committed_pending_acceptance",
@@ -2689,7 +2709,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S019",
+ "active_step": "S021",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3013,7 +3033,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S019-R4",
+ "next_checkpoint": "S021-R2",
  "supervisor_review": {
   "source_commit": "d6261c4c0c3fdcc082d8d7902642d364b687d7af",
   "report": "implementation/reports/CODEX-d6261c4.md",
