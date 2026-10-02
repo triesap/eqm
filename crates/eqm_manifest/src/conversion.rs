@@ -140,14 +140,47 @@ pub fn convert_binding(
     document: &ValidatedDocument,
     target_roots: &BTreeMap<TargetId, RepoPath>,
 ) -> Result<Binding, ConversionError> {
+    let target = binding_target(document)?;
+    let target_root = target_roots
+        .get(&target)
+        .ok_or_else(|| ConversionError::at(document.source().as_str(), "target"))?;
+    convert_binding_with(document, std::slice::from_ref(target_root))
+}
+
+/// Converts one binding using the target's complete declared source-component
+/// ownership (its output root plus any declared shared component roots).
+///
+/// A path owned by a declared component is valid even when it lies outside the
+/// target's shipped output root; an unrelated component or an escaped path still
+/// fails. This is an ownership check only and inspects no source content.
+pub fn convert_binding_with_roots(
+    document: &ValidatedDocument,
+    target_roots: &BTreeMap<TargetId, Vec<RepoPath>>,
+) -> Result<Binding, ConversionError> {
+    let target = binding_target(document)?;
+    let roots = target_roots
+        .get(&target)
+        .ok_or_else(|| ConversionError::at(document.source().as_str(), "target"))?;
+    convert_binding_with(document, roots)
+}
+
+fn binding_target(document: &ValidatedDocument) -> Result<TargetId, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Binding(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    parse(&dto.target, "target", source)
+}
+
+fn convert_binding_with(
+    document: &ValidatedDocument,
+    target_roots: &[RepoPath],
+) -> Result<Binding, ConversionError> {
     let source = document.source().as_str();
     let DocumentDto::Binding(dto) = document.document() else {
         return Err(ConversionError::at(source, "schema"));
     };
     let target: TargetId = parse(&dto.target, "target", source)?;
-    let target_root = target_roots
-        .get(&target)
-        .ok_or_else(|| ConversionError::at(source, "target"))?;
     Binding::new(
         parse(&dto.id, "id", source)?,
         build(Revision::new(dto.revision), "revision", source)?,
@@ -158,7 +191,7 @@ pub fn convert_binding(
             Artifacts::new(
                 dto.artifacts
                     .iter()
-                    .map(|value| artifact(value, target_root, source))
+                    .map(|value| artifact(value, target_roots, source))
                     .collect::<Result<_, _>>()?,
             ),
             "artifacts",
@@ -572,15 +605,17 @@ where
 
 fn artifact(
     dto: &ArtifactDto,
-    target_root: &RepoPath,
+    target_roots: &[RepoPath],
     source: &str,
 ) -> Result<Artifact, ConversionError> {
     let path: RepoPath = parse(&dto.path, "artifacts.path", source)?;
-    let within_target = path == *target_root
-        || path
-            .as_str()
-            .strip_prefix(target_root.as_str())
-            .is_some_and(|suffix| suffix.starts_with('/'));
+    let within_target = target_roots.iter().any(|target_root| {
+        path == *target_root
+            || path
+                .as_str()
+                .strip_prefix(target_root.as_str())
+                .is_some_and(|suffix| suffix.starts_with('/'))
+    });
     if !within_target {
         return Err(ConversionError::at(source, "artifacts.path"));
     }
@@ -1092,6 +1127,30 @@ test_id = "form submits"
             TargetId::from_str("web")?,
             RepoPath::new("apps/web")?,
         )]))
+    }
+
+    #[test]
+    fn declared_shared_component_root_admits_an_artifact_outside_the_output_root()
+    -> Result<(), Box<dyn Error>> {
+        let mut shared = binding()?;
+        shared.artifacts[0].path = "shared/kmp/src/form.ts".to_owned();
+        // Outside the shipped output root and undeclared: rejects.
+        assert!(
+            convert_binding(
+                &document(DocumentDto::Binding(shared.clone()))?,
+                &target_roots()?
+            )
+            .is_err()
+        );
+        // Declared shared component root: admits through the real conversion.
+        let roots = BTreeMap::from([(
+            TargetId::from_str("web")?,
+            vec![RepoPath::new("apps/web")?, RepoPath::new("shared/kmp")?],
+        )]);
+        let converted =
+            convert_binding_with_roots(&document(DocumentDto::Binding(shared))?, &roots)?;
+        assert_eq!(converted.artifacts().values().len(), 1);
+        Ok(())
     }
 
     #[test]

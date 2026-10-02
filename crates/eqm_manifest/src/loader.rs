@@ -3,7 +3,7 @@
 use crate::conversion::extensions;
 use crate::{
     ConfigError, ContractEntity, ConversionError, DiscoveryError, DocumentDto, LockError,
-    ValidationError, WorkspaceLock, convert_binding, convert_contract, convert_policy,
+    ValidationError, WorkspaceLock, convert_binding_with_roots, convert_contract, convert_policy,
     convert_profile, convert_runner, convert_waiver, decode_sources, discover_sources,
     load_lockfile, select_workspace_config,
 };
@@ -72,7 +72,6 @@ pub fn load_workspace(
     let lock_source = RepoPath::new(config.dto().lockfile.as_deref().unwrap_or("eqm.lock"))
         .map_err(|_| LoadError::Lock(LockError::InvalidPath))?;
     let mut source_map = BTreeMap::new();
-    let mut target_roots = BTreeMap::new();
     let mut portable_roots = BTreeSet::new();
     for (id, target) in &config.dto().targets {
         let id: TargetId = id.parse().map_err(|_| LoadError::WorkspaceTarget)?;
@@ -103,7 +102,6 @@ pub fn load_workspace(
             extensions(&target.extensions, "eqm.toml").map_err(|_| LoadError::WorkspaceTarget)?,
         )
         .map_err(|_| LoadError::WorkspaceTarget)?;
-        target_roots.insert(id, root);
         source_map.insert(
             format!("target:{}", authority.id()).into(),
             config_source.clone(),
@@ -177,7 +175,6 @@ pub fn load_workspace(
                         .collect::<Result<_, _>>()?,
                 )
                 .map_err(|_| LoadError::WorkspaceTarget)?;
-            target_roots.insert(id, root);
             source_map.insert(
                 format!("target:{}", authority.id()).into(),
                 config_source.clone(),
@@ -225,6 +222,42 @@ pub fn load_workspace(
 
     validate_shared_source_overlaps(&input)?;
 
+    // Each binding validates its artifact paths against the target's complete
+    // declared source ownership: the shipped output root plus every declared
+    // source component reachable through its dependency closure.
+    let components_by_id: BTreeMap<&str, &SourceComponent> = input
+        .source_components
+        .iter()
+        .map(|component| (component.id().as_str(), component))
+        .collect();
+    let mut binding_roots: BTreeMap<TargetId, Vec<RepoPath>> = BTreeMap::new();
+    for target in &input.targets {
+        let mut roots = vec![target.root().clone()];
+        let mut seen = BTreeSet::new();
+        let mut stack: Vec<&str> = target
+            .source_components()
+            .iter()
+            .map(SourceComponentId::as_str)
+            .collect();
+        while let Some(id) = stack.pop() {
+            if !seen.insert(id) {
+                continue;
+            }
+            if let Some(component) = components_by_id.get(id) {
+                roots.extend(component.roots().iter().cloned());
+                stack.extend(
+                    component
+                        .dependencies()
+                        .iter()
+                        .map(SourceComponentId::as_str),
+                );
+            }
+        }
+        roots.sort();
+        roots.dedup();
+        binding_roots.insert(target.id().clone(), roots);
+    }
+
     for document in &documents {
         match document.document() {
             DocumentDto::Capability(_)
@@ -263,7 +296,8 @@ pub fn load_workspace(
                 }
             }
             DocumentDto::Binding(_) => {
-                let value = convert_binding(document, &target_roots).map_err(conversion_error)?;
+                let value = convert_binding_with_roots(document, &binding_roots)
+                    .map_err(conversion_error)?;
                 source_map.insert(
                     format!("binding:{}", value.id()).into(),
                     document.source().clone(),

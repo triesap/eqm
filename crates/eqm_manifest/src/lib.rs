@@ -29,8 +29,8 @@ pub use canonical::{
 };
 pub use config::{ConfigError, WorkspaceConfig, select_workspace_config};
 pub use conversion::{
-    ContractEntity, ConversionError, convert_binding, convert_contract, convert_policy,
-    convert_profile, convert_runner, convert_waiver,
+    ContractEntity, ConversionError, convert_binding, convert_binding_with_roots, convert_contract,
+    convert_policy, convert_profile, convert_runner, convert_waiver,
 };
 pub use conversion::{WaiverTemporalStatus, classify_waiver};
 pub use discovery::{DiscoveredSource, DiscoveryError, SourceClass, discover_sources};

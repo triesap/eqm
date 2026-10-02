@@ -66,3 +66,62 @@ fn existence_role_collision_and_symlink_resolution_are_fail_closed() -> Result<(
     );
     Ok(())
 }
+
+#[test]
+fn declared_source_component_root_admits_a_shared_artifact() -> Result<(), Box<dyn Error>> {
+    use eqm_domain::{
+        Artifact, ArtifactId, Artifacts, Binding, BindingId, Extensions, FrameworkId, OwnerRef,
+        PlatformId, Revision, SurfaceId, Target, TargetId, UnitId,
+    };
+    use eqm_engine::evaluate_structure_with_roots;
+    use std::str::FromStr;
+
+    let binding = Binding::new(
+        BindingId::new("binding.web")?,
+        Revision::new(1)?,
+        vec![OwnerRef::from_str("owner://team/web")?],
+        TargetId::new("web")?,
+        UnitId::new("account.create.primary.form")?,
+        Artifacts::new(vec![Artifact::new(
+            ArtifactId::new("form")?,
+            ArtifactRole::View,
+            RepoPath::new("shared/kmp/src/form.ts")?,
+            Some(SurfaceId::new("account.create.primary.form")?),
+            None,
+            None,
+            Extensions::default(),
+        )?])?,
+        Vec::new(),
+        Vec::new(),
+        Extensions::default(),
+    )?;
+    let target = Target::new(
+        TargetId::new("web")?,
+        RepoPath::new("apps/web")?,
+        PlatformId::new("web")?,
+        FrameworkId::new("sveltekit")?,
+        vec![OwnerRef::from_str("owner://team/web")?],
+        Extensions::default(),
+    )?;
+    let path = RepoPath::new("shared/kmp/src/form.ts")?;
+    let view = RepositoryView::from([(
+        path,
+        RepositoryEntry {
+            kind: RepositoryEntryKind::File,
+            resolved: None,
+            roles: BTreeSet::from([ArtifactRole::View]),
+        },
+    )]);
+
+    // The shipped output root alone does not own the shared artifact.
+    assert!(
+        evaluate_structure(&binding, &target, &view, false)
+            .findings
+            .iter()
+            .any(|finding| finding.kind == StructureFindingKind::OutsideTargetRoot)
+    );
+    // The declared source component ownership admits it.
+    let roots = vec![RepoPath::new("apps/web")?, RepoPath::new("shared/kmp")?];
+    assert!(evaluate_structure_with_roots(&binding, &roots, &view, false).satisfied());
+    Ok(())
+}

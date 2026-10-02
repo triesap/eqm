@@ -22,11 +22,13 @@ components and target role/source/dependency references through the real loader
 while v1 stays frozen (acceptance pending). S032 keeps the portable output-root
 collision check while allowing declared shared component roots, rejecting
 ambiguous component overlaps and undeclared target/root overlaps (acceptance
-pending). RF44 final-tree gating and authority context are reconciled in current
-planning; implementation receipts must prove final trees, including
-reports/ledger.
+pending). S033 validates binding artifacts and structural evaluation against the
+target's declared source-component ownership, admitting declared shared
+artifacts while unrelated or escaped paths stay blocking (acceptance pending).
+RF44 final-tree gating and authority context are reconciled in current planning;
+implementation receipts must prove final trees, including reports/ledger.
 
-Next **every ordered S033–S043**, pfc through EQM-P03.
+Next **every ordered S034–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly

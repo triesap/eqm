@@ -77,6 +77,6 @@ pub use selection::{
 };
 pub use structure::{
     RepositoryEntry, RepositoryEntryKind, RepositoryView, StructureFinding, StructureFindingKind,
-    StructureReport, evaluate_structure,
+    StructureReport, evaluate_structure, evaluate_structure_with_roots,
 };
 pub use waivers::{WaivableStatus, WaiverEvaluation, WaiverInvalidReason, evaluate_waivers};

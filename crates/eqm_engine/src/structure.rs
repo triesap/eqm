@@ -69,7 +69,7 @@ impl StructureReport {
     }
 }
 
-/// Evaluates binding artifacts without filesystem access.
+/// Evaluates binding artifacts without filesystem access against one root.
 #[must_use]
 pub fn evaluate_structure(
     binding: &Binding,
@@ -77,11 +77,31 @@ pub fn evaluate_structure(
     view: &RepositoryView,
     allow_artifact_symlinks: bool,
 ) -> StructureReport {
+    evaluate_structure_with_roots(
+        binding,
+        std::slice::from_ref(target.root()),
+        view,
+        allow_artifact_symlinks,
+    )
+}
+
+/// Evaluates binding artifacts against the target's complete declared source
+/// ownership: its shipped output root plus any declared shared component roots.
+///
+/// An artifact owned by a declared component is valid even outside the shipped
+/// output root; an unrelated path still reports `OutsideTargetRoot`.
+#[must_use]
+pub fn evaluate_structure_with_roots(
+    binding: &Binding,
+    target_roots: &[RepoPath],
+    view: &RepositoryView,
+    allow_artifact_symlinks: bool,
+) -> StructureReport {
     let collisions = portable_collisions(view);
     let mut findings = BTreeSet::new();
     for artifact in binding.artifacts().values().values() {
         let path = artifact.path();
-        if !inside(path, target.root()) {
+        if !inside_any(path, target_roots) {
             findings.insert(StructureFinding {
                 artifact: artifact.id().clone(),
                 kind: StructureFindingKind::OutsideTargetRoot,
@@ -112,7 +132,7 @@ pub fn evaluate_structure(
                     && entry
                         .resolved
                         .as_ref()
-                        .is_some_and(|resolved| inside(resolved, target.root()));
+                        .is_some_and(|resolved| inside_any(resolved, target_roots));
                 if !valid {
                     findings.insert(StructureFinding {
                         artifact: artifact.id().clone(),
@@ -138,6 +158,10 @@ fn inside(path: &RepoPath, root: &RepoPath) -> bool {
             .as_str()
             .strip_prefix(root.as_str())
             .is_some_and(|suffix| suffix.starts_with('/'))
+}
+
+fn inside_any(path: &RepoPath, roots: &[RepoPath]) -> bool {
+    roots.iter().any(|root| inside(path, root))
 }
 
 fn portable_collisions(view: &RepositoryView) -> BTreeSet<RepoPath> {
