@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_467_test_executions_dependency_policy_failed_yanked_RF28_RF30_S022_remaining",
+ "local_verification": "standard_passed_467_test_executions_dependency_policy_passed_yoke_derive_0_8_4_RF28_RF30_S022_remaining",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -719,9 +719,22 @@
    "prerequisite_checkpoints": [
     {
      "id": "DEV008-P1",
-     "status": "in_progress",
+     "status": "complete",
      "commit_sha": null,
-     "report": "implementation/reports/S019.md"
+     "report": "implementation/reports/DEV008-P1.md",
+     "implementation_status": "committed_supervisor_pending",
+     "verification": [
+      "cargo deny check",
+      "cargo audit --deny warnings",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_protocol -p eqm_test_support",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     }
    ]
   },
@@ -2970,7 +2983,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "DEV008-P1",
+ "next_checkpoint": "S019-R3",
  "supervisor_review": {
   "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "report": "implementation/reports/CODEX-eb2f323.md",
@@ -2978,12 +2991,12 @@
   "amendment": "DEV-008",
   "standard_check": "passed_467_test_executions",
   "advisory_audit": "not_rerun_this_review",
-  "dependency_policy": "failed_yoke_derive_0_8_3_yanked",
+  "dependency_policy": "passed_transitive_yoke_derive_0_8_4",
   "package_structure": "passed",
   "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
   "release_candidate": false,
   "s019_decision": "resolved",
-  "next_checkpoint": "DEV008-P1",
+  "next_checkpoint": "S019-R3",
   "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
   "review_report": "implementation/reports/CODEX-eb2f323.md",
   "s020_decision": "resolved",
@@ -3298,11 +3311,12 @@
   {
    "id": "RF31",
    "priority": "P2",
-   "status": "open",
+   "status": "fixed_pending_acceptance",
    "owner": "S019",
    "checkpoint": "DEV008-P1",
    "summary": "Locked yoke-derive 0.8.3 is yanked; dependency policy now fails",
-   "report": "implementation/reports/CODEX-eb2f323.md"
+   "report": "implementation/reports/CODEX-eb2f323.md",
+   "followup_report": "implementation/reports/DEV008-P1.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
