@@ -1,30 +1,21 @@
 # Verification and implementation status
 
-DEV-010 reviewed source `49541e36942bc0649be59a065479e559fc34e1cd`.
-S001–S021 plus S023/S024, are accepted for allocated scope:
-23 numbered steps (S001–S018/S020 prior acceptance preserved, S019/S021/
-S023/S024 accepted now). S022 recursive concealment repair is retained; RF40
-confinement is implemented and verified by S022-R2 (acceptance pending). S025
-checked admission is retained; RF38 typed context and RF39 retry chronology are
-implemented and verified by S025-R1 (acceptance pending). The S026 acyclic
-record dependency model is implemented and verified (acceptance pending). Next
-eligible step: S027, then every ordered eligible S027-S043 before the S043
-independent integration review.
+DEV-011 reviewed clean source `c774fe000bdecb50dd1b8ea4b16164900bd6032b`.
+24 numbered steps S001–S024 are accepted for allocated scope; prior acceptance
+preserved. S025 typed identities/chronology and S026 registry checks are retained
+contributions. S025 needs RF43 integration evidence; S026 needs RF42 definition
+history and legitimate later deployment-input support. RF44 final-tree gating and
+authority context are reconciled in current planning; implementation receipts must
+prove final trees, including reports/ledger.
 
-Frontier: S022-R2 `9ecbe00`, S025-R1 `75eb084` and S026 `61e0200` are
-implemented and verified (acceptance pending). Remaining in this approved range:
-every ordered eligible **S027–S043**, `pfc through EQM-P03`; independent
-integration review at S043 before S044. Full MVP remains S211. No arbitrary
-commit-count or conversation-length stopping boundary.
+Next **S025-R2 → S026-R1 → every ordered S027–S043**, pfc through EQM-P03.
+Independent model/schema/identity review before S044; full MVP remains S211.
+Standard gate independently passed 531 successful test executions, domain/protocol
+doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly
+rejected from later input; no product source/tests edited by Codex. See
+[review](reports/CODEX-c774fe0.md). Whole RA02/RA13 remain open at later integration.
 
-Independent current-source standard check: exit 0, 515 successful test executions.
-Runner/protocol positive and compile-fail doctests passed. Isolated source-revision
-probes demonstrate reversed retry chronology admitted and symlinked ancestor
-escape traversed; the latter returns dirty, not a clean-release bypass. No product
-code changed by Codex. See [review](reports/CODEX-49541e3.md).
-
-No release readiness or human release-testing gate reached. Full verify/Linux/
-extended/live product/crypto/host/signing/operational acceptance remains unverified.
-Audit/deny was not rerun this review; prior receipts are historical. Q01–Q15 and
-original R/AC/RA remain at owning dependencies; Q02/Q06 real host/cohort evidence
-is not established by synthetic software and does not blanket-block it.
+No release/human release-testing milestone reached. Full verify, current audit/deny,
+Linux, extended/live product/crypto/host/packaging/signing/operational lanes remain
+unverified here. All original R/AC/RA and Q01–Q15 apply; real Q02/Q06 facts do not
+blanket-block synthetic software. No operational/publication activation authorized.

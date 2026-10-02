@@ -129,3 +129,13 @@ windows (next start >= previous finish), equality allowed and nanos preserved,
 checked before admission. No added observed_at/freshness rule. Recursive Gitlink
 inspection rejects symlinked ancestors and canonical-root escape before child
 Git. Exact controls and two repair checkpoints live in the sole governing plan.
+
+## DEV-011 repeated evaluation history
+
+Record validation consumes explicit caller-supplied definition order, not time/path
+sorting or inferred trust. References resolve only to earlier definitions. Preserve
+kind-direction and cycle checks while allowing already-defined deployment receipts
+as inputs to later Runtime/FrozenInput records. Initial evidence cannot require
+its future decision/deployment. Canonical typed reference sets remain separate
+from ordered definition history. This domain structure confers no authority, storage
+or wire publication. Exact repair/evidence scope lives in the governing sequence.

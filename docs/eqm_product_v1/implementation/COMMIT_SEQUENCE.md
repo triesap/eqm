@@ -1,5 +1,104 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-011 — Complete reusable lifecycle and provenance integration evidence
+
+**Date/author:** 2026-10-02, Codex under owner delegation.
+**Reviewed source:** `c774fe000bdecb50dd1b8ea4b16164900bd6032b`.
+[Independent review](reports/CODEX-c774fe0.md) accepts S022 allocated scope;
+24 numbered steps S001–S024 are accepted. Retain S025 typed/chronology and S026
+acyclic-registry contributions; whole steps await RF42/RF43 closure. All four
+returned commits remain, no prior acceptance revoked. Original R/AC/RA/Q gates
+remain; no release readiness or new owner authority is implied.
+
+Execute **S025-R2 → S026-R1 → every ordered eligible S027–S043** with
+**pfc through EQM-P03**. This is two corrections plus 17 original implementation
+steps. S043 inclusive is the required model/schema/identity integration review
+before S044; full MVP remains S211. Continue after each green commit; do not
+choose an arbitrary commit-count, report or estimated-context stopping boundary.
+Use available native context management and focused reads, retaining the range;
+actual user stops, enforced runtime limits, original review/external gates apply.
+All engineering decisions required for this allocated range are resolved here.
+
+### S025-R2 — real projection-to-admission evidence (RF43)
+
+Commit `test: verify admission with production provenance projections`.
+Retain the approved implementation; complete missing DEV-010 evidence. Put a real
+loader/prepared-session projection-to-admission integration in the application
+owning test lane (application already depends on manifest/protocol/runner).
+Obtain contract/binding/evidence-spec/target identities from existing canonical
+v2 projection APIs and selected-policy identity from same-session production
+prepare_policy_provenance. Wire their exact digests into a genuine v2 assertion,
+seal semantic identity, parse exact bytes and admit against the independently
+computed typed context. A real semantic mutation through projection/lookup must
+reject old evidence; formatting-only equivalent loaded inputs preserve identity.
+No test-local substitute projector or hash_content of arbitrary seed strings.
+Include present typed runner/adapter expectations where existing APIs/carriers
+permit; use existing production runner projection/acquisition for runner evidence.
+Do not invent an adapter projection API absent from this step: document its existing
+carrier/domain boundary and retain typed-reference comparison tests.
+
+Add compile-fail examples that actually misuse EvidenceAdmissionContext fields
+or AdmittedEvidenceV2 access, with real positive counterparts; generic helper
+functions prove only the already-known newtypes. Run the sealed temporal matrix
+for **StructuralCheck, Test and Snapshot**, with kind/context kept consistent:
+sequential, equal-boundary and subsecond positives; reversed, overlapping and
+out-of-window negatives. Preserve v1 acceptance, exact raws and RA02/RA13 limits.
+Read/mutate the actual domain fixture via real loader and production projection;
+no private credentials/live product values. Existing exact-pinned workspace dev
+libraries may be used in owning tests if necessary, with justified locked update;
+no external dependency upgrade or policy waiver. Run protocol/domain/application
+owning tests and actual doctests plus all original standard/schema/structure lanes.
+
+### S026-R1 — repeated acyclic evaluations (RF42)
+
+Commit `fix: allow historical deployment inputs in acyclic record histories`.
+The registry is an explicitly supplied **ordered definition history**; Vec order
+is caller-declared creation order, not timestamp/path/kind sort or inferred trust.
+A checked record references only an earlier definition in that supplied history.
+Document this at the public validation boundary and preserve order in checked
+history. Do not sort definitions to make future references pass. Maintain the
+complete known-ID, duplicate, self, missing and directed-cycle checks; use explicit
+typed failure for a forward definition. Keep cycle detection iterative and bounded
+by supplied input, no recursion/unchecked public checked construction.
+
+Retain existing kind-direction checks, with exactly these historical exceptions:
+**Runtime → DeploymentReceipt** and **FrozenInput → DeploymentReceipt** may
+reference an already earlier-defined receipt. They model post-deployment
+observations/receipts consumed by a later input/decision, never initial readiness
+waiting on its own future deployment. Evidence → Decision remains forbidden;
+self/future/cyclic initial-readiness references remain invalid. No signature,
+release authority, persistence or wire carrier is created by this domain check.
+No new epoch, product identifier, timestamp heuristic or digest domain is needed.
+
+Execute full initial lifecycle then earlier receipt → later runtime/input → later
+decision positive controls. Reject same-kind forward definitions, future receipts,
+initial readiness/deployment cycles, missing/wrong-kind references, duplicates
+and self-reference. Permuting caller history to put a referenced definition later
+must reject; permuting reference member supply order stays equivalent. Store
+references sorted by complete typed (kind,id), rejecting duplicates, matching
+references() canonical-order documentation. The original S026 ID and regression
+obligations remain, followed by S027's real corpus integration. Run domain/protocol
+owning tests and all original standard/schema/structure lanes.
+
+### Final-tree gates and focused continuation (RF44)
+
+Write/finalize code, tests, schemas, reports, ledger/status and any required mirrors
+before the checkpoint's final standard/structure/diff gate and commit. A gate run
+before a later report/ledger edit is not proof that the committed tree is green.
+Preserve unique attempt logs and real exits; never overwrite or hide failures.
+No reviewed commit amendment. Public instruction surfaces now point to DEV-011.
+
+To reach S043 efficiently, read only current amendment + retained DEV-009 P03
+allocation, current step object/required predecessor summary and relevant caller
+sections. Select progress/steps entries with a small parser; do not repeatedly
+load entire multi-thousand-line ledgers or full historical plan. Use compact
+external receipts for resume context; they are not a second governing plan/store.
+After the repairs continue S027 then all S028–S043 under the exact DEV-009
+field/kind/domain/discovery allocation. Synthetic model/schema/fixture work is
+eligible; Q02/Q06 real host/cohort facts stay unverified at actual dependencies.
+Original hard predecessors, original acceptance and S043 independent review remain.
+
+
 ## DEV-010 — Accept repaired provenance and finish the P03 implementation range
 
 **Date/author:** 2026-10-02, Codex under owner delegation.
@@ -2704,12 +2803,15 @@ Validate evidence identity relationships.
 Catch contradictions among envelope and payload subjects.
 
 ### 3. Exact scope of code changes
-Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion. DEV-010 S025-R1 retains existing typed component expectations and checked access, validates ordered retry chronology at v2 admission, with full one-axis real-ingress controls; v1 stays unchanged.
+Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion. DEV-010 S025-R1 retains existing typed component expectations and checked access, validates ordered retry chronology at v2 admission, with full one-axis real-ingress controls; v1 stays unchanged. DEV-011 S025-R2 adds actual prepared-session/projection-to-admission integration, real context/access compile-fail controls and every execution-bearing temporal matrix.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
 - `crates/eqm_domain/src/evidence_result.rs`
 - `crates/eqm_protocol/tests/`
+- `crates/eqm_application/tests/`
+- `crates/eqm_application/Cargo.toml`
+- `Cargo.lock`
 
 ### 5. Unit tests or integration tests required
 Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip. Use genuine positive fixtures and one-axis RA02/RA13 mutants, including mutation after DTO parsing; no helper-only or self-hash acceptance.
@@ -2718,7 +2820,7 @@ Mismatched payload kind, subject, attempt or semantic digest reject before evalu
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_protocol -p eqm_domain
+cargo test --all-targets --locked -p eqm_protocol -p eqm_domain -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -2751,7 +2853,7 @@ Model the acyclic record dependency chain.
 Prevent evidence-to-decision digest cycles.
 
 ### 3. Exact scope of code changes
-Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence. DEV-009 allocates typed record-kind references to already-defined supplied registry entries along the approved acyclic lifecycle; reject missing/self/future/cyclic references without storage/publication.
+Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence. DEV-009 allocates typed record-kind references to already-defined supplied registry entries along the approved acyclic lifecycle; reject missing/self/future/cyclic references without storage/publication. DEV-011 S026-R1 freezes explicit definition-history order, already-defined historical deployment inputs for Runtime/FrozenInput, forbidden forward definitions and sorted typed references while preserving cycle/direction checks.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`

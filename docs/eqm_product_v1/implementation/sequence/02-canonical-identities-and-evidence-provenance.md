@@ -1,5 +1,9 @@
 # Chapter 02: Canonical identities and evidence provenance
 
+**Current authority:** DEV-011, S025-R2 → S026-R1 → S027–S043;
+24 numbered steps accepted, independent integration review before S044.
+Historical frontier paragraphs below are superseded by the current sole plan.
+
 
 **Current authority:** DEV-010 in the sole COMMIT_SEQUENCE; 23 numbered steps
 accepted for allocated scope. S022-R2 → S025-R1 → S026–S043; independent
@@ -610,12 +614,15 @@ Validate evidence identity relationships.
 Catch contradictions among envelope and payload subjects.
 
 ### 3. Exact scope of code changes
-Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion. DEV-010 S025-R1 retains existing typed component expectations and checked access, validates ordered retry chronology at v2 admission, with full one-axis real-ingress controls; v1 stays unchanged.
+Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion. DEV-010 S025-R1 retains existing typed component expectations and checked access, validates ordered retry chronology at v2 admission, with full one-axis real-ingress controls; v1 stays unchanged. DEV-011 S025-R2 adds actual prepared-session/projection-to-admission integration, real context/access compile-fail controls and every execution-bearing temporal matrix.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
 - `crates/eqm_domain/src/evidence_result.rs`
 - `crates/eqm_protocol/tests/`
+- `crates/eqm_application/tests/`
+- `crates/eqm_application/Cargo.toml`
+- `Cargo.lock`
 
 ### 5. Unit tests or integration tests required
 Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip. Use genuine positive fixtures and one-axis RA02/RA13 mutants, including mutation after DTO parsing; no helper-only or self-hash acceptance.
@@ -624,7 +631,7 @@ Mismatched payload kind, subject, attempt or semantic digest reject before evalu
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_protocol -p eqm_domain
+cargo test --all-targets --locked -p eqm_protocol -p eqm_domain -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -657,7 +664,7 @@ Model the acyclic record dependency chain.
 Prevent evidence-to-decision digest cycles.
 
 ### 3. Exact scope of code changes
-Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence. DEV-009 allocates typed record-kind references to already-defined supplied registry entries along the approved acyclic lifecycle; reject missing/self/future/cyclic references without storage/publication.
+Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence. DEV-009 allocates typed record-kind references to already-defined supplied registry entries along the approved acyclic lifecycle; reject missing/self/future/cyclic references without storage/publication. DEV-011 S026-R1 freezes explicit definition-history order, already-defined historical deployment inputs for Runtime/FrozenInput, forbidden forward definitions and sorted typed references while preserving cycle/direction checks.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`

@@ -185,3 +185,16 @@ S026–S043. No step renumbering, original acceptance change, v1 narrowing, poli
 waiver or external mutation. Independent standard/doctest checks pass; isolated
 probes establish the defects. S043 remains the independent integration boundary;
 full S211 MVP and all original gates remain. See reports/CODEX-49541e3.md.
+
+## DEV-011 — Reusable record lifecycle and missing boundary evidence
+
+Codex, 2026-10-02, reviewed `c774fe0`; accept S022 allocated scope, preserve prior
+acceptance (24 numbered). Retain all returned commits. RF42 requires S026-R1
+explicit definition history and narrow earlier deployment-input exceptions; RF43
+requires S025-R2 production projection/real typed API/all-kind temporal tests.
+RF44 requires final-tree gating after report/ledger updates; stale instruction
+references are aligned here. Exact decisions live in sole COMMIT_SEQUENCE, no
+second plan, renumbering, v1 narrowing, trust promotion or external waiver.
+Independent standard/doctests pass; isolated probe confirms lifecycle defect.
+Continue both corrections and all17 S027–S043 steps, then required independent
+review. Full S211 and original gates remain. See reports/CODEX-c774fe0.md.

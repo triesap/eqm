@@ -1,5 +1,9 @@
 # Chapter 03: Shared sources target roles and exact subjects
 
+**Current authority:** DEV-011, S025-R2 → S026-R1 → S027–S043;
+24 numbered steps accepted, independent integration review before S044.
+Historical frontier paragraphs below are superseded by the current sole plan.
+
 
 **Current authority:** DEV-010 in the sole COMMIT_SEQUENCE; 23 numbered steps
 accepted for allocated scope. S022-R2 → S025-R1 → S026–S043; independent
