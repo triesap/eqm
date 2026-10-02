@@ -899,6 +899,16 @@ pub enum EvidenceResultBuildError {
     AttemptsRequired,
     /// An execution repeated an attempt name.
     DuplicateAttemptId,
+    /// The lineage plan differs from the independently supplied expected plan.
+    PlanMismatch,
+    /// The lineage campaign differs from the independently supplied expected campaign.
+    CampaignMismatch,
+    /// The lineage run differs from the declared execution run.
+    RunMismatch,
+    /// The lineage logical case differs from the declared execution logical case.
+    LogicalCaseMismatch,
+    /// The lineage attempt is not declared by the execution.
+    AttemptNotDeclared,
 }
 
 impl Display for EvidenceResultBuildError {
@@ -1058,6 +1068,37 @@ impl EvidenceLineage {
     pub const fn attempt(&self) -> &AttemptId {
         &self.attempt
     }
+
+    /// Validates this lineage against a declared execution and independently
+    /// supplied expected plan/campaign authority.
+    ///
+    /// The plan and campaign must equal the explicit expected authority; the
+    /// run and logical case must equal the declared execution; the attempt must
+    /// be a member of that execution. Every mismatch returns its own typed
+    /// error, and nothing is derived from timestamps, directories or producer
+    /// strings.
+    pub fn validate_against(
+        &self,
+        execution: &EvidenceExecution,
+        expected: &ExpectedLineageAuthority,
+    ) -> Result<(), EvidenceResultBuildError> {
+        if self.plan != expected.plan {
+            return Err(EvidenceResultBuildError::PlanMismatch);
+        }
+        if self.campaign != expected.campaign {
+            return Err(EvidenceResultBuildError::CampaignMismatch);
+        }
+        if self.run != execution.run {
+            return Err(EvidenceResultBuildError::RunMismatch);
+        }
+        if self.logical_case != execution.logical_case {
+            return Err(EvidenceResultBuildError::LogicalCaseMismatch);
+        }
+        if !execution.attempts.contains(&self.attempt) {
+            return Err(EvidenceResultBuildError::AttemptNotDeclared);
+        }
+        Ok(())
+    }
 }
 
 /// One logical-case execution with uniquely named attempts.
@@ -1104,6 +1145,37 @@ impl EvidenceExecution {
     #[must_use]
     pub const fn attempts(&self) -> &BTreeSet<AttemptId> {
         &self.attempts
+    }
+}
+
+/// Independently supplied expected plan/campaign authority for validating one
+/// [`EvidenceLineage`] against an [`EvidenceExecution`].
+///
+/// Holding this context is not authority by itself, and a structurally complete
+/// lineage or a declared attempt name is never substituted for it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExpectedLineageAuthority {
+    plan: PlanId,
+    campaign: CampaignId,
+}
+
+impl ExpectedLineageAuthority {
+    /// Creates explicit expected authority.
+    #[must_use]
+    pub const fn new(plan: PlanId, campaign: CampaignId) -> Self {
+        Self { plan, campaign }
+    }
+
+    /// Returns the expected plan.
+    #[must_use]
+    pub const fn plan(&self) -> &PlanId {
+        &self.plan
+    }
+
+    /// Returns the expected campaign.
+    #[must_use]
+    pub const fn campaign(&self) -> &CampaignId {
+        &self.campaign
     }
 }
 
@@ -1321,13 +1393,46 @@ mod tests {
             attempt: Some(attempt),
         };
         assert!(EvidenceLineage::from_parts(complete.clone()).is_ok());
-        assert_eq!(
-            EvidenceLineage::from_parts(EvidenceLineageParts {
-                plan: None,
-                ..complete
-            }),
-            Err(EvidenceResultBuildError::MissingPlan)
-        );
+        // Each of the five parts is required and rejected separately.
+        for (parts, expected) in [
+            (
+                EvidenceLineageParts {
+                    plan: None,
+                    ..complete.clone()
+                },
+                EvidenceResultBuildError::MissingPlan,
+            ),
+            (
+                EvidenceLineageParts {
+                    campaign: None,
+                    ..complete.clone()
+                },
+                EvidenceResultBuildError::MissingCampaign,
+            ),
+            (
+                EvidenceLineageParts {
+                    run: None,
+                    ..complete.clone()
+                },
+                EvidenceResultBuildError::MissingRun,
+            ),
+            (
+                EvidenceLineageParts {
+                    logical_case: None,
+                    ..complete.clone()
+                },
+                EvidenceResultBuildError::MissingLogicalCase,
+            ),
+            (
+                EvidenceLineageParts {
+                    attempt: None,
+                    ..complete.clone()
+                },
+                EvidenceResultBuildError::MissingAttempt,
+            ),
+        ] {
+            assert_eq!(EvidenceLineage::from_parts(parts), Err(expected));
+        }
         Ok(())
     }
 
@@ -1359,6 +1464,103 @@ mod tests {
         )?;
         assert_ne!(first, second);
         assert_eq!(first.attempts().len(), 2);
+        Ok(())
+    }
+
+    fn lineage(parts: &LineageIds) -> Result<EvidenceLineage, Box<dyn Error>> {
+        let (plan, campaign, run, logical_case, attempt) = parts;
+        Ok(EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(plan.clone()),
+            campaign: Some(campaign.clone()),
+            run: Some(run.clone()),
+            logical_case: Some(logical_case.clone()),
+            attempt: Some(attempt.clone()),
+        })?)
+    }
+
+    #[test]
+    fn validate_against_declared_execution_and_expected_authority() -> Result<(), Box<dyn Error>> {
+        let ids = lineage_ids()?;
+        let (plan, campaign, run, logical_case, attempt) = ids.clone();
+        let lineage = lineage(&ids)?;
+        let execution = EvidenceExecution::new(
+            run.clone(),
+            logical_case.clone(),
+            vec![attempt.clone(), AttemptId::new("attempt.two")?],
+        )?;
+        let expected = ExpectedLineageAuthority::new(plan.clone(), campaign.clone());
+        assert!(lineage.validate_against(&execution, &expected).is_ok());
+        assert_eq!(expected.plan(), &plan);
+        assert_eq!(expected.campaign(), &campaign);
+
+        // Each mismatched axis rejects with its own typed error.
+        assert_eq!(
+            lineage.validate_against(
+                &execution,
+                &ExpectedLineageAuthority::new(PlanId::new("plan.other")?, campaign.clone())
+            ),
+            Err(EvidenceResultBuildError::PlanMismatch)
+        );
+        assert_eq!(
+            lineage.validate_against(
+                &execution,
+                &ExpectedLineageAuthority::new(plan.clone(), CampaignId::new("campaign.other")?)
+            ),
+            Err(EvidenceResultBuildError::CampaignMismatch)
+        );
+        let other_run = EvidenceExecution::new(
+            RunId::new("run.two")?,
+            logical_case.clone(),
+            vec![attempt.clone()],
+        )?;
+        assert_eq!(
+            lineage.validate_against(&other_run, &expected),
+            Err(EvidenceResultBuildError::RunMismatch)
+        );
+        let other_case = EvidenceExecution::new(
+            run.clone(),
+            LogicalCaseId::new("case.other")?,
+            vec![attempt.clone()],
+        )?;
+        assert_eq!(
+            lineage.validate_against(&other_case, &expected),
+            Err(EvidenceResultBuildError::LogicalCaseMismatch)
+        );
+        let undeclared = EvidenceExecution::new(
+            run.clone(),
+            logical_case.clone(),
+            vec![AttemptId::new("attempt.other")?],
+        )?;
+        assert_eq!(
+            lineage.validate_against(&undeclared, &expected),
+            Err(EvidenceResultBuildError::AttemptNotDeclared)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn run_and_case_axes_are_independent() -> Result<(), Box<dyn Error>> {
+        let ids = lineage_ids()?;
+        let (plan, campaign, run, logical_case, attempt) = ids.clone();
+        let lineage = lineage(&ids)?;
+        let expected = ExpectedLineageAuthority::new(plan, campaign);
+        // Same run, different case: only the case axis rejects.
+        let case_variant = EvidenceExecution::new(
+            run.clone(),
+            LogicalCaseId::new("case.other")?,
+            vec![attempt.clone()],
+        )?;
+        assert_eq!(
+            lineage.validate_against(&case_variant, &expected),
+            Err(EvidenceResultBuildError::LogicalCaseMismatch)
+        );
+        // Same case, different run: only the run axis rejects.
+        let run_variant =
+            EvidenceExecution::new(RunId::new("run.two")?, logical_case.clone(), vec![attempt])?;
+        assert_eq!(
+            lineage.validate_against(&run_variant, &expected),
+            Err(EvidenceResultBuildError::RunMismatch)
+        );
         Ok(())
     }
 }

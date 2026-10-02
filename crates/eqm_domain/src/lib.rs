@@ -83,8 +83,8 @@ pub use evidence_result::{
     AttemptAggregate, EvidenceAttachment, EvidenceAttempt, EvidenceCounts, EvidenceExecution,
     EvidenceIdentityRelation, EvidenceLineage, EvidenceLineageParts, EvidencePayload,
     EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject,
-    ExecutionPayload, MAX_RAW_EVIDENCE_BYTES, ProducerRef, ProfileSelection, RawEvidenceObject,
-    RepositoryIdentity, SourceCommit,
+    ExecutionPayload, ExpectedLineageAuthority, MAX_RAW_EVIDENCE_BYTES, ProducerRef,
+    ProfileSelection, RawEvidenceObject, RepositoryIdentity, SourceCommit,
 };
 pub use graph::{
     AdapterLockIdentity, FinalizedWorkspaceGraph, ImportLockIdentity, WorkspaceGraph,
