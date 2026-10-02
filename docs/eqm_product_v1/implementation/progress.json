@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S025",
+ "next_step": "S026",
  "implementation": "in_progress",
- "local_verification": "independent_check_passed_531_test_executions;domain_protocol_doctests_passed;lifecycle_defect_probe_confirmed",
+ "local_verification": "S025-R2_committed_verified_pending_acceptance;S026-R1_next",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1022,9 +1022,25 @@
     },
     {
      "id": "S025-R2",
-     "status": "pending",
+     "status": "complete",
      "commit_sha": null,
-     "supervisor_status": "required_DEV011"
+     "supervisor_status": "pending_acceptance",
+     "report": "implementation/reports/S025.md#corrective-checkpoint-s025-r2--production-projection-admission-evidence-dev-011-rf43",
+     "implementation_status": "committed_pending_acceptance",
+     "verification": [
+      "cargo check --workspace --all-targets",
+      "cargo test --locked -p eqm_protocol admission",
+      "cargo test --locked -p eqm_application --test admission_provenance",
+      "cargo test --locked -p eqm_protocol -p eqm_domain --doc",
+      "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain -p eqm_application",
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+      "git diff --check"
+     ]
     }
    ]
   },
@@ -2870,7 +2886,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S025",
+ "active_step": "S026",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3194,7 +3210,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S025-R2",
+ "next_checkpoint": "S026-R1",
  "supervisor_review": {
   "source_commit": "c774fe000bdecb50dd1b8ea4b16164900bd6032b",
   "report": "implementation/reports/CODEX-c774fe0.md",

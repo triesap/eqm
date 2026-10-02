@@ -39,27 +39,38 @@ use std::fmt::{self, Display, Formatter};
 /// workspace digest. Approved component identities use their existing typed
 /// digest newtypes, not interchangeable generic SHA values.
 ///
-/// The distinct newtypes cannot be substituted for each other:
+/// The typed fields cannot be substituted with another identity domain:
 ///
 /// ```compile_fail
-/// use eqm_domain::{AdapterDigest, RunnerDigest};
-/// fn expects_adapter(_: AdapterDigest) {}
-/// expects_adapter(RunnerDigest::hash_content(b"runner"));
+/// use eqm_domain::BindingDigest;
+/// use eqm_protocol::EvidenceAdmissionContext;
+/// fn replace(context: &mut EvidenceAdmissionContext) {
+///     // `contract_digest` is a `ContractDigest`, not a `BindingDigest`.
+///     context.contract_digest = BindingDigest::hash_content(b"binding");
+/// }
 /// ```
 ///
 /// ```compile_fail
-/// use eqm_domain::{BindingDigest, ContractDigest};
-/// fn expects_binding(_: BindingDigest) {}
-/// expects_binding(ContractDigest::hash_content(b"contract"));
+/// use eqm_domain::RunnerDigest;
+/// use eqm_protocol::EvidenceAdmissionContext;
+/// fn replace(context: &mut EvidenceAdmissionContext) {
+///     // `adapter_digest` is `Option<AdapterDigest>`, not `Option<RunnerDigest>`.
+///     context.adapter_digest = Some(RunnerDigest::hash_content(b"runner"));
+/// }
 /// ```
 ///
-/// Each identity remains constructible under its documented domain, and its
-/// exact SHA is its wire encoding:
+/// The positive counterpart assigns the matching typed domain, and each
+/// identity's exact SHA is its wire encoding:
 ///
 /// ```
-/// use eqm_domain::ContractDigest;
+/// use eqm_domain::{ContractDigest, Sha256Digest};
+/// use eqm_protocol::EvidenceAdmissionContext;
+/// fn replace(context: &mut EvidenceAdmissionContext, value: ContractDigest) {
+///     context.contract_digest = value;
+/// }
 /// let contract = ContractDigest::hash_content(b"contract");
-/// assert_eq!(contract.as_digest().to_string(), contract.to_string());
+/// let plain: Sha256Digest = contract.as_digest();
+/// assert_eq!(plain.to_string(), contract.to_string());
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EvidenceAdmissionContext {
@@ -108,7 +119,40 @@ pub struct EvidenceAdmissionContext {
 ///
 /// Fields are private; only [`admit_evidence`] constructs one, so an arbitrary
 /// parsed record cannot be promoted to an admitted result without the full
-/// cross-checks. Holding one confers no producer trust.
+/// cross-checks:
+///
+/// ```compile_fail
+/// use eqm_protocol::AdmittedEvidenceV2;
+/// fn forge() -> AdmittedEvidenceV2 {
+///     // `result` is a private field, so unchecked construction fails.
+///     AdmittedEvidenceV2 { result: todo!() }
+/// }
+/// ```
+///
+/// The accessors return their own typed option, not a bare identity:
+///
+/// ```compile_fail
+/// use eqm_domain::AdapterDigest;
+/// use eqm_protocol::AdmittedEvidenceV2;
+/// fn takes(_: AdapterDigest) {}
+/// fn read(value: &AdmittedEvidenceV2) {
+///     // `adapter_digest()` returns `Option<AdapterDigest>`.
+///     takes(value.adapter_digest());
+/// }
+/// ```
+///
+/// The positive accessor form unwraps the typed option:
+///
+/// ```
+/// use eqm_domain::AdapterDigest;
+/// use eqm_protocol::AdmittedEvidenceV2;
+/// fn takes(_: Option<AdapterDigest>) {}
+/// fn read(value: &AdmittedEvidenceV2) {
+///     takes(value.adapter_digest());
+/// }
+/// ```
+///
+/// Holding one confers no producer trust.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AdmittedEvidenceV2 {
     result: EvidenceResult,
@@ -1061,26 +1105,44 @@ mod tests {
         })
     }
 
+    fn execution_payload(
+        kind: &str,
+        attempts: Vec<AttemptV2Dto>,
+    ) -> Result<EvidencePayloadV2Dto, Box<dyn Error>> {
+        let execution = ExecutionPayloadV2Dto {
+            attempts,
+            counts: CountsV2Dto {
+                selected: WireUint::new(1),
+                passed: WireUint::new(1),
+                failed: WireUint::new(0),
+                skipped: WireUint::new(0),
+                filtered: WireUint::new(0),
+                quarantined: WireUint::new(0),
+            },
+            started_at: instant("2026-01-02T03:00:00Z")?,
+            finished_at: instant("2026-01-02T04:00:00Z")?,
+        };
+        Ok(match kind {
+            "structural_check" => EvidencePayloadV2Dto::StructuralCheck { execution },
+            "snapshot" => EvidencePayloadV2Dto::Snapshot { execution },
+            _ => EvidencePayloadV2Dto::Test { execution },
+        })
+    }
+
     fn record_with_attempts(
+        kind: &str,
         attempts: Vec<AttemptV2Dto>,
     ) -> Result<EvidenceResultV2Dto, Box<dyn Error>> {
         let mut value = record()?;
-        value.payload = EvidencePayloadV2Dto::Test {
-            execution: ExecutionPayloadV2Dto {
-                attempts,
-                counts: CountsV2Dto {
-                    selected: WireUint::new(1),
-                    passed: WireUint::new(1),
-                    failed: WireUint::new(0),
-                    skipped: WireUint::new(0),
-                    filtered: WireUint::new(0),
-                    quarantined: WireUint::new(0),
-                },
-                started_at: instant("2026-01-02T03:00:00Z")?,
-                finished_at: instant("2026-01-02T04:00:00Z")?,
-            },
-        };
+        value.kind = kind.to_owned();
+        value.payload = execution_payload(kind, attempts)?;
         Ok(value)
+    }
+
+    fn context_for_kind(kind: EvidenceKind) -> Result<EvidenceAdmissionContext, Box<dyn Error>> {
+        let mut expected = context()?;
+        expected.kind = kind;
+        Ok(expected)
     }
 
     #[test]
@@ -1295,87 +1357,108 @@ mod tests {
     #[test]
     fn retry_chronology_control_accepts_ordered_and_rejects_reversed() -> Result<(), Box<dyn Error>>
     {
-        // Strictly sequential.
-        let sequential = vec![
-            attempt_dto(1, "2026-01-02T03:04:05Z", "2026-01-02T03:04:06Z")?,
-            attempt_dto(2, "2026-01-02T03:04:07Z", "2026-01-02T03:04:08Z")?,
-        ];
-        assert!(
-            admit_evidence(
-                &seal(record_with_attempts(sequential)?)?,
-                &lineage()?,
-                &execution_record()?,
-                &context()?
-            )
-            .is_ok()
-        );
-        // Equal boundaries are allowed and nanoseconds are retained.
-        let equal = vec![
-            attempt_dto(
+        // The same sealed temporal matrix runs for every execution-bearing kind
+        // with its context kind kept consistent.
+        for (kind_str, kind) in [
+            ("structural_check", EvidenceKind::StructuralCheck),
+            ("test", EvidenceKind::Test),
+            ("snapshot", EvidenceKind::Snapshot),
+        ] {
+            let expected = context_for_kind(kind)?;
+
+            // Strictly sequential.
+            let sequential = vec![
+                attempt_dto(1, "2026-01-02T03:04:05Z", "2026-01-02T03:04:06Z")?,
+                attempt_dto(2, "2026-01-02T03:04:07Z", "2026-01-02T03:04:08Z")?,
+            ];
+            assert!(
+                admit_evidence(
+                    &seal(record_with_attempts(kind_str, sequential)?)?,
+                    &lineage()?,
+                    &execution_record()?,
+                    &expected
+                )
+                .is_ok(),
+                "{kind_str} sequential"
+            );
+
+            // Equal boundaries are allowed and nanoseconds are retained.
+            let equal = vec![
+                attempt_dto(
+                    1,
+                    "2026-01-02T03:04:05.000000001Z",
+                    "2026-01-02T03:04:05.000000002Z",
+                )?,
+                attempt_dto(
+                    2,
+                    "2026-01-02T03:04:05.000000002Z",
+                    "2026-01-02T03:04:05.000000003Z",
+                )?,
+            ];
+            assert!(
+                admit_evidence(
+                    &seal(record_with_attempts(kind_str, equal)?)?,
+                    &lineage()?,
+                    &execution_record()?,
+                    &expected
+                )
+                .is_ok(),
+                "{kind_str} equal boundary"
+            );
+
+            // Reversed: retry 2 begins before retry 1 finishes.
+            let reversed = vec![
+                attempt_dto(1, "2026-01-02T03:04:09Z", "2026-01-02T03:04:10Z")?,
+                attempt_dto(2, "2026-01-02T03:04:05Z", "2026-01-02T03:04:06Z")?,
+            ];
+            assert_eq!(
+                admit_evidence(
+                    &seal(record_with_attempts(kind_str, reversed)?)?,
+                    &lineage()?,
+                    &execution_record()?,
+                    &expected
+                ),
+                Err(EvidenceAdmissionError::RetryChronology),
+                "{kind_str} reversed"
+            );
+
+            // Overlapping: retry 2 begins before retry 1 finishes.
+            let overlapping = vec![
+                attempt_dto(1, "2026-01-02T03:04:05Z", "2026-01-02T03:04:08Z")?,
+                attempt_dto(2, "2026-01-02T03:04:07Z", "2026-01-02T03:04:09Z")?,
+            ];
+            assert_eq!(
+                admit_evidence(
+                    &seal(record_with_attempts(kind_str, overlapping)?)?,
+                    &lineage()?,
+                    &execution_record()?,
+                    &expected
+                ),
+                Err(EvidenceAdmissionError::RetryChronology),
+                "{kind_str} overlapping"
+            );
+
+            // Out of the aggregate window: domain attempt-window containment rejects.
+            let out_of_window = vec![attempt_dto(
                 1,
-                "2026-01-02T03:04:05.000000001Z",
-                "2026-01-02T03:04:05.000000002Z",
-            )?,
-            attempt_dto(
-                2,
-                "2026-01-02T03:04:05.000000002Z",
-                "2026-01-02T03:04:05.000000003Z",
-            )?,
-        ];
-        assert!(
-            admit_evidence(
-                &seal(record_with_attempts(equal)?)?,
-                &lineage()?,
-                &execution_record()?,
-                &context()?
-            )
-            .is_ok()
-        );
-        // Reversed: retry 2 begins before retry 1 finishes.
-        let reversed = vec![
-            attempt_dto(1, "2026-01-02T03:04:09Z", "2026-01-02T03:04:10Z")?,
-            attempt_dto(2, "2026-01-02T03:04:05Z", "2026-01-02T03:04:06Z")?,
-        ];
-        assert_eq!(
-            admit_evidence(
-                &seal(record_with_attempts(reversed)?)?,
-                &lineage()?,
-                &execution_record()?,
-                &context()?
-            ),
-            Err(EvidenceAdmissionError::RetryChronology)
-        );
-        // Overlapping: retry 2 begins before retry 1 finishes.
-        let overlapping = vec![
-            attempt_dto(1, "2026-01-02T03:04:05Z", "2026-01-02T03:04:08Z")?,
-            attempt_dto(2, "2026-01-02T03:04:07Z", "2026-01-02T03:04:09Z")?,
-        ];
-        assert_eq!(
-            admit_evidence(
-                &seal(record_with_attempts(overlapping)?)?,
-                &lineage()?,
-                &execution_record()?,
-                &context()?
-            ),
-            Err(EvidenceAdmissionError::RetryChronology)
-        );
-        // Out of the aggregate window: domain attempt-window containment rejects.
-        let out_of_window = vec![attempt_dto(
-            1,
-            "2026-01-02T02:59:00Z",
-            "2026-01-02T02:59:30Z",
-        )?];
-        assert!(matches!(
-            admit_evidence(
-                &seal(record_with_attempts(out_of_window)?)?,
-                &lineage()?,
-                &execution_record()?,
-                &context()?
-            ),
-            Err(EvidenceAdmissionError::Domain(
-                EvidenceResultBuildError::InvalidAttemptSequence
-            ))
-        ));
+                "2026-01-02T02:59:00Z",
+                "2026-01-02T02:59:30Z",
+            )?];
+            assert!(
+                matches!(
+                    admit_evidence(
+                        &seal(record_with_attempts(kind_str, out_of_window)?)?,
+                        &lineage()?,
+                        &execution_record()?,
+                        &expected
+                    ),
+                    Err(EvidenceAdmissionError::Domain(
+                        EvidenceResultBuildError::InvalidAttemptSequence
+                    ))
+                ),
+                "{kind_str} out of window"
+            );
+        }
         Ok(())
     }
 }

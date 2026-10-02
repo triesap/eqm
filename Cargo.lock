@@ -227,6 +227,7 @@ dependencies = [
  "eqm_manifest",
  "eqm_protocol",
  "eqm_runner",
+ "serde_json",
  "tempfile",
 ]
 

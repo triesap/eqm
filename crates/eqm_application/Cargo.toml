@@ -19,6 +19,7 @@ eqm_protocol.workspace = true
 eqm_runner.workspace = true
 
 [dev-dependencies]
+serde_json.workspace = true
 tempfile.workspace = true
 
 [lints]
