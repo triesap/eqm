@@ -3,12 +3,11 @@
 //! DEV-007 chooses an exact **target-definition component identity**, separate
 //! from selected-policy, source snapshot, build artifact and execution
 //! identities. At this step [`Target`] contains exactly `id`, `root`,
-//! `platform`, `framework`, `owners` and `extensions`: there are ZERO
-//! build/profile/source-component reference fields to project. The internal JSON
-//! root therefore has exactly those six members, without a schema URI or a
-//! nested `target` wrapper. That absence is a documented fact, not a `null`,
-//! an invented empty collection, a successful verification or a `"none"`
-//! authority.
+//! `platform`, `framework`, optional `role`, `owners` and `extensions`. The
+//! internal JSON root therefore has those members, with `role` inserted only
+//! when the target declares one, without a schema URI or a nested `target`
+//! wrapper. An absent role is omitted; it is not a `null`, an invented default,
+//! a successful verification or a `"none"` authority.
 //!
 //! Strings retain their validated exact values. `root` remains the authored
 //! [`RepoPath`](eqm_domain::RepoPath): no absolute expansion, filesystem
@@ -24,7 +23,7 @@
 //! it as a full build or trusted-subject identity.
 
 use super::support::{canonical_strings, extensions_v2};
-use super::{CanonicalizationError, MAX_PROJECTION_BYTES, object};
+use super::{CanonicalizationError, MAX_PROJECTION_BYTES, insert_optional, object};
 use eqm_domain::{Target, TargetConfigurationDigest};
 use serde_json::{Value, json};
 
@@ -51,11 +50,11 @@ impl CanonicalTargetConfigurationV2 {
 
 /// Projects one target into its exact v2 target-configuration semantic shape.
 ///
-/// The root has exactly `id`, `root`, `platform`, `framework`, `owners` and
-/// `extensions`. There are no build/profile/source-component fields to project
-/// at this step.
+/// The root has `id`, `root`, `platform`, `framework`, `owners` and
+/// `extensions`, plus `role` only when the target declares one. There are no
+/// build/profile/source-component fields to project at this step.
 pub fn target_configuration_v2(value: &Target) -> Result<Value, CanonicalizationError> {
-    Ok(object([
+    let mut projected = object([
         ("id", json!(value.id().as_str())),
         ("root", json!(value.root().as_str())),
         ("platform", json!(value.platform().as_str())),
@@ -65,7 +64,13 @@ pub fn target_configuration_v2(value: &Target) -> Result<Value, Canonicalization
             canonical_strings(value.owners().iter().map(|owner| owner.as_str().to_owned()))?,
         ),
         ("extensions", extensions_v2(value.extensions())?),
-    ]))
+    ]);
+    insert_optional(
+        &mut projected,
+        "role",
+        value.role().map(|role| json!(role.as_str())),
+    );
+    Ok(projected)
 }
 
 /// Canonicalizes one target under the existing `TargetConfigurationDigest` domain.

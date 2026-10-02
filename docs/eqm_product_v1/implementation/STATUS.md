@@ -9,11 +9,13 @@ definition-history ordering with the two historical deployment-input edges and
 canonical sorted references for RF42 (acceptance pending). S027 adds a shared
 deterministic cross-domain provenance corpus with literal raw/semantic oracles,
 bound-axis mutation controls and real-loader component identity controls
-(acceptance pending). RF44 final-tree gating and authority context are reconciled
-in current planning; implementation receipts must prove final trees, including
-reports/ledger.
+(acceptance pending). S028 adds an authored extensible target role that is
+projected into the target v2 identity only when present, leaving legacy targets
+and the v1 projection unchanged (acceptance pending). RF44 final-tree gating and
+authority context are reconciled in current planning; implementation receipts
+must prove final trees, including reports/ledger.
 
-Next **every ordered S028–S043**, pfc through EQM-P03.
+Next **every ordered S029–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly

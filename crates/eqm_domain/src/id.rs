@@ -203,6 +203,12 @@ define_id!(
     None
 );
 define_id!(
+    /// An authored, extensible product-role identity, independent of targets.
+    RoleId,
+    1,
+    None
+);
+define_id!(
     /// An approved acquisition plan ID.
     PlanId,
     2,

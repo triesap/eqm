@@ -4,8 +4,8 @@ use crate::{
     ArtifactId, ArtifactRole, BindingId, CapabilityId, DimensionId, EvidenceSpecId,
     EvidenceSpecification, Facet, FragmentId, FrameworkId, HttpMethod, IntendedExposureState,
     JourneyId, LifecycleStatus, LocalRequirementId, OwnerRef, PlatformId, ProviderId, RepoPath,
-    RequirementLevel, RequirementScope, RiskClass, Sha256Digest, SurfaceId, SymbolicValueId,
-    TargetId, UnitId,
+    RequirementLevel, RequirementScope, RiskClass, RoleId, Sha256Digest, SurfaceId,
+    SymbolicValueId, TargetId, UnitId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -1151,12 +1151,16 @@ pub struct Target {
     root: RepoPath,
     platform: PlatformId,
     framework: FrameworkId,
+    role: Option<RoleId>,
     owners: BTreeSet<OwnerRef>,
     extensions: Extensions,
 }
 
 impl Target {
     /// Creates a target with a validated repository root and nonempty owners.
+    ///
+    /// The product role is absent. A legacy/unauthored target carries typed
+    /// absence, never an invented role.
     pub fn new(
         id: TargetId,
         root: RepoPath,
@@ -1170,9 +1174,21 @@ impl Target {
             root,
             platform,
             framework,
+            role: None,
             owners: owner_set(owners)?,
             extensions,
         })
+    }
+
+    /// Returns a copy of this target with an explicit product role.
+    ///
+    /// The role is an authored, extensible symbolic identity; it is independent
+    /// of the target ID, platform, framework and owners, and two distinct
+    /// targets may share one role.
+    #[must_use]
+    pub fn with_role(mut self, role: RoleId) -> Self {
+        self.role = Some(role);
+        self
     }
     /// Returns the target ID.
     #[must_use]
@@ -1188,6 +1204,13 @@ impl Target {
     #[must_use]
     pub const fn platform(&self) -> &PlatformId {
         &self.platform
+    }
+    /// Returns the authored product role, if one was declared.
+    ///
+    /// An absent role is typed absence, not a default platform role.
+    #[must_use]
+    pub const fn role(&self) -> Option<&RoleId> {
+        self.role.as_ref()
     }
     /// Returns the extensible framework ID.
     #[must_use]

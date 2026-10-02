@@ -95,7 +95,7 @@ pub use id::{
     AdapterId, ArtifactId, AttemptId, BindingId, CampaignId, CapabilityId, DimensionId,
     EvidenceSpecId, FragmentId, FrameworkId, FullRequirementId, IdParseError, JourneyId,
     LocalRequirementId, LogicalCaseId, PlanId, PlatformId, PolicyId, ProfileId, ProviderId,
-    RecordId, RunId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
+    RecordId, RoleId, RunId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
 };
 pub use inventory::{
     AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,

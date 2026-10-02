@@ -7,7 +7,7 @@
 
 use eqm_domain::{
     ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, FrameworkId, OwnerRef,
-    PlatformId, RepoPath, Target, TargetConfigurationDigest, TargetId,
+    PlatformId, RepoPath, RoleId, Target, TargetConfigurationDigest, TargetId,
 };
 use eqm_manifest::{canonicalize_target_configuration_v2, project_target_configuration_v2};
 use std::collections::BTreeMap;
@@ -47,6 +47,10 @@ fn base_target() -> Result<Target, Box<dyn Error>> {
         &["owner://team/web"],
         Extensions::default(),
     )
+}
+
+fn role_target(role: &str) -> Result<Target, Box<dyn Error>> {
+    Ok(base_target()?.with_role(RoleId::new(role)?))
 }
 
 fn display_extensions() -> Result<Extensions, Box<dyn Error>> {
@@ -277,5 +281,60 @@ fn nested_large_extension_values_remain_distinct() -> Result<(), Box<dyn Error>>
     )?)?;
     assert_ne!(base.digest(), large_integer.digest());
     assert_ne!(large_integer.bytes(), large_text.bytes());
+    Ok(())
+}
+
+#[test]
+fn absent_role_omits_the_member_and_preserves_the_literal_identity() -> Result<(), Box<dyn Error>> {
+    let projected = project_target_configuration_v2(&base_target()?)?;
+    assert!(
+        !projected
+            .as_object()
+            .ok_or("projected target")?
+            .contains_key("role")
+    );
+    assert_eq!(
+        std::str::from_utf8(canonicalize_target_configuration_v2(&base_target()?)?.bytes())?,
+        BASE_BYTES
+    );
+    Ok(())
+}
+
+#[test]
+fn present_role_is_projected_and_changes_the_v2_identity() -> Result<(), Box<dyn Error>> {
+    let base = canonicalize_target_configuration_v2(&base_target()?)?;
+    let with_role = canonicalize_target_configuration_v2(&role_target("control_tower")?)?;
+    let projected = project_target_configuration_v2(&role_target("control_tower")?)?;
+    assert_eq!(projected["role"], serde_json::json!("control_tower"));
+    assert_eq!(projected["id"], serde_json::json!("web"));
+    // A same-target role mutation changes the target-configuration identity.
+    assert_ne!(base.digest(), with_role.digest());
+    // A different role on the same target also differs.
+    let other = canonicalize_target_configuration_v2(&role_target("operator")?)?;
+    assert_ne!(with_role.digest(), other.digest());
+    // The typed identity remains the domain wrapper over its exact bytes.
+    assert_eq!(
+        with_role.digest(),
+        TargetConfigurationDigest::hash_content(with_role.bytes())
+    );
+    Ok(())
+}
+
+#[test]
+fn distinct_targets_may_share_a_role_without_colliding() -> Result<(), Box<dyn Error>> {
+    let web = canonicalize_target_configuration_v2(&role_target("control_tower")?)?;
+    let desktop = canonicalize_target_configuration_v2(
+        &target_with(
+            "tower",
+            "apps/tower",
+            "desktop",
+            "compose",
+            &["owner://team/tower"],
+            Extensions::default(),
+        )?
+        .with_role(RoleId::new("control_tower")?),
+    )?;
+    assert_ne!(web.digest(), desktop.digest());
+    assert_eq!(web.bytes(), web.bytes());
     Ok(())
 }
