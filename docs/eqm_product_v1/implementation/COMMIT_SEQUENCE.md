@@ -1,5 +1,210 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-008 — Finish source provenance and continue the eligible MVP
+
+**Date/author:** 2026-10-02, Codex under owner delegation.
+**Reviewed source:** `eb2f323e459423fd06d25beffa7f6f85a1077af4`.
+[Independent review](reports/CODEX-eb2f323.md) accepts RF27 and S020 for allocated
+scope, retains S019-R2 with a small evidence gap, and retains S021/S022 with
+changes required. S001–S018 and S020 are accepted (19 numbered steps). S019's
+main implementation remains; no history is rewritten. This amendment supersedes
+stale cursors and S022's decision block. No owner-only decision is needed now.
+
+### Ordered work and batch boundary
+
+Execute **DEV008-P1 → S019-R3 → S021-R1 → S022 completion → every ordered eligible S023–S211**.
+The selected batch is the full remaining approved MVP, ending at S211. Each
+checkpoint remains independently green and committed; a commit/report/context
+growth is not a stop condition. Continue after the repairs and after each later
+green checkpoint. Hard predecessors, explicit independent-review gates, actual
+runtime limits, user stops and genuine unavailable inputs/authority remain binding.
+Do not skip a blocked predecessor. If another approved slice is independently
+eligible under existing dependencies, continue it; do not invent a new order.
+
+Codex owns material requirements, representation decisions and independent
+acceptance. Pi owns product code/tests and routine internal mechanics. A new
+material decision must return with exact evidence and smallest alternatives;
+Pi cannot waive criteria or promote its own verification to Codex acceptance.
+S143 is intermediate. Q01–Q15 remain at actual dependent steps, not blanket
+hardware blockers. Synthetic inputs prove software behavior only. No push,
+publication, deployment, signing, live enforcement or optional native activation.
+
+### DEV008-P1 — RF31: repair the newly yanked transitive dependency
+
+Current cargo deny rejects locked yoke-derive 0.8.3. Official registry metadata
+lists 0.8.4 unyanked, MSRV 1.82, compatible with the current toolchain and yoke
+0.8 dependency range. Codex selects 0.8.4. Perform a narrow transitive Cargo.lock
+update (`cargo update -p yoke-derive --precise 0.8.4`), inspect all resulting
+lock changes and preserve exact direct pins. No dependency-policy waiver, broad
+upgrade or new license exception. One intentionally unlocked resolution is
+authorized; all subsequent tests/checks stay --locked. Verify the resolved graph
+with cargo deny check and cargo audit --deny warnings plus workspace standard,
+schema and relevant protocol/test-support schema-validator tests. If that precise
+resolution is impossible or exposes a new policy failure, return actual evidence
+to Codex rather than changing pins/gates. Record the failed baseline and exact
+replacement; commit `build: replace yanked schema validator dependency`. This
+prerequisite does not renumber the original 211 steps or pretend prior trees
+passed today's registry state. Continue the next repair after green verification.
+
+### S019-R3 — RF28's remaining proof (not new product semantics)
+
+Retain all S019-R1/R2 code and regressions. RF27 is closed: shared applicability
+projection correctly orders full JCS member bytes and preserves domain sets/v1.
+RF28 is largely repaired but these assertions still need real production output:
+
+- `policy_rule_endpoints_use_literal_v2_wire_forms` checks minimum `1` by calling
+  boundary_expected(1), not by projecting a minimum-valued rule. Project actual
+  minimum and legal maximum rules; use reviewed literal expected JSON tokens for
+  both age/count. Replace computed boundary_expected helpers in contract and
+  policy revision tests with a literal (input, expected JSON value) table.
+- `rule_order_uses_full_member_bytes` compares two outputs but does not assert
+  reviewed literal order/digest; the chosen facets follow ordinary enum order.
+  Use a heterogeneous two-rule trap where full JCS order differs from domain
+  ordering (e.g. optional selector presence versus minimum_age/count ordering),
+  assert the exact expected member order and permutation-equal bytes/digests.
+- `populated_dimension_description_is_present_and_absent_exactly` asserts only
+  presence. Add a same-ingress absent control and require omission, not null.
+
+No whole AC/RA closure follows. Scope is owning manifest tests/reports and any
+existing approved-projection defect they expose. Run S019's declared tests and
+commands plus structure/schema checks; commit
+`test: finish literal policy provenance controls`. No ordinary successor is
+folded into this repair. Mark new implementation acceptance pending, then continue.
+
+### S021-R1 — RF30: approved v2 runner identity
+
+S021 successfully binds executable bytes, definition and approved guarantees,
+but invents `eqm:v1:runner-identity` with a private binary encoder and returns
+untyped SHA-256 while the frozen RunnerDigest domain is `eqm:v2:runner`.
+Keep stronger executable binding; close this representation now, before new
+subject consumers. Do not publish that invented v1 identity as the new contract.
+
+Choose runner-owned pure JCS projection over the resolved definition/program and
+approved enforceable guarantees, using existing dependencies. No manifest-to-
+runner/engine/protocol back-edge and no domain serialization dependency. Root is
+exactly `definition`, `program`, `approved_guarantees`. `definition` includes all
+RunnerDefinition fields: id, revision, owners, backend, declared program, ordered
+args, cwd, environment, secret references, timeout_ms, max_output_bytes,
+max_concurrency, declared guarantees, semantic extensions. Approved guarantees
+are actual independently supplied context; do not hash hypothetical host claims
+or invent toolchain versions. This digest proves no downstream wrapper-tool
+immutability; owning execution/subject steps must still bind actual inputs.
+
+Use explicit v2 fields, not default Serde/v1 projection rehashing. Definition
+program is `{kind:"repository",path}` or `{kind:"locked",resolved,digest}`.
+Resolved root program retains that form plus independently verified digest for
+repository executables. A resolved repository path must match the declaration;
+locked identity/digest must match exactly. Unresolved programs still reject.
+Args are tagged records: `{kind:"literal",value}`, `{kind:"target_root"}`,
+`{kind:"selector_json"}`, `{kind:"result_path"}`. Cwd is tagged likewise as
+`{kind:"target_root"}`, `{kind:"repository",path}`, `{kind:"result_path"}`.
+This distinguishes authored literal placeholder text from substitution semantics.
+Environment is the existing complete `{name,source,value?}` record set; literal
+value present only for literal sources. Secret references are `{name,provider}`
+sets, never resolved secret values. Owners, environment, secrets and both guarantee
+collections are full JCS member-byte canonical sets; args and extension arrays
+retain order. Counts/revisions use ADR-0013 integer/string rules. Extensions use
+recursive DEV-006 tags and exclude only the display namespace. Optional absence
+is omission; exact validated strings preserved. Bound projection bytes using the
+existing component limit, with typed errors, no fallback to a definition hash.
+
+ResolvedRunner stores immutable bytes and RunnerDigest; add canonical_bytes() and
+identity_v2() accessors (names frozen here). Existing digest() can remain an
+explicit legacy/wire adapter returning identity_v2().as_digest(); document that
+boundary. Internal new v2 consumers use RunnerDigest. No existing DTO shape,
+schema/v1 bytes or v1 graph/fragment/definition oracles change. Changes to runtime
+runner hash values are expressly approved in this scope and must be reported;
+there is no silent legacy alias/fallback. Preserve any independently needed old
+v1 definition projection as v1; it is not authorization for v2 evidence.
+
+Required tests: reviewed literal complete bytes and independently computed
+`SHA256("eqm:v2:runner" || 0x00 || bytes)`; typed positive/cross-domain compile-fail
+proof with executed doctests; actual temp executable replacement through the
+existing resolution/acquisition path with freshly independently observed digest;
+same-definition content change, definition-only change, approved-context change,
+repository/locked cases and unresolved rejection. Also full-range quantities,
+integer/text extension distinction, placeholder-literal versus template, display
+exclusion, set permutations and argv order. Do not claim actual executable
+reading from a test that only mutates an authority map. Keep map-boundary tests
+as separate controls. Run runner/protocol tests, relevant doctests, standard,
+schema, structure and diff checks. Commit
+`fix: align resolved runner identity with v2 provenance`.
+
+### Source provenance decision (S022)
+
+Select a conservative repository-wide inspection gate, not application-only
+exposure and not source-root narrowing. Clean release provenance requires no
+tracked/index changes and no untracked or ignored content outside the reserved
+untracked generated `.eqm/` output tree. Tracked changes remain dirty even inside
+that tree. `.gitignore` is not permission to conceal source; ignored source or
+outputs elsewhere conservatively make this inspection dirty. Source-root-only
+inspection could miss build files, EQM authority, lock files and tooling.
+
+Retain normalization and typed SourceCommit. Inspect the explicit repository
+identity/root, disable status shortcuts that conceal changes, and handle Git
+NUL-delimited paths without whitespace/newline ambiguity. Include staged,
+unstaged, deleted, untracked, ignored-outside-output and submodule changes;
+`--ignore-submodules=none` (or equivalent). Reject assume-unchanged/skip-worktree
+tracked entries as non-authorizing inspection, since normal status may conceal
+modified bytes. Missing/failed Git or unsupported identity remains a typed
+error, with retained causal errors where possible, never clean/default provenance.
+The existing SourceProvenance::clean() means this defined inspection passed,
+not universal equality of all bytes nor proof of what executed. Correct its
+current broad 'exactly matches HEAD' claims. Races/actual execution binding remain
+with immutable prepared source/subject and acquisition steps; no trust promotion.
+
+Wire clean() into release context completeness now. A dirty or failed inspection
+cannot produce Pass or Conditional; successful underlying tests do not override
+this. Retain structured non-authorizing diagnostics/exit behavior. Local development
+may inspect dirty provenance but cannot relabel it as clean HEAD. Attest/verify
+must not fabricate a clean executed-subject claim from only an inspected commit;
+later subject steps retain explicit dirty/immutable context. Do not add a v1 wire
+field or reinterpret signed originals to bypass this gate.
+
+Repair the fixture, not the requirement: materialize generated release/runtime/
+evidence records in the reserved `.eqm/` tree, ignored by a fixture `.gitignore`
+written before its initial commit. Adjust actual fixture input paths/commands and
+all related integration callers atomically. Do not add broad ignore patterns for
+source, tests, authored manifests or arbitrary release directories. Do not commit
+the generated artifacts as source to hide the issue. Codex authorizes regeneration
+of only affected fixture goldens via repository-owned generators after proving the
+input change, preserving the original clean-pass/fail/unknown acceptance. Record
+old/new hash and exact cause if any oracle changes; no blanket golden refresh.
+A changed source commit due to fixture setup is handled by its existing dynamic
+subject construction, not hardcoded as production provenance.
+
+Required production-boundary controls: genuinely clean fixture Pass with required
+synthetic trust; unconfigured trust Unknown; generated untracked `.eqm/` inputs
+remain neutral; same-HEAD tracked source modification, staged change, deletion,
+non-output untracked file and ignored non-output source make release non-authorizing.
+A tracked modification inside `.eqm/` also fails. Include Git concealment flags,
+submodule dirtiness where constructible and newline/path controls for the parser.
+Missing origin/invalid repository failures remain explicit. Never create hardware
+or credentials as a prerequisite for these software tests. Run the full S022
+declared domain/application/CLI lane, owning release/fixture tests and standard,
+schema, structure/diff checks. Commit
+`fix: bind source provenance beyond clean head claims`.
+
+### Progress, review and continuation
+
+Backfill all five retained implementation SHAs, checkpoint contributions and
+current scalar cursors consistently. S019-R3 owns remaining RF28; S021-R1 owns
+RF30; S022 is engineering-unblocked by this decision. S019/S021 retain committed
+implementation with changes required, not nonexistent work. RF27/S020 acceptance
+is independent; later corrections still need Codex acceptance. Keep one active
+checkpoint and accurately recompute cycle counts. Reports distinguish implemented,
+verified, incomplete/blocked and independently accepted. Preserve all original
+R/AC/RA criteria and failed logs. Record actual command, source HEAD and exit for
+unique log attempts; do not overwrite failed raw output or infer historical passes.
+
+After green repairs/S022, continue eligible S023–S211 under their original scope,
+read lists, tests and dependencies. No extra supervisor pause follows a routine
+green commit; genuinely required independent review gates remain binding. Material
+new semantic choices belong to Codex; ordinary implementation mechanics belong to
+Pi. A missing real product/host credential gates only its dependent claim/work,
+not all software by default. No publication or operational activation is granted.
+
+
 ## DEV-007 — Correct applicability sets and close provenance evidence
 
 **Date/author:** 2026-09-28, Codex supervisor under owner delegation.
@@ -1829,7 +2034,7 @@ fix: hash exact evidence specification semantics
 
 **Predecessor:** S018. **Contracts:** R19, R58. **Acceptance:** AC019, AC058.
 
-**Read:** [specs/EVALUATION_SEMANTICS.md](../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-1512c9f.md](../implementation/reports/CODEX-1512c9f.md).
+**Read:** [specs/EVALUATION_SEMANTICS.md](../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-1512c9f.md](../implementation/reports/CODEX-1512c9f.md), [implementation/reports/CODEX-eb2f323.md](../implementation/reports/CODEX-eb2f323.md).
 
 ### 1. Step title
 Separate contract and policy digests.
@@ -1838,7 +2043,7 @@ Separate contract and policy digests.
 Stop populating unrelated provenance with one workspace digest.
 
 ### 3. Exact scope of code changes
-Retain DEV-006 S019-A/B/C carriers, complete v2 contract/policy projections and same-session application assembly. Complete DEV-007 S019-R1 for shared binding/contract applicability set semantics, then S019-R2 for missing boundary evidence. Preserve crate direction, v1 records and workspace aggregate identity.
+Retain accepted applicability repair and implemented DEV-006/007 provenance assembly. Finish DEV-008 S019-R3: real minimum rule projection, literal endpoint expectations, two-rule JCS order trap and absent dimension-description control. Existing requirements, crate directions and v1 forms remain.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`
@@ -1851,7 +2056,7 @@ Retain DEV-006 S019-A/B/C carriers, complete v2 contract/policy projections and 
 - `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
-Execute the exact DEV-007 RF27/RF28 matrix: all/any complete member-byte set ordering, literal numeric boundaries/endpoints and optional field inventory, exact-revision failures, known/unknown digest distinction, multi-profile/rule/record canonical ordering, real manifest formatting/unselected-definition stability and immutable same-session reuse with error causes.
+Retain all S019-R1/R2 controls and execute DEV-008 remaining RF28 literal/production-boundary assertions with valid controls; preserve original complete provenance matrix.
 
 ### 6. Verification commands
 ```sh
@@ -1865,7 +2070,7 @@ cargo xtask schemas check
 git diff --check
 ```
 
-**Admission gate:** DEV-007: S019-A/B/C are retained; S019-R1 and S019-R2 must pass in order before S020. Continue all ordered unblocked work through S211.
+**Admission gate:** DEV-008: complete DEV008-P1, then S019-R3, S021-R1 and S022 completion before ordered successors. No extra approval pause follows objective green checks.
 
 ### 7. Expected result
 Internal prepared context has distinct accurate contract/policy identities.
@@ -1928,7 +2133,7 @@ fix: derive exact target configuration identity
 
 **Predecessor:** S020. **Contracts:** R19, R30. **Acceptance:** AC019, AC030.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [specs/EXECUTION_SECURITY.md](../specs/EXECUTION_SECURITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [specs/EXECUTION_SECURITY.md](../specs/EXECUTION_SECURITY.md), [implementation/reports/CODEX-eb2f323.md](../implementation/reports/CODEX-eb2f323.md).
 
 ### 1. Step title
 Bind runner identity to approved executable bytes.
@@ -1937,7 +2142,7 @@ Bind runner identity to approved executable bytes.
 Preserve executable provenance in persisted evidence.
 
 ### 3. Exact scope of code changes
-Extend resolved runner identity to include independently verified executable digest plus semantic definition and relevant approved toolchain context; keep unresolved programs non-executable.
+Retain executable-bound resolution but complete DEV-008 S021-R1: explicit bounded runner-owned v2 JCS projection of full definition, resolved program and approved guarantees; existing RunnerDigest, typed identity_v2/canonical_bytes accessors and explicit digest wire adapter. Preserve v1 shapes/oracles, unresolved rejection and record runtime identity change.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_runner/src/resolution.rs`
@@ -1945,7 +2150,7 @@ Extend resolved runner identity to include independently verified executable dig
 - `crates/eqm_protocol/src/`
 
 ### 5. Unit tests or integration tests required
-Replacing executable bytes at the same path changes the recorded runner identity; definition-only changes also invalidate it.
+Execute DEV-008 RF30 literal v2 bytes/domain hash, typed/compile-fail doctests, real executable acquisition/replacement and map-boundary controls, definition/context changes, locked/repository/unresolved cases, full-range quantities, template/literal distinction, set/argv order and extension/display semantics.
 
 ### 6. Verification commands
 ```sh
@@ -1953,6 +2158,7 @@ cargo fmt --all --check
 cargo check --workspace --all-targets --locked
 cargo test --all-targets --locked -p eqm_runner -p eqm_protocol
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --locked -p eqm_runner --doc
 cargo xtask check
 git diff --check
 ```
@@ -1972,7 +2178,7 @@ fix: include executable content in runner identity
 
 **Predecessor:** S021. **Contracts:** R19, R22. **Acceptance:** AC019, AC022.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-eb2f323.md](../implementation/reports/CODEX-eb2f323.md).
 
 ### 1. Step title
 Normalize repository and source provenance explicitly.
@@ -1981,7 +2187,7 @@ Normalize repository and source provenance explicitly.
 Prevent display remote strings and dirty HEAD from implying exact clean source.
 
 ### 3. Exact scope of code changes
-Centralize repository identity acquisition/normalization and exact source-tree provenance in application code; retain unsupported/missing cases as errors; do not silently trust arbitrary remotes.
+Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -1990,7 +2196,7 @@ Centralize repository identity acquisition/normalization and exact source-tree p
 - `crates/eqm_cli/src/commands/attest.rs`
 
 ### 5. Unit tests or integration tests required
-Equivalent supported remote encodings map deliberately; modified/untracked fixture content is labeled dirty and cannot satisfy clean release provenance.
+Execute DEV-008 actual clean Pass/unconfigured Unknown controls, generated-output neutrality, tracked/staged/deleted/untracked/ignored non-output and tracked-output non-authorizing mutants, concealment flags and submodule/path controls. Preserve normalization failures, original release outcomes and golden evidence.
 
 ### 6. Verification commands
 ```sh
@@ -2001,6 +2207,8 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
 ```
+
+**Admission gate:** DEV-008 resolves the representation block. Execute after DEV008-P1, S019-R3 and S021-R1; no requirement is deferred. Continue every ordered eligible S023-S211 after green completion.
 
 ### 7. Expected result
 Source identity reflects inspected/executed bytes and shared identity logic replaces copies.

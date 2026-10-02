@@ -100,3 +100,10 @@ required subject axes. Later role/source modeling steps extend the target
 projection atomically with new normative fields; S031/S038/S043 prove linkage.
 Exact spellings, APIs, failures and regression controls are normative in DEV-007
 of the governing sequence. This component digest grants no trust or release authority.
+
+## DEV-008 provenance completion
+
+Repository-wide clean inspection permits only reserved untracked .eqm outputs.
+Ignored non-output content and Git concealment flags cannot authorize clean source.
+Dirty inspection cannot satisfy clean release provenance; inspection alone is not
+immutable execution proof. DEV-008 freezes conservative gate/fixture integration.

@@ -1,6 +1,6 @@
 # Chapter 02: Canonical identities and evidence provenance
 
-Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S001–S016 and S018 are accepted for allocated scope; retained S017/S019 need DEV-007 S019-R1/R2, then the resolved S020 and successors.
+Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P02, containing 15 separate ordered commits, S013–S027; it is not one combined commit. Live completion is recorded in progress.json; S001–S018 and S020 accepted. DEV-008 dependency repair, S019-R3/S021-R1 and S022 precede all eligible successors to S211.
 
 **Definition of green:** Canonical component/subject/raw/semantic/attempt identities and dirty-source provenance pass mutation vectors.
 
@@ -314,7 +314,7 @@ fix: hash exact evidence specification semantics
 
 **Predecessor:** S018. **Contracts:** R19, R58. **Acceptance:** AC019, AC058.
 
-**Read:** [specs/EVALUATION_SEMANTICS.md](../../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-1512c9f.md](../../implementation/reports/CODEX-1512c9f.md).
+**Read:** [specs/EVALUATION_SEMANTICS.md](../../specs/EVALUATION_SEMANTICS.md), [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-3469fac.md](../../implementation/reports/CODEX-3469fac.md), [decisions/ADR-0013-wire-namespace-and-representations.md](../../decisions/ADR-0013-wire-namespace-and-representations.md), [implementation/reports/CODEX-1512c9f.md](../../implementation/reports/CODEX-1512c9f.md), [implementation/reports/CODEX-eb2f323.md](../../implementation/reports/CODEX-eb2f323.md).
 
 ### 1. Step title
 Separate contract and policy digests.
@@ -323,7 +323,7 @@ Separate contract and policy digests.
 Stop populating unrelated provenance with one workspace digest.
 
 ### 3. Exact scope of code changes
-Retain DEV-006 S019-A/B/C carriers, complete v2 contract/policy projections and same-session application assembly. Complete DEV-007 S019-R1 for shared binding/contract applicability set semantics, then S019-R2 for missing boundary evidence. Preserve crate direction, v1 records and workspace aggregate identity.
+Retain accepted applicability repair and implemented DEV-006/007 provenance assembly. Finish DEV-008 S019-R3: real minimum rule projection, literal endpoint expectations, two-rule JCS order trap and absent dimension-description control. Existing requirements, crate directions and v1 forms remain.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`
@@ -336,7 +336,7 @@ Retain DEV-006 S019-A/B/C carriers, complete v2 contract/policy projections and 
 - `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
-Execute the exact DEV-007 RF27/RF28 matrix: all/any complete member-byte set ordering, literal numeric boundaries/endpoints and optional field inventory, exact-revision failures, known/unknown digest distinction, multi-profile/rule/record canonical ordering, real manifest formatting/unselected-definition stability and immutable same-session reuse with error causes.
+Retain all S019-R1/R2 controls and execute DEV-008 remaining RF28 literal/production-boundary assertions with valid controls; preserve original complete provenance matrix.
 
 ### 6. Verification commands
 ```sh
@@ -350,7 +350,7 @@ cargo xtask schemas check
 git diff --check
 ```
 
-**Admission gate:** DEV-007: S019-A/B/C are retained; S019-R1 and S019-R2 must pass in order before S020. Continue all ordered unblocked work through S211.
+**Admission gate:** DEV-008: complete DEV008-P1, then S019-R3, S021-R1 and S022 completion before ordered successors. No extra approval pause follows objective green checks.
 
 ### 7. Expected result
 Internal prepared context has distinct accurate contract/policy identities.
@@ -413,7 +413,7 @@ fix: derive exact target configuration identity
 
 **Predecessor:** S020. **Contracts:** R19, R30. **Acceptance:** AC019, AC030.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [specs/EXECUTION_SECURITY.md](../../specs/EXECUTION_SECURITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [specs/EXECUTION_SECURITY.md](../../specs/EXECUTION_SECURITY.md), [implementation/reports/CODEX-eb2f323.md](../../implementation/reports/CODEX-eb2f323.md).
 
 ### 1. Step title
 Bind runner identity to approved executable bytes.
@@ -422,7 +422,7 @@ Bind runner identity to approved executable bytes.
 Preserve executable provenance in persisted evidence.
 
 ### 3. Exact scope of code changes
-Extend resolved runner identity to include independently verified executable digest plus semantic definition and relevant approved toolchain context; keep unresolved programs non-executable.
+Retain executable-bound resolution but complete DEV-008 S021-R1: explicit bounded runner-owned v2 JCS projection of full definition, resolved program and approved guarantees; existing RunnerDigest, typed identity_v2/canonical_bytes accessors and explicit digest wire adapter. Preserve v1 shapes/oracles, unresolved rejection and record runtime identity change.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_runner/src/resolution.rs`
@@ -430,7 +430,7 @@ Extend resolved runner identity to include independently verified executable dig
 - `crates/eqm_protocol/src/`
 
 ### 5. Unit tests or integration tests required
-Replacing executable bytes at the same path changes the recorded runner identity; definition-only changes also invalidate it.
+Execute DEV-008 RF30 literal v2 bytes/domain hash, typed/compile-fail doctests, real executable acquisition/replacement and map-boundary controls, definition/context changes, locked/repository/unresolved cases, full-range quantities, template/literal distinction, set/argv order and extension/display semantics.
 
 ### 6. Verification commands
 ```sh
@@ -438,6 +438,7 @@ cargo fmt --all --check
 cargo check --workspace --all-targets --locked
 cargo test --all-targets --locked -p eqm_runner -p eqm_protocol
 cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --locked -p eqm_runner --doc
 cargo xtask check
 git diff --check
 ```
@@ -457,7 +458,7 @@ fix: include executable content in runner identity
 
 **Predecessor:** S021. **Contracts:** R19, R22. **Acceptance:** AC019, AC022.
 
-**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md).
+**Read:** [specs/EVIDENCE_AND_IDENTITY.md](../../specs/EVIDENCE_AND_IDENTITY.md), [implementation/reports/CODEX-eb2f323.md](../../implementation/reports/CODEX-eb2f323.md).
 
 ### 1. Step title
 Normalize repository and source provenance explicitly.
@@ -466,7 +467,7 @@ Normalize repository and source provenance explicitly.
 Prevent display remote strings and dirty HEAD from implying exact clean source.
 
 ### 3. Exact scope of code changes
-Centralize repository identity acquisition/normalization and exact source-tree provenance in application code; retain unsupported/missing cases as errors; do not silently trust arbitrary remotes.
+Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -475,7 +476,7 @@ Centralize repository identity acquisition/normalization and exact source-tree p
 - `crates/eqm_cli/src/commands/attest.rs`
 
 ### 5. Unit tests or integration tests required
-Equivalent supported remote encodings map deliberately; modified/untracked fixture content is labeled dirty and cannot satisfy clean release provenance.
+Execute DEV-008 actual clean Pass/unconfigured Unknown controls, generated-output neutrality, tracked/staged/deleted/untracked/ignored non-output and tracked-output non-authorizing mutants, concealment flags and submodule/path controls. Preserve normalization failures, original release outcomes and golden evidence.
 
 ### 6. Verification commands
 ```sh
@@ -486,6 +487,8 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
 ```
+
+**Admission gate:** DEV-008 resolves the representation block. Execute after DEV008-P1, S019-R3 and S021-R1; no requirement is deferred. Continue every ordered eligible S023-S211 after green completion.
 
 ### 7. Expected result
 Source identity reflects inspected/executed bytes and shared identity logic replaces copies.

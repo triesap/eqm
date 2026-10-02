@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S022",
+ "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "S021_green_463_tests_S022_partial_blocked_on_decision",
+ "local_verification": "standard_passed_467_test_executions_dependency_policy_failed_yanked_RF28_RF30_S022_remaining",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -519,8 +519,8 @@
    ],
    "baseline_exceptions": [],
    "implementation_status": "committed_supervisor_pending",
-   "supervisor_status": "RF27_implemented_S019_R1_supervisor_pending",
-   "closure_report": "implementation/reports/CODEX-1512c9f.md"
+   "supervisor_status": "accepted_for_allocated_scope",
+   "closure_report": "implementation/reports/CODEX-eb2f323.md"
   },
   {
    "id": "S018",
@@ -586,7 +586,7 @@
   },
   {
    "id": "S019",
-   "status": "complete",
+   "status": "in_progress",
    "commit_sha": "1512c9fa7e886781bdf2976dfaabde1d8328ac43",
    "report": "implementation/reports/S019.md",
    "verification": [
@@ -601,8 +601,8 @@
    ],
    "baseline_exceptions": [],
    "decision_status": "resolved_by_Codex_DEV007",
-   "implementation_status": "ABC_R1_R2_committed_supervisor_pending",
-   "supervisor_status": "RF27_RF28_implemented_supervisor_pending",
+   "implementation_status": "committed_RF28_remaining_controls",
+   "supervisor_status": "S019_R3_required",
    "implementation_checkpoints": [
     {
      "id": "S019-A",
@@ -679,7 +679,7 @@
       "git diff --check"
      ],
      "implementation_status": "committed_supervisor_pending",
-     "supervisor_status": "pending_review"
+     "supervisor_status": "accepted_for_allocated_scope"
     },
     {
      "id": "S019-R2",
@@ -697,7 +697,31 @@
       "git diff --check"
      ],
      "implementation_status": "committed_supervisor_pending",
-     "supervisor_status": "pending_review"
+     "supervisor_status": "RF28_partial_remaining_controls"
+    },
+    {
+     "id": "S019-R3",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/S019.md",
+     "verification": [
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_domain -p eqm_manifest -p eqm_engine -p eqm_application",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_application --doc",
+      "cargo xtask check",
+      "cargo xtask schemas check",
+      "git diff --check"
+     ]
+    }
+   ],
+   "prerequisite_checkpoints": [
+    {
+     "id": "DEV008-P1",
+     "status": "in_progress",
+     "commit_sha": null,
+     "report": "implementation/reports/S019.md"
     }
    ]
   },
@@ -719,12 +743,13 @@
    ],
    "baseline_exceptions": [],
    "implementation_status": "committed_supervisor_pending",
-   "supervisor_status": "pending_review"
+   "supervisor_status": "accepted_for_allocated_scope",
+   "closure_report": "implementation/reports/CODEX-eb2f323.md"
   },
   {
    "id": "S021",
-   "status": "complete",
-   "commit_sha": null,
+   "status": "changes_required",
+   "commit_sha": "0e6584fa3aa86b13836c98aa6a016dd575691704",
    "report": "implementation/reports/S021.md",
    "verification": [
     "cargo fmt --all --check",
@@ -738,13 +763,30 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_supervisor_pending",
-   "supervisor_status": "pending_review"
+   "implementation_status": "committed_v2_repair_required",
+   "supervisor_status": "RF30_S021_R1_required",
+   "corrective_checkpoints": [
+    {
+     "id": "S021-R1",
+     "status": "pending",
+     "commit_sha": null,
+     "report": "implementation/reports/S021.md",
+     "verification": [
+      "cargo fmt --all --check",
+      "cargo check --workspace --all-targets --locked",
+      "cargo test --all-targets --locked -p eqm_runner -p eqm_protocol",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo test --locked -p eqm_runner --doc",
+      "cargo xtask check",
+      "git diff --check"
+     ]
+    }
+   ]
   },
   {
    "id": "S022",
-   "status": "in_progress",
-   "commit_sha": null,
+   "status": "changes_required",
+   "commit_sha": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
    "report": "implementation/reports/S022.md",
    "verification": [
     "cargo fmt --all --check",
@@ -757,9 +799,9 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "partial_centralization_committed_decision_required",
-   "supervisor_status": "blocked_pending_codex_decision",
-   "decision_status": "pending_codex_release_provenance_representation"
+   "implementation_status": "partial_committed",
+   "supervisor_status": "decision_resolved_implementation_required",
+   "decision_status": "resolved_by_Codex_DEV008"
   },
   {
    "id": "S023",
@@ -2606,7 +2648,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S022",
+ "active_step": "S019",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2621,7 +2663,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 9,
+   "completed_steps": 7,
    "total_steps": 15
   },
   {
@@ -2928,23 +2970,24 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S019-R1",
+ "next_checkpoint": "DEV008-P1",
  "supervisor_review": {
-  "source_commit": "1512c9fa7e886781bdf2976dfaabde1d8328ac43",
-  "report": "implementation/reports/CODEX-1512c9f.md",
-  "status": "RF22_RF24_RF26_accepted_RF25_reconciled_RF27_RF28_open_RF29_reconciled",
-  "amendment": "DEV-007",
-  "standard_check": "passed_428_test_executions",
-  "advisory_audit": "passed",
-  "dependency_policy": "passed",
+  "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
+  "report": "implementation/reports/CODEX-eb2f323.md",
+  "status": "RF27_S020_accepted_RF28_partial_RF30_RF31_open_S022_decision_resolved",
+  "amendment": "DEV-008",
+  "standard_check": "passed_467_test_executions",
+  "advisory_audit": "not_rerun_this_review",
+  "dependency_policy": "failed_yoke_derive_0_8_3_yanked",
   "package_structure": "passed",
   "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
   "release_candidate": false,
   "s019_decision": "resolved",
-  "next_checkpoint": "S019-R1",
-  "reviewed_head": "1512c9fa7e886781bdf2976dfaabde1d8328ac43",
-  "review_report": "implementation/reports/CODEX-1512c9f.md",
-  "s020_decision": "resolved"
+  "next_checkpoint": "DEV008-P1",
+  "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
+  "review_report": "implementation/reports/CODEX-eb2f323.md",
+  "s020_decision": "resolved",
+  "s022_decision": "resolved"
  },
  "execution_target": "S211 subject to predecessor and external evidence gates",
  "supervisor_findings": [
@@ -3216,21 +3259,23 @@
   },
   {
    "id": "RF27",
-   "status": "open",
+   "status": "accepted_for_allocated_scope",
    "priority": "P2",
    "owner": "S019",
    "checkpoint": "S019-R1",
    "summary": "Applicability set classification and JCS member ordering",
-   "report": "implementation/reports/CODEX-1512c9f.md"
+   "report": "implementation/reports/CODEX-1512c9f.md",
+   "closure_report": "implementation/reports/CODEX-eb2f323.md"
   },
   {
    "id": "RF28",
-   "status": "open",
+   "status": "partial_remaining_controls",
    "priority": "P2",
    "owner": "S019",
-   "checkpoint": "S019-R2",
+   "checkpoint": "S019-R3",
    "summary": "Missing declared S019 provenance boundary evidence",
-   "report": "implementation/reports/CODEX-1512c9f.md"
+   "report": "implementation/reports/CODEX-1512c9f.md",
+   "followup_report": "implementation/reports/CODEX-eb2f323.md"
   },
   {
    "id": "RF29",
@@ -3240,8 +3285,26 @@
    "checkpoint": "Codex DEV-007",
    "summary": "Contradictory progress and historical log references",
    "report": "implementation/reports/CODEX-1512c9f.md"
+  },
+  {
+   "id": "RF30",
+   "priority": "P2",
+   "status": "open",
+   "owner": "S021",
+   "checkpoint": "S021-R1",
+   "summary": "Runner identity differs from frozen typed v2 canonical contract",
+   "report": "implementation/reports/CODEX-eb2f323.md"
+  },
+  {
+   "id": "RF31",
+   "priority": "P2",
+   "status": "open",
+   "owner": "S019",
+   "checkpoint": "DEV008-P1",
+   "summary": "Locked yoke-derive 0.8.3 is yanked; dependency policy now fails",
+   "report": "implementation/reports/CODEX-eb2f323.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
- "supervisor_amendment": "DEV-007"
+ "supervisor_amendment": "DEV-008"
 }

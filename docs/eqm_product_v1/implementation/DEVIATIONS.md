@@ -152,3 +152,13 @@ fields. Later role/source/subject owners extend projections and prove all axes.
 S001–S211 IDs/dependencies remain; these shared-boundary repairs precede ordinary
 advancement. No product scope, v1 contract, external gate or operational authority
 is waived. Source changes remain Pi-owned and unimplemented by this amendment.
+
+## DEV-008 — Source cleanliness and full eligible continuation
+
+2026-10-02, Codex delegation; reviewed `eb2f323`.
+[Review](reports/CODEX-eb2f323.md) accepts RF27/S020; residual RF28 proof, RF30 v2
+runner identity and RF31 yanked lock entry remain. [DEV-008](COMMIT_SEQUENCE.md)
+defines dependency repair DEV008-P1, S019-R3/S021-R1, conservative S022 gate and
+reserved-output fixture correction, then all eligible ordered work to S211.
+All 211 IDs/dependencies and original product criteria remain. Pi implements;
+Codex accepts. No gate, failed check or operational authority is waived.

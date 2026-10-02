@@ -1120,7 +1120,7 @@
     {
       "title": "Separate contract and policy digests",
       "purpose": "Stop populating unrelated provenance with one workspace digest.",
-      "scope": "Retain DEV-006 S019-A/B/C carriers, complete v2 contract/policy projections and same-session application assembly. Complete DEV-007 S019-R1 for shared binding/contract applicability set semantics, then S019-R2 for missing boundary evidence. Preserve crate direction, v1 records and workspace aggregate identity.",
+      "scope": "Retain accepted applicability repair and implemented DEV-006/007 provenance assembly. Finish DEV-008 S019-R3: real minimum rule projection, literal endpoint expectations, two-rule JCS order trap and absent dimension-description control. Existing requirements, crate directions and v1 forms remain.",
       "files": [
         "crates/eqm_domain/src/",
         "crates/eqm_domain/tests/",
@@ -1131,7 +1131,7 @@
         "crates/eqm_application/src/",
         "crates/eqm_application/tests/"
       ],
-      "tests": "Execute the exact DEV-007 RF27/RF28 matrix: all/any complete member-byte set ordering, literal numeric boundaries/endpoints and optional field inventory, exact-revision failures, known/unknown digest distinction, multi-profile/rule/record canonical ordering, real manifest formatting/unselected-definition stability and immutable same-session reuse with error causes.",
+      "tests": "Retain all S019-R1/R2 controls and execute DEV-008 remaining RF28 literal/production-boundary assertions with valid controls; preserve original complete provenance matrix.",
       "expected": "Internal prepared context has distinct accurate contract/policy identities.",
       "commit_message": "fix: separate contract and policy provenance",
       "requirements": [
@@ -1151,7 +1151,8 @@
         "specs/EVIDENCE_AND_IDENTITY.md",
         "implementation/reports/CODEX-3469fac.md",
         "decisions/ADR-0013-wire-namespace-and-representations.md",
-        "implementation/reports/CODEX-1512c9f.md"
+        "implementation/reports/CODEX-1512c9f.md",
+        "implementation/reports/CODEX-eb2f323.md"
       ],
       "verification_commands": [
         "cargo fmt --all --check",
@@ -1164,7 +1165,7 @@
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": "DEV-007: S019-A/B/C are retained; S019-R1 and S019-R2 must pass in order before S020. Continue all ordered unblocked work through S211.",
+      "gate": "DEV-008: complete DEV008-P1, then S019-R3, S021-R1 and S022 completion before ordered successors. No extra approval pause follows objective green checks.",
       "initial_status": "pending",
       "review_regressions": [],
       "implementation_checkpoints": [
@@ -1174,7 +1175,11 @@
       ],
       "corrective_checkpoints": [
         "S019-R1",
-        "S019-R2"
+        "S019-R2",
+        "S019-R3"
+      ],
+      "prerequisite_checkpoints": [
+        "DEV008-P1"
       ]
     },
     {
@@ -1221,13 +1226,16 @@
     {
       "title": "Bind runner identity to approved executable bytes",
       "purpose": "Preserve executable provenance in persisted evidence.",
-      "scope": "Extend resolved runner identity to include independently verified executable digest plus semantic definition and relevant approved toolchain context; keep unresolved programs non-executable.",
+      "scope": "Retain executable-bound resolution but complete DEV-008 S021-R1: explicit bounded runner-owned v2 JCS projection of full definition, resolved program and approved guarantees; existing RunnerDigest, typed identity_v2/canonical_bytes accessors and explicit digest wire adapter. Preserve v1 shapes/oracles, unresolved rejection and record runtime identity change.",
       "files": [
         "crates/eqm_runner/src/resolution.rs",
         "crates/eqm_runner/tests/",
-        "crates/eqm_protocol/src/"
+        "crates/eqm_protocol/src/",
+        "crates/eqm_domain/src/digest.rs",
+        "crates/eqm_runner/src/",
+        "crates/eqm_runner/tests/"
       ],
-      "tests": "Replacing executable bytes at the same path changes the recorded runner identity; definition-only changes also invalidate it.",
+      "tests": "Execute DEV-008 RF30 literal v2 bytes/domain hash, typed/compile-fail doctests, real executable acquisition/replacement and map-boundary controls, definition/context changes, locked/repository/unresolved cases, full-range quantities, template/literal distinction, set/argv order and extension/display semantics.",
       "expected": "Runner evidence cannot reuse a definition digest after executable substitution.",
       "commit_message": "fix: include executable content in runner identity",
       "requirements": [
@@ -1244,32 +1252,37 @@
       ],
       "contract_files": [
         "specs/EVIDENCE_AND_IDENTITY.md",
-        "specs/EXECUTION_SECURITY.md"
+        "specs/EXECUTION_SECURITY.md",
+        "implementation/reports/CODEX-eb2f323.md"
       ],
       "verification_commands": [
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
         "cargo test --all-targets --locked -p eqm_runner -p eqm_protocol",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
+        "cargo test --locked -p eqm_runner --doc",
         "cargo xtask check",
         "git diff --check"
       ],
       "verification_discovery": [],
       "gate": null,
       "initial_status": "pending",
-      "review_regressions": []
+      "review_regressions": [],
+      "corrective_checkpoints": [
+        "S021-R1"
+      ]
     },
     {
       "title": "Normalize repository and source provenance explicitly",
       "purpose": "Prevent display remote strings and dirty HEAD from implying exact clean source.",
-      "scope": "Centralize repository identity acquisition/normalization and exact source-tree provenance in application code; retain unsupported/missing cases as errors; do not silently trust arbitrary remotes.",
+      "scope": "Complete DEV-008 conservative source inspection and clean release gate. Inspect repository-wide tracked/index/untracked/ignored state with only reserved untracked .eqm outputs excluded, reject Git concealment flags, preserve typed identity/error handling and causal failures. Move generated fixture inputs to .eqm before enforcing clean provenance; preserve original release outcomes and separate actual execution/subject claims.",
       "files": [
         "crates/eqm_domain/src/evidence_result.rs",
         "crates/eqm_application/src/authority.rs",
         "crates/eqm_cli/src/commands/verify.rs",
         "crates/eqm_cli/src/commands/attest.rs"
       ],
-      "tests": "Equivalent supported remote encodings map deliberately; modified/untracked fixture content is labeled dirty and cannot satisfy clean release provenance.",
+      "tests": "Execute DEV-008 actual clean Pass/unconfigured Unknown controls, generated-output neutrality, tracked/staged/deleted/untracked/ignored non-output and tracked-output non-authorizing mutants, concealment flags and submodule/path controls. Preserve normalization failures, original release outcomes and golden evidence.",
       "expected": "Source identity reflects inspected/executed bytes and shared identity logic replaces copies.",
       "commit_message": "fix: bind source provenance beyond clean head claims",
       "requirements": [
@@ -1285,7 +1298,8 @@
         "AC022"
       ],
       "contract_files": [
-        "specs/EVIDENCE_AND_IDENTITY.md"
+        "specs/EVIDENCE_AND_IDENTITY.md",
+        "implementation/reports/CODEX-eb2f323.md"
       ],
       "verification_commands": [
         "cargo fmt --all --check",
@@ -1296,7 +1310,7 @@
         "git diff --check"
       ],
       "verification_discovery": [],
-      "gate": null,
+      "gate": "DEV-008 resolves the representation block. Execute after DEV008-P1, S019-R3 and S021-R1; no requirement is deferred. Continue every ordered eligible S023-S211 after green completion.",
       "initial_status": "pending",
       "review_regressions": []
     },
@@ -13631,10 +13645,10 @@
   "supervision": {
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
-    "amendment": "DEV-007",
-    "next_checkpoint": "S019-R1",
+    "amendment": "DEV-008",
+    "next_checkpoint": "DEV008-P1",
     "execution_target": "S211 subject to explicit predecessor and external evidence gates",
     "intermediate_checkpoint": "S143 is not a stopping boundary",
-    "continuation": "Complete S019-R1/R2; S020 exact target definition decision resolved; continue every ordered unblocked successor through S211."
+    "continuation": "pfc all: DEV008-P1, S019-R3, S021-R1, S022 completion, every ordered eligible successor to S211; preserve hard dependencies, required review and external gates."
   }
 }

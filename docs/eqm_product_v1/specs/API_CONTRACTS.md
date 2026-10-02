@@ -156,3 +156,10 @@ TargetId, performs exact graph lookup, and returns typed MissingTarget or causal
 Projection failure. No missing-target hash or aggregate fallback exists. Missing
 future build/source fields are not fabricated. DEV-007 in the governing sequence
 allocates the exact regression and later target-field extension obligations.
+
+## DEV-008 provenance completion
+
+ResolvedRunner uses existing RunnerDigest over explicit v2 JCS root definition/
+program/approved_guarantees, tagged template semantics and full member ordering.
+identity_v2()/canonical_bytes() retain typed identity/bytes; digest() is an explicit
+wire adapter. DEV-008 defines fields, bounds, errors, literals and integration.
