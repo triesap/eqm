@@ -233,6 +233,13 @@ define_id!(
     None
 );
 
+define_id!(
+    /// One validated evaluation-record identity.
+    RecordId,
+    1,
+    None
+);
+
 /// A fully qualified requirement identity: `<unit>#<local>`.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct FullRequirementId {

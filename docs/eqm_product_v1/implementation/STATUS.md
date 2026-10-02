@@ -6,8 +6,10 @@ S001–S021 plus S023/S024, are accepted for allocated scope:
 S023/S024 accepted now). S022 recursive concealment repair is retained; RF40
 confinement is implemented and verified by S022-R2 (acceptance pending). S025
 checked admission is retained; RF38 typed context and RF39 retry chronology are
-implemented and verified by S025-R1 (acceptance pending). Next eligible step:
-S026.
+implemented and verified by S025-R1 (acceptance pending). The S026 acyclic
+record dependency model is implemented and verified (acceptance pending). Next
+eligible step: S027, then every ordered eligible S027-S043 before the S043
+independent integration review.
 
 Next every ordered eligible **S026–S043**, `pfc through EQM-P03`; independent
 integration review at S043 before S044. Full MVP remains S211. No arbitrary

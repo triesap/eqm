@@ -50,6 +50,7 @@ mod id;
 mod inventory;
 mod path;
 mod policy;
+mod record;
 mod reference;
 mod runner;
 mod schema;
@@ -93,8 +94,8 @@ pub use graph::{
 pub use id::{
     AdapterId, ArtifactId, AttemptId, BindingId, CampaignId, CapabilityId, DimensionId,
     EvidenceSpecId, FragmentId, FrameworkId, FullRequirementId, IdParseError, JourneyId,
-    LocalRequirementId, LogicalCaseId, PlanId, PlatformId, PolicyId, ProfileId, ProviderId, RunId,
-    RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
+    LocalRequirementId, LogicalCaseId, PlanId, PlatformId, PolicyId, ProfileId, ProviderId,
+    RecordId, RunId, RunnerId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
 };
 pub use inventory::{
     AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,
@@ -104,6 +105,9 @@ pub use path::{RepoPath, RepoPathError};
 pub use policy::{
     Policy, PolicyBuildError, PolicyRule, PolicySelector, PositiveDays, Profile, ProfileDimension,
     WaiverPolicy,
+};
+pub use record::{
+    RecordDescriptor, RecordError, RecordKind, RecordRef, ValidatedRecords, validate_records,
 };
 pub use reference::{
     CatalogRef, CiRunRef, DesignRef, ExternalRefError, IssueRef, OwnerRef, ReleaseRef,

@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S026",
+ "next_step": "S027",
  "implementation": "in_progress",
- "local_verification": "S022-R2_and_S025-R1_committed_verified_pending_acceptance;S026_next",
+ "local_verification": "S022-R2_S025-R1_S026_committed_verified_pending_acceptance;S027_next",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1004,7 +1004,7 @@
      "id": "S025-R1",
      "status": "complete",
      "supervisor_status": "pending_acceptance",
-     "commit_sha": null,
+     "commit_sha": "75eb084cf91f3b6979f0f0c4b02caae74969e8de",
      "report": "implementation/reports/S025.md#corrective-checkpoint-s025-r1--typed-context-and-retry-chronology-dev-010-rf38rf39",
      "implementation_status": "committed_pending_acceptance",
      "verification": [
@@ -1024,11 +1024,23 @@
   },
   {
    "id": "S026",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S026.md",
+   "verification": [
+    "cargo test --locked -p eqm_domain record::",
+    "cargo test --all-targets --locked -p eqm_domain -p eqm_protocol",
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "cargo xtask schemas check",
+    "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+    "git diff --check"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "committed_pending_acceptance",
+   "supervisor_status": "pending_acceptance"
   },
   {
    "id": "S027",
@@ -2858,7 +2870,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 11,
+   "completed_steps": 12,
    "total_steps": 15
   },
   {
