@@ -62,3 +62,14 @@ digest consistency or trust. Conformance tests use an actual standards validator
 with date-time format assertions and local-only resolution. v2 UTC patterns
 still enforce minimal AutoSi groups; runtime validation retains exact calendar
 checks. No canonical input rule is relaxed by this clarification.
+
+## DEV-009 checked identity and model allocation
+
+DEV-009 in the sole governing COMMIT_SEQUENCE closes bytes-first lossless v2
+semantic evidence, explicit lineage/admission context, recursive source inspection
+and the exact shared-source/participant/subject/cohort engineering allocation.
+Use its member/version/domain decisions at each owning step; preserve original
+criteria, v1 contracts and signed bytes. Parsed identifiers/digests are not trust,
+synthetic combinations are not real cohort certification, and new target fields
+extend their canonical projection atomically. S043 is the next independent
+integration review boundary before routing; full MVP remains S211.

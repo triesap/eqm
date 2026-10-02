@@ -57,3 +57,14 @@ RA05/RA06 require finalization and prepared completeness to be constructed only 
 Exact raw bytes, semantic assertions and immutable attempts remain separate identities (RA08/RA15). Duplicated delivery preserves provenance without count inflation; same-attempt conflicts remain durable and relevant to their coordinates. RA13 requires one strict envelope/payload/subject/kind/reference/time conversion before admission. Parsing is not verification.
 
 Observed role/inventory/exposure facts are independently obtained for an independently expected subject; copied authored declarations or a document's presence are insufficient (RA21). Waivers bind exact policy/profile revisions, subject and context and enumerate only actual contributions (RA09).
+
+## DEV-009 checked identity and model allocation
+
+DEV-009 in the sole governing COMMIT_SEQUENCE closes bytes-first lossless v2
+semantic evidence, explicit lineage/admission context, recursive source inspection
+and the exact shared-source/participant/subject/cohort engineering allocation.
+Use its member/version/domain decisions at each owning step; preserve original
+criteria, v1 contracts and signed bytes. Parsed identifiers/digests are not trust,
+synthetic combinations are not real cohort certification, and new target fields
+extend their canonical projection atomically. S043 is the next independent
+integration review boundary before routing; full MVP remains S211.

@@ -514,7 +514,7 @@ Model raw and semantic evidence identities.
 Preserve exact signed bytes independently of normalized assertions.
 
 ### 3. Exact scope of code changes
-Add validated raw-object/semantic-evidence relation types and conversion results without storage or trust promotion; keep existing records readable only under the version ADR.
+Add validated raw-object/semantic-evidence relation types and conversion results without storage or trust promotion; keep existing records readable only under the version ADR. DEV-009 S023-R1 repairs raw-record binding and lossless explicit v2 semantic projection; newly added v1 identity helper is not a v2 contract.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -522,7 +522,7 @@ Add validated raw-object/semantic-evidence relation types and conversion results
 - `crates/eqm_protocol/tests/`
 
 ### 5. Unit tests or integration tests required
-Alternate whitespace transports differ in raw identity but agree semantically; signed originals are returned unchanged; changed assertions differ.
+Alternate whitespace transports differ in raw identity but agree semantically; signed originals are returned unchanged; changed assertions differ. Also execute raw mismatch rejection, neighboring large-value separation, all assertion-axis mutations, canonical sets/ordered attempts, bounds and independently computed complete literal v2 bytes/digest.
 
 ### 6. Verification commands
 ```sh
@@ -561,7 +561,7 @@ Model plans campaigns and attempts.
 Establish exact acquisition lineage before selection/persistence.
 
 ### 3. Exact scope of code changes
-Add validated plan/campaign/run/logical-case/attempt identifiers and explicit relationships; reject inconsistent or missing required lineage instead of deriving it from timestamps.
+Add validated plan/campaign/run/logical-case/attempt identifiers and explicit relationships; reject inconsistent or missing required lineage instead of deriving it from timestamps. DEV-009 S024-R1 adds exact lineage validation against declared execution and independently supplied expected plan/campaign context.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -569,7 +569,7 @@ Add validated plan/campaign/run/logical-case/attempt identifiers and explicit re
 - `crates/eqm_protocol/src/`
 
 ### 5. Unit tests or integration tests required
-Duplicate attempt names under the same execution reject ambiguous construction; distinct runs/cases remain independent.
+Duplicate attempt names under the same execution reject ambiguous construction; distinct runs/cases remain independent. Test every missing and mismatched lineage axis, attempt membership and run/case independence separately.
 
 ### 6. Verification commands
 ```sh
@@ -605,7 +605,7 @@ Validate evidence identity relationships.
 Catch contradictions among envelope and payload subjects.
 
 ### 3. Exact scope of code changes
-Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed.
+Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
@@ -613,7 +613,7 @@ Validate matching scope/target/unit/requirements/facets/kind and identity lineag
 - `crates/eqm_protocol/tests/`
 
 ### 5. Unit tests or integration tests required
-Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip.
+Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip. Use genuine positive fixtures and one-axis RA02/RA13 mutants, including mutation after DTO parsing; no helper-only or self-hash acceptance.
 
 ### 6. Verification commands
 ```sh
@@ -652,7 +652,7 @@ Model the acyclic record dependency chain.
 Prevent evidence-to-decision digest cycles.
 
 ### 3. Exact scope of code changes
-Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence.
+Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence. DEV-009 allocates typed record-kind references to already-defined supplied registry entries along the approved acyclic lifecycle; reject missing/self/future/cyclic references without storage/publication.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`
@@ -696,7 +696,7 @@ Add cross-domain provenance regression corpus.
 Lock identity semantics before target and evaluator changes.
 
 ### 3. Exact scope of code changes
-Consolidate approved raw/semantic/component/source/lineage vectors into shared fixtures and golden identities without live credentials.
+Consolidate approved raw/semantic/component/source/lineage vectors into shared fixtures and golden identities without live credentials. DEV-009 includes all repaired raw/semantic/nested-source/runner/lineage controls and complete literal oracles in real owning boundaries, not only declarative vector inventory.
 
 ### 4. Files/modules likely involved
 - `tests/fixtures/`

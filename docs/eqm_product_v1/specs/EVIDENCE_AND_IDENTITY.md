@@ -107,3 +107,14 @@ Repository-wide clean inspection permits only reserved untracked .eqm outputs.
 Ignored non-output content and Git concealment flags cannot authorize clean source.
 Dirty inspection cannot satisfy clean release provenance; inspection alone is not
 immutable execution proof. DEV-008 freezes conservative gate/fixture integration.
+
+## DEV-009 checked identity and model allocation
+
+DEV-009 in the sole governing COMMIT_SEQUENCE closes bytes-first lossless v2
+semantic evidence, explicit lineage/admission context, recursive source inspection
+and the exact shared-source/participant/subject/cohort engineering allocation.
+Use its member/version/domain decisions at each owning step; preserve original
+criteria, v1 contracts and signed bytes. Parsed identifiers/digests are not trust,
+synthetic combinations are not real cohort certification, and new target fields
+extend their canonical projection atomically. S043 is the next independent
+integration review boundary before routing; full MVP remains S211.

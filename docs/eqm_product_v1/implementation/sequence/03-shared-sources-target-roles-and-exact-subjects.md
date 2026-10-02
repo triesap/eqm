@@ -22,7 +22,7 @@ Model product roles separately from targets.
 Support asymmetric CLI/control-tower/edge behavior.
 
 ### 3. Exact scope of code changes
-Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable. DEV-007: bind the newly modeled exact role ID in the target configuration projection in this same step; preserve v1 forms and prove same-target role mutation changes its v2 identity.
+Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable. DEV-007: bind the newly modeled exact role ID in the target configuration projection in this same step; preserve v1 forms and prove same-target role mutation changes its v2 identity. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -68,7 +68,7 @@ Model source components.
 Represent shared implementation input without duplicate target roots.
 
 ### 3. Exact scope of code changes
-Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation. DEV-007: bind newly modeled target-to-source-component ID references in the target projection as canonical ID sets in this same step; exact source content remains a separate subject axis.
+Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation. DEV-007: bind newly modeled target-to-source-component ID references in the target projection as canonical ID sets in this same step; exact source content remains a separate subject axis. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -114,7 +114,7 @@ Resolve source dependency edges.
 Make transitive shared-source ownership explicit.
 
 ### 3. Exact scope of code changes
-Resolve component references, target dependencies and cycles in graph preparation; reject dangling/cyclic unsupported dependencies deterministically.
+Resolve component references, target dependencies and cycles in graph preparation; reject dangling/cyclic unsupported dependencies deterministically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_engine/src/resolve.rs`
@@ -158,7 +158,7 @@ Extend authored target and source schemas.
 Expose the approved model through generated manifests.
 
 ### 3. Exact scope of code changes
-Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases. DEV-007: round-trip all new target role/source references into the target identity through authored schemas and the real loader; no new normative target field may be dropped from its projection.
+Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases. DEV-007: round-trip all new target role/source references into the target identity through authored schemas and the real loader; no new normative target field may be dropped from its projection. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/dto/`
@@ -205,7 +205,7 @@ Load overlapping shared-source targets safely.
 Remove duplicate-root rejection only where explicit shared ownership permits it.
 
 ### 3. Exact scope of code changes
-Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps.
+Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/loader.rs`
@@ -248,7 +248,7 @@ Validate artifacts against declared source ownership.
 Stop requiring every valid shared artifact under one output root.
 
 ### 3. Exact scope of code changes
-Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking.
+Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/conversion/`
@@ -292,7 +292,7 @@ Model capability participation rules.
 Express intentional role differences independently of waivers.
 
 ### 3. Exact scope of code changes
-Add validated requirement/target/profile participation selectors aligned with existing applicability vocabulary; reject ambiguous selectors and duplicate authority.
+Add validated requirement/target/profile participation selectors aligned with existing applicability vocabulary; reject ambiguous selectors and duplicate authority. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -336,7 +336,7 @@ Author and resolve participation metadata.
 Make participation part of protected graph semantics.
 
 ### 3. Exact scope of code changes
-Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together.
+Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/dto/`
@@ -383,7 +383,7 @@ Evaluate applicability per participant coordinate.
 Preserve target-specific applicability and unknown context.
 
 ### 3. Exact scope of code changes
-Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct.
+Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_engine/src/applicability.rs`
@@ -426,7 +426,7 @@ Model role-bearing scenario occurrences.
 Represent multiple actors of one shipped target.
 
 ### 3. Exact scope of code changes
-Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set.
+Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -470,7 +470,7 @@ Model exact multi-subject manifests.
 Bind each actor to its own source build artifact and configuration.
 
 ### 3. Exact scope of code changes
-Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs.
+Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -514,7 +514,7 @@ Separate comparison context identity.
 Prevent exact build identity from blocking valid comparability.
 
 ### 3. Exact scope of code changes
-Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically.
+Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/digest.rs`
@@ -558,7 +558,7 @@ Bind provider obligations explicitly.
 Avoid unscoped provider participation in unrelated targets.
 
 ### 3. Exact scope of code changes
-Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps.
+Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`
@@ -602,7 +602,7 @@ Author compatibility cohorts.
 Support approved mixed-version combinations without inventing a support window.
 
 ### 3. Exact scope of code changes
-Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit.
+Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/policy.rs`
@@ -649,7 +649,7 @@ Add the asymmetric multi-runtime graph fixture.
 Exercise the target/source/participant model as a whole.
 
 ### 3. Exact scope of code changes
-Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks.
+Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `tests/fixtures/`
@@ -694,7 +694,7 @@ Verify target model schema and identity parity.
 Close graph-model changes before obligation routing.
 
 ### 3. Exact scope of code changes
-Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success.
+Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `docs/concepts.md`

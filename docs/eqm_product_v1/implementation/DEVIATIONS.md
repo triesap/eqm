@@ -162,3 +162,14 @@ defines dependency repair DEV008-P1, S019-R3/S021-R1, conservative S022 gate and
 reserved-output fixture correction, then all eligible ordered work to S211.
 All 211 IDs/dependencies and original product criteria remain. Pi implements;
 Codex accepts. No gate, failed check or operational authority is waived.
+
+## DEV-009 — checked provenance and EQM-P03 integration boundary
+
+2026-10-02, Codex under delegated engineering/acceptance ownership; reviewed
+`d6261c4`. Six commits retained; dependency repair accepted, raw/semantic/nested
+source defect probes and remaining evidence/lineage findings require the five
+ordered repair checkpoints in the governing DEV-009 amendment. Original steps,
+criteria and dependency order remain. Next batch through S043, independent
+model/schema/identity review before S044; full MVP S211 unchanged. Representation
+allocation is frozen before new code; no owner-only question, policy waiver, v1
+wire rewrite, operational activation or product implementation by Codex.

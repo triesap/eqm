@@ -1317,13 +1317,13 @@
     {
       "title": "Model raw and semantic evidence identities",
       "purpose": "Preserve exact signed bytes independently of normalized assertions.",
-      "scope": "Add validated raw-object/semantic-evidence relation types and conversion results without storage or trust promotion; keep existing records readable only under the version ADR.",
+      "scope": "Add validated raw-object/semantic-evidence relation types and conversion results without storage or trust promotion; keep existing records readable only under the version ADR. DEV-009 S023-R1 repairs raw-record binding and lossless explicit v2 semantic projection; newly added v1 identity helper is not a v2 contract.",
       "files": [
         "crates/eqm_domain/src/evidence_result.rs",
         "crates/eqm_protocol/src/",
         "crates/eqm_protocol/tests/"
       ],
-      "tests": "Alternate whitespace transports differ in raw identity but agree semantically; signed originals are returned unchanged; changed assertions differ.",
+      "tests": "Alternate whitespace transports differ in raw identity but agree semantically; signed originals are returned unchanged; changed assertions differ. Also execute raw mismatch rejection, neighboring large-value separation, all assertion-axis mutations, canonical sets/ordered attempts, bounds and independently computed complete literal v2 bytes/digest.",
       "expected": "Evidence normalization no longer conflates raw collision with semantic identity.",
       "commit_message": "feat: separate raw and semantic evidence identity",
       "requirements": [
@@ -1367,13 +1367,13 @@
     {
       "title": "Model plans campaigns and attempts",
       "purpose": "Establish exact acquisition lineage before selection/persistence.",
-      "scope": "Add validated plan/campaign/run/logical-case/attempt identifiers and explicit relationships; reject inconsistent or missing required lineage instead of deriving it from timestamps.",
+      "scope": "Add validated plan/campaign/run/logical-case/attempt identifiers and explicit relationships; reject inconsistent or missing required lineage instead of deriving it from timestamps. DEV-009 S024-R1 adds exact lineage validation against declared execution and independently supplied expected plan/campaign context.",
       "files": [
         "crates/eqm_domain/src/evidence_result.rs",
         "crates/eqm_domain/src/id.rs",
         "crates/eqm_protocol/src/"
       ],
-      "tests": "Duplicate attempt names under the same execution reject ambiguous construction; distinct runs/cases remain independent.",
+      "tests": "Duplicate attempt names under the same execution reject ambiguous construction; distinct runs/cases remain independent. Test every missing and mismatched lineage axis, attempt membership and run/case independence separately.",
       "expected": "The engine can reason about attempts without counting JSON files.",
       "commit_message": "feat: model evidence execution lineage",
       "requirements": [
@@ -1409,13 +1409,13 @@
     {
       "title": "Validate evidence identity relationships",
       "purpose": "Catch contradictions among envelope and payload subjects.",
-      "scope": "Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed.",
+      "scope": "Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion.",
       "files": [
         "crates/eqm_protocol/src/",
         "crates/eqm_domain/src/evidence_result.rs",
         "crates/eqm_protocol/tests/"
       ],
-      "tests": "Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip.",
+      "tests": "Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip. Use genuine positive fixtures and one-axis RA02/RA13 mutants, including mutation after DTO parsing; no helper-only or self-hash acceptance.",
       "expected": "Structurally valid JSON cannot create internally contradictory evidence.",
       "commit_message": "fix: validate evidence envelope relationships",
       "requirements": [
@@ -1467,7 +1467,7 @@
     {
       "title": "Model the acyclic record dependency chain",
       "purpose": "Prevent evidence-to-decision digest cycles.",
-      "scope": "Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence.",
+      "scope": "Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence. DEV-009 allocates typed record-kind references to already-defined supplied registry entries along the approved acyclic lifecycle; reject missing/self/future/cyclic references without storage/publication.",
       "files": [
         "crates/eqm_domain/src/",
         "crates/eqm_protocol/src/",
@@ -1508,7 +1508,7 @@
     {
       "title": "Add cross-domain provenance regression corpus",
       "purpose": "Lock identity semantics before target and evaluator changes.",
-      "scope": "Consolidate approved raw/semantic/component/source/lineage vectors into shared fixtures and golden identities without live credentials.",
+      "scope": "Consolidate approved raw/semantic/component/source/lineage vectors into shared fixtures and golden identities without live credentials. DEV-009 includes all repaired raw/semantic/nested-source/runner/lineage controls and complete literal oracles in real owning boundaries, not only declarative vector inventory.",
       "files": [
         "tests/fixtures/",
         "crates/eqm_test_support/src/",
@@ -1557,7 +1557,7 @@
     {
       "title": "Model product roles separately from targets",
       "purpose": "Support asymmetric CLI/control-tower/edge behavior.",
-      "scope": "Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable. DEV-007: bind the newly modeled exact role ID in the target configuration projection in this same step; preserve v1 forms and prove same-target role mutation changes its v2 identity.",
+      "scope": "Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable. DEV-007: bind the newly modeled exact role ID in the target configuration projection in this same step; preserve v1 forms and prove same-target role mutation changes its v2 identity. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/entity.rs",
         "crates/eqm_domain/src/id.rs",
@@ -1615,7 +1615,7 @@
     {
       "title": "Model source components",
       "purpose": "Represent shared implementation input without duplicate target roots.",
-      "scope": "Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation. DEV-007: bind newly modeled target-to-source-component ID references in the target projection as canonical ID sets in this same step; exact source content remains a separate subject axis.",
+      "scope": "Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation. DEV-007: bind newly modeled target-to-source-component ID references in the target projection as canonical ID sets in this same step; exact source content remains a separate subject axis. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/entity.rs",
         "crates/eqm_domain/src/graph.rs",
@@ -1673,7 +1673,7 @@
     {
       "title": "Resolve source dependency edges",
       "purpose": "Make transitive shared-source ownership explicit.",
-      "scope": "Resolve component references, target dependencies and cycles in graph preparation; reject dangling/cyclic unsupported dependencies deterministically.",
+      "scope": "Resolve component references, target dependencies and cycles in graph preparation; reject dangling/cyclic unsupported dependencies deterministically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_engine/src/resolve.rs",
         "crates/eqm_engine/src/invariants.rs",
@@ -1729,7 +1729,7 @@
     {
       "title": "Extend authored target and source schemas",
       "purpose": "Expose the approved model through generated manifests.",
-      "scope": "Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases. DEV-007: round-trip all new target role/source references into the target identity through authored schemas and the real loader; no new normative target field may be dropped from its projection.",
+      "scope": "Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases. DEV-007: round-trip all new target role/source references into the target identity through authored schemas and the real loader; no new normative target field may be dropped from its projection. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_manifest/src/dto/",
         "crates/eqm_manifest/src/conversion/",
@@ -1788,7 +1788,7 @@
     {
       "title": "Load overlapping shared-source targets safely",
       "purpose": "Remove duplicate-root rejection only where explicit shared ownership permits it.",
-      "scope": "Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps.",
+      "scope": "Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_manifest/src/loader.rs",
         "crates/eqm_manifest/tests/"
@@ -1843,7 +1843,7 @@
     {
       "title": "Validate artifacts against declared source ownership",
       "purpose": "Stop requiring every valid shared artifact under one output root.",
-      "scope": "Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking.",
+      "scope": "Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_manifest/src/conversion/",
         "crates/eqm_engine/src/structure.rs",
@@ -1899,7 +1899,7 @@
     {
       "title": "Model capability participation rules",
       "purpose": "Express intentional role differences independently of waivers.",
-      "scope": "Add validated requirement/target/profile participation selectors aligned with existing applicability vocabulary; reject ambiguous selectors and duplicate authority.",
+      "scope": "Add validated requirement/target/profile participation selectors aligned with existing applicability vocabulary; reject ambiguous selectors and duplicate authority. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/entity.rs",
         "crates/eqm_domain/src/policy.rs",
@@ -1955,7 +1955,7 @@
     {
       "title": "Author and resolve participation metadata",
       "purpose": "Make participation part of protected graph semantics.",
-      "scope": "Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together.",
+      "scope": "Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_manifest/src/dto/",
         "crates/eqm_manifest/src/conversion/",
@@ -2014,7 +2014,7 @@
     {
       "title": "Evaluate applicability per participant coordinate",
       "purpose": "Preserve target-specific applicability and unknown context.",
-      "scope": "Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct.",
+      "scope": "Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_engine/src/applicability.rs",
         "crates/eqm_engine/tests/"
@@ -2069,7 +2069,7 @@
     {
       "title": "Model role-bearing scenario occurrences",
       "purpose": "Represent multiple actors of one shipped target.",
-      "scope": "Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set.",
+      "scope": "Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/entity.rs",
         "crates/eqm_domain/src/evidence_result.rs",
@@ -2125,7 +2125,7 @@
     {
       "title": "Model exact multi-subject manifests",
       "purpose": "Bind each actor to its own source build artifact and configuration.",
-      "scope": "Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs.",
+      "scope": "Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/evidence_result.rs",
         "crates/eqm_protocol/src/",
@@ -2181,7 +2181,7 @@
     {
       "title": "Separate comparison context identity",
       "purpose": "Prevent exact build identity from blocking valid comparability.",
-      "scope": "Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically.",
+      "scope": "Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/digest.rs",
         "crates/eqm_engine/src/equivalence.rs",
@@ -2237,7 +2237,7 @@
     {
       "title": "Bind provider obligations explicitly",
       "purpose": "Avoid unscoped provider participation in unrelated targets.",
-      "scope": "Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps.",
+      "scope": "Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/",
         "crates/eqm_engine/src/resolve.rs",
@@ -2293,7 +2293,7 @@
     {
       "title": "Author compatibility cohorts",
       "purpose": "Support approved mixed-version combinations without inventing a support window.",
-      "scope": "Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit.",
+      "scope": "Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "crates/eqm_domain/src/policy.rs",
         "crates/eqm_manifest/src/dto/",
@@ -2352,7 +2352,7 @@
     {
       "title": "Add the asymmetric multi-runtime graph fixture",
       "purpose": "Exercise the target/source/participant model as a whole.",
-      "scope": "Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks.",
+      "scope": "Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "tests/fixtures/",
         "crates/eqm_test_support/src/",
@@ -2409,7 +2409,7 @@
     {
       "title": "Verify target model schema and identity parity",
       "purpose": "Close graph-model changes before obligation routing.",
-      "scope": "Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success.",
+      "scope": "Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
       "files": [
         "docs/concepts.md",
         "docs/manifests.md",
@@ -13645,10 +13645,10 @@
   "supervision": {
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
-    "amendment": "DEV-008",
-    "next_checkpoint": "DEV008-P1",
-    "execution_target": "S211 subject to explicit predecessor and external evidence gates",
+    "amendment": "DEV-009",
+    "next_checkpoint": "S019-R4",
+    "execution_target": "S043 / EQM-P03 integration review; full MVP remains S211",
     "intermediate_checkpoint": "S143 is not a stopping boundary",
-    "continuation": "pfc all: DEV008-P1, S019-R3, S021-R1, S022 completion, every ordered eligible successor to S211; preserve hard dependencies, required review and external gates."
+    "continuation": "pfc through EQM-P03: S019-R4, S021-R2, S022-R1, S023-R1, S024-R1, every ordered eligible S025-S043; stop for independent model/schema/identity review before S044."
   }
 }

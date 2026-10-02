@@ -163,3 +163,14 @@ ResolvedRunner uses existing RunnerDigest over explicit v2 JCS root definition/
 program/approved_guarantees, tagged template semantics and full member ordering.
 identity_v2()/canonical_bytes() retain typed identity/bytes; digest() is an explicit
 wire adapter. DEV-008 defines fields, bounds, errors, literals and integration.
+
+## DEV-009 checked identity and model allocation
+
+DEV-009 in the sole governing COMMIT_SEQUENCE closes bytes-first lossless v2
+semantic evidence, explicit lineage/admission context, recursive source inspection
+and the exact shared-source/participant/subject/cohort engineering allocation.
+Use its member/version/domain decisions at each owning step; preserve original
+criteria, v1 contracts and signed bytes. Parsed identifiers/digests are not trust,
+synthetic combinations are not real cohort certification, and new target fields
+extend their canonical projection atomically. S043 is the next independent
+integration review boundary before routing; full MVP remains S211.

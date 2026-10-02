@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S019",
  "implementation": "in_progress",
- "local_verification": "standard_passed_dependency_policy_passed_yoke_derive_0_8_4_S019_R3_S021_R1_S022_S023_S024_committed_S025_remaining",
+ "local_verification": "standard_passed_489_test_executions_deny_audit_runner_doctests_passed_three_isolated_defect_probes_confirmed",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -586,7 +586,7 @@
   },
   {
    "id": "S019",
-   "status": "complete",
+   "status": "in_progress",
    "commit_sha": "1512c9fa7e886781bdf2976dfaabde1d8328ac43",
    "report": "implementation/reports/S019.md",
    "verification": [
@@ -601,8 +601,8 @@
    ],
    "baseline_exceptions": [],
    "decision_status": "resolved_by_Codex_DEV007",
-   "implementation_status": "committed_R3_pending_review",
-   "supervisor_status": "S019_R3_pending_acceptance",
+   "implementation_status": "retained_committed_changes_required",
+   "supervisor_status": "changes_required_DEV009",
    "implementation_checkpoints": [
     {
      "id": "S019-A",
@@ -738,7 +738,8 @@
       "git diff --check"
      ]
     }
-   ]
+   ],
+   "review_report": "implementation/reports/CODEX-d6261c4.md"
   },
   {
    "id": "S020",
@@ -763,7 +764,7 @@
   },
   {
    "id": "S021",
-   "status": "complete",
+   "status": "pending",
    "commit_sha": "0e6584fa3aa86b13836c98aa6a016dd575691704",
    "report": "implementation/reports/S021.md",
    "verification": [
@@ -778,8 +779,8 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_R1_pending_review",
-   "supervisor_status": "S021_R1_pending_acceptance",
+   "implementation_status": "retained_committed_changes_required",
+   "supervisor_status": "changes_required_DEV009",
    "corrective_checkpoints": [
     {
      "id": "S021-R1",
@@ -798,11 +799,12 @@
      "implementation_status": "committed_pending_acceptance",
      "supervisor_status": "pending_acceptance"
     }
-   ]
+   ],
+   "review_report": "implementation/reports/CODEX-d6261c4.md"
   },
   {
    "id": "S022",
-   "status": "complete",
+   "status": "pending",
    "commit_sha": "af5aab620ee5d66b32f3de689f421e5fa0ea0853",
    "report": "implementation/reports/S022.md",
    "verification": [
@@ -816,14 +818,15 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_pending_review",
-   "supervisor_status": "S022_completion_pending_acceptance",
+   "implementation_status": "retained_committed_changes_required",
+   "supervisor_status": "changes_required_DEV009",
    "decision_status": "resolved_by_Codex_DEV008",
-   "closure_report": "implementation/reports/S022.md"
+   "closure_report": "implementation/reports/S022.md",
+   "review_report": "implementation/reports/CODEX-d6261c4.md"
   },
   {
    "id": "S023",
-   "status": "complete",
+   "status": "pending",
    "commit_sha": "9f000b683579426b194d10e94a2f5d5b96516a49",
    "report": "implementation/reports/S023.md",
    "verification": [
@@ -835,13 +838,14 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_pending_acceptance",
-   "supervisor_status": "pending_acceptance"
+   "implementation_status": "retained_committed_changes_required",
+   "supervisor_status": "changes_required_DEV009",
+   "review_report": "implementation/reports/CODEX-d6261c4.md"
   },
   {
    "id": "S024",
-   "status": "complete",
-   "commit_sha": null,
+   "status": "pending",
+   "commit_sha": "d6261c4c0c3fdcc082d8d7902642d364b687d7af",
    "report": "implementation/reports/S024.md",
    "verification": [
     "cargo fmt --all --check",
@@ -852,8 +856,9 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "committed_pending_acceptance",
-   "supervisor_status": "pending_acceptance"
+   "implementation_status": "retained_committed_changes_required",
+   "supervisor_status": "changes_required_DEV009",
+   "review_report": "implementation/reports/CODEX-d6261c4.md"
   },
   {
    "id": "S025",
@@ -2699,7 +2704,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 12,
+   "completed_steps": 7,
    "total_steps": 15
   },
   {
@@ -3008,26 +3013,19 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S025",
+ "next_checkpoint": "S019-R4",
  "supervisor_review": {
-  "source_commit": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
-  "report": "implementation/reports/CODEX-eb2f323.md",
-  "status": "RF27_S020_accepted_RF28_partial_RF30_RF31_open_S022_decision_resolved",
-  "amendment": "DEV-008",
-  "standard_check": "passed_467_test_executions",
-  "advisory_audit": "not_rerun_this_review",
-  "dependency_policy": "passed_transitive_yoke_derive_0_8_4",
-  "package_structure": "passed",
-  "literal_oracles": "six_binding_spec_contract_policy_hashes_independently_recomputed",
+  "source_commit": "d6261c4c0c3fdcc082d8d7902642d364b687d7af",
+  "report": "implementation/reports/CODEX-d6261c4.md",
+  "status": "RF31_accepted_RF28_RF30_partial_RF32_RF37_changes_required",
+  "amendment": "DEV-009",
+  "standard_check": "passed_489_test_executions",
+  "advisory_audit": "passed",
+  "dependency_policy": "passed",
   "release_candidate": false,
-  "s019_decision": "resolved",
-  "next_checkpoint": "S025",
-  "reviewed_head": "eb2f323e459423fd06d25beffa7f6f85a1077af4",
-  "review_report": "implementation/reports/CODEX-eb2f323.md",
-  "s020_decision": "resolved",
-  "s022_decision": "resolved"
+  "next_checkpoint": "S019-R4"
  },
- "execution_target": "S211 subject to predecessor and external evidence gates",
+ "execution_target": "S043 / EQM-P03 independent integration review; full MVP S211 remains",
  "supervisor_findings": [
   {
    "id": "RF01",
@@ -3307,13 +3305,13 @@
   },
   {
    "id": "RF28",
-   "status": "fixed_pending_acceptance",
+   "status": "partial_literal_digest_remaining",
    "priority": "P2",
    "owner": "S019",
-   "checkpoint": "S019-R3",
+   "checkpoint": "S019-R4",
    "summary": "Missing declared S019 provenance boundary evidence",
    "report": "implementation/reports/CODEX-1512c9f.md",
-   "followup_report": "implementation/reports/S019.md"
+   "followup_report": "implementation/reports/CODEX-d6261c4.md"
   },
   {
    "id": "RF29",
@@ -3327,24 +3325,79 @@
   {
    "id": "RF30",
    "priority": "P2",
-   "status": "fixed_pending_acceptance",
+   "status": "projection_accepted_acquisition_evidence_remaining",
    "owner": "S021",
-   "checkpoint": "S021-R1",
+   "checkpoint": "S021-R2",
    "summary": "Runner identity differs from frozen typed v2 canonical contract",
    "report": "implementation/reports/CODEX-eb2f323.md",
-   "followup_report": "implementation/reports/S021.md"
+   "followup_report": "implementation/reports/CODEX-d6261c4.md"
   },
   {
    "id": "RF31",
    "priority": "P2",
-   "status": "fixed_pending_acceptance",
+   "status": "accepted_for_allocated_scope",
    "owner": "S019",
    "checkpoint": "DEV008-P1",
    "summary": "Locked yoke-derive 0.8.3 is yanked; dependency policy now fails",
    "report": "implementation/reports/CODEX-eb2f323.md",
-   "followup_report": "implementation/reports/DEV008-P1.md"
+   "followup_report": "implementation/reports/DEV008-P1.md",
+   "closure_report": "implementation/reports/CODEX-d6261c4.md"
+  },
+  {
+   "id": "RF32",
+   "owner": "S023",
+   "checkpoint": "S023-R1",
+   "priority": "P1",
+   "status": "open",
+   "summary": "Raw evidence relation accepts unrelated non-JSON bytes",
+   "report": "implementation/reports/CODEX-d6261c4.md"
+  },
+  {
+   "id": "RF33",
+   "owner": "S023",
+   "checkpoint": "S023-R1",
+   "priority": "P1",
+   "status": "open",
+   "summary": "V1 serialization under v2 semantic domain collapses different large numeric values",
+   "report": "implementation/reports/CODEX-d6261c4.md"
+  },
+  {
+   "id": "RF34",
+   "owner": "S021",
+   "checkpoint": "S021-R2",
+   "priority": "P2",
+   "status": "open",
+   "summary": "Acquisition regression mirrors CLI code rather than executing production path; argv mutation is confounded",
+   "report": "implementation/reports/CODEX-d6261c4.md"
+  },
+  {
+   "id": "RF35",
+   "owner": "S024",
+   "checkpoint": "S024-R1",
+   "priority": "P2",
+   "status": "open",
+   "summary": "Lineage presence carrier does not validate declared execution relationships; test matrix incomplete",
+   "report": "implementation/reports/CODEX-d6261c4.md"
+  },
+  {
+   "id": "RF36",
+   "owner": "S022",
+   "checkpoint": "S022-R1",
+   "priority": "P1",
+   "status": "open",
+   "summary": "Concealed modified nested submodule bytes pass clean source inspection",
+   "report": "implementation/reports/CODEX-d6261c4.md"
+  },
+  {
+   "id": "RF37",
+   "owner": "S024",
+   "checkpoint": "DEV-009",
+   "priority": "P2",
+   "status": "open",
+   "summary": "Stale execution cursors and supervisor metadata mix self-verification with historical independent evidence",
+   "report": "implementation/reports/CODEX-d6261c4.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
- "supervisor_amendment": "DEV-008"
+ "supervisor_amendment": "DEV-009"
 }

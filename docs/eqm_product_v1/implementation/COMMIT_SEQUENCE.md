@@ -1,5 +1,281 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-009 — Checked evidence identities and complete shared-subject modeling
+
+**Date/author:** 2026-10-02, Codex under owner delegation.
+**Reviewed source:** `d6261c4c0c3fdcc082d8d7902642d364b687d7af`.
+[Independent review](reports/CODEX-d6261c4.md) preserves all earlier acceptance
+and accepts DEV008-P1/RF31. Retain all six new commits. Their implemented and
+verified contributions are not whole-step acceptance. S001–S018 and S020 remain
+accepted (19 numbered steps); remaining evidence/defects below must close before
+those corrected steps are accepted. No owner-only decision is needed for this batch. Q02/Q06 remain required host/real-cohort evidence gates; synthetic model/schema implementation through S043 is eligible, but those facts are not certified by it.
+
+### Batch and ordered repairs
+
+Execute **S019-R4 → S021-R2 → S022-R1 → S023-R1 → S024-R1 → S025–S043**,
+using `pfc through EQM-P03`. EQM-P03 ends at S043. This substantial batch completes
+identity admission and the shared-source/participant/subject model, then returns
+for independent integration review before S044 obligation routing. It does not
+cancel the remaining MVP S044–S211. One green checkpoint is not a stop; preserve
+hard predecessors, actual review/external gates, user stops and genuine runtime
+limits. Context growth or a chosen 'natural boundary' is not itself a runtime
+limit. Use compact step receipts and native context management; preserve the
+selected range after compaction. Do not ask Codex again about decisions frozen here.
+
+| Repair | Required result | Commit |
+| --- | --- | --- |
+| S019-R4 | RF28 remaining literal digest for the heterogeneous rule-order trap; independently compute its constant from frozen complete bytes and assert production output against it, retaining R3's controls. | `test: freeze heterogeneous policy ordering identity` |
+| S021-R2 | RF34: execute the actual CLI runner-authority acquisition/resolution path against a temporary repository executable before/after replacement; same definition/context. Also make argv reversal differ only in argv, prove all defined field families with isolated controls and nested extension tags/set-order traps. Retain literal/typed JCS implementation and executed doctests. | `test: verify runner identity at production acquisition` |
+| S022-R1 | RF36: inspect populated nested submodule indices/worktrees recursively; concealment, ignored content and unavailable inspection cannot authorize clean source. Keep existing release gate/fixture and narrow output exclusion. | `fix: reject concealed nested source changes` |
+| S023-R1 | RF32/RF33: raw bytes must parse to the same record; semantic projection must use explicit existing v2 DTO forms, not v1 serialization. Preserve originals and full numeric identity. | `fix: bind raw evidence to lossless v2 assertions` |
+| S024-R1 | RF35: checked lineage-to-execution/expected-plan/campaign validation with mismatch controls; prove every missing field and separate run/case independence. | `fix: validate explicit execution lineage relationships` |
+
+Run each repair's owning tests, fmt, locked workspace all-target check/clippy,
+standard, schema, structure and diff lanes before its separate commit. S019-R4
+uses S019's tests/doctests; S021-R2 additionally CLI verification tests and runner/
+protocol doctests; S022-R1 domain/application/CLI release lanes; S023/S024 domain/
+protocol tests. No direct dependency upgrade or additional license/policy waiver.
+
+### Source inspection closure (S022-R1)
+
+The current top-level `ls-files -v -z` rejects concealment only in the parent
+index; normal submodule status can hide modified child bytes under a child
+assume-unchanged/skip-worktree flag. Codex reproduced a clean result for that
+modified tree. Traverse exact Gitlink paths using NUL-safe output and inspect
+all populated nested repositories without network/submodule initialization.
+Reject concealed child entries and treat tracked/index/untracked/ignored child
+changes conservatively. The reserved generated-output exclusion is only the
+owning inspected root `.eqm/`; it is not an arbitrary exemption for nested source.
+A missing/uninitialized/failed nested inspection is explicitly non-authorizing.
+Verify child HEAD against its declared Gitlink and prevent symlink/root escape,
+repeated/cyclic roots and unbounded traversal; limits produce typed unavailable
+inspection, never clean. No changed-byte or executed-subject universality claim.
+
+Add actual source and release-boundary tests for normal/modified nested source,
+both concealment flags, ignored/untracked child source, mismatch/unavailable child
+and nested depth. On this supported host submodule fixture construction works;
+do not return Ok from a failed setup and count it as a passed regression. Preserve
+root clean Pass, reserved output neutrality, dirty non-Pass/non-Conditional and
+unconfigured Unknown controls. No blanket golden regeneration or v1 change.
+
+### Raw/semantic identity contract (S023-R1)
+
+The current `EvidenceResultDto::identity_relation(&self, raw_bytes)` accepts
+unrelated non-JSON bytes and hashes v1 default serialization. Two legal different
+attachment sizes 9007199254740992 and 9007199254740993 collide after JCS numeric
+rounding. Do not narrow v1 acceptance or silently convert a v1 assertion into v2.
+Remove/replace that newly added v1 relation helper, preserving established v1 APIs.
+
+Protocol owns a bytes-first checked v2 parsing result with private fields,
+read-only record/raw/semantic access and retained canonical semantic bytes. Parse
+once through the existing strict v2 reader, preserving every input byte separately.
+If a receiver-plus-bytes convenience method remains, reparse/validate and require
+record equality before constructing the result. Invalid/duplicate/oversized JSON,
+wrong exact schema and mismatched raw record reject with typed contextual errors.
+A generic public domain pair is non-authorizing data, not a 'validated' admission
+capability; prevent unchecked construction of the protocol checked result.
+
+Freeze the semantic root to every existing EvidenceResultV2Dto assertion member
+except `schema`, `id` and `result_digest`. This explicitly contains subject, target,
+unit, requirements, facets, kind, evidence_spec_digest, contract_digest,
+binding_digest, policy_digest, present runner/adapter/runtime/release references,
+profile_values, producer, claimed_trust, observed_at, payload and attachments.
+Root/schema/self-transport identifiers are excluded, not substantive claims.
+Use current explicit v2 member forms recursively: WireUint, CanonicalInstant,
+absence by omission, canonical full-member sets and ordered attempts. Revalidate
+mutable DTO fields before projection; never use the v1 serializer. No semantic
+extension field exists in this DTO yet: do not pretend it was included or add an
+unallocated wire field. Later owning additions extend projections atomically.
+Hash under existing SemanticEvidenceDigest/RawObjectDigest domains; execution
+identity remains a separate required relation, not observation/file-count credit.
+
+Use one explicit published bound per stage: existing evidence JSON ingress is
+8 MiB; the generic raw-object carrier's 16 MiB cap is separate, not a claim that
+this evidence reader admits 16 MiB. Test both relevant boundaries without changing
+v1 ranges. Required regressions: unrelated valid JSON and non-JSON reject; alternate
+whitespace/object order preserve raw differences with equal semantic bytes/digest;
+large neighboring attachment/count values stay distinct with literal decimal
+strings; all bound assertion axes change digest; set permutations agree while
+attempt order does not; duplicates/null/noncanonical tokens reject; signed raw
+bytes unchanged. Freeze a complete literal v2 semantic byte/digest oracle, computed
+independently. This parsed relation itself does not verify producer trust or storage.
+
+### Lineage and checked conversion (S024-R1/S025)
+
+Keep existing typed PlanId/CampaignId/RunId/LogicalCaseId/AttemptId grammars and
+complete parts. Add a fallible validation operation matching EvidenceLineage to
+an EvidenceExecution plus explicit expected PlanId/CampaignId: exact plan,
+campaign, run and logical case must match; attempt must be declared in that
+execution. Expected authority is independently supplied context, not established
+by these constructors or producer strings. Reject each mismatch specifically.
+Missing each of five parts, empty/duplicate attempts, independent runs and cases
+are separate executed tests. Never derive lineage from timestamps/directories.
+
+S025 owns one protocol-to-domain checked conversion over the parsed v2 object,
+explicit lineage, declared execution and immutable expected context. These are
+separate typed inputs; do not invent wire lineage from absent transport fields.
+Exact existing v2 component strings become their respective typed digest domains;
+subject/scope/target/unit/requirement/facet/profile/reference expectations must
+match approved context, payload kind must match the envelope, requirement units
+must match, and payload runtime/release references must match the same envelope.
+Target scope requires its target; target-set scope requires membership; provider
+scope uses the explicitly declared provider-to-target association, never ID equality
+or invented universal linkage. Subject repository/commit/build/artifact/configuration
+and profile revisions/values are exact axes. Missing required references fail;
+allowed absence stays typed/visible. No workspace-digest or zero-value fallback.
+Require id == result_digest == recomputed semantic digest for newly checked v2
+admission, excluding the two digest members from their own projection. Keep the
+older structural v2 parsing API distinct from admission; synthetic representation
+vectors do not become accepted evidence. Preserve all v1 bytes/reader behavior.
+
+Validate arithmetic plus contradictions between asserted counts and terminal
+outcomes (RA02), temporal ordering/window bounds, exact attempt numbering/declared
+membership, and every RA13 one-axis mismatch before constructing a private-field
+checked result. Do not equate selected logical observations with retry count.
+Mixed retry history remains representable and non-success; incomplete case/outcome
+mapping cannot create minimum-count credit. S059/S062–S066 retain full selection/
+aggregation integration; S025 implements its boundary contribution without claiming
+those are complete. Route actual new v2 admission through this boundary, with a
+bytes-first entry and a separately revalidating DTO entry if needed. Old v1 CLI
+consumer transition is owned later; do not route legacy fixtures through implicit
+conversion. No parsing/lineage/digest creates verification trust. New field/schema
+changes happen only in owning steps with explicit version dispatch and parity.
+
+### Acyclic references and complete corpus (S026/S027)
+
+Use typed record-kind/reference distinctions and validated already-defined
+references for the lifecycle in EVIDENCE_AND_IDENTITY.md: authority/candidate →
+plan/campaign → evidence/worker/runtime → frozen input → decision → statement →
+authorization → deployment receipt. Validate known IDs, allowed direction,
+self/future/cyclic references against an explicit supplied registry. Evidence
+references plan/candidate, not its future decision. Post-deployment evidence
+belongs to a later input/decision. Preserve separate digest domains; no timestamp
+or directory ordering substitutes for references. Public checked records cannot
+be built by unchecked deserialization. No storage/publication is implied here.
+
+S027 includes every repaired axis and literal oracle plus negative bypass tests
+in the real domain/protocol/manifest boundaries, not merely a declarative vector
+inventory. Actual v2 selector ingress must call its typed helper when introduced.
+Keep deterministic fixture generation and original raws; no live credentials.
+
+### EQM-P03 representation and sequencing decisions (S028–S043)
+
+These close engineering allocation within the existing model; they do not define
+real product cohorts/business rules. Exact operational values remain explicit gates.
+Domain/engine remain pure; manifest owns authored projection/validation, protocol
+owns wire carriers, application owns effects. No dependency back-edges.
+
+- S028: RoleId is an authored extensible symbolic identity, not a three-role enum.
+  Target retains stable id/root/platform/framework/owners/extensions and adds
+  explicit role metadata. Preserve the existing constructor/v1 projection; legacy
+  absent role is typed absence, never an invented role. V2 role-bearing metadata
+  requires an explicit role; target v2 projection adds `role` when present.
+- S029/S030: SourceComponentId, confined canonical root set, owner set, explicit
+  dependency-ID set and semantic extensions. Domain/root projection members are
+  `id`, `roots`, `owners`, `dependencies`, `extensions`. Target adds explicit
+  `source_components` ID set and `depends_on` target ID set, bound in target v2
+  identity when modeled. Validate dangling refs/cycles/duplicate authority; compute
+  transitive ownership deterministically, not filename guesses. Raw source content
+  remains a separate subject axis. No default shared-source authority.
+- S031/S032/S033: Explicit workspace v2 reader/DTO uses existing workspace fields
+  plus `source_components` keyed by ID, with existing targets keyed by ID carrying
+  `role`, `source_components`, `depends_on`. No implicit v1/v2 conversion. New
+  manifest families use the existing schemas/v2/manifest base with exact kind
+  filenames allocated below; generate actual schemas, not placeholders. Keep v1
+  schemas/readers/oracles frozen. Overlaps are permitted only when their complete
+  overlap is explained by the same declared source component dependency closure;
+  undeclared/ambiguous/escaped ownership remains an error. Distinct target IDs and
+  configurations retain distinct shipped output identities. Shared paths never
+  imply identical artifact/builds or universal ownership. Test real loader inputs.
+- S034/S035/S036: Participation rules bind exact fully-qualified `requirement`,
+  explicit `targets` and existing typed `applicability`, with unique `id` and
+  semantic `extensions`. Use `participation` v2 manifest kind. Reject duplicate/
+  ambiguous authority for the same requirement/target; exact profiles come from
+  the immutable selected context. No undeclared target/profile. Evaluate at each
+  coordinate; explicit false may exclude, unknown remains visible/non-authorizing,
+  and unspecified required context is unknown. Do not alter old v1 evaluation
+  implicitly or synthesize a global drop/waiver.
+- S037: `scenario` v2 manifest kind, exact id/revision, `participants` with unique
+  occurrence `id`, explicit `role`, tagged target/provider `subject`, and explicit
+  directed `dependencies` between occurrence IDs, plus semantic extensions.
+  Participants/dependencies are canonical sets by complete member bytes; repeated
+  target/provider references with different occurrence IDs remain distinct.
+  Roles/refs/dependency mappings must validate; no target-ID set collapse.
+- S038: Exact subject assignments keyed by occurrence, retaining separate
+  repository/source commit and immutable source/component-content identity,
+  target/provider configuration, build ID and artifact digest. Use explicit
+  `subject-manifest` v2 protocol kind. Absence is omitted wire member/typed absent
+  domain state only for declared development context; trusted completeness requires
+  every relevant axis and never zero placeholders. One participant's valid build
+  does not need to equal another's. Later preparation/acquisition/trust owns actual
+  authorized material, not parsing or synthetic fixtures.
+- S039: `comparison-context` v2 protocol kind; root `contract_digest`,
+  `scenario_digest`, `profiles`, `comparison_rule_digest`. Profiles retain exact
+  selected definitions/revisions/logical values under the approved selected-profile
+  projection. Distinct participant build/source/artifact assignments do not enter
+  this shared identity; subject/evaluation identities remain separate. Use distinct
+  `eqm:v2:scenario`, `eqm:v2:subject-manifest`, `eqm:v2:comparison-context` domains
+  when introduced, with typed carriers and literal oracles; no aggregate fallback.
+- S040: Explicit provider records/configuration and target/scenario dependency IDs;
+  attach provider obligations only to declared dependents. Exact provider subjects
+  enter the subject manifest. Missing required provider remains non-authorizing;
+  an unrelated provider is not attached to every target. Operational endpoints/
+  credentials remain explicit unavailable inputs, not guessed defaults.
+- S041: `cohort` v2 manifest kind with id/revision/scenario, explicit participant
+  occurrence assignments to exact subject/build identities, and semantic extensions.
+  Validate required participant coverage and declared combinations. N/N+1 are
+  synthetic positive/negative fixture data, not a real supported-version promise.
+- S042/S043: synthetic CLI/desktop/mobile/provider fixture, shared components,
+  repeated occurrences, role-specific requirements, exact subjects and explicit
+  cohorts. Update public usage/schema inventory and real loader/application parity
+  controls atomically. New target fields always extend its v2 projection in the
+  introducing step; new wire families use explicit local dispatch, bounds, NFC,
+  omission/null, exact numeric/time rules and full-JCS sets, without network reads.
+  Preserve v1, ordered journeys/argv/extension arrays, and original signed bytes.
+
+Authoring allocation: new participation/scenario/provider/cohort documents use
+existing contract_sources discovery with exact v2 kind dispatch; do not invent
+new CLI flags or workspace source-list aliases. Source components remain embedded
+in workspace v2. Provider manifest kind is `provider`, with id,
+configuration_digest, owners and semantic extensions; explicit target `providers`
+ID sets are added/bound at S040, scenario occurrences already carry provider
+references. New reference fields are canonical sets, with no automatic dependency.
+Distinct `eqm:v2:participation`, `eqm:v2:provider-configuration` and
+`eqm:v2:source-snapshot` domains are allocated at their owning steps as needed;
+actual source/configuration verification remains independently required. Include
+participation in its own exact component projection and later authority linkage;
+do not silently alter S019's frozen ContractDigest root. For newly modeled graph
+semantics, provide explicit v2 semantic graph summary/projections in owning steps
+under `eqm:v2:semantic-graph`; old v1 projection must reject a v2-only graph rather
+than omit new normative fields or silently change legacy bytes. Actual supported
+schema inventory expands only when an owning step implements its reader/DTO;
+no placeholder schema or relaxation of exact parity is authorized.
+
+New local helper names and module placement are routine mechanics. Apply the
+member/digest/version decisions above and the original read lists/tests. If a
+truly new product/compatibility/authority decision is evidenced, return the exact
+conflict and smallest alternatives; do not re-ask already resolved allocations.
+All original per-step acceptance and RA obligations remain; the table does not
+replace them or grant whole-feature acceptance.
+
+### Evidence and cursor discipline
+
+RF37: current scalar next_step/active_step still say S019 while next_checkpoint
+says S025; historical supervisor metadata also mixes independent and new self-verification. Reconcile one
+implementation frontier plus distinct acceptance status; preserve original commits
+and accurately backfill S024. Cycle counts distinguish retained implementation
+from accepted work. Never change historical supervisor source/check metadata to
+look like new independent verification. Distinguish dedicated commands from checks
+inside the standard gate; S023/S024 have schema parity there, not evidence of
+a separate schema-check command. Preserve actual native/raw failure evidence.
+
+Use unique attempt log names, exact command, exit and source/tree identity; fail
+fast between dependent gates and serialize build-router workloads within a repo.
+Never commit from a shell pipeline that masks a failed Git exit. Do not amend
+reviewed commits; repair later with a new checkpoint. Reports/progress updates
+are not a stop. New code remains supervisor acceptance pending until reviewed.
+
+
 ## DEV-008 — Finish source provenance and continue the eligible MVP
 
 **Date/author:** 2026-10-02, Codex under owner delegation.
@@ -2234,7 +2510,7 @@ Model raw and semantic evidence identities.
 Preserve exact signed bytes independently of normalized assertions.
 
 ### 3. Exact scope of code changes
-Add validated raw-object/semantic-evidence relation types and conversion results without storage or trust promotion; keep existing records readable only under the version ADR.
+Add validated raw-object/semantic-evidence relation types and conversion results without storage or trust promotion; keep existing records readable only under the version ADR. DEV-009 S023-R1 repairs raw-record binding and lossless explicit v2 semantic projection; newly added v1 identity helper is not a v2 contract.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -2242,7 +2518,7 @@ Add validated raw-object/semantic-evidence relation types and conversion results
 - `crates/eqm_protocol/tests/`
 
 ### 5. Unit tests or integration tests required
-Alternate whitespace transports differ in raw identity but agree semantically; signed originals are returned unchanged; changed assertions differ.
+Alternate whitespace transports differ in raw identity but agree semantically; signed originals are returned unchanged; changed assertions differ. Also execute raw mismatch rejection, neighboring large-value separation, all assertion-axis mutations, canonical sets/ordered attempts, bounds and independently computed complete literal v2 bytes/digest.
 
 ### 6. Verification commands
 ```sh
@@ -2281,7 +2557,7 @@ Model plans campaigns and attempts.
 Establish exact acquisition lineage before selection/persistence.
 
 ### 3. Exact scope of code changes
-Add validated plan/campaign/run/logical-case/attempt identifiers and explicit relationships; reject inconsistent or missing required lineage instead of deriving it from timestamps.
+Add validated plan/campaign/run/logical-case/attempt identifiers and explicit relationships; reject inconsistent or missing required lineage instead of deriving it from timestamps. DEV-009 S024-R1 adds exact lineage validation against declared execution and independently supplied expected plan/campaign context.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -2289,7 +2565,7 @@ Add validated plan/campaign/run/logical-case/attempt identifiers and explicit re
 - `crates/eqm_protocol/src/`
 
 ### 5. Unit tests or integration tests required
-Duplicate attempt names under the same execution reject ambiguous construction; distinct runs/cases remain independent.
+Duplicate attempt names under the same execution reject ambiguous construction; distinct runs/cases remain independent. Test every missing and mismatched lineage axis, attempt membership and run/case independence separately.
 
 ### 6. Verification commands
 ```sh
@@ -2325,7 +2601,7 @@ Validate evidence identity relationships.
 Catch contradictions among envelope and payload subjects.
 
 ### 3. Exact scope of code changes
-Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed.
+Validate matching scope/target/unit/requirements/facets/kind and identity lineage across protocol-to-domain conversion; require explicit typed absence where allowed. DEV-009 freezes checked bytes-first v2 admission with explicit lineage/execution/expected typed context, recomputed semantic identity, local relationship/count/time checks and no trust promotion or implicit v1 conversion.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_protocol/src/`
@@ -2333,7 +2609,7 @@ Validate matching scope/target/unit/requirements/facets/kind and identity lineag
 - `crates/eqm_protocol/tests/`
 
 ### 5. Unit tests or integration tests required
-Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip.
+Mismatched payload kind, subject, attempt or semantic digest reject before evaluation; valid fixtures round-trip. Use genuine positive fixtures and one-axis RA02/RA13 mutants, including mutation after DTO parsing; no helper-only or self-hash acceptance.
 
 ### 6. Verification commands
 ```sh
@@ -2372,7 +2648,7 @@ Model the acyclic record dependency chain.
 Prevent evidence-to-decision digest cycles.
 
 ### 3. Exact scope of code changes
-Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence.
+Add candidate/plan/input-manifest/decision/reference distinctions and validate directed references before publication; do not require future release decisions in evidence. DEV-009 allocates typed record-kind references to already-defined supplied registry entries along the approved acyclic lifecycle; reject missing/self/future/cyclic references without storage/publication.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`
@@ -2416,7 +2692,7 @@ Add cross-domain provenance regression corpus.
 Lock identity semantics before target and evaluator changes.
 
 ### 3. Exact scope of code changes
-Consolidate approved raw/semantic/component/source/lineage vectors into shared fixtures and golden identities without live credentials.
+Consolidate approved raw/semantic/component/source/lineage vectors into shared fixtures and golden identities without live credentials. DEV-009 includes all repaired raw/semantic/nested-source/runner/lineage controls and complete literal oracles in real owning boundaries, not only declarative vector inventory.
 
 ### 4. Files/modules likely involved
 - `tests/fixtures/`
@@ -2462,7 +2738,7 @@ Model product roles separately from targets.
 Support asymmetric CLI/control-tower/edge behavior.
 
 ### 3. Exact scope of code changes
-Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable. DEV-007: bind the newly modeled exact role ID in the target configuration projection in this same step; preserve v1 forms and prove same-target role mutation changes its v2 identity.
+Add validated role metadata to the logical target model without hardcoding the user's whole product; keep existing target IDs stable. DEV-007: bind the newly modeled exact role ID in the target configuration projection in this same step; preserve v1 forms and prove same-target role mutation changes its v2 identity. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -2508,7 +2784,7 @@ Model source components.
 Represent shared implementation input without duplicate target roots.
 
 ### 3. Exact scope of code changes
-Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation. DEV-007: bind newly modeled target-to-source-component ID references in the target projection as canonical ID sets in this same step; exact source content remains a separate subject axis.
+Add source-component identities and confined roots with explicit target-to-component relations; retain domain-only validation. DEV-007: bind newly modeled target-to-source-component ID references in the target projection as canonical ID sets in this same step; exact source content remains a separate subject axis. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -2554,7 +2830,7 @@ Resolve source dependency edges.
 Make transitive shared-source ownership explicit.
 
 ### 3. Exact scope of code changes
-Resolve component references, target dependencies and cycles in graph preparation; reject dangling/cyclic unsupported dependencies deterministically.
+Resolve component references, target dependencies and cycles in graph preparation; reject dangling/cyclic unsupported dependencies deterministically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_engine/src/resolve.rs`
@@ -2598,7 +2874,7 @@ Extend authored target and source schemas.
 Expose the approved model through generated manifests.
 
 ### 3. Exact scope of code changes
-Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases. DEV-007: round-trip all new target role/source references into the target identity through authored schemas and the real loader; no new normative target field may be dropped from its projection.
+Add target role/source-component DTOs using the version decision; regenerate schemas and examples atomically without implicit old aliases. DEV-007: round-trip all new target role/source references into the target identity through authored schemas and the real loader; no new normative target field may be dropped from its projection. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/dto/`
@@ -2645,7 +2921,7 @@ Load overlapping shared-source targets safely.
 Remove duplicate-root rejection only where explicit shared ownership permits it.
 
 ### 3. Exact scope of code changes
-Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps.
+Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/loader.rs`
@@ -2688,7 +2964,7 @@ Validate artifacts against declared source ownership.
 Stop requiring every valid shared artifact under one output root.
 
 ### 3. Exact scope of code changes
-Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking.
+Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/conversion/`
@@ -2732,7 +3008,7 @@ Model capability participation rules.
 Express intentional role differences independently of waivers.
 
 ### 3. Exact scope of code changes
-Add validated requirement/target/profile participation selectors aligned with existing applicability vocabulary; reject ambiguous selectors and duplicate authority.
+Add validated requirement/target/profile participation selectors aligned with existing applicability vocabulary; reject ambiguous selectors and duplicate authority. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -2776,7 +3052,7 @@ Author and resolve participation metadata.
 Make participation part of protected graph semantics.
 
 ### 3. Exact scope of code changes
-Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together.
+Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/dto/`
@@ -2823,7 +3099,7 @@ Evaluate applicability per participant coordinate.
 Preserve target-specific applicability and unknown context.
 
 ### 3. Exact scope of code changes
-Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct.
+Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_engine/src/applicability.rs`
@@ -2866,7 +3142,7 @@ Model role-bearing scenario occurrences.
 Represent multiple actors of one shipped target.
 
 ### 3. Exact scope of code changes
-Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set.
+Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
@@ -2910,7 +3186,7 @@ Model exact multi-subject manifests.
 Bind each actor to its own source build artifact and configuration.
 
 ### 3. Exact scope of code changes
-Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs.
+Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
@@ -2954,7 +3230,7 @@ Separate comparison context identity.
 Prevent exact build identity from blocking valid comparability.
 
 ### 3. Exact scope of code changes
-Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically.
+Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/digest.rs`
@@ -2998,7 +3274,7 @@ Bind provider obligations explicitly.
 Avoid unscoped provider participation in unrelated targets.
 
 ### 3. Exact scope of code changes
-Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps.
+Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`
@@ -3042,7 +3318,7 @@ Author compatibility cohorts.
 Support approved mixed-version combinations without inventing a support window.
 
 ### 3. Exact scope of code changes
-Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit.
+Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/policy.rs`
@@ -3089,7 +3365,7 @@ Add the asymmetric multi-runtime graph fixture.
 Exercise the target/source/participant model as a whole.
 
 ### 3. Exact scope of code changes
-Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks.
+Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `tests/fixtures/`
@@ -3134,7 +3410,7 @@ Verify target model schema and identity parity.
 Close graph-model changes before obligation routing.
 
 ### 3. Exact scope of code changes
-Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success.
+Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
 
 ### 4. Files/modules likely involved
 - `docs/concepts.md`
