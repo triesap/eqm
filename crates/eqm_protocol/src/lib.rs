@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod adapter;
+mod admission;
 mod attestation;
 mod canonical;
 mod evidence;
@@ -15,6 +16,9 @@ mod strict;
 pub mod v2;
 mod wire;
 
+pub use admission::{
+    AdmittedEvidenceV2, EvidenceAdmissionContext, EvidenceAdmissionError, admit_evidence,
+};
 pub use canonical::{
     CanonicalCollectionError, CanonicalSet, canonical_member_bytes, is_authored_nfc,
 };

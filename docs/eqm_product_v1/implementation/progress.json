@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S025",
+ "next_step": "S026",
  "implementation": "in_progress",
- "local_verification": "S019-R4_S021-R2_S022-R1_S023-R1_S024-R1_committed_pending_acceptance;lineage_relationship_lanes_green",
+ "local_verification": "S019-R4..S024-R1_committed_pending_acceptance;S025_checked_admission_committed_pending_acceptance",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -942,7 +942,7 @@
     {
      "id": "S024-R1",
      "status": "complete",
-     "commit_sha": null,
+     "commit_sha": "5a2adfd5a68797df6a1a200277a443ccb99380f5",
      "report": "implementation/reports/S024.md#corrective-checkpoint-s024-r1--checked-lineage-relationships-dev-009-rf35",
      "verification": [
       "cargo test --all-targets --locked -p eqm_domain -p eqm_protocol",
@@ -961,11 +961,23 @@
   },
   {
    "id": "S025",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S025.md",
+   "verification": [
+    "cargo test --all-targets --locked -p eqm_protocol -p eqm_domain",
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask check",
+    "cargo xtask schemas check",
+    "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+    "git diff --check"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "committed_pending_acceptance",
+   "supervisor_status": "pending_acceptance",
+   "commit_message": "fix: validate evidence envelope relationships"
   },
   {
    "id": "S026",
@@ -2788,7 +2800,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P02",
- "active_step": "S025",
+ "active_step": "S026",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -2803,7 +2815,7 @@
    "first_step": "S013",
    "last_step": "S027",
    "status": "in_progress",
-   "completed_steps": 7,
+   "completed_steps": 8,
    "total_steps": 15
   },
   {
@@ -3112,7 +3124,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S025",
+ "next_checkpoint": "S026",
  "supervisor_review": {
   "source_commit": "d6261c4c0c3fdcc082d8d7902642d364b687d7af",
   "report": "implementation/reports/CODEX-d6261c4.md",

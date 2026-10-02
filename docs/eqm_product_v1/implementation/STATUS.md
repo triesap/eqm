@@ -7,13 +7,15 @@ S023 and S024. DEV008-P1/RF31 accepted; direct pins unchanged. Remaining correct
 are not discarded implementation: S019 literal oracle, S021 actual acquisition proof,
 S022 nested concealment, S023 raw/lossless-v2 identity and S024 lineage relationships.
 
-S019-R4, S021-R2, S022-R1, S023-R1 and S024-R1 are committed pending acceptance.
-S024-R1 adds `EvidenceLineage::validate_against` with an independently supplied
-`ExpectedLineageAuthority`: exact plan/campaign against expected context, exact
-run/case against the declared execution and attempt membership, each with its
-own typed mismatch error.
+S019-R4, S021-R2, S022-R1, S023-R1, S024-R1 and S025 are committed pending
+acceptance. S025 adds the protocol `admit_evidence` boundary: explicit lineage,
+declared execution and an independently supplied `EvidenceAdmissionContext`,
+`id == result_digest == recomputed semantic identity`, subject/scope/target/unit/
+requirement/facet/digest/profile/provider-reference cross-checks, payload
+runtime/release references, and RA02 count/outcome consistency, before
+constructing the private-field `AdmittedEvidenceV2`.
 
-Next **S025–S043**, `pfc through EQM-P03`. Independent integration review at S043
+Next **S026–S043**, `pfc through EQM-P03`. Independent integration review at S043
 precedes S044 routing.
 Full governing MVP remains S211. P01 complete; P02 seven complete accepted steps,
 five retained steps require corrections; later cycles pending. Cursor/acceptance
