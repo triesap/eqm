@@ -1,9 +1,9 @@
 //! Fixed symbolic profiles and source-controlled policy authority.
 
 use crate::{
-    Description, DimensionId, DurationMillis, Extensions, Facet, FullRequirementId, OwnerRef,
-    PolicyId, PositiveCount, ProfileId, RequirementLevel, RequirementScope, Revision, RiskClass,
-    SymbolicValueId, TargetId, Title, TrustLevel, UnitId,
+    Applicability, Description, DimensionId, DurationMillis, Extensions, Facet, FullRequirementId,
+    OwnerRef, ParticipationRuleId, PolicyId, PositiveCount, ProfileId, RequirementLevel,
+    RequirementScope, Revision, RiskClass, SymbolicValueId, TargetId, Title, TrustLevel, UnitId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -556,6 +556,127 @@ fn unique_nonempty<T: Ord>(
         return Err(duplicate);
     }
     Ok(values)
+}
+
+/// One authored capability-participation rule.
+///
+/// A rule binds one exact fully-qualified requirement to explicit target IDs and
+/// the existing typed applicability vocabulary. It is domain authority only: it
+/// implies no target/profile existence beyond the immutable selected context and
+/// no automatic dependency.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ParticipationRule {
+    id: ParticipationRuleId,
+    requirement: FullRequirementId,
+    targets: BTreeSet<TargetId>,
+    applicability: Applicability,
+    extensions: Extensions,
+}
+
+impl ParticipationRule {
+    /// Creates one participation rule with nonempty distinct targets.
+    pub fn new(
+        id: ParticipationRuleId,
+        requirement: FullRequirementId,
+        targets: Vec<TargetId>,
+        applicability: Applicability,
+        extensions: Extensions,
+    ) -> Result<Self, PolicyBuildError> {
+        if targets.is_empty() {
+            return Err(PolicyBuildError::TargetsRequired);
+        }
+        let count = targets.len();
+        let targets: BTreeSet<_> = targets.into_iter().collect();
+        if targets.len() != count {
+            return Err(PolicyBuildError::DuplicateTarget);
+        }
+        Ok(Self {
+            id,
+            requirement,
+            targets,
+            applicability,
+            extensions,
+        })
+    }
+
+    /// Returns the rule authority ID.
+    #[must_use]
+    pub const fn id(&self) -> &ParticipationRuleId {
+        &self.id
+    }
+
+    /// Returns the exact fully-qualified requirement this rule constrains.
+    #[must_use]
+    pub const fn requirement(&self) -> &FullRequirementId {
+        &self.requirement
+    }
+
+    /// Returns the explicit target IDs in canonical order.
+    #[must_use]
+    pub const fn targets(&self) -> &BTreeSet<TargetId> {
+        &self.targets
+    }
+
+    /// Returns the typed applicability predicate.
+    #[must_use]
+    pub const fn applicability(&self) -> &Applicability {
+        &self.applicability
+    }
+
+    /// Returns normative extensions.
+    #[must_use]
+    pub const fn extensions(&self) -> &Extensions {
+        &self.extensions
+    }
+}
+
+/// Participation-registry validation failure.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ParticipationError {
+    /// Two rules shared one authority ID.
+    DuplicateRule,
+    /// Two rules constrained the same `(requirement, target)` coordinate.
+    DuplicateCoordinate,
+}
+
+impl Display for ParticipationError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::DuplicateRule => "duplicate participation rule authority",
+            Self::DuplicateCoordinate => {
+                "participation rules constrain one requirement/target coordinate twice"
+            }
+        })
+    }
+}
+
+impl Error for ParticipationError {}
+
+/// Indexes one supplied participation registry by rule authority.
+///
+/// Rejects duplicate rule IDs and duplicate `(requirement, target)` authority so
+/// no two rules ambiguously constrain the same requirement/target coordinate.
+/// Declared targets and profiles remain explicit; this never infers them.
+pub fn validate_participation_rules(
+    rules: Vec<ParticipationRule>,
+) -> Result<BTreeMap<ParticipationRuleId, ParticipationRule>, ParticipationError> {
+    let count = rules.len();
+    let indexed: BTreeMap<ParticipationRuleId, ParticipationRule> = rules
+        .into_iter()
+        .map(|rule| (rule.id().clone(), rule))
+        .collect();
+    if indexed.len() != count {
+        return Err(ParticipationError::DuplicateRule);
+    }
+    let mut coordinates = BTreeSet::new();
+    for rule in indexed.values() {
+        for target in rule.targets() {
+            if !coordinates.insert((rule.requirement().clone(), target.clone())) {
+                return Err(ParticipationError::DuplicateCoordinate);
+            }
+        }
+    }
+    Ok(indexed)
 }
 
 /// Policy or profile construction failure.

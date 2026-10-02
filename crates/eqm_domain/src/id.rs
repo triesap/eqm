@@ -155,6 +155,12 @@ define_id!(
     None
 );
 define_id!(
+    /// A capability-participation rule authority ID.
+    ParticipationRuleId,
+    2,
+    None
+);
+define_id!(
     /// A locked adapter authority ID.
     AdapterId,
     2,

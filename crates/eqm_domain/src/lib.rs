@@ -94,9 +94,9 @@ pub use graph::{
 pub use id::{
     AdapterId, ArtifactId, AttemptId, BindingId, CampaignId, CapabilityId, DimensionId,
     EvidenceSpecId, FragmentId, FrameworkId, FullRequirementId, IdParseError, JourneyId,
-    LocalRequirementId, LogicalCaseId, PlanId, PlatformId, PolicyId, ProfileId, ProviderId,
-    RecordId, RoleId, RunId, RunnerId, SourceComponentId, SurfaceId, SymbolicValueId, TargetId,
-    UnitId, WaiverId,
+    LocalRequirementId, LogicalCaseId, ParticipationRuleId, PlanId, PlatformId, PolicyId,
+    ProfileId, ProviderId, RecordId, RoleId, RunId, RunnerId, SourceComponentId, SurfaceId,
+    SymbolicValueId, TargetId, UnitId, WaiverId,
 };
 pub use inventory::{
     AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,
@@ -104,8 +104,8 @@ pub use inventory::{
 };
 pub use path::{RepoPath, RepoPathError};
 pub use policy::{
-    Policy, PolicyBuildError, PolicyRule, PolicySelector, PositiveDays, Profile, ProfileDimension,
-    WaiverPolicy,
+    ParticipationError, ParticipationRule, Policy, PolicyBuildError, PolicyRule, PolicySelector,
+    PositiveDays, Profile, ProfileDimension, WaiverPolicy, validate_participation_rules,
 };
 pub use record::{
     RecordDescriptor, RecordError, RecordKind, RecordRef, ValidatedRecords, validate_records,

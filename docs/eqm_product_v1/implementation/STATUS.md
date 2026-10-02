@@ -25,10 +25,13 @@ ambiguous component overlaps and undeclared target/root overlaps (acceptance
 pending). S033 validates binding artifacts and structural evaluation against the
 target's declared source-component ownership, admitting declared shared
 artifacts while unrelated or escaped paths stay blocking (acceptance pending).
-RF44 final-tree gating and authority context are reconciled in current planning;
-implementation receipts must prove final trees, including reports/ledger.
+S034 adds the domain capability-participation rule binding an exact requirement
+to explicit targets and typed applicability, with duplicate/ambiguous authority
+rejected (acceptance pending). RF44 final-tree gating and authority context are
+reconciled in current planning; implementation receipts must prove final trees,
+including reports/ledger.
 
-Next **every ordered S034–S043**, pfc through EQM-P03.
+Next **every ordered S035–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly
