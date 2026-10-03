@@ -75,104 +75,20 @@ fn write_semantic_graph(root: &Path) -> Result<(), Box<dyn Error>> {
 }
 
 fn write_semantic_graph_v2(root: &Path) -> Result<(), Box<dyn Error>> {
-    let arrays = [
-        "adapters",
-        "bindings",
-        "capabilities",
-        "fragments",
-        "imports",
-        "journeys",
-        "participation",
-        "policies",
-        "profiles",
-        "runners",
-        "scenarios",
-        "source_components",
-        "surfaces",
-        "targets",
-        "waivers",
-    ];
-    let mut properties = serde_json::Map::new();
-    for name in arrays {
-        properties.insert(name.to_owned(), serde_json::json!({"type": "array"}));
-    }
-    properties.insert(
-        "extensions".to_owned(),
-        serde_json::json!({"type": "object"}),
-    );
-    properties.insert(
-        "schema".to_owned(),
-        serde_json::json!({
-            "const": SchemaUri::versioned(SchemaKind::SemanticGraph, SchemaVersion::V2)
-                .to_string()
-        }),
-    );
-    let required = [
-        "adapters",
-        "bindings",
-        "capabilities",
-        "extensions",
-        "fragments",
-        "imports",
-        "journeys",
-        "participation",
-        "policies",
-        "profiles",
-        "runners",
-        "scenarios",
-        "schema",
-        "source_components",
-        "surfaces",
-        "targets",
-        "waivers",
-    ];
-    let value = serde_json::json!({
-        "$id": SchemaUri::versioned(SchemaKind::SemanticGraph, SchemaVersion::V2).to_string(),
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "additionalProperties": false,
-        "description": "Complete canonical EQM v2 semantic graph projection.",
-        "properties": properties,
-        "required": required,
-        "title": "SemanticGraphV2",
-        "type": "object"
-    });
-    let mut bytes = serde_json::to_vec_pretty(&value)?;
-    bytes.push(b'\n');
-    fs::create_dir_all(root)?;
-    fs::write(root.join("semantic-graph.schema.json"), bytes)?;
+    write::<schema_graph_v2::SemanticGraphV2Dto>(
+        root,
+        "semantic-graph",
+        &SchemaUri::versioned(SchemaKind::SemanticGraph, SchemaVersion::V2).to_string(),
+    )?;
     Ok(())
 }
 
 fn write_comparison_context_v2(root: &Path) -> Result<(), Box<dyn Error>> {
-    let value = serde_json::json!({
-        "$id": SchemaUri::versioned(SchemaKind::ComparisonContext, SchemaVersion::V2).to_string(),
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "additionalProperties": false,
-        "description": "Shared EQM v2 comparison-context projection.",
-        "properties": {
-            "comparison_rule_digest": {"type": "string"},
-            "contract_digest": {"type": "string"},
-            "profiles": {"type": "array"},
-            "scenario_digest": {"type": "string"},
-            "schema": {
-                "const": SchemaUri::versioned(SchemaKind::ComparisonContext, SchemaVersion::V2)
-                    .to_string()
-            }
-        },
-        "required": [
-            "comparison_rule_digest",
-            "contract_digest",
-            "profiles",
-            "scenario_digest",
-            "schema"
-        ],
-        "title": "ComparisonContextV2",
-        "type": "object"
-    });
-    let mut bytes = serde_json::to_vec_pretty(&value)?;
-    bytes.push(b'\n');
-    fs::create_dir_all(root)?;
-    fs::write(root.join("comparison-context.schema.json"), bytes)?;
+    write::<schema_graph_v2::ComparisonContextV2Dto>(
+        root,
+        "comparison-context",
+        &SchemaUri::versioned(SchemaKind::ComparisonContext, SchemaVersion::V2).to_string(),
+    )?;
     Ok(())
 }
 

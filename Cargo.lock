@@ -258,6 +258,7 @@ version = "0.1.0"
 dependencies = [
  "eqm_domain",
  "globset",
+ "jsonschema",
  "schemars",
  "serde",
  "serde_json",

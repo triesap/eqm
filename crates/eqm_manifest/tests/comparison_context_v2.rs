@@ -5,10 +5,13 @@ use eqm_domain::{
     FullRequirementId, OccurrenceId, OwnerRef, Policy, PolicyId, PolicyRule,
     PolicySelectionInputV2, PolicySelector, PositiveCount, Profile, ProfileDimension, ProfileId,
     ProviderId, Revision, RoleId, Scenario, ScenarioDependency, ScenarioId, ScenarioParticipant,
-    ScenarioSubject, SelectedDimensionStateV2, SelectedProfileInputV2, Sha256Digest,
-    SymbolicValueId, TargetId, Title, TrustLevel, UnitId, WaiverPolicy,
+    ScenarioSubject, SchemaKind, SchemaUri, SchemaVersion, SelectedDimensionStateV2,
+    SelectedProfileInputV2, Sha256Digest, SymbolicValueId, TargetId, Title, TrustLevel, UnitId,
+    WaiverPolicy,
 };
 use eqm_manifest::{canonicalize_comparison_context_v2, project_comparison_context_v2};
+use jsonschema::{Draft, Validator};
+use serde_json::json;
 use std::error::Error;
 
 fn owner(value: &str) -> Result<OwnerRef, Box<dyn Error>> {
@@ -316,5 +319,141 @@ fn empty_dependency_scenario_is_valid_context() -> Result<(), Box<dyn Error>> {
         &selection,
         Sha256Digest::hash_content(b"rule"),
     ))?;
+    Ok(())
+}
+
+fn comparison_schema_validator() -> Result<Validator, Box<dyn Error>> {
+    let schema_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../schemas/v2/protocol/comparison-context.schema.json");
+    let schema: serde_json::Value = serde_json::from_slice(&std::fs::read(schema_path)?)?;
+    Ok(jsonschema::options()
+        .with_draft(Draft::Draft202012)
+        .should_validate_formats(true)
+        .build(&schema)?)
+}
+
+fn wire_context(region: SelectedDimensionStateV2) -> Result<serde_json::Value, Box<dyn Error>> {
+    let policy = policy()?;
+    let profile = profile()?;
+    let selection = selection(&policy, &profile, region)?;
+    let scenario = scenario()?;
+    let base = context(
+        ContractDigest::hash_content(b"contract"),
+        &scenario,
+        &selection,
+        Sha256Digest::hash_content(b"rule"),
+    );
+    let mut wire = project_comparison_context_v2(&base)?;
+    wire["schema"] =
+        json!(SchemaUri::versioned(SchemaKind::ComparisonContext, SchemaVersion::V2).to_string());
+    Ok(wire)
+}
+
+#[test]
+fn comparison_wire_projection_conforms_to_real_draft_2020_12_schema() -> Result<(), Box<dyn Error>>
+{
+    let validator = comparison_schema_validator()?;
+    for region in [
+        SelectedDimensionStateV2::Unknown,
+        SelectedDimensionStateV2::Known(SymbolicValueId::new("eu")?),
+    ] {
+        let wire = wire_context(region)?;
+        assert!(
+            validator.is_valid(&wire),
+            "actual comparison wire failed the committed schema: {wire}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn comparison_root_marker_and_digests_reject_invalid_forms() -> Result<(), Box<dyn Error>> {
+    let validator = comparison_schema_validator()?;
+    let base = wire_context(SelectedDimensionStateV2::Unknown)?;
+
+    let mut missing = base.clone();
+    missing
+        .as_object_mut()
+        .ok_or("wire is not an object")?
+        .remove("schema");
+    assert!(
+        !validator.is_valid(&missing),
+        "missing schema marker accepted"
+    );
+
+    for bad in [
+        json!("https://example.com/other.schema.json"),
+        json!(5),
+        json!(null),
+    ] {
+        let mut mutated = base.clone();
+        mutated["schema"] = bad.clone();
+        assert!(
+            !validator.is_valid(&mutated),
+            "schema marker {bad} accepted"
+        );
+    }
+
+    for field in [
+        "contract_digest",
+        "scenario_digest",
+        "comparison_rule_digest",
+    ] {
+        for bad in [
+            json!("x"),
+            json!("sha256:ABCDEF"),
+            json!("sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde"),
+            json!(5),
+            json!(null),
+        ] {
+            let mut mutated = base.clone();
+            mutated[field] = bad.clone();
+            assert!(!validator.is_valid(&mutated), "{field} accepted {bad}");
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn comparison_profiles_and_selected_states_reject_misuse() -> Result<(), Box<dyn Error>> {
+    let validator = comparison_schema_validator()?;
+    let base = wire_context(SelectedDimensionStateV2::Unknown)?;
+
+    for bad in [json!([null]), json!([123]), json!([{}])] {
+        let mut mutated = base.clone();
+        mutated["profiles"] = bad.clone();
+        assert!(!validator.is_valid(&mutated), "profiles accepted {bad}");
+    }
+
+    let bad_values = [
+        json!([{"dimension": "region", "state": "unknown", "value": "eu"}]),
+        json!([{"dimension": "region", "state": "known"}]),
+        json!([{"dimension": "region", "state": "bogus", "value": "eu"}]),
+        json!([{"dimension": 5, "state": "known", "value": "eu"}]),
+        json!([
+            {"dimension": "locale", "state": "known", "value": "en"},
+            {"dimension": "locale", "state": "known", "value": "en"}
+        ]),
+    ];
+    for bad in bad_values {
+        let mut mutated = base.clone();
+        mutated["profiles"][0]["values"] = bad.clone();
+        assert!(!validator.is_valid(&mutated), "values accepted {bad}");
+    }
+    let mut known = base.clone();
+    known["profiles"][0]["values"] =
+        json!([{"dimension": "region", "state": "known", "value": "eu"}]);
+    assert!(validator.is_valid(&known), "known selection must validate");
+
+    let mut bad_definition = base.clone();
+    bad_definition["profiles"][0]["definition"]["unknown_member"] = json!(true);
+    assert!(
+        !validator.is_valid(&bad_definition),
+        "profile misuse accepted"
+    );
+
+    let mut extra = base.clone();
+    extra["unknown_member"] = json!(true);
+    assert!(!validator.is_valid(&extra), "root extra member accepted");
     Ok(())
 }

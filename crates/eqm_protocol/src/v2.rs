@@ -2265,6 +2265,14 @@ mod tests {
                 crate::SUBJECT_MANIFEST_SCHEMA_V2,
                 eqm_domain::SchemaKind::SubjectManifest,
             ),
+            (
+                crate::SEMANTIC_GRAPH_SCHEMA_V2,
+                eqm_domain::SchemaKind::SemanticGraph,
+            ),
+            (
+                crate::COMPARISON_CONTEXT_SCHEMA_V2,
+                eqm_domain::SchemaKind::ComparisonContext,
+            ),
         ];
         assert_eq!(identities.len(), crate::V2_PROTOCOL_SCHEMAS.len());
         for (uri, kind) in identities {

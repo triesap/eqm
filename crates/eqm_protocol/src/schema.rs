@@ -41,6 +41,12 @@ pub const ADAPTER_RESPONSE_SCHEMA_V2: SchemaUri =
 /// Explicit v2 subject-manifest schema.
 pub const SUBJECT_MANIFEST_SCHEMA_V2: SchemaUri =
     SchemaUri::versioned(SchemaKind::SubjectManifest, SchemaVersion::V2);
+/// Explicit v2 semantic-graph schema.
+pub const SEMANTIC_GRAPH_SCHEMA_V2: SchemaUri =
+    SchemaUri::versioned(SchemaKind::SemanticGraph, SchemaVersion::V2);
+/// Explicit v2 comparison-context schema.
+pub const COMPARISON_CONTEXT_SCHEMA_V2: SchemaUri =
+    SchemaUri::versioned(SchemaKind::ComparisonContext, SchemaVersion::V2);
 
 /// Every v1 EQM-owned protocol schema in stable schema-kind order.
 pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
@@ -60,13 +66,17 @@ pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
 ///
 /// S015-R3 registers the five concrete v2 protocol families: evidence-result,
 /// runtime-facts, inventory, adapter-request and adapter-response. DEV-009 S038
-/// adds the explicit subject-manifest family.
-pub const V2_PROTOCOL_SCHEMAS: [SchemaUri; 6] = [
+/// adds the explicit subject-manifest family; DEV-014 P03-R3 registers the
+/// typed semantic-graph and comparison-context families once their real member
+/// schemas replace the placeholders.
+pub const V2_PROTOCOL_SCHEMAS: [SchemaUri; 8] = [
     ADAPTER_REQUEST_SCHEMA_V2,
     ADAPTER_RESPONSE_SCHEMA_V2,
+    COMPARISON_CONTEXT_SCHEMA_V2,
     EVIDENCE_RESULT_SCHEMA_V2,
     INVENTORY_SCHEMA_V2,
     RUNTIME_FACTS_SCHEMA_V2,
+    SEMANTIC_GRAPH_SCHEMA_V2,
     SUBJECT_MANIFEST_SCHEMA_V2,
 ];
 

@@ -18,9 +18,8 @@ use eqm_domain::{
     WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate, WorkspaceGraph,
     WorkspaceGraphInput,
 };
-use eqm_manifest::{
-    canonicalize_graph, canonicalize_graph_v2, project_graph_v2, semantic_graph_v2_schema_uri,
-};
+use eqm_manifest::{canonicalize_graph, canonicalize_graph_v2, project_graph_v2};
+use jsonschema::{Draft, Validator};
 use std::collections::BTreeMap;
 use std::error::Error;
 
@@ -132,48 +131,194 @@ fn literal_v2_graph_bytes_and_digest_match_independent_oracle() -> Result<(), Bo
     Ok(())
 }
 
-#[test]
-fn v2_graph_projection_conforms_to_the_committed_local_schema() -> Result<(), Box<dyn Error>> {
-    let projected = project_graph_v2(&graph("control_tower", None, Extensions::default(), true)?)?;
+fn semantic_graph_validator() -> Result<Validator, Box<dyn Error>> {
     let schema_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../schemas/v2/protocol/semantic-graph.schema.json");
     let schema: serde_json::Value = serde_json::from_slice(&std::fs::read(schema_path)?)?;
-    let object = projected
-        .as_object()
-        .ok_or("projected graph is not an object")?;
-    let required = schema["required"]
-        .as_array()
-        .ok_or("schema required")?
-        .iter()
-        .filter_map(serde_json::Value::as_str)
-        .collect::<Vec<_>>();
-    let mut keys = object.keys().map(String::as_str).collect::<Vec<_>>();
-    keys.sort_unstable();
-    let mut required_sorted = required.clone();
-    required_sorted.sort_unstable();
-    assert_eq!(keys, required_sorted, "projection root membership");
-    assert_eq!(
-        schema["additionalProperties"],
-        serde_json::Value::Bool(false)
-    );
-    for name in required {
-        let property = &schema["properties"][name];
-        if let Some(constant) = property.get("const").and_then(serde_json::Value::as_str) {
-            assert_eq!(object[name], serde_json::json!(constant), "{name} const");
-            continue;
-        }
-        let kind = property["type"].as_str().ok_or("property type")?;
-        match kind {
-            "array" => assert!(object[name].is_array(), "{name} must be an array"),
-            "object" => assert!(object[name].is_object(), "{name} must be an object"),
-            "string" => assert!(object[name].is_string(), "{name} must be a string"),
-            other => return Err(format!("unexpected schema type {other}").into()),
+    Ok(jsonschema::options()
+        .with_draft(Draft::Draft202012)
+        .should_validate_formats(true)
+        .build(&schema)?)
+}
+
+#[test]
+fn v2_graph_projection_conforms_to_real_draft_2020_12_schema() -> Result<(), Box<dyn Error>> {
+    let validator = semantic_graph_validator()?;
+    let runner_literal = runner_graph(
+        vec![ArgumentTemplate::Literal(SelectorText::new(
+            "{target_root}",
+        )?)],
+        Some(WorkingDirectoryTemplate::Repository(RepoPath::new(
+            "{target_root}",
+        )?)),
+    )?;
+    let runner_template = runner_graph(
+        vec![ArgumentTemplate::TargetRoot],
+        Some(WorkingDirectoryTemplate::TargetRoot),
+    )?;
+    let target_waiver = waiver_graph(EvidenceScopeSubject::Target(TargetId::new("web")?))?;
+    let provider_waiver = waiver_graph(EvidenceScopeSubject::Provider(ProviderId::new(
+        "provider.mailgun",
+    )?))?;
+    let set_waiver = waiver_graph(EvidenceScopeSubject::target_set(vec![
+        TargetId::new("web")?,
+        TargetId::new("ios")?,
+    ])?)?;
+    for finalized in [
+        graph("control_tower", None, Extensions::default(), true)?,
+        runner_literal,
+        runner_template,
+        target_waiver,
+        provider_waiver,
+        set_waiver,
+    ] {
+        let projected = project_graph_v2(&finalized)?;
+        assert!(
+            validator.is_valid(&projected),
+            "actual projection failed the committed schema: {projected}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn v2_graph_collections_reject_null_numeric_unknown_and_missing_members()
+-> Result<(), Box<dyn Error>> {
+    let validator = semantic_graph_validator()?;
+    let base = project_graph_v2(&graph("control_tower", None, Extensions::default(), true)?)?;
+    let collections = [
+        "adapters",
+        "bindings",
+        "capabilities",
+        "fragments",
+        "imports",
+        "journeys",
+        "participation",
+        "policies",
+        "profiles",
+        "runners",
+        "scenarios",
+        "source_components",
+        "surfaces",
+        "targets",
+        "waivers",
+    ];
+    for name in collections {
+        for bad in [
+            serde_json::json!([null]),
+            serde_json::json!([123]),
+            serde_json::json!([{}]),
+            serde_json::json!([{"unknown": true}]),
+        ] {
+            let mut mutated = base.clone();
+            mutated[name] = bad.clone();
+            assert!(!validator.is_valid(&mutated), "{name} accepted {bad}");
         }
     }
-    assert_eq!(
-        object["schema"],
-        serde_json::json!(semantic_graph_v2_schema_uri())
+    for bad in [
+        serde_json::json!({"dev.equivalencematrix.extra": null}),
+        serde_json::json!({"dev.equivalencematrix.extra": 5}),
+        serde_json::json!({"dev.equivalencematrix.extra": {"type": "bogus", "value": 1}}),
+    ] {
+        let mut mutated = base.clone();
+        mutated["extensions"] = bad.clone();
+        assert!(!validator.is_valid(&mutated), "extensions accepted {bad}");
+    }
+    let mut mutated = base.clone();
+    mutated
+        .as_object_mut()
+        .ok_or("projection is not an object")?
+        .remove("targets");
+    assert!(
+        !validator.is_valid(&mutated),
+        "missing root member accepted"
     );
+    Ok(())
+}
+
+#[test]
+fn v2_graph_unions_reject_wrong_kind_marker_and_payload() -> Result<(), Box<dyn Error>> {
+    let validator = semantic_graph_validator()?;
+    let runner_base = project_graph_v2(&runner_graph(
+        vec![ArgumentTemplate::Literal(SelectorText::new("x")?)],
+        Some(WorkingDirectoryTemplate::TargetRoot),
+    )?)?;
+    let bad_args = [
+        serde_json::json!([{"kind": "bogus"}]),
+        serde_json::json!([{"kind": "literal"}]),
+        serde_json::json!([{"kind": "target_root", "value": "x"}]),
+        serde_json::json!([{"kind": "literal", "value": 42}]),
+    ];
+    for bad in bad_args {
+        let mut mutated = runner_base.clone();
+        mutated["runners"][0]["args"] = bad.clone();
+        assert!(!validator.is_valid(&mutated), "args accepted {bad}");
+    }
+    let bad_cwd = [
+        serde_json::json!({"kind": "bogus"}),
+        serde_json::json!({"kind": "repository"}),
+        serde_json::json!({"kind": "repository", "path": 5}),
+        serde_json::json!({"kind": "target_root", "path": "x"}),
+    ];
+    for bad in bad_cwd {
+        let mut mutated = runner_base.clone();
+        mutated["runners"][0]["cwd"] = bad.clone();
+        assert!(!validator.is_valid(&mutated), "cwd accepted {bad}");
+    }
+    for bad in [
+        serde_json::json!({"kind": "bogus"}),
+        serde_json::json!({"kind": "repository"}),
+        serde_json::json!({"kind": "locked", "resolved": "x", "digest": "not-a-digest"}),
+    ] {
+        let mut mutated = runner_base.clone();
+        mutated["runners"][0]["program"] = bad.clone();
+        assert!(!validator.is_valid(&mutated), "program accepted {bad}");
+    }
+    for bad in [
+        serde_json::json!({"type": "bogus", "value": 1}),
+        serde_json::json!({"type": "integer"}),
+        serde_json::json!({"type": "integer", "value": {}}),
+        serde_json::json!({"type": "integer", "value": "1"}),
+        serde_json::json!({"type": "boolean", "value": 1}),
+    ] {
+        let mut mutated = runner_base.clone();
+        mutated["extensions"]["dev.equivalencematrix.extra"] = bad.clone();
+        assert!(!validator.is_valid(&mutated), "extension accepted {bad}");
+    }
+
+    let waiver_base = project_graph_v2(&waiver_graph(EvidenceScopeSubject::Target(
+        TargetId::new("web")?,
+    ))?)?;
+    for bad in [
+        serde_json::json!({"kind": "bogus"}),
+        serde_json::json!({"kind": "target"}),
+        serde_json::json!({"kind": "target", "provider": "x"}),
+        serde_json::json!({"kind": "target_set", "targets": null}),
+    ] {
+        let mut mutated = waiver_base.clone();
+        mutated["waivers"][0]["scope"]["target"] = bad.clone();
+        assert!(
+            !validator.is_valid(&mutated),
+            "waiver subject accepted {bad}"
+        );
+    }
+
+    let participation_base =
+        project_graph_v2(&graph("control_tower", None, Extensions::default(), true)?)?;
+    for bad in [
+        serde_json::json!({"bogus": true}),
+        serde_json::json!({"always": "yes"}),
+        serde_json::json!({"all": [{"bogus": true}]}),
+        serde_json::json!({"not": {"bogus": true}}),
+        serde_json::json!({"dimension": "locale", "operator": "equals"}),
+    ] {
+        let mut mutated = participation_base.clone();
+        mutated["participation"][0]["applicability"] = bad.clone();
+        assert!(
+            !validator.is_valid(&mutated),
+            "applicability accepted {bad}"
+        );
+    }
     Ok(())
 }
 

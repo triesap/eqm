@@ -1,32 +1,319 @@
 {
+  "$defs": {
+    "CanonicalSet_DimensionDeclarationV2Dto": {
+      "items": {
+        "$ref": "#/$defs/DimensionDeclarationV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "CanonicalSet_DimensionValueV2Dto": {
+      "items": {
+        "$ref": "#/$defs/DimensionValueV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "CanonicalSet_SelectedProfileV2Dto": {
+      "items": {
+        "$ref": "#/$defs/SelectedProfileV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "CanonicalSet_string": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "DimensionDeclarationV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "values": {
+          "$ref": "#/$defs/CanonicalSet_string"
+        }
+      },
+      "required": [
+        "id",
+        "values"
+      ],
+      "type": "object"
+    },
+    "DimensionKnownV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/KnownState"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "dimension",
+        "state",
+        "value"
+      ],
+      "type": "object"
+    },
+    "DimensionUnknownV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/UnknownState"
+        }
+      },
+      "required": [
+        "dimension",
+        "state"
+      ],
+      "type": "object"
+    },
+    "DimensionValueV2Dto": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DimensionKnownV2Dto"
+        },
+        {
+          "$ref": "#/$defs/DimensionUnknownV2Dto"
+        }
+      ]
+    },
+    "ExtensionValueV2Dto": {
+      "description": "One recursive type-tagged v2 extension value.",
+      "oneOf": [
+        {
+          "properties": {
+            "type": {
+              "const": "boolean",
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "integer",
+              "type": "string"
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "format": "int64",
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:(?:9007199254740992|900719925474099[3-8]|9007199254740999|900719925474[1-8][0-9]{3}|9007199254749[0-9]{3}|90071992547[5-8][0-9]{4}|900719925479[0-9]{4}|90071992548[0-9]{5}|90071992549[0-9]{5}|900719925[5-8][0-9]{6}|9007199259[0-9]{6}|90071992[6-8][0-9]{7}|900719929[0-9]{7}|9007199[3-8][0-9]{8}|90071999[0-9]{8}|9007[2-8][0-9]{11}|90079[0-9]{11}|9008[0-9]{12}|9009[0-9]{12}|90[1-8][0-9]{13}|909[0-9]{13}|9[1-8][0-9]{14}|99[0-9]{14}|1[0-9]{16}|[2-8][0-9]{16}|9[0-9]{16}|1[0-9]{17}|[2-8][0-9]{17}|9[0-9]{17}|1[0-9]{18}|[2-8][0-9]{18}|90[0-9]{17}|91[0-9]{17}|920[0-9]{16}|921[0-9]{16}|9220[0-9]{15}|922[1-2][0-9]{15}|92230[0-9]{14}|9223[1-2][0-9]{14}|922330[0-9]{13}|92233[1-6][0-9]{13}|9223370[0-9]{12}|9223371[0-9]{12}|922337200[0-9]{10}|92233720[1-2][0-9]{10}|9223372030[0-9]{9}|922337203[1-5][0-9]{9}|92233720360[0-9]{8}|9223372036[1-7][0-9]{8}|922337203680[0-9]{7}|92233720368[1-4][0-9]{7}|9223372036850[0-9]{6}|922337203685[1-3][0-9]{6}|92233720368540[0-9]{5}|9223372036854[1-6][0-9]{5}|922337203685470[0-9]{4}|92233720368547[1-6][0-9]{4}|9223372036854770[0-9]{3}|922337203685477[1-4][0-9]{3}|92233720368547750[0-9]{2}|9223372036854775[1-7][0-9]{2}|9223372036854775800|922337203685477580[1-6]|9223372036854775807)|-(?:9007199254740992|900719925474099[3-8]|9007199254740999|900719925474[1-8][0-9]{3}|9007199254749[0-9]{3}|90071992547[5-8][0-9]{4}|900719925479[0-9]{4}|90071992548[0-9]{5}|90071992549[0-9]{5}|900719925[5-8][0-9]{6}|9007199259[0-9]{6}|90071992[6-8][0-9]{7}|900719929[0-9]{7}|9007199[3-8][0-9]{8}|90071999[0-9]{8}|9007[2-8][0-9]{11}|90079[0-9]{11}|9008[0-9]{12}|9009[0-9]{12}|90[1-8][0-9]{13}|909[0-9]{13}|9[1-8][0-9]{14}|99[0-9]{14}|1[0-9]{16}|[2-8][0-9]{16}|9[0-9]{16}|1[0-9]{17}|[2-8][0-9]{17}|9[0-9]{17}|1[0-9]{18}|[2-8][0-9]{18}|90[0-9]{17}|91[0-9]{17}|920[0-9]{16}|921[0-9]{16}|9220[0-9]{15}|922[1-2][0-9]{15}|92230[0-9]{14}|9223[1-2][0-9]{14}|922330[0-9]{13}|92233[1-6][0-9]{13}|9223370[0-9]{12}|9223371[0-9]{12}|922337200[0-9]{10}|92233720[1-2][0-9]{10}|9223372030[0-9]{9}|922337203[1-5][0-9]{9}|92233720360[0-9]{8}|9223372036[1-7][0-9]{8}|922337203680[0-9]{7}|92233720368[1-4][0-9]{7}|9223372036850[0-9]{6}|922337203685[1-3][0-9]{6}|92233720368540[0-9]{5}|9223372036854[1-6][0-9]{5}|922337203685470[0-9]{4}|92233720368547[1-6][0-9]{4}|9223372036854770[0-9]{3}|922337203685477[1-4][0-9]{3}|92233720368547750[0-9]{2}|9223372036854775[1-7][0-9]{2}|9223372036854775800|922337203685477580[1-7]|9223372036854775808))$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "string",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "array",
+              "type": "string"
+            },
+            "value": {
+              "items": {
+                "$ref": "#/$defs/ExtensionValueV2Dto"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "const": "object",
+              "type": "string"
+            },
+            "value": {
+              "additionalProperties": {
+                "$ref": "#/$defs/ExtensionValueV2Dto"
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "type",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "KnownState": {
+      "description": "The exact `known` state marker.",
+      "enum": [
+        "known"
+      ],
+      "type": "string"
+    },
+    "ProfileDefinitionV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "defaults": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "description": {
+          "type": "string"
+        },
+        "dimensions": {
+          "$ref": "#/$defs/CanonicalSet_DimensionDeclarationV2Dto"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ExtensionValueV2Dto"
+          },
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "owners": {
+          "$ref": "#/$defs/CanonicalSet_string"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:9007199254740992|900719925474099[3-8]|9007199254740999|900719925474[1-8][0-9]{3}|9007199254749[0-9]{3}|90071992547[5-8][0-9]{4}|900719925479[0-9]{4}|90071992548[0-9]{5}|90071992549[0-9]{5}|900719925[5-8][0-9]{6}|9007199259[0-9]{6}|90071992[6-8][0-9]{7}|900719929[0-9]{7}|9007199[3-8][0-9]{8}|90071999[0-9]{8}|9007[2-8][0-9]{11}|90079[0-9]{11}|9008[0-9]{12}|9009[0-9]{12}|90[1-8][0-9]{13}|909[0-9]{13}|9[1-8][0-9]{14}|99[0-9]{14}|1[0-9]{16}|[2-8][0-9]{16}|9[0-9]{16}|1[0-9]{17}|[2-8][0-9]{17}|9[0-9]{17}|1[0-9]{18}|[2-8][0-9]{18}|9[0-9]{18}|10[0-9]{18}|1[1-7][0-9]{18}|180[0-9]{17}|18[1-3][0-9]{17}|1840[0-9]{16}|184[1-3][0-9]{16}|18440[0-9]{15}|1844[1-5][0-9]{15}|184460[0-9]{14}|18446[1-6][0-9]{14}|1844670[0-9]{13}|184467[1-3][0-9]{13}|18446740[0-9]{12}|1844674[1-3][0-9]{12}|1844674400[0-9]{10}|184467440[1-6][0-9]{10}|18446744070[0-9]{9}|1844674407[1-2][0-9]{9}|184467440730[0-9]{8}|18446744073[1-6][0-9]{8}|18446744073700[0-9]{6}|1844674407370[1-8][0-9]{6}|184467440737090[0-9]{5}|18446744073709[1-4][0-9]{5}|1844674407370950[0-9]{4}|184467440737095[1-4][0-9]{4}|18446744073709550[0-9]{3}|184467440737095510[0-9]{2}|18446744073709551[1-5][0-9]{2}|1844674407370955160[0-9]{1}|18446744073709551610|1844674407370955161[1-4]|18446744073709551615)$",
+              "type": "string"
+            }
+          ]
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "title",
+        "owners",
+        "dimensions",
+        "defaults",
+        "extensions"
+      ],
+      "type": "object"
+    },
+    "SelectedProfileV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "definition": {
+          "$ref": "#/$defs/ProfileDefinitionV2Dto"
+        },
+        "values": {
+          "$ref": "#/$defs/CanonicalSet_DimensionValueV2Dto"
+        }
+      },
+      "required": [
+        "definition",
+        "values"
+      ],
+      "type": "object"
+    },
+    "UnknownState": {
+      "description": "The exact `unknown` state marker.",
+      "enum": [
+        "unknown"
+      ],
+      "type": "string"
+    }
+  },
   "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/comparison-context.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Shared EQM v2 comparison-context projection.",
+  "description": "The exact `eqm:v2:comparison-context` wire root.",
   "properties": {
     "comparison_rule_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
       "type": "string"
     },
     "contract_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
       "type": "string"
     },
     "profiles": {
-      "type": "array"
+      "$ref": "#/$defs/CanonicalSet_SelectedProfileV2Dto"
     },
     "scenario_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
       "type": "string"
     },
     "schema": {
-      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/comparison-context.schema.json"
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/comparison-context.schema.json",
+      "type": "string"
     }
   },
   "required": [
-    "comparison_rule_digest",
+    "schema",
     "contract_digest",
-    "profiles",
     "scenario_digest",
-    "schema"
+    "profiles",
+    "comparison_rule_digest"
   ],
-  "title": "ComparisonContextV2",
+  "title": "ComparisonContextV2Dto",
   "type": "object"
 }

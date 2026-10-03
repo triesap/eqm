@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S039",
  "implementation": "in_progress",
- "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;P03-R2_implemented_verified_pending_review;RF45_partial_RF51_implemented_RF52_RF53_changes_required;not_release_ready",
+ "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;P03-R2_P03-R3_implemented_verified_pending_review;RF45_partial_RF51_RF52_implemented_RF53_changes_required;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -3400,7 +3400,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P03-R3",
+ "next_checkpoint": "S039-R1",
  "supervisor_review": {
   "source_commit": "667776537709f824efac48f6bf325be2c9ea2913",
   "report": "implementation/reports/CODEX-6677765.md",
@@ -3944,9 +3944,10 @@
    "priority": "P1",
    "owner": "S043",
    "checkpoint": "P03-R3",
-   "status": "changes_required",
+   "status": "implemented_verified_pending_review",
    "summary": "Graph/comparison schema and real conformance incomplete",
-   "report": "implementation/reports/CODEX-6677765.md"
+   "report": "implementation/reports/CODEX-6677765.md",
+   "closure_report": "implementation/reports/P03-R3.md"
   },
   {
    "id": "RF53",
@@ -3992,7 +3993,7 @@
    },
    {
     "id": "P03-R3",
-    "status": "pending",
+    "status": "implemented_verified",
     "supervisor_status": "not_accepted"
    },
    {
