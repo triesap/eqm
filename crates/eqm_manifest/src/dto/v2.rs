@@ -155,6 +155,40 @@ pattern_text!(OccurrenceText, SEGMENT_ID_PATTERN);
 pattern_text!(SourceCommitText, "^(?:[0-9a-f]{40}|[0-9a-f]{64})$");
 bounded_pattern_text!(RequirementText, REQUIREMENT_PATTERN, 320);
 
+// The schema-expressible lexical subset of a portable repository-relative path.
+//
+// The owning `RepoPath` contract additionally enforces Unicode NFC, UTF-8 byte
+// lengths and portable collision keys; those are not faithfully expressible in
+// JSON Schema and remain owning layers. This pattern covers the relative form,
+// separator, empty/traversal segment, forbidden-punctuation, trailing space or
+// dot, drive-prefix, reserved-device and segment-count rules.
+const REPO_PATH_PATTERN: &str = r#"^(?!.*(?:/[^/]*){128})(?!^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|/|$))(?!.*/(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|/|$))(?:[^/\\\x00-\x1f\x7f:*?"<>| .]|[^/\\\x00-\x1f\x7f:*?"<>|]+[^/\\\x00-\x1f\x7f:*?"<>| .])(?:/(?:[^/\\\x00-\x1f\x7f:*?"<>| .]|[^/\\\x00-\x1f\x7f:*?"<>|]+[^/\\\x00-\x1f\x7f:*?"<>| .]))*$"#;
+
+/// The schema-expressible subset of the owning portable `RepoPath` contract.
+///
+/// This expresses only the lexical rules JSON Schema can faithfully prove. The
+/// owning `RepoPath` still enforces NFC, exact UTF-8 byte length and portable
+/// collision keys, and must accept every value this pattern admits.
+struct RepoPathText;
+
+impl JsonSchema for RepoPathText {
+    fn schema_name() -> Cow<'static, str> {
+        "RepoPathText".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "string",
+            "pattern": REPO_PATH_PATTERN,
+            "maxLength": 1024,
+        })
+    }
+}
+
 /// The existing `RepositoryIdentity` HTTPS parser, expressible in JSON Schema.
 ///
 /// The owning parser requires a nonempty ASCII host (no uppercase or control
@@ -273,6 +307,29 @@ impl JsonSchema for NonEmptyTargetIdList {
             "minItems": 1,
             "uniqueItems": true,
             "items": {"type": "string", "pattern": EXTENSIBLE_ID_PATTERN, "maxLength": 255},
+        })
+    }
+}
+
+/// A nonempty duplicate-free array of schema-expressible portable roots.
+struct NonEmptyRepoPathList;
+
+impl JsonSchema for NonEmptyRepoPathList {
+    fn schema_name() -> Cow<'static, str> {
+        "NonEmptyRepoPathList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let items = generator.subschema_for::<RepoPathText>();
+        json_schema!({
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": items,
         })
     }
 }
@@ -457,6 +514,7 @@ pub struct TargetV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct SourceComponentV2Dto {
+    #[schemars(with = "NonEmptyRepoPathList")]
     pub roots: Vec<String>,
     #[schemars(with = "OwnerList")]
     pub owners: Vec<String>,

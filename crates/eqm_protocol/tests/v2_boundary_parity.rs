@@ -9,7 +9,7 @@
 
 use eqm_domain::{
     DimensionId, ExtensionKey, ExtensionNamespace, FullRequirementId, OccurrenceId, ProfileId,
-    ProviderId, RepositoryIdentity, RoleId, ScenarioId, SymbolicValueId, TargetId,
+    ProviderId, RepoPath, RepositoryIdentity, RoleId, ScenarioId, SymbolicValueId, TargetId,
 };
 use eqm_protocol::schema_graph_v2::ComparisonContextV2Dto;
 use jsonschema::{Draft, Validator};
@@ -663,6 +663,151 @@ fn accepted_maximum_and_range_controls_are_not_overrestricted() -> Result<(), Bo
 
     let graph = validator("schemas/v2/protocol/semantic-graph.schema.json")?;
     assert!(graph.is_valid(&graph_document()));
+    Ok(())
+}
+
+#[test]
+fn graph_scenario_subject_alternatives_match_owner() -> Result<(), Box<dyn Error>> {
+    let graph = validator("schemas/v2/protocol/semantic-graph.schema.json")?;
+    let s63 = seg63();
+    let s64 = seg64();
+
+    // The `target`-tagged alternative uses the owning extensible TargetId grammar.
+    let target_values = [
+        "web",
+        "web.mobile",
+        s63.as_str(),
+        s64.as_str(),
+        "Web",
+        "web..mobile",
+        "",
+    ];
+    parity(
+        &graph,
+        &graph_document(),
+        |document, value| {
+            document["scenarios"][0]["participants"][0]["subject"] =
+                json!({"kind": "target", "target": value})
+        },
+        |value| TargetId::new(value).is_ok(),
+        &target_values,
+    );
+
+    // The `provider`-tagged alternative uses the owning dotted ProviderId grammar.
+    let provider_values = [
+        "provider.mailgun",
+        "provider",
+        s63.as_str(),
+        s64.as_str(),
+        "Provider.Mailgun",
+        "provider..mailgun",
+        "",
+    ];
+    parity(
+        &graph,
+        &graph_document(),
+        |document, value| {
+            document["scenarios"][0]["participants"][0]["subject"] =
+                json!({"kind": "provider", "provider": value})
+        },
+        |value| ProviderId::new(value).is_ok(),
+        &provider_values,
+    );
+
+    // A missing or wrong discriminant is rejected independently of the value.
+    for subject in [
+        json!({}),
+        json!({"kind": "target"}),
+        json!({"kind": "provider"}),
+        json!({"kind": "target", "provider": "provider.mailgun"}),
+        json!({"kind": "provider", "target": "web"}),
+        json!({"kind": "target", "target": "web", "provider": "provider.mailgun"}),
+    ] {
+        let mut document = graph_document();
+        document["scenarios"][0]["participants"][0]["subject"] = subject.clone();
+        assert!(
+            !graph.is_valid(&document),
+            "subject discriminant accepted {subject}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn graph_source_component_roots_match_owner_and_cardinality() -> Result<(), Box<dyn Error>> {
+    let graph = validator("schemas/v2/protocol/semantic-graph.schema.json")?;
+    assert!(graph.is_valid(&graph_document()), "valid positive");
+
+    // Each single root value must agree with the owning `RepoPath` constructor.
+    for value in [
+        "shared/kmp",
+        "shared/kmp/nested",
+        "apps/café/view.swift",
+        "../escape",
+        "/abs",
+        "a\\b",
+        "CON",
+        "a.",
+        "a ",
+        "a//b",
+        "",
+    ] {
+        let mut document = graph_document();
+        document["source_components"][0]["roots"] = json!([value]);
+        let schema_ok = graph.is_valid(&document);
+        let owner_ok = RepoPath::new(value).is_ok();
+        assert_eq!(
+            schema_ok, owner_ok,
+            "root={value:?} schema={schema_ok} owner={owner_ok}"
+        );
+    }
+
+    // Cardinality and exact-duplicate exclusion are separate collection rules.
+    let mut empty = graph_document();
+    empty["source_components"][0]["roots"] = json!([]);
+    assert!(!graph.is_valid(&empty), "empty roots accepted");
+
+    let mut duplicate = graph_document();
+    duplicate["source_components"][0]["roots"] = json!(["shared/kmp", "shared/kmp"]);
+    assert!(!graph.is_valid(&duplicate), "duplicate roots accepted");
+    Ok(())
+}
+
+#[test]
+fn authored_workspace_component_roots_match_owner_and_cardinality() -> Result<(), Box<dyn Error>> {
+    let workspace = validator("schemas/v2/manifest/workspace.schema.json")?;
+    assert!(workspace.is_valid(&workspace_document()), "valid positive");
+
+    for value in [
+        "shared/kmp",
+        "shared/kmp/nested",
+        "apps/café/view.swift",
+        "../escape",
+        "/abs",
+        "a\\b",
+        "CON",
+        "a.",
+        "a ",
+        "a//b",
+        "",
+    ] {
+        let mut document = workspace_document();
+        document["source_components"]["shared.kmp"]["roots"] = json!([value]);
+        let schema_ok = workspace.is_valid(&document);
+        let owner_ok = RepoPath::new(value).is_ok();
+        assert_eq!(
+            schema_ok, owner_ok,
+            "root={value:?} schema={schema_ok} owner={owner_ok}"
+        );
+    }
+
+    let mut empty = workspace_document();
+    empty["source_components"]["shared.kmp"]["roots"] = json!([]);
+    assert!(!workspace.is_valid(&empty), "empty roots accepted");
+
+    let mut duplicate = workspace_document();
+    duplicate["source_components"]["shared.kmp"]["roots"] = json!(["shared/kmp", "shared/kmp"]);
+    assert!(!workspace.is_valid(&duplicate), "duplicate roots accepted");
     Ok(())
 }
 

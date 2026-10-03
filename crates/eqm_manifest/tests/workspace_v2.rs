@@ -233,6 +233,38 @@ fn escaped_component_root_rejects() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[test]
+fn component_roots_require_nonempty_duplicate_free_portable_paths() -> Result<(), Box<dyn Error>> {
+    // Same-ingress positive: two distinct valid portable roots load unchanged.
+    let positive = repository(&shared_roots_workspace("", "").replace(
+        "roots = [\"shared/kmp\"]",
+        "roots = [\"shared/kmp\", \"shared/nested\"]",
+    ))?;
+    let loaded = load_workspace(positive.path(), None)?;
+    assert_eq!(loaded.graph_input().source_components.len(), 1);
+    assert_eq!(loaded.graph_input().source_components[0].roots().len(), 2);
+
+    // One-axis negatives at the same authored ingress.
+    for roots in [
+        "[]",
+        "[\"shared/kmp\", \"shared/kmp\"]",
+        "[\"/abs\"]",
+        "[\"shared//kmp\"]",
+        "[\"CON\"]",
+        "[\"shared/kmp.\"]",
+    ] {
+        let workspace = shared_roots_workspace("", "")
+            .replace("roots = [\"shared/kmp\"]", &format!("roots = {roots}"));
+        let repository = repository(&workspace)?;
+        assert_eq!(
+            load_workspace(repository.path(), None),
+            Err(eqm_manifest::LoadError::WorkspaceTarget),
+            "roots={roots}"
+        );
+    }
+    Ok(())
+}
+
 const PARTICIPATION: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json"
 id = "participation.mobile"
 requirement = "account.create#create"
