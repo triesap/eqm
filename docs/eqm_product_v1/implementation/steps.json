@@ -13649,9 +13649,9 @@
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
     "amendment": "DEV-011",
-    "next_checkpoint": "S037",
+    "next_checkpoint": "S038",
     "execution_target": "S043 / EQM-P03 integration review; full MVP remains S211",
     "intermediate_checkpoint": "S143 is not a stopping boundary",
-    "continuation": "pfc through EQM-P03: S025-R2 through S036 done; every ordered eligible S037-S043; independent integration review before S044."
+    "continuation": "pfc through EQM-P03: S025-R2 through S037 done; every ordered eligible S038-S043; independent integration review before S044."
   }
 }

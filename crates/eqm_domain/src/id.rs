@@ -161,6 +161,18 @@ define_id!(
     None
 );
 define_id!(
+    /// A scenario authority ID.
+    ScenarioId,
+    2,
+    None
+);
+define_id!(
+    /// A scenario participant occurrence ID.
+    OccurrenceId,
+    1,
+    Some(1)
+);
+define_id!(
     /// A locked adapter authority ID.
     AdapterId,
     2,

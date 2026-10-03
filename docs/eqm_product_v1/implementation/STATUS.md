@@ -32,11 +32,13 @@ v2 participation manifest kind and its generated schema, rejecting duplicate and
 dangling authority (acceptance pending). S036 evaluates participation
 applicability for an exact requirement/participant/profile coordinate, keeping
 true, false and unknown distinct with no pre-fanout global drop (acceptance
-pending). RF44 final-tree gating and authority context are reconciled in current
-planning; implementation receipts must prove final trees, including
-reports/ledger.
+pending). S037 models role-bearing scenario participant occurrences with unique
+occurrence IDs, tagged target/provider subjects and explicit directed
+dependencies, keeping repeated occurrences distinct (acceptance pending). RF44
+final-tree gating and authority context are reconciled in current planning;
+implementation receipts must prove final trees, including reports/ledger.
 
-Next **every ordered S037–S043**, pfc through EQM-P03.
+Next **every ordered S038–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly

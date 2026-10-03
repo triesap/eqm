@@ -53,6 +53,7 @@ mod policy;
 mod record;
 mod reference;
 mod runner;
+mod scenario;
 mod schema;
 mod selection;
 mod time;
@@ -94,9 +95,9 @@ pub use graph::{
 pub use id::{
     AdapterId, ArtifactId, AttemptId, BindingId, CampaignId, CapabilityId, DimensionId,
     EvidenceSpecId, FragmentId, FrameworkId, FullRequirementId, IdParseError, JourneyId,
-    LocalRequirementId, LogicalCaseId, ParticipationRuleId, PlanId, PlatformId, PolicyId,
-    ProfileId, ProviderId, RecordId, RoleId, RunId, RunnerId, SourceComponentId, SurfaceId,
-    SymbolicValueId, TargetId, UnitId, WaiverId,
+    LocalRequirementId, LogicalCaseId, OccurrenceId, ParticipationRuleId, PlanId, PlatformId,
+    PolicyId, ProfileId, ProviderId, RecordId, RoleId, RunId, RunnerId, ScenarioId,
+    SourceComponentId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
 };
 pub use inventory::{
     AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,
@@ -117,6 +118,9 @@ pub use runner::{
     AdapterDefinition, AdapterLimits, ArgumentTemplate, DiscoveryMode, EnvironmentBinding,
     EnvironmentName, EnvironmentSource, RunnerBuildError, RunnerDefinition, RunnerLimits,
     RunnerProgram, SecretBinding, SecretProviderRef, WorkingDirectoryTemplate,
+};
+pub use scenario::{
+    Scenario, ScenarioDependency, ScenarioError, ScenarioParticipant, ScenarioSubject,
 };
 pub use schema::{
     SchemaGroup, SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion,
