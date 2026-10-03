@@ -85,3 +85,14 @@ authored symbolic id with a separate typed canonical digest and strict exact
 occurrence/context matching. Declared development absence never grants trusted
 completeness. S039–S043 retain original comparison/provider/cohort and real parity
 criteria; no product values, operational authority or acceptance gate is invented.
+
+## DEV-014 integration closure
+
+The sole COMMIT_SEQUENCE DEV-014 closes lossless tagged graph runner/scope
+semantics, real typed graph/comparison schemas, strict checked comparison ingress
+and distinct-subject comparison eligibility. Provider configuration remains a
+typed projection separate from declared external content. Cohort configuration
+comes from immutable graph authority; authored cohort source/build/artifact axes
+are independently supplied when matching candidate subjects. Ambiguous scenario
+revisions reject rather than infer latest. Parsing and eligibility grant no trust.
+S040–S043 remain ordered; required independent review before S044 is preserved.

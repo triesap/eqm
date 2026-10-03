@@ -1,38 +1,33 @@
 # Verification and implementation status
 
-Execution revalidation, 2026-10-03: P03-R1 is implemented and locally verified
-under DEV-012; Codex acceptance remains pending. The remaining ten DEV-012
-checkpoints (S032-R1 through S043) are still pending.
+DEV-014 independently reviewed clean `667776537709f824efac48f6bf325be2c9ea2913`.
+All seven returned checkpoints are retained. S001–S038 are accepted for allocated
+implementation scope: 38 numbered steps, preserving prior acceptance. Whole R/AC/RA
+and live acceptance remain separate; RA02/RA13 remain open at later integration.
 
-DEV-012 independently reviewed clean `38c125467084f41bb0414484d62f7efc59eb28d0`.
-All14 returned commits retained. S001–S031 and S034 accepted for allocated scope:
-32 numbered steps. P01/P02 complete for allocated implementation; P03 in progress.
-S032/S033/S035/S036/S037/S038 have retained contributions and require RF45–RF50
-integration corrections; S039–S043 unstarted. Every original criterion remains.
+RF46–RF50 close for allocated scope. RF45 remains partial: explicit v2 graph
+routing and v1 rejection work, but typed runner variants collide and schemas
+are incomplete. RF51–RF53 require lossless graph projection, real typed schemas,
+checked comparison ingress and genuine distinct-subject consumer evidence.
+S039 is retained changes-required. S040–S043 are unstarted. RF54 current tracking
+is reconciled in DEV-014; historical receipts remain historical.
 
-P03-R1 adds the explicit complete `eqm:v2:semantic-graph` identity and
-application version routing: a genuine v1 workspace still projects under the
-frozen v1 domain, while an authored v2 workspace projects under the complete v2
-identity (role/source_components/depends_on, source_components, participation).
-The v1 projection rejects v2-only metadata instead of omitting it.
-
-Next **S040 → S041 → S042 → S043**,
+Current frontier **P03-R2 → P03-R3 → S039-R1 → S040 → S041 → S042 → S043**,
 **pfc through EQM-P03**. Required independent model/schema/identity review before
-S044; full MVP remains S211. Actual user/runtime limits, original review gates and
-genuine dependent external blockers remain legitimate stops.
+S044; full MVP remains S211. See the sole [plan](COMMIT_SEQUENCE.md), current
+[independent review](reports/CODEX-6677765.md) and progress.json.
 
-P03-R1 through S039 verification: `cargo xtask check` passed, `cargo xtask schemas
-check` passed, changed domain/manifest/protocol/engine/application doctests
-passed, the structure validator passed and `git diff --check` is clean. S039 adds
-the independent `eqm:v2:scenario` `ScenarioDigest` and the four-member
-`eqm:v2:comparison-context` `ComparisonContextDigest`, with exact subject axes
-kept outside the shared identity. See the per-checkpoint reports under `reports/`
-and the sole [plan](COMMIT_SEQUENCE.md).
-No supervisor product code/tests changed. Previously accepted work is preserved.
-Whole RA02/RA13 remain open at later integration; Q01–Q15 retain their original gates.
+At the reviewed candidate, independent standard check passed 658 successful test
+executions and changed doctests passed 9. Four isolated probes reproduced graph
+identity collisions and malformed schema acceptance. Passing standard gates does
+not close these defects. No product code/tests were changed by the supervisor.
+
+P01/P02 are complete for allocated implementation; P03 is in progress (11 of16
+numbered steps accepted); P04–P15 remain pending. Provider/cohort authority and
+complete model/application/CLI parity are still required. Q01–Q15 retain original
+dependent gates; synthetic/simulator-capable work remains eligible.
 
 No release or human release-testing milestone is reached. Full verify, current
-supply-chain, Linux, extended/live product/crypto/host/package/signing/operational
-lanes remain unverified here. Synthetic/simulator-capable implementation remains
-eligible; Q02/Q06 actual host/cohort facts cannot be fabricated. No operational,
-publication, deployment, signing or optional-native activation is authorized.
+supply-chain, Linux, coverage/mutation/fuzz/benchmark/package and live product/
+crypto/host/signing/operational lanes remain unverified. No publication/deployment/
+signing/operational or optional-native activation authority is granted.

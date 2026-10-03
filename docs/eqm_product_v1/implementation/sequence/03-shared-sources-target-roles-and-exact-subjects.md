@@ -1,15 +1,17 @@
 # Chapter 03: Shared sources target roles and exact subjects
 
-**Current authority:** DEV-012 in the sole COMMIT_SEQUENCE; 32 allocated numbered steps accepted.
+**Current authority:** DEV-014 in the sole COMMIT_SEQUENCE; 38 allocated numbered steps accepted. P03-R2 → P03-R3 → S039-R1 → S040–S043; mandatory independent review before S044. Retained historical frontiers below do not replace this frontier.
+
+**Historical authority:** DEV-012 in the sole COMMIT_SEQUENCE; 32 allocated numbered steps accepted.
 Six integration repairs then every S039–S043; mandatory independent review before S044.
 Historical frontier paragraphs below are subordinate to the current amendment.
 
-**Current authority:** DEV-011, S025-R2 → S026-R1 → S027–S043;
+**Historical authority:** DEV-011, S025-R2 → S026-R1 → S027–S043;
 24 numbered steps accepted, independent integration review before S044.
 Historical frontier paragraphs below are superseded by the current sole plan.
 
 
-**Current authority:** DEV-010 in the sole COMMIT_SEQUENCE; 23 numbered steps
+**Historical authority:** DEV-010 in the sole COMMIT_SEQUENCE; 23 numbered steps
 accepted for allocated scope. S022-R2 → S025-R1 → S026–S043; independent
 integration review before S044. Historical amendment text below is subordinate
 to that current frontier. All original criteria remain.
@@ -546,7 +548,7 @@ Separate comparison context identity.
 Prevent exact build identity from blocking valid comparability.
 
 ### 3. Exact scope of code changes
-Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 is the current governing clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/digest.rs`
@@ -590,7 +592,7 @@ Bind provider obligations explicitly.
 Avoid unscoped provider participation in unrelated targets.
 
 ### 3. Exact scope of code changes
-Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Represent provider subject/configuration and target/scenario dependency links; adjust domain/graph checks while deferring final aggregation to evaluator steps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 is the current governing clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/`
@@ -634,7 +636,7 @@ Author compatibility cohorts.
 Support approved mixed-version combinations without inventing a support window.
 
 ### 3. Exact scope of code changes
-Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 is the current governing clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/policy.rs`
@@ -681,7 +683,7 @@ Add the asymmetric multi-runtime graph fixture.
 Exercise the target/source/participant model as a whole.
 
 ### 3. Exact scope of code changes
-Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add synthetic Rust CLI, desktop, mobile and provider authority with shared source sets, repeated actors and role-specific requirements; no invented real product build tasks. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 is the current governing clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria.
 
 ### 4. Files/modules likely involved
 - `tests/fixtures/`
@@ -726,7 +728,7 @@ Verify target model schema and identity parity.
 Close graph-model changes before obligation routing.
 
 ### 3. Exact scope of code changes
-Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF45-RF50: cycle exit verifies production v2 graph identity/version routing, checked transitive structural ownership, nonambiguous participation and exact scenario/subject/provider/cohort ingress with public parity.
+Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF45-RF50: cycle exit verifies production v2 graph identity/version routing, checked transitive structural ownership, nonambiguous participation and exact scenario/subject/provider/cohort ingress with public parity. DEV-014 is the current governing clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria.
 
 ### 4. Files/modules likely involved
 - `docs/concepts.md`
