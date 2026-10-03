@@ -4099,7 +4099,8 @@
    {
     "id": "S043-R2",
     "status": "implemented_verified_pending_codex_acceptance",
-    "supervisor_status": "not_accepted"
+    "supervisor_status": "not_accepted",
+    "commit_sha": "88221e58b94a49173662540ce4c9e2741926baeb"
    }
   ]
  },
