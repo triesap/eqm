@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S032-R1",
+ "next_step": "S033-R1",
  "implementation": "in_progress",
- "local_verification": "P03-R1_implemented_verified_pending_acceptance;candidate_38c1254_baseline_32_allocated_steps_accepted;S032-R1_then_S033-R1_S035-R1_S037-R1_S038-R1_S039_S043",
+ "local_verification": "P03-R1_S032-R1_implemented_verified_pending_acceptance;candidate_38c1254_baseline_32_allocated_steps_accepted;S033-R1_then_S035-R1_S037-R1_S038-R1_S039_S043",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -3062,7 +3062,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P03",
- "active_step": "S032-R1",
+ "active_step": "S033-R1",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3389,7 +3389,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S032-R1",
+ "next_checkpoint": "S033-R1",
  "supervisor_review": {
   "source_commit": "38c125467084f41bb0414484d62f7efc59eb28d0",
   "report": "implementation/reports/CODEX-38c1254.md",
@@ -3876,9 +3876,10 @@
    "priority": "P2",
    "owner": "S032",
    "checkpoint": "S032-R1",
-   "status": "open",
+   "status": "implemented_pending_supervisor_acceptance",
    "summary": "Direct-only overlap validation contradicts transitive ownership",
-   "report": "implementation/reports/CODEX-38c1254.md"
+   "report": "implementation/reports/CODEX-38c1254.md",
+   "closure_report": "implementation/reports/S032-R1.md"
   },
   {
    "id": "RF48",
@@ -3934,12 +3935,14 @@
     "status": "complete",
     "supervisor_status": "not_accepted",
     "report": "implementation/reports/P03-R1.md",
-    "commit_sha": null
+    "commit_sha": "995c6ee62f87d85498a447d4ec9d8de2debadb8e"
    },
    {
     "id": "S032-R1",
-    "status": "pending",
-    "supervisor_status": "not_accepted"
+    "status": "complete",
+    "supervisor_status": "not_accepted",
+    "report": "implementation/reports/S032-R1.md",
+    "commit_sha": null
    },
    {
     "id": "S033-R1",
@@ -3994,7 +3997,7 @@
   "implementation_delta": "none_observed",
   "returned_candidate": "not_available",
   "acceptance_changes": false,
-  "next_checkpoint": "S032-R1",
+  "next_checkpoint": "S033-R1",
   "batch_endpoint": "S043",
   "governing_amendment": "DEV-012"
  }

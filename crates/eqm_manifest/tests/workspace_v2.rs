@@ -282,3 +282,121 @@ fn v2_participation_unknown_field_and_wrong_version_fail_closed() -> Result<(), 
     assert!(load_workspace(v1.path(), None).is_err());
     Ok(())
 }
+
+fn closure_workspace(targets: &str, components: &str) -> String {
+    format!(
+        r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json"
+contract_sources = ["eqm/contracts/**/*.toml"]
+binding_sources = ["eqm/bindings/**/*.toml"]
+policy_sources = ["eqm/policies/**/*.toml"]
+profile_sources = ["eqm/profiles/**/*.toml"]
+runner_sources = ["eqm/runners/**/*.toml"]
+waiver_sources = ["eqm/waivers/**/*.toml"]
+
+{targets}
+{components}
+"#
+    )
+}
+
+const WEB_TARGET: &str = r#"[targets.web]
+root = "apps/web"
+platform = "web"
+framework = "sveltekit"
+source_components = ["shared.a"]
+owners = ["owner://team/web"]
+"#;
+
+#[test]
+fn target_root_overlap_is_allowed_through_the_transitive_component_closure()
+-> Result<(), Box<dyn Error>> {
+    // shared.b overlaps the web output root but is reachable from shared.a,
+    // which the target declares. The same closure owns the shared roots.
+    let components = r#"[source_components."shared.a"]
+roots = ["shared/a"]
+owners = ["owner://team/shared"]
+dependencies = ["shared.b"]
+
+[source_components."shared.b"]
+roots = ["apps/web/shared"]
+owners = ["owner://team/shared"]
+dependencies = []
+"#;
+    let repository = repository(&closure_workspace(WEB_TARGET, components))?;
+    let loaded = load_workspace(repository.path(), None)?;
+    assert_eq!(loaded.graph_input().targets.len(), 1);
+    assert_eq!(loaded.graph_input().source_components.len(), 2);
+    Ok(())
+}
+
+#[test]
+fn same_target_root_overlap_without_the_closure_rejects() -> Result<(), Box<dyn Error>> {
+    // Identical paths, but shared.a no longer declares shared.b.
+    let components = r#"[source_components."shared.a"]
+roots = ["shared/a"]
+owners = ["owner://team/shared"]
+dependencies = []
+
+[source_components."shared.b"]
+roots = ["apps/web/shared"]
+owners = ["owner://team/shared"]
+dependencies = []
+"#;
+    let repository = repository(&closure_workspace(WEB_TARGET, components))?;
+    assert_eq!(
+        load_workspace(repository.path(), None),
+        Err(eqm_manifest::LoadError::UndeclaredSourceOverlap)
+    );
+    Ok(())
+}
+
+#[test]
+fn unrelated_component_overlapping_the_target_root_rejects() -> Result<(), Box<dyn Error>> {
+    let components = r#"[source_components."shared.a"]
+roots = ["shared/a"]
+owners = ["owner://team/shared"]
+dependencies = []
+
+[source_components."shared.unrelated"]
+roots = ["apps/web/unrelated"]
+owners = ["owner://team/other"]
+dependencies = []
+"#;
+    let repository = repository(&closure_workspace(WEB_TARGET, components))?;
+    assert_eq!(
+        load_workspace(repository.path(), None),
+        Err(eqm_manifest::LoadError::UndeclaredSourceOverlap)
+    );
+    Ok(())
+}
+
+#[test]
+fn transitive_component_overlap_is_explained_but_unrelated_overlap_rejects()
+-> Result<(), Box<dyn Error>> {
+    let transitive = r#"[source_components."shared.a"]
+roots = ["shared/a"]
+owners = ["owner://team/shared"]
+dependencies = ["shared.b"]
+
+[source_components."shared.b"]
+roots = ["shared/b"]
+owners = ["owner://team/shared"]
+dependencies = ["shared.c"]
+
+[source_components."shared.c"]
+roots = ["shared/a/nested"]
+owners = ["owner://team/shared"]
+dependencies = []
+"#;
+    let transitive_repo = repository(&closure_workspace(WEB_TARGET, transitive))?;
+    let loaded = load_workspace(transitive_repo.path(), None)?;
+    assert_eq!(loaded.graph_input().source_components.len(), 3);
+
+    let unrelated = transitive.replace("dependencies = [\"shared.b\"]", "dependencies = []");
+    let unrelated_repo = repository(&closure_workspace(WEB_TARGET, &unrelated))?;
+    assert_eq!(
+        load_workspace(unrelated_repo.path(), None),
+        Err(eqm_manifest::LoadError::AmbiguousSourceOverlap)
+    );
+    Ok(())
+}

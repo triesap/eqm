@@ -240,24 +240,15 @@ pub fn load_workspace(
     let mut binding_roots: BTreeMap<TargetId, Vec<RepoPath>> = BTreeMap::new();
     for target in &input.targets {
         let mut roots = vec![target.root().clone()];
-        let mut seen = BTreeSet::new();
-        let mut stack: Vec<&str> = target
-            .source_components()
-            .iter()
-            .map(SourceComponentId::as_str)
-            .collect();
-        while let Some(id) = stack.pop() {
-            if !seen.insert(id) {
-                continue;
-            }
+        for id in transitive_component_closure(
+            &components_by_id,
+            target
+                .source_components()
+                .iter()
+                .map(SourceComponentId::as_str),
+        ) {
             if let Some(component) = components_by_id.get(id) {
                 roots.extend(component.roots().iter().cloned());
-                stack.extend(
-                    component
-                        .dependencies()
-                        .iter()
-                        .map(SourceComponentId::as_str),
-                );
             }
         }
         roots.sort();
@@ -489,38 +480,45 @@ fn roots_overlap(left: &RepoPath, right: &RepoPath) -> bool {
             .is_some_and(|rest| rest.starts_with('/'))
 }
 
+/// Returns one deterministic transitive component closure over the declared
+/// component dependency graph. `depends_on` target edges never enter this
+/// closure: only a target's own declared `source_components` (and their
+/// transitive component dependencies) grant shared roots.
+fn transitive_component_closure<'a>(
+    components: &BTreeMap<&'a str, &'a SourceComponent>,
+    seeds: impl IntoIterator<Item = &'a str>,
+) -> BTreeSet<&'a str> {
+    let mut seen = BTreeSet::new();
+    let mut stack: Vec<&'a str> = seeds.into_iter().collect();
+    while let Some(id) = stack.pop() {
+        if !seen.insert(id) {
+            continue;
+        }
+        if let Some(component) = components.get(id) {
+            stack.extend(
+                component
+                    .dependencies()
+                    .iter()
+                    .map(SourceComponentId::as_str),
+            );
+        }
+    }
+    seen
+}
+
 /// Rejects ambiguous source-component root overlaps and undeclared target/root
-/// overlaps. Output identity (the target root) stays distinct from shared
-/// source roots, so a declared shared component is not a target-root collision.
+/// overlaps using one checked transitive component closure. Output identity (the
+/// target root) stays distinct from shared source roots, so a declared shared
+/// component is not a target-root collision.
 fn validate_shared_source_overlaps(input: &WorkspaceGraphInput) -> Result<(), LoadError> {
     let components: BTreeMap<&str, &SourceComponent> = input
         .source_components
         .iter()
         .map(|component| (component.id().as_str(), component))
         .collect();
-    let reachable = |from: &str, to: &str| -> bool {
-        let mut stack = vec![from];
-        let mut seen = BTreeSet::new();
-        while let Some(current) = stack.pop() {
-            if current == to {
-                return true;
-            }
-            if !seen.insert(current) {
-                continue;
-            }
-            if let Some(component) = components.get(current) {
-                stack.extend(
-                    component
-                        .dependencies()
-                        .iter()
-                        .map(SourceComponentId::as_str),
-                );
-            }
-        }
-        false
-    };
     let ids: Vec<&str> = components.keys().copied().collect();
     for (index, left) in ids.iter().enumerate() {
+        let left_closure = transitive_component_closure(&components, [*left]);
         let left_component = components[left];
         for right in &ids[index + 1..] {
             let right_component = components[right];
@@ -530,23 +528,29 @@ fn validate_shared_source_overlaps(input: &WorkspaceGraphInput) -> Result<(), Lo
                     .iter()
                     .any(|right_root| roots_overlap(left_root, right_root))
             });
-            if overlaps && !reachable(left, right) && !reachable(right, left) {
+            // The complete overlap must be explained by the same declared
+            // source-component dependency closure, in either direction.
+            let explained = left_closure.contains(right)
+                || transitive_component_closure(&components, [*right]).contains(left);
+            if overlaps && !explained {
                 return Err(LoadError::AmbiguousSourceOverlap);
             }
         }
     }
     for target in &input.targets {
+        let closure = transitive_component_closure(
+            &components,
+            target
+                .source_components()
+                .iter()
+                .map(SourceComponentId::as_str),
+        );
         for (id, component) in &components {
             let overlaps = component
                 .roots()
                 .iter()
                 .any(|root| roots_overlap(root, target.root()));
-            if overlaps
-                && !target
-                    .source_components()
-                    .iter()
-                    .any(|declared| declared.as_str() == *id)
-            {
+            if overlaps && !closure.contains(id) {
                 return Err(LoadError::UndeclaredSourceOverlap);
             }
         }

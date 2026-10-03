@@ -16,15 +16,18 @@ frozen v1 domain, while an authored v2 workspace projects under the complete v2
 identity (role/source_components/depends_on, source_components, participation).
 The v1 projection rejects v2-only metadata instead of omitting it.
 
-Next **S032-R1 → S033-R1 → S035-R1 → S037-R1 → S038-R1 → S039–S043**,
+Next **S033-R1 → S035-R1 → S037-R1 → S038-R1 → S039–S043**,
 **pfc through EQM-P03**. Required independent model/schema/identity review before
 S044; full MVP remains S211. Actual user/runtime limits, original review gates and
 genuine dependent external blockers remain legitimate stops.
 
-P03-R1 verification: `cargo xtask check` passed, `cargo xtask schemas check`
-passed, changed domain/manifest/protocol/application doctests passed, structure
-validator passed and `git diff --check` is clean. See
-[report](reports/P03-R1.md) and sole [plan](COMMIT_SEQUENCE.md).
+P03-R1 and S032-R1 verification: `cargo xtask check` passed, `cargo xtask schemas
+check` passed, changed domain/manifest/protocol/engine/application doctests
+passed, the structure validator passed and `git diff --check` is clean. S032-R1
+uses one checked transitive component closure for overlap validation and binding
+ownership without granting target `depends_on` roots. See
+[P03-R1 report](reports/P03-R1.md), [S032-R1 report](reports/S032-R1.md) and sole
+[plan](COMMIT_SEQUENCE.md).
 No supervisor product code/tests changed. Previously accepted work is preserved.
 Whole RA02/RA13 remain open at later integration; Q01–Q15 retain their original gates.
 
