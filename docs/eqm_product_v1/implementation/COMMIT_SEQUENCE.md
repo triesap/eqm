@@ -1,5 +1,87 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-022 — Complete every owning field before P03 acceptance
+
+**Date/author:** 2026-10-03, Codex under owner delegation.
+**Reviewed candidate:** `1836b3512272a78b28f7548debd2a61f4ebbfd84`.
+[Independent review](reports/CODEX-1836b35.md) preserves all four returned commits,
+accepts S041 and allocated RF53/RF59/RF61/RF62/RF63/RF64 corrections, retaining
+41 earlier numbered acceptances (**42 total**). S043/P03 remain changes-required:
+RF65 demonstrates missing nested reference vocabulary and source-root cardinality.
+RF45 remains partial; whole RA02/RA13 and original 64 R/AC,21 RA,Q01–Q15,S211 remain.
+This is the sole current amendment, retaining DEV-020 and earlier decisions.
+
+Execute **P03-R8 → P03-R9 → P03-R10 → S043-R4**, **pfc through EQM-P03**; all four
+substantial checkpoints. S044 requires independent P03 acceptance. This existing
+hard integration dependency is the reason for the boundary; no owner-only blocker.
+No later evaluator/trust/operational behavior is implemented early.
+
+### P03-R8 — Repair nested references and source collection contracts
+
+Commit `fix: constrain nested scenario references and source roots`.
+Apply owning TargetId/ProviderId constraints to both ScenarioSubjectV2Dto tagged
+variants; field-name/kind shapes and valid boundaries must be preserved. Enforce
+nonempty source-component roots at authored and graph roots, plus duplicate-free
+exact values where expressible. Root collection bounds are separate from RepoPath
+NFC/Unicode-byte/collision semantics. Add faithful schema-expressible portable
+path lexical constraints with owning accepted controls; do not tighten RepoPath.
+Fix all direct RF65 cases, regenerate source-driven schemas atomically, retain
+v1 bytes, no new fields/digests/parser or policy changes. Run actual domain and
+loader/checked boundaries with same-ingress positives and one-axis negatives.
+
+### P03-R9 — Finish field-complete owning schema audit
+
+Commit `fix: complete owning graph member value constraints`.
+The existing generic table is insufficient. Enumerate each serialized field and
+enum variant of every introduced authored and semantic graph/comparison DTO,
+including nested existing projections introduced into the graph wire surface.
+Map each to the owning constructor/projection, exact constraint, schema expression
+or justified separate layer, and specific test case. Include discriminated subject
+references, source root collections, target/source/provider references, applicability
+variants, contract/entity IDs/text/revisions/owners, binding/evidence/runner/waiver
+projection members, profile defaults/selections and extension recursion. Read
+actual domain rules rather than inventing universal rules for differently typed
+values. This is completion of the already approved owning graph value contract.
+Repair all faithfully schema-expressible omissions discovered in this audit within
+the batch, not only RF65. Do not require pointer identity or introduce unrelated
+identity bindings. ASCII vocabulary/bounds, exact-one, lexical path subset and
+collection bounds must not be mislabeled cross-field/Unicode exceptions.
+NFC/raw tokens/Unicode byte counts, normalized collisions, referential integrity
+and genuine domain relationships stay explicit owning layers when schemas cannot
+faithfully prove them. Preserve valid forms and all accepted authority/identity
+behavior; no trust promotion, wire compatibility alias or manual generated JSON.
+
+### P03-R10 — Execute every field and variant boundary
+
+Commit `test: cover every owning graph field boundary`.
+Independent literal positive/negative input matrix covers every field/variant row
+from P03-R9 across real local Draft2020-12 validators with format assertions and
+actual domain/loader/checked-reader/canonical projection consumers as applicable.
+Mutate the exact nested reference field, not a similarly typed sibling. Include
+valid maxima, empty/minimum/maximum/over-boundary collections, duplicates, absent/
+null/type distinctions, variant discriminants, portable path positives/negatives,
+source root cardinality and target/provider subject alternatives. Assertions derive
+from independently authored expectations plus owning APIs; no generator inspection
+alone masquerades as behavior. Report intentional schema/token/semantic differences.
+Retain independent literal bytes/digests, v1 controls and graph-bound matching.
+Do not certify full coverage with grouped type labels or a bare test count.
+
+### S043-R4 — Actual integration and full original cycle exit
+
+Commit `test: verify field-complete P03 consumer parity`.
+Run nested-reference/source-root/other discovered controls through actual asymmetric
+preparation and public CLI admission/diagnostics, with valid positives. Retain all
+transitive ownership, repeated actor/distinct build, explicit N/N+1, exact revision/
+configuration/context and component mutation/literal-oracle obligations. Execute
+ALL original S039/S041/S043/P03 exit lanes and affected owning regressions/doctests.
+Reconcile implementation reports/current progress before final gates; retain failed
+attempts. Extended verification is unrun unless executed, not automatically blocked
+by hardware or unspecified prerequisites. Actual live facts/operational authority
+remain separate. Pi reports implementation/verification only; independent P03
+acceptance before S044 remains Codex-owned. One green commit per checkpoint;
+continue all four, not after the first repair. No private tracker/session metadata
+belongs in public records and no activation/publication is authorized.
+
 ## DEV-020 — Complete bounded schema contracts and independent boundary corpus
 
 **Date/author:** 2026-10-03, Codex under owner delegation.

@@ -1,33 +1,26 @@
 # Verification and implementation status
 
-Codex independently reviewed clean `aa5556336075aae2065862ed65166176717888f6`.
-The matched implementation run reached all three DEV-017 checkpoints and stopped
-at the required review gate. Five returned commits are preserved. S039/RF55/RF60
-and allocated RF57 authority repair are accepted; 40 prior numbered acceptances
-remain, for **41 accepted numbered steps**. RF56/RF58 closures remain.
+Codex independently reviewed clean `1836b3512272a78b28f7548debd2a61f4ebbfd84`.
+The returned run completed all three DEV-020 checkpoints plus ledger backfill and
+correctly stopped for review. Four commits retained; S041 and allocated RF53/
+RF59/RF61/RF62/RF63/RF64 corrections accepted; **42 numbered steps accepted**,
+including all 41 previous acceptances. Whole RA02/RA13 remain open.
 
-S041/S043 and P03 gate remain changes-required. RF59/RF61 are partial; RF62 ID
-bounds, RF63 recursive extension keys and RF64 repository overrestriction require
-completion. RF45/RF53 and whole RA02/RA13 remain open. See
-[review](reports/CODEX-aa55563.md) and sole [plan](COMMIT_SEQUENCE.md).
+S043/P03 remain changes-required. RF65: graph scenario subject references still
+admit invalid IDs; source-root collections admit empty roots. RF45 graph parity
+remains partial. Current sole DEV-022 frontier **P03-R8 → P03-R9 → P03-R10 → S043-R4**,
+**pfc through EQM-P03**, all four before independent P03 acceptance and S044.
+See [review](reports/CODEX-1836b35.md) and [plan](COMMIT_SEQUENCE.md). Pi records
+implementation/verification; acceptance is Codex-owned. P04–P15 pending.
+Original 64 R/AC,21 RA,Q01–Q15 and S211 unchanged.
 
-DEV-020 checkpoints **P03-R6**, **P03-R7** and **S043-R3** are implemented and
-locally verified (RF62/RF63/RF64 repaired in source generators and seven
-regenerated v2 schemas, an independent cross-layer boundary corpus, and real
-asymmetric preparation/public CLI boundary integration; v1 bytes unchanged).
-The next required gate is **independent P03 acceptance before S044**; **pfc
-through EQM-P03** is complete for local execution. Pi records implementation and
-verification, not supervisor acceptance. P04–P15 remain pending. Original 64
-R/AC, 21 RA, Q01–Q15 and full S211 remain unchanged. External startup receipts
-identify actual repository/revision/runtime; unavailable handles are explicit.
+Independent standard passed **738 successful test executions**, owning doctests
+**9**, structure/diff checks passed. Isolated probe establishes three remaining
+mismatches, not feature correctness. v1 schemas and Cargo.lock unchanged. No Codex
+production source/test edits. Startup/runtime evidence remains external.
 
-Independent standard gate passed **720 successful test executions**, owning
-doctests **9**, structure/diff checks passed. Isolated probes confirm remaining
-schema mismatches, not correctness. v1 schemas and Cargo.lock unchanged. No Codex
-product source/test modifications. Historical missing-run receipts stay historical.
-
-No release or human release-testing gate is reached. Full verify, Linux,
-coverage/mutation/fuzz/benchmark/package and live product/crypto/host/signing/
-operational acceptance remain unverified. Synthetic/simulator-capable software
-and local automation remain eligible; real Q02/Q06 facts are separate. No live
-activation/publication/deployment/signing or optional-native activation authority.
+No release or human release-testing gate reached. Full verify/Linux/coverage/
+mutation/fuzz/benchmark/package and live product/crypto/host/signing/operational
+acceptance unverified. Unrun local automation is not inherently hardware-blocked;
+real Q02/Q06 facts and activation authority remain separate. No publication,
+deployment, signing or optional-native activation authorization.
