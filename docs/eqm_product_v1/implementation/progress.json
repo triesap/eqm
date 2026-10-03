@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S036",
+ "next_step": "S037",
  "implementation": "in_progress",
- "local_verification": "S025-R2_through_S035_committed_verified_pending_acceptance;S036_next",
+ "local_verification": "S025-R2_through_S036_committed_verified_pending_acceptance;S037_next",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1260,7 +1260,7 @@
   {
    "id": "S035",
    "status": "complete",
-   "commit_sha": null,
+   "commit_sha": "56943ee8711d20f4b8caaa91456b6137f8c374a4",
    "report": "implementation/reports/S035.md",
    "verification": [
     "cargo xtask schemas generate",
@@ -1282,11 +1282,24 @@
   },
   {
    "id": "S036",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S036.md",
+   "verification": [
+    "cargo test --locked -p eqm_engine --test participation",
+    "cargo test --all-targets --locked -p eqm_engine",
+    "cargo xtask check",
+    "cargo fmt --all --check",
+    "cargo check --workspace --all-targets --locked",
+    "cargo clippy --workspace --all-targets --locked -- -D warnings",
+    "cargo xtask schemas check",
+    "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+    "git diff --check"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "implemented_verified_pending_acceptance",
+   "supervisor_status": "pending_acceptance",
+   "review_report": null
   },
   {
    "id": "S037",
@@ -3021,7 +3034,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P03",
- "active_step": "S036",
+ "active_step": "S037",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3044,7 +3057,7 @@
    "first_step": "S028",
    "last_step": "S043",
    "status": "in_progress",
-   "completed_steps": 8,
+   "completed_steps": 9,
    "total_steps": 16
   },
   {
@@ -3345,7 +3358,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S036",
+ "next_checkpoint": "S037",
  "supervisor_review": {
   "source_commit": "c774fe000bdecb50dd1b8ea4b16164900bd6032b",
   "report": "implementation/reports/CODEX-c774fe0.md",

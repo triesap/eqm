@@ -26,6 +26,7 @@ mod waivers;
 pub use affected::{AffectedIndexes, AffectedSet, ChangedFile, analyze_affected_set};
 pub use applicability::{
     ApplicabilityContext, ApplicabilityError, TruthValue, evaluate_applicability,
+    evaluate_participation,
 };
 pub use conformance::{
     ConformanceError, FacetEvaluationInput, FacetStatus, SupportingCheck, TargetConformance,

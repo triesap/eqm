@@ -1,8 +1,8 @@
 //! Total three-valued evaluation over declared finite profile dimensions.
 
 use eqm_domain::{
-    Applicability, ApplicabilityView, ComparisonOperator, DimensionId, MembershipOperator, Profile,
-    SymbolicValueId,
+    Applicability, ApplicabilityView, ComparisonOperator, DimensionId, FullRequirementId,
+    MembershipOperator, ParticipationRule, ParticipationRuleId, Profile, SymbolicValueId, TargetId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -204,6 +204,30 @@ fn evaluate_validated(expression: &Applicability, context: &ApplicabilityContext
         }),
         ApplicabilityView::Not(value) => evaluate_validated(value, context).logical_not(),
     }
+}
+
+/// Evaluates capability participation for one exact
+/// `(requirement, participant, profile)` coordinate.
+///
+/// A participant here is an exact target ID. The evaluation returns the typed
+/// three-valued result of the matching participation rule: `True` admits,
+/// `False` explicitly excludes, and a missing rule or missing required profile
+/// value stays `Unknown` and non-authorizing. It never applies one pre-fanout
+/// conclusion to another participant.
+pub fn evaluate_participation(
+    rules: &BTreeMap<ParticipationRuleId, ParticipationRule>,
+    requirement: &FullRequirementId,
+    target: &TargetId,
+    context: &ApplicabilityContext,
+) -> Result<TruthValue, ApplicabilityError> {
+    for rule in rules.values() {
+        if rule.requirement() == requirement && rule.targets().contains(target) {
+            return evaluate_applicability(rule.applicability(), context);
+        }
+    }
+    // No declared participation authority for this exact coordinate is unknown
+    // and non-authorizing, never an implicit global inclusion.
+    Ok(TruthValue::Unknown)
 }
 
 /// Applicability declaration or selection failure.
