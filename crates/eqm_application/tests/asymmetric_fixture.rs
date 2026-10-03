@@ -525,3 +525,72 @@ fn prepared_fixture_cross_scenario_cohort_authority_is_rejected() -> Result<(), 
     );
     Ok(())
 }
+
+#[test]
+fn prepared_fixture_admits_repository_and_extension_boundaries() -> Result<(), Box<dyn Error>> {
+    // Positive: the existing parser's explicit-port repository and a valid
+    // authored extension namespace are admitted by real preparation.
+    let repository = fixture()?;
+    let cohort_path = repository.path().join("eqm/contracts/cohort.n.toml");
+    let text = fs::read_to_string(&cohort_path)?.replace(
+        "https://example.com/team/project",
+        "https://example.com:443/team/repo",
+    );
+    fs::write(
+        &cohort_path,
+        format!("{text}\n[extensions.\"dev.example.ext\"]\nnote = true\n"),
+    )?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let cohort_n = session
+        .finalized()
+        .graph()
+        .cohorts()
+        .values()
+        .find(|cohort| cohort.id().as_str() == "cohort.n")
+        .ok_or("cohort.n")?;
+    assert!(
+        cohort_n
+            .assignments()
+            .iter()
+            .all(|assignment| assignment.repository().as_str().contains(":443")),
+        "explicit-port repository must be retained"
+    );
+
+    // One-axis negative: an invalid authored extension namespace rejects.
+    let repository = fixture()?;
+    let provider_path = repository
+        .path()
+        .join("eqm/contracts/provider.mailgun.toml");
+    let text = fs::read_to_string(&provider_path)?;
+    fs::write(
+        &provider_path,
+        format!("{text}\n[extensions.\"dev.example\"]\nnote = true\n"),
+    )?;
+    assert!(
+        prepare(
+            &SessionRequest::new(None, evaluation_time()?),
+            repository.path(),
+        )
+        .is_err()
+    );
+
+    // One-axis negative: a parser-invalid repository rejects.
+    let repository = fixture()?;
+    let cohort_path = repository.path().join("eqm/contracts/cohort.n.toml");
+    let text = fs::read_to_string(&cohort_path)?.replace(
+        "https://example.com/team/project",
+        "https://Example.com/team/repo",
+    );
+    fs::write(&cohort_path, text)?;
+    assert!(
+        prepare(
+            &SessionRequest::new(None, evaluation_time()?),
+            repository.path(),
+        )
+        .is_err()
+    );
+    Ok(())
+}

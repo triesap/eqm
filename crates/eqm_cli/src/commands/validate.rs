@@ -345,4 +345,77 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn asymmetric_fixture_boundary_values_are_admitted_and_diagnosed() -> Result<(), Box<dyn Error>>
+    {
+        fn validate_mutated(mutate: impl Fn(&str) -> String) -> Result<u8, Box<dyn Error>> {
+            let repository = crate::test_support::asymmetric_repository()?;
+            let path = repository.path().join("eqm/contracts/cohort.n.toml");
+            let text = fs::read_to_string(&path)?;
+            fs::write(&path, mutate(&text))?;
+            run_validate(repository.path())
+        }
+
+        // Positive: the existing parser's explicit-port repository is admitted.
+        assert_eq!(
+            validate_mutated(|text| text.replace(
+                "https://example.com/team/project",
+                "https://example.com:443/team/repo"
+            ))?,
+            0,
+            "explicit-port repository was rejected"
+        );
+
+        // Positive: a valid authored extension namespace with a nested key is
+        // admitted at the public CLI boundary.
+        assert_eq!(
+            validate_mutated(|text| format!(
+                "{text}\n[extensions.\"dev.example.ext\"]\nnote = true\n"
+            ))?,
+            0,
+            "valid extension namespace was rejected"
+        );
+
+        // One-axis negatives at the real public ingress.
+        assert_eq!(
+            validate_mutated(|text| text.replace(
+                "https://example.com/team/project",
+                "https://Example.com/team/repo"
+            ))?,
+            3,
+            "uppercase host was admitted"
+        );
+        assert_eq!(
+            validate_mutated(|text| text.replace(
+                "https://example.com/team/project",
+                "https://example.com/team/repo/"
+            ))?,
+            3,
+            "trailing-slash repository was admitted"
+        );
+        assert_eq!(
+            validate_mutated(|text| format!(
+                "{text}\n[extensions.\"dev.example\"]\nnote = true\n"
+            ))?,
+            3,
+            "two-segment namespace was admitted"
+        );
+        assert_eq!(
+            validate_mutated(|text| format!(
+                "{text}\n[extensions.\"dev.example.ext\"]\nnested = {{ Bad = true }}\n"
+            ))?,
+            3,
+            "invalid nested extension key was admitted"
+        );
+        assert_eq!(
+            validate_mutated(|text| text.replace(
+                "occurrence = \"mailer\"",
+                &format!("occurrence = \"{}\"", "m".repeat(64))
+            ))?,
+            3,
+            "64-byte occurrence segment was admitted"
+        );
+        Ok(())
+    }
 }
