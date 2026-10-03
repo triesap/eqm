@@ -56,6 +56,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             write::<ParticipationV2Dto>(root, "participation", SchemaKind::Participation, version)?;
             write::<ScenarioV2Dto>(root, "scenario", SchemaKind::Scenario, version)?;
             write::<ProviderV2Dto>(root, "provider", SchemaKind::Provider, version)?;
+            write::<CohortV2Dto>(root, "cohort", SchemaKind::Cohort, version)?;
         }
     }
     Ok(())

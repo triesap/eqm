@@ -3,7 +3,7 @@
 use crate::conversion::extensions;
 use crate::{
     ConfigError, ContractEntity, ConversionError, DiscoveryError, DocumentDto, LockError,
-    ValidationError, WorkspaceLock, convert_binding_with_roots, convert_contract,
+    ValidationError, WorkspaceLock, convert_binding_with_roots, convert_cohort, convert_contract,
     convert_participation, convert_policy, convert_profile, convert_provider, convert_runner,
     convert_scenario, convert_waiver, decode_sources, discover_sources, load_lockfile,
     select_workspace_config,
@@ -371,6 +371,14 @@ pub fn load_workspace(
                     document.source().clone(),
                 );
                 input.providers.push(value);
+            }
+            DocumentDto::Cohort(_) => {
+                let value = convert_cohort(document).map_err(conversion_error)?;
+                source_map.insert(
+                    format!("cohort:{}@{}", value.id(), value.revision().get()).into(),
+                    document.source().clone(),
+                );
+                input.cohorts.push(value);
             }
         }
     }

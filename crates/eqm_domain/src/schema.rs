@@ -88,6 +88,8 @@ pub enum SchemaKind {
     Fragment,
     /// Target binding authority.
     Binding,
+    /// Declared compatibility-cohort authority (v2).
+    Cohort,
     /// Policy authority.
     Policy,
     /// Profile authority.
@@ -134,12 +136,13 @@ pub enum SchemaKind {
 
 impl SchemaKind {
     /// Every accepted kind in stable lexical-identity order.
-    pub const ALL: [Self; 27] = [
+    pub const ALL: [Self; 28] = [
         Self::AdapterRequest,
         Self::AdapterResponse,
         Self::Attestation,
         Self::Binding,
         Self::Capability,
+        Self::Cohort,
         Self::ComparisonContext,
         Self::Diagnostic,
         Self::EvidenceResult,
@@ -174,6 +177,7 @@ impl SchemaKind {
             Self::Surface => "surface",
             Self::Fragment => "fragment",
             Self::Binding => "binding",
+            Self::Cohort => "cohort",
             Self::Policy => "policy",
             Self::Profile => "profile",
             Self::Provider => "provider",
@@ -208,6 +212,7 @@ impl SchemaKind {
             | Self::Surface
             | Self::Fragment
             | Self::Binding
+            | Self::Cohort
             | Self::Policy
             | Self::Profile
             | Self::Provider

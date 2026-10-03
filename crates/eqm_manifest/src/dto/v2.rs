@@ -135,3 +135,36 @@ pub struct ProviderV2Dto {
     #[serde(default)]
     pub extensions: ExtensionsDto,
 }
+
+/// One strict v2 compatibility-cohort document.
+///
+/// Assignments reuse the S038 exact-subject members and are keyed by unique
+/// occurrence. Target/provider configuration is graph-backed authority and is
+/// validated against the immutable projections; the authored source/build/
+/// artifact axes are independently supplied when matching candidate subjects.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct CohortV2Dto {
+    pub schema: String,
+    pub id: String,
+    pub revision: u64,
+    pub scenario: String,
+    pub assignments: Vec<CohortAssignmentV2Dto>,
+    #[serde(default)]
+    pub extensions: ExtensionsDto,
+}
+
+/// One authored cohort assignment for an exact scenario occurrence.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct CohortAssignmentV2Dto {
+    pub occurrence: String,
+    pub repository: String,
+    pub source_commit: String,
+    #[serde(default)]
+    pub source_content_digest: Option<String>,
+    #[serde(default)]
+    pub build_id: Option<String>,
+    #[serde(default)]
+    pub artifact_digest: Option<String>,
+}

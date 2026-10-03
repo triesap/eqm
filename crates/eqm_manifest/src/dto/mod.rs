@@ -12,8 +12,9 @@ pub type ExtensionsDto = Map<String, Value>;
 pub mod v2;
 
 pub use v2::{
-    ParticipationV2Dto, ProviderV2Dto, ScenarioDependencyV2Dto, ScenarioParticipantV2Dto,
-    ScenarioSubjectV2Dto, ScenarioV2Dto, SourceComponentV2Dto, TargetV2Dto, WorkspaceV2Dto,
+    CohortAssignmentV2Dto, CohortV2Dto, ParticipationV2Dto, ProviderV2Dto, ScenarioDependencyV2Dto,
+    ScenarioParticipantV2Dto, ScenarioSubjectV2Dto, ScenarioV2Dto, SourceComponentV2Dto,
+    TargetV2Dto, WorkspaceV2Dto,
 };
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]

@@ -31,10 +31,10 @@ use super::{
     CanonicalizationError, MAX_PROJECTION_BYTES, binding_v2::binding_v2, insert_optional, object,
 };
 use eqm_domain::{
-    AdapterLockIdentity, ArgumentTemplate, EnvironmentSource, EvidenceScopeSubject,
-    FinalizedWorkspaceGraph, ImportLockIdentity, Provider, RunnerDefinition, RunnerProgram,
-    SchemaKind, SchemaUri, SchemaVersion, SemanticGraphV2Digest, SourceComponent, Waiver,
-    WorkingDirectoryTemplate,
+    AdapterLockIdentity, ArgumentTemplate, Cohort, CohortAssignment, EnvironmentSource,
+    EvidenceScopeSubject, FinalizedWorkspaceGraph, ImportLockIdentity, Provider,
+    ProviderConfigurationDigest, RunnerDefinition, RunnerProgram, SchemaKind, SchemaUri,
+    SchemaVersion, SemanticGraphV2Digest, SourceComponent, Waiver, WorkingDirectoryTemplate,
 };
 use serde_json::{Value, json};
 
@@ -99,6 +99,88 @@ fn provider_v2(value: &Provider) -> Result<Value, CanonicalizationError> {
         (
             "owners",
             canonical_strings(value.owners().iter().map(|owner| owner.as_str().to_owned()))?,
+        ),
+        ("extensions", extensions_v2(value.extensions())?),
+    ]))
+}
+
+/// Immutable canonical v2 provider-configuration bytes and digest.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CanonicalProviderConfigurationV2 {
+    bytes: Vec<u8>,
+    digest: ProviderConfigurationDigest,
+}
+
+impl CanonicalProviderConfigurationV2 {
+    /// Returns the exact one-line JCS bytes without a trailing newline.
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Returns the domain-separated provider-configuration identity.
+    #[must_use]
+    pub const fn digest(&self) -> ProviderConfigurationDigest {
+        self.digest
+    }
+}
+
+/// Canonicalizes one provider under `eqm:v2:provider-configuration`.
+///
+/// This identity is derived over the whole validated provider definition; the
+/// authored `configuration_digest` member remains a distinct external content
+/// reference.
+pub fn canonicalize_provider_configuration_v2(
+    value: &Provider,
+) -> Result<CanonicalProviderConfigurationV2, CanonicalizationError> {
+    let projected = provider_v2(value)?;
+    let bytes = serde_json_canonicalizer::to_vec(&projected)
+        .map_err(|_| CanonicalizationError::Serialization)?;
+    if bytes.len() > MAX_PROJECTION_BYTES {
+        return Err(CanonicalizationError::ProjectionTooLarge);
+    }
+    let digest = ProviderConfigurationDigest::hash_content(&bytes);
+    Ok(CanonicalProviderConfigurationV2 { bytes, digest })
+}
+
+fn cohort_assignment_v2(value: &CohortAssignment) -> Result<Value, CanonicalizationError> {
+    let mut projected = object([
+        ("occurrence", json!(value.occurrence().as_str())),
+        ("repository", json!(value.repository().as_str())),
+        ("source_commit", json!(value.source_commit().as_str())),
+    ]);
+    insert_optional(
+        &mut projected,
+        "source_content_digest",
+        value.source_content().map(|item| json!(item.to_string())),
+    );
+    insert_optional(
+        &mut projected,
+        "build_id",
+        value.build_id().map(|item| json!(item.as_str())),
+    );
+    insert_optional(
+        &mut projected,
+        "artifact_digest",
+        value.artifact_digest().map(|item| json!(item.to_string())),
+    );
+    Ok(projected)
+}
+
+fn cohort_v2(value: &Cohort) -> Result<Value, CanonicalizationError> {
+    Ok(object([
+        ("id", json!(value.id().as_str())),
+        ("revision", wire_uint(value.revision().get())),
+        ("scenario", json!(value.scenario().as_str())),
+        (
+            "assignments",
+            canonical_set(
+                value
+                    .assignments()
+                    .iter()
+                    .map(cohort_assignment_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )?,
         ),
         ("extensions", extensions_v2(value.extensions())?),
     ]))
@@ -407,6 +489,16 @@ pub fn graph_v2(finalized: &FinalizedWorkspaceGraph) -> Result<Value, Canonicali
                     .providers()
                     .values()
                     .map(provider_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )?,
+        ),
+        (
+            "cohorts",
+            canonical_set(
+                graph
+                    .cohorts()
+                    .values()
+                    .map(cohort_v2)
                     .collect::<Result<Vec<_>, _>>()?,
             )?,
         ),

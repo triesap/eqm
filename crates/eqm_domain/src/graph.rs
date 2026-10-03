@@ -3,7 +3,7 @@
 use crate::id::ParticipationRuleId;
 use crate::policy::{ParticipationError, ParticipationRule, validate_participation_rules};
 use crate::{
-    AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Extensions,
+    AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Cohort, Extensions,
     Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId, Provider,
     ProviderId, RepoPath, RepositoryIdentity, Revision, RunnerDefinition, RunnerId, Scenario,
     ScenarioId, SelectorText, Sha256Digest, SourceCommit, SourceComponent, SourceComponentId,
@@ -76,6 +76,8 @@ pub struct WorkspaceGraphInput {
     pub bindings: Vec<Binding>,
     /// Declared external provider authorities (v2).
     pub providers: Vec<Provider>,
+    /// Declared compatibility-cohort authorities (v2).
+    pub cohorts: Vec<Cohort>,
     /// Exact policy revisions.
     pub policies: Vec<Policy>,
     /// Exact profile revisions.
@@ -107,6 +109,7 @@ pub struct WorkspaceGraph {
     targets: BTreeMap<TargetId, Target>,
     source_components: BTreeMap<SourceComponentId, SourceComponent>,
     providers: BTreeMap<ProviderId, Provider>,
+    cohorts: BTreeMap<(SelectorText, Revision), Cohort>,
     participation: BTreeMap<ParticipationRuleId, ParticipationRule>,
     scenarios: BTreeMap<(ScenarioId, Revision), Scenario>,
     bindings: BTreeMap<BindingId, Binding>,
@@ -140,6 +143,10 @@ impl WorkspaceGraph {
             .map_err(|()| WorkspaceGraphBuildError::DuplicateSourceComponent)?;
         let providers = unique_index(input.providers, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateProvider)?;
+        let cohorts = unique_index(input.cohorts, |value| {
+            (value.id().clone(), value.revision())
+        })
+        .map_err(|()| WorkspaceGraphBuildError::DuplicateCohort)?;
         let participation =
             validate_participation_rules(input.participation).map_err(|error| match error {
                 ParticipationError::DuplicateRule => {
@@ -203,6 +210,7 @@ impl WorkspaceGraph {
             targets,
             source_components,
             providers,
+            cohorts,
             participation,
             scenarios,
             bindings,
@@ -252,6 +260,11 @@ impl WorkspaceGraph {
     #[must_use]
     pub const fn providers(&self) -> &BTreeMap<ProviderId, Provider> {
         &self.providers
+    }
+    /// Returns authored compatibility cohorts in `(id, revision)` order.
+    #[must_use]
+    pub const fn cohorts(&self) -> &BTreeMap<(SelectorText, Revision), Cohort> {
+        &self.cohorts
     }
     /// Returns capability-participation rules in authority-ID order.
     #[must_use]
@@ -361,6 +374,7 @@ impl WorkspaceGraph {
             targets: self.targets.into_values().collect(),
             source_components: self.source_components.into_values().collect(),
             providers: self.providers.into_values().collect(),
+            cohorts: self.cohorts.into_values().collect(),
             participation: self.participation.into_values().collect(),
             scenarios: self.scenarios.into_values().collect(),
             bindings: self.bindings.into_values().collect(),
@@ -451,6 +465,8 @@ pub enum WorkspaceGraphBuildError {
     DuplicateAdapterLock,
     /// Provider authority ID repeated.
     DuplicateProvider,
+    /// Exact cohort authority `(id, revision)` repeated.
+    DuplicateCohort,
 }
 
 impl Display for WorkspaceGraphBuildError {

@@ -429,6 +429,45 @@ pub struct ProviderV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+pub struct CohortAssignmentV2Dto {
+    pub occurrence: String,
+    pub repository: String,
+    pub source_commit: String,
+    #[serde(
+        default,
+        deserialize_with = "crate::v2::deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "Sha256Text")]
+    pub source_content_digest: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::v2::deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "String")]
+    pub build_id: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::v2::deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "Sha256Text")]
+    pub artifact_digest: Option<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CohortV2Dto {
+    pub id: String,
+    pub revision: WireUint,
+    pub scenario: String,
+    pub assignments: CanonicalSet<CohortAssignmentV2Dto>,
+    pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
+}
+
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct ParticipationV2Dto {
     pub id: String,
     pub requirement: String,
@@ -907,6 +946,7 @@ pub struct SemanticGraphV2Dto {
     pub targets: CanonicalSet<TargetConfigurationV2Dto>,
     pub source_components: CanonicalSet<SourceComponentV2Dto>,
     pub providers: CanonicalSet<ProviderV2Dto>,
+    pub cohorts: CanonicalSet<CohortV2Dto>,
     pub participation: CanonicalSet<ParticipationV2Dto>,
     pub bindings: CanonicalSet<BindingV2Dto>,
     pub scenarios: CanonicalSet<ScenarioV2Dto>,

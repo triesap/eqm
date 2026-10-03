@@ -443,6 +443,20 @@
       "type": "array",
       "uniqueItems": true
     },
+    "CanonicalSet_CohortAssignmentV2Dto": {
+      "items": {
+        "$ref": "#/$defs/CohortAssignmentV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "CanonicalSet_CohortV2Dto": {
+      "items": {
+        "$ref": "#/$defs/CohortV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
     "CanonicalSet_DimensionDeclarationV2Dto": {
       "items": {
         "$ref": "#/$defs/DimensionDeclarationV2Dto"
@@ -648,6 +662,79 @@
         "title",
         "status",
         "owners",
+        "extensions"
+      ],
+      "type": "object"
+    },
+    "CohortAssignmentV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "build_id": {
+          "type": "string"
+        },
+        "occurrence": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "source_content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurrence",
+        "repository",
+        "source_commit"
+      ],
+      "type": "object"
+    },
+    "CohortV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "assignments": {
+          "$ref": "#/$defs/CanonicalSet_CohortAssignmentV2Dto"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ExtensionValueV2Dto"
+          },
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "format": "uint64",
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:9007199254740992|900719925474099[3-8]|9007199254740999|900719925474[1-8][0-9]{3}|9007199254749[0-9]{3}|90071992547[5-8][0-9]{4}|900719925479[0-9]{4}|90071992548[0-9]{5}|90071992549[0-9]{5}|900719925[5-8][0-9]{6}|9007199259[0-9]{6}|90071992[6-8][0-9]{7}|900719929[0-9]{7}|9007199[3-8][0-9]{8}|90071999[0-9]{8}|9007[2-8][0-9]{11}|90079[0-9]{11}|9008[0-9]{12}|9009[0-9]{12}|90[1-8][0-9]{13}|909[0-9]{13}|9[1-8][0-9]{14}|99[0-9]{14}|1[0-9]{16}|[2-8][0-9]{16}|9[0-9]{16}|1[0-9]{17}|[2-8][0-9]{17}|9[0-9]{17}|1[0-9]{18}|[2-8][0-9]{18}|9[0-9]{18}|10[0-9]{18}|1[1-7][0-9]{18}|180[0-9]{17}|18[1-3][0-9]{17}|1840[0-9]{16}|184[1-3][0-9]{16}|18440[0-9]{15}|1844[1-5][0-9]{15}|184460[0-9]{14}|18446[1-6][0-9]{14}|1844670[0-9]{13}|184467[1-3][0-9]{13}|18446740[0-9]{12}|1844674[1-3][0-9]{12}|1844674400[0-9]{10}|184467440[1-6][0-9]{10}|18446744070[0-9]{9}|1844674407[1-2][0-9]{9}|184467440730[0-9]{8}|18446744073[1-6][0-9]{8}|18446744073700[0-9]{6}|1844674407370[1-8][0-9]{6}|184467440737090[0-9]{5}|18446744073709[1-4][0-9]{5}|1844674407370950[0-9]{4}|184467440737095[1-4][0-9]{4}|18446744073709550[0-9]{3}|184467440737095510[0-9]{2}|18446744073709551[1-5][0-9]{2}|1844674407370955160[0-9]{1}|18446744073709551610|1844674407370955161[1-4]|18446744073709551615)$",
+              "type": "string"
+            }
+          ]
+        },
+        "scenario": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "scenario",
+        "assignments",
         "extensions"
       ],
       "type": "object"
@@ -2212,6 +2299,9 @@
     "capabilities": {
       "$ref": "#/$defs/CanonicalSet_CapabilityV2Dto"
     },
+    "cohorts": {
+      "$ref": "#/$defs/CanonicalSet_CohortV2Dto"
+    },
     "extensions": {
       "additionalProperties": {
         "$ref": "#/$defs/ExtensionValueV2Dto"
@@ -2271,6 +2361,7 @@
     "targets",
     "source_components",
     "providers",
+    "cohorts",
     "participation",
     "bindings",
     "scenarios",

@@ -1,6 +1,6 @@
 //! Exact-current schema dispatch and bounded strict DTO decoding.
 
-use crate::dto::v2::{ParticipationV2Dto, ProviderV2Dto, ScenarioV2Dto};
+use crate::dto::v2::{CohortV2Dto, ParticipationV2Dto, ProviderV2Dto, ScenarioV2Dto};
 use crate::dto::{
     BindingDto, CapabilityDto, FragmentDto, JourneyDto, PolicyDto, ProfileDto, RunnerDto,
     SurfaceDto, WaiverDto,
@@ -49,6 +49,8 @@ pub enum DocumentDto {
     Scenario(ScenarioV2Dto),
     /// Declared external provider authority (v2).
     Provider(ProviderV2Dto),
+    /// Authored compatibility-cohort authority (v2).
+    Cohort(CohortV2Dto),
 }
 
 impl DocumentDto {
@@ -66,6 +68,7 @@ impl DocumentDto {
             Self::Participation(dto) => format!("participation:{}", dto.id),
             Self::Scenario(dto) => format!("scenario:{}@{}", dto.id, dto.revision),
             Self::Provider(dto) => format!("provider:{}", dto.id),
+            Self::Cohort(dto) => format!("cohort:{}@{}", dto.id, dto.revision),
         }
         .into_boxed_str()
     }
@@ -165,6 +168,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
         (SchemaVersion::V2, SchemaKind::Participation) => true,
         (SchemaVersion::V2, SchemaKind::Scenario) => true,
         (SchemaVersion::V2, SchemaKind::Provider) => true,
+        (SchemaVersion::V2, SchemaKind::Cohort) => true,
         _ => return Err(ValidationErrorKind::WrongSchema),
     };
     let kind = schema.kind();
@@ -174,6 +178,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
             (SourceClass::Contract, SchemaKind::Participation)
                 | (SourceClass::Contract, SchemaKind::Scenario)
                 | (SourceClass::Contract, SchemaKind::Provider)
+                | (SourceClass::Contract, SchemaKind::Cohort)
         )
     } else {
         matches!(
@@ -214,6 +219,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
         SchemaKind::Participation => decode!(ParticipationV2Dto, Participation),
         SchemaKind::Scenario => decode!(ScenarioV2Dto, Scenario),
         SchemaKind::Provider => decode!(ProviderV2Dto, Provider),
+        SchemaKind::Cohort => decode!(CohortV2Dto, Cohort),
         _ => Err(ValidationErrorKind::WrongSchema),
     }
 }

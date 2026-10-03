@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "CohortAssignmentV2Dto": {
+      "additionalProperties": false,
+      "description": "One authored cohort assignment for an exact scenario occurrence.",
+      "properties": {
+        "artifact_digest": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build_id": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "occurrence": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "source_commit": {
+          "type": "string"
+        },
+        "source_content_digest": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "occurrence",
+        "repository",
+        "source_commit"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One strict v2 compatibility-cohort document.\n\nAssignments reuse the S038 exact-subject members and are keyed by unique\noccurrence. Target/provider configuration is graph-backed authority and is\nvalidated against the immutable projections; the authored source/build/\nartifact axes are independently supplied when matching candidate subjects.",
+  "properties": {
+    "assignments": {
+      "items": {
+        "$ref": "#/$defs/CohortAssignmentV2Dto"
+      },
+      "type": "array"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "scenario": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "scenario",
+    "assignments"
+  ],
+  "title": "CohortV2Dto",
+  "type": "object"
+}

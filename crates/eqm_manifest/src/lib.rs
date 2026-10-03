@@ -17,11 +17,12 @@ mod validation;
 pub use canonical::{
     CanonicalBindingV2, CanonicalComparisonContextV2, CanonicalContractV2, CanonicalEvidenceSpecV2,
     CanonicalFragment, CanonicalGraph, CanonicalGraphV2, CanonicalParticipationV2,
-    CanonicalPolicySelectionV2, CanonicalScenarioV2, CanonicalTargetConfigurationV2,
-    CanonicalizationError, binding as project_binding, binding_v2 as project_binding_v2,
-    canonicalize_binding_v2, canonicalize_comparison_context_v2, canonicalize_contract_v2,
-    canonicalize_evidence_spec_v2, canonicalize_fragment, canonicalize_graph,
-    canonicalize_graph_v2, canonicalize_participation_v2, canonicalize_policy_selection_v2,
+    CanonicalPolicySelectionV2, CanonicalProviderConfigurationV2, CanonicalScenarioV2,
+    CanonicalTargetConfigurationV2, CanonicalizationError, binding as project_binding,
+    binding_v2 as project_binding_v2, canonicalize_binding_v2, canonicalize_comparison_context_v2,
+    canonicalize_contract_v2, canonicalize_evidence_spec_v2, canonicalize_fragment,
+    canonicalize_graph, canonicalize_graph_v2, canonicalize_participation_v2,
+    canonicalize_policy_selection_v2, canonicalize_provider_configuration_v2,
     canonicalize_scenario_v2, canonicalize_target_configuration_v2,
     capability as project_capability, comparison_context_v2 as project_comparison_context_v2,
     contract_v2 as project_contract_v2, evidence_spec_v2 as project_evidence_spec_v2,
@@ -34,9 +35,9 @@ pub use canonical::{
 };
 pub use config::{ConfigError, WorkspaceConfig, select_workspace_config};
 pub use conversion::{
-    ContractEntity, ConversionError, convert_binding, convert_binding_with_roots, convert_contract,
-    convert_participation, convert_policy, convert_profile, convert_provider, convert_runner,
-    convert_scenario, convert_waiver,
+    ContractEntity, ConversionError, convert_binding, convert_binding_with_roots, convert_cohort,
+    convert_contract, convert_participation, convert_policy, convert_profile, convert_provider,
+    convert_runner, convert_scenario, convert_waiver,
 };
 pub use conversion::{WaiverTemporalStatus, classify_waiver};
 pub use discovery::{DiscoveredSource, DiscoveryError, SourceClass, discover_sources};

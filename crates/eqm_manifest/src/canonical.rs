@@ -20,7 +20,8 @@ pub use evidence_spec_v2::{
     CanonicalEvidenceSpecV2, canonicalize_evidence_spec_v2, evidence_spec_v2,
 };
 pub use graph_v2::{
-    CanonicalGraphV2, canonicalize_graph_v2, graph_v2, semantic_graph_v2_schema_uri,
+    CanonicalGraphV2, CanonicalProviderConfigurationV2, canonicalize_graph_v2,
+    canonicalize_provider_configuration_v2, graph_v2, semantic_graph_v2_schema_uri,
 };
 pub use participation_v2::{
     CanonicalParticipationV2, canonicalize_participation_v2, participation_v2,

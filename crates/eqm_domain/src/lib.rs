@@ -40,6 +40,7 @@
 
 #![forbid(unsafe_code)]
 
+mod cohort;
 mod diagnostic;
 mod digest;
 mod entity;
@@ -62,6 +63,7 @@ mod time;
 mod vocabulary;
 mod waiver;
 
+pub use cohort::{Cohort, CohortAssignment, CohortError};
 pub use diagnostic::{
     Diagnostic, DiagnosticBuildError, DiagnosticCode, DiagnosticDescriptor,
     DiagnosticRegistryError, Severity, SourceLocation, SourceName, SourcePosition,

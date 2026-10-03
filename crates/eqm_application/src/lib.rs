@@ -33,6 +33,7 @@ use std::fmt::{self, Display, Formatter};
 pub mod acquisition;
 pub mod authority;
 pub mod clock;
+pub mod cohort;
 pub mod comparison;
 pub mod evaluation;
 pub mod provenance;
@@ -45,6 +46,7 @@ pub use acquisition::{
 };
 pub use authority::{AuthorityError, AuthorityProvider, AuthorityRequest};
 pub use clock::{ClockError, host_evaluation_time};
+pub use cohort::{CohortError, ResolvedCohort, match_cohort_subjects, resolve_cohort};
 pub use comparison::{
     ComparisonContextError, checked_comparison_eligibility, shared_comparison_context,
 };

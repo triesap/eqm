@@ -451,3 +451,62 @@ fn prepared_session_runner_argument_mutation_moves_the_workspace_digest()
     assert_ne!(baseline.workspace_digest(), changed.workspace_digest());
     Ok(())
 }
+
+const COHORT: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json"
+id = "cohort.signup"
+revision = 1
+scenario = "signup.flow"
+
+[[assignments]]
+occurrence = "mailer"
+repository = "https://example.com/team/project"
+source_commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+source_content_digest = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+build_id = "build.mailer"
+artifact_digest = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+
+[[assignments]]
+occurrence = "phone"
+repository = "https://example.com/team/project"
+source_commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+source_content_digest = "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+build_id = "build.phone"
+artifact_digest = "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+"#;
+
+#[test]
+fn v2_cohort_document_is_discovered_and_indexed() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/scenario.signup.toml"),
+        SCENARIO,
+    )?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/contracts/provider.mailgun.toml"),
+        PROVIDER,
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/cohort.signup.toml"),
+        COHORT,
+    )?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    assert_eq!(session.finalized().graph().cohorts().len(), 1);
+    let (_, cohort) = session
+        .finalized()
+        .graph()
+        .cohorts()
+        .iter()
+        .next()
+        .ok_or("cohort missing")?;
+    assert_eq!(cohort.assignments().len(), 2);
+    Ok(())
+}

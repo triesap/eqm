@@ -7,8 +7,8 @@ use crate::dto::{
 use crate::{DocumentDto, ValidatedDocument};
 use eqm_domain::{
     Applicability, ArgumentTemplate, Artifact, ArtifactSelector, Artifacts, Binding, CalendarDate,
-    Capability, ComparisonOperator, Description, DurationMillis, EnvironmentBinding,
-    EnvironmentName, EnvironmentSource, EvidenceScopeSubject, EvidenceSelector,
+    Capability, Cohort, CohortAssignment, ComparisonOperator, Description, DurationMillis,
+    EnvironmentBinding, EnvironmentName, EnvironmentSource, EvidenceScopeSubject, EvidenceSelector,
     EvidenceSpecification, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Facet,
     Fragment, FragmentUse, HttpMethod, Journey, MembershipOperator, OwnerRef, ParticipationRule,
     ParticipationRuleId, Policy, PolicyRule, PolicySelector, PositiveCount, PositiveDays, Profile,
@@ -317,6 +317,56 @@ pub fn convert_provider(document: &ValidatedDocument) -> Result<Provider, Conver
         extensions(&dto.extensions, source)?,
     )
     .map_err(|_| ConversionError::at(source, "provider"))
+}
+
+/// Converts one strict v2 cohort DTO into a declared cohort authority.
+///
+/// The authored assignments are independent content authority; target/provider
+/// configuration is validated later against the immutable graph projections and
+/// never copied from a candidate subject manifest.
+pub fn convert_cohort(document: &ValidatedDocument) -> Result<Cohort, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Cohort(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    let assignments = dto
+        .assignments
+        .iter()
+        .map(|assignment| {
+            Ok(CohortAssignment::new(
+                parse(&assignment.occurrence, "assignments.occurrence", source)?,
+                parse(&assignment.repository, "assignments.repository", source)?,
+                parse(
+                    &assignment.source_commit,
+                    "assignments.source_commit",
+                    source,
+                )?,
+                assignment
+                    .source_content_digest
+                    .as_deref()
+                    .map(|value| parse(value, "assignments.source_content_digest", source))
+                    .transpose()?,
+                assignment
+                    .build_id
+                    .as_deref()
+                    .map(|value| build(SelectorText::new(value), "assignments.build_id", source))
+                    .transpose()?,
+                assignment
+                    .artifact_digest
+                    .as_deref()
+                    .map(|value| parse(value, "assignments.artifact_digest", source))
+                    .transpose()?,
+            ))
+        })
+        .collect::<Result<Vec<_>, ConversionError>>()?;
+    Cohort::new(
+        build(SelectorText::new(dto.id.as_str()), "id", source)?,
+        build(Revision::new(dto.revision), "revision", source)?,
+        parse(&dto.scenario, "scenario", source)?,
+        assignments,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "cohort"))
 }
 
 /// Converts one strict profile DTO into a finite symbolic profile family.
