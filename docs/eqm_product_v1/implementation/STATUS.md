@@ -1,5 +1,9 @@
 # Verification and implementation status
 
+Latest-batch revalidation: no matching returned candidate or new product delta
+is available. No acceptance change. All four DEV-022 checkpoints remain pending;
+any implementation found elsewhere must be reconciled before repeating work.
+
 Codex independently reviewed clean `1836b3512272a78b28f7548debd2a61f4ebbfd84`.
 The returned run completed all three DEV-020 checkpoints plus ledger backfill and
 correctly stopped for review. Four commits retained; S041 and allocated RF53/

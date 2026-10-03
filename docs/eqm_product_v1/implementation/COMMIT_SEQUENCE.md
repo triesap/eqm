@@ -1,5 +1,15 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## Execution revalidation — 2026-10-03
+
+The latest issued batch has no matching returned run or subsequent product delta
+available for review. No new acceptance is granted. DEV-022 remains the sole
+technical amendment: all four P03-R8/P03-R9/P03-R10/S043-R4 checkpoints remain
+pending under its settled decisions. Preserve 42 accepted numbered steps and
+all original criteria; independent P03 acceptance must precede S044. Previously
+reviewed implementation remains retained. Reconcile any implementation located
+elsewhere before duplicating it; preserve rather than overwrite that work.
+
 ## DEV-022 — Complete every owning field before P03 acceptance
 
 **Date/author:** 2026-10-03, Codex under owner delegation.
