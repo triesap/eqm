@@ -4,6 +4,7 @@ Execution revalidation, 2026-10-03: latest issued batch has no matching returned
 run available and no subsequent implementation delta in this checkout. No new
 candidate acceptance. All three DEV-017 checkpoints remain pending; preserve the
 reviewed implementation, prior acceptances and original P03/S211 gates below.
+The next run records actual startup identity externally before implementation.
 
 DEV-017 independently reviewed clean `8e5f21867bdaa7ccf32c4c2d626b2f269184380e`.
 All four issued checkpoints plus one ledger backfill were committed; Pi stopped

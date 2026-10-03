@@ -10,6 +10,11 @@ Preserve 40 prior allocated numbered-step acceptances, RF56/RF58 allocated closu
 all outstanding findings and the required independent P03 gate before S044.
 Full original MVP S211 and all original acceptance criteria remain unchanged.
 
+Before implementation, retain an external startup receipt identifying the actual
+repository, revision, dirty state and configured/observed runtime identity.
+Unavailable native handles remain explicit; they do not block eligible software.
+This execution-evidence requirement does not alter DEV-017 technical scope.
+
 ## DEV-017 — Bind consumed cohort authority and complete P03 value parity
 
 **Date/author:** 2026-10-03, Codex under owner delegation.
