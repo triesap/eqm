@@ -1791,10 +1791,12 @@
     {
       "title": "Load overlapping shared-source targets safely",
       "purpose": "Remove duplicate-root rejection only where explicit shared ownership permits it.",
-      "scope": "Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
+      "scope": "Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF47: S032-R1 uses the same checked transitive component closure for overlap and binding ownership, retaining confinement and unrelated-root rejection.",
       "files": [
         "crates/eqm_manifest/src/loader.rs",
-        "crates/eqm_manifest/tests/"
+        "crates/eqm_manifest/tests/",
+        "crates/eqm_engine/src/",
+        "crates/eqm_application/tests/"
       ],
       "tests": "Two approved outputs share a component; undeclared root collision and path escape reject.",
       "expected": "Natural KMP layouts load without weakening repository containment.",
@@ -1833,7 +1835,7 @@
       "verification_commands": [
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
-        "cargo test --all-targets --locked -p eqm_manifest",
+        "cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo xtask check",
         "git diff --check"
@@ -1846,11 +1848,14 @@
     {
       "title": "Validate artifacts against declared source ownership",
       "purpose": "Stop requiring every valid shared artifact under one output root.",
-      "scope": "Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
+      "scope": "Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF46: S033-R1 routes resolved shared ownership into production CLI structural checking and executes declared-shared versus undeclared/escaped controls.",
       "files": [
         "crates/eqm_manifest/src/conversion/",
         "crates/eqm_engine/src/structure.rs",
-        "crates/eqm_engine/tests/"
+        "crates/eqm_engine/tests/",
+        "crates/eqm_cli/src/commands/check.rs",
+        "crates/eqm_application/tests/",
+        "crates/eqm_cli/tests/"
       ],
       "tests": "Shared commonMain artifact validates for dependent outputs; unrelated component and escaped paths fail.",
       "expected": "Shared code is valid only through explicit dependency authority.",
@@ -1889,7 +1894,7 @@
       "verification_commands": [
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
-        "cargo test --all-targets --locked -p eqm_manifest -p eqm_engine",
+        "cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application -p eqm",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo xtask check",
         "git diff --check"
@@ -1958,12 +1963,14 @@
     {
       "title": "Author and resolve participation metadata",
       "purpose": "Make participation part of protected graph semantics.",
-      "scope": "Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
+      "scope": "Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF50: S035-R1 rejects duplicate requirement/target coordinates at real graph preparation and public participation evaluation, never first-ID wins.",
       "files": [
         "crates/eqm_manifest/src/dto/",
         "crates/eqm_manifest/src/conversion/",
         "crates/eqm_engine/src/resolve.rs",
-        "schemas/"
+        "schemas/",
+        "crates/eqm_domain/src/graph.rs",
+        "crates/eqm_application/tests/"
       ],
       "tests": "Round-trip participation rules; undeclared targets/profiles and weakening graph mutations are diagnosable.",
       "expected": "Participation is versioned semantic authority, not a UI-only filter.",
@@ -2003,7 +2010,7 @@
         "cargo xtask schemas generate",
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
-        "cargo test --all-targets --locked -p eqm_manifest -p eqm_engine",
+        "cargo test --all-targets --locked -p eqm_domain -p eqm_engine -p eqm_manifest -p eqm_application",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo xtask check",
         "cargo xtask schemas check",
@@ -2017,7 +2024,7 @@
     {
       "title": "Evaluate applicability per participant coordinate",
       "purpose": "Preserve target-specific applicability and unknown context.",
-      "scope": "Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
+      "scope": "Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF50: retain coordinate evaluation contribution but reject ambiguous supplied authorities through S035-R1 before accepting this step.",
       "files": [
         "crates/eqm_engine/src/applicability.rs",
         "crates/eqm_engine/tests/"
@@ -2072,11 +2079,15 @@
     {
       "title": "Model role-bearing scenario occurrences",
       "purpose": "Represent multiple actors of one shipped target.",
-      "scope": "Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
+      "scope": "Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF48: S037-R1 includes exact v2 scenario reader/schema/discovery/conversion/index/reference validation and complete graph identity, not domain-only modeling.",
       "files": [
         "crates/eqm_domain/src/entity.rs",
         "crates/eqm_domain/src/evidence_result.rs",
-        "crates/eqm_domain/tests/"
+        "crates/eqm_domain/tests/",
+        "crates/eqm_manifest/src/",
+        "crates/eqm_engine/src/",
+        "crates/eqm_application/tests/",
+        "schemas/v2/manifest/scenario.schema.json"
       ],
       "tests": "Two mobile occurrences remain distinct; duplicate occurrence IDs and missing roles reject.",
       "expected": "Multi-device journeys have unambiguous participant identity.",
@@ -2115,7 +2126,7 @@
       "verification_commands": [
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
-        "cargo test --all-targets --locked -p eqm_domain",
+        "cargo test --all-targets --locked -p eqm_domain -p eqm_engine -p eqm_manifest -p eqm_protocol -p eqm_application",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo xtask check",
         "git diff --check"
@@ -2128,11 +2139,14 @@
     {
       "title": "Model exact multi-subject manifests",
       "purpose": "Bind each actor to its own source build artifact and configuration.",
-      "scope": "Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
+      "scope": "Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF49: S038-R1 aligns symbolic id/domain/wire, rejects logical-key duplicates, validates exact occurrence/context assignments with explicit development absence, and projects a separately typed subject identity.",
       "files": [
         "crates/eqm_domain/src/evidence_result.rs",
         "crates/eqm_protocol/src/",
-        "crates/eqm_protocol/tests/"
+        "crates/eqm_protocol/tests/",
+        "crates/eqm_domain/src/subject_manifest.rs",
+        "crates/eqm_application/tests/",
+        "crates/eqm_manifest/src/canonical/"
       ],
       "tests": "Different valid mobile/desktop builds coexist; substituted artifact/build/config mismatches reject.",
       "expected": "Cross-target context does not require identical build digests.",
@@ -2171,7 +2185,7 @@
       "verification_commands": [
         "cargo fmt --all --check",
         "cargo check --workspace --all-targets --locked",
-        "cargo test --all-targets --locked -p eqm_domain -p eqm_protocol",
+        "cargo test --all-targets --locked -p eqm_domain -p eqm_protocol -p eqm_manifest -p eqm_application",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo xtask check",
         "git diff --check"
@@ -2412,7 +2426,7 @@
     {
       "title": "Verify target model schema and identity parity",
       "purpose": "Close graph-model changes before obligation routing.",
-      "scope": "Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.",
+      "scope": "Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF45-RF50: cycle exit verifies production v2 graph identity/version routing, checked transitive structural ownership, nonambiguous participation and exact scenario/subject/provider/cohort ingress with public parity.",
       "files": [
         "docs/concepts.md",
         "docs/manifests.md",
@@ -13648,10 +13662,10 @@
   "supervision": {
     "scope_owner": "Codex supervisor under owner delegation",
     "implementation_owner": "Pi implementation agent",
-    "amendment": "DEV-011",
-    "next_checkpoint": "S039",
+    "amendment": "DEV-012",
+    "next_checkpoint": "P03-R1",
     "execution_target": "S043 / EQM-P03 integration review; full MVP remains S211",
     "intermediate_checkpoint": "S143 is not a stopping boundary",
-    "continuation": "pfc through EQM-P03: S025-R2 through S038 done; every ordered eligible S039-S043; independent integration review before S044."
+    "continuation": "pfc through EQM-P03: P03-R1,S032-R1,S033-R1,S035-R1,S037-R1,S038-R1 then all ordered S039-S043; mandatory independent review before S044."
   }
 }

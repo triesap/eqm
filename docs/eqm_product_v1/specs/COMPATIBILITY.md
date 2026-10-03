@@ -73,3 +73,15 @@ criteria, v1 contracts and signed bytes. Parsed identifiers/digests are not trus
 synthetic combinations are not real cohort certification, and new target fields
 extend their canonical projection atomically. S043 is the next independent
 integration review boundary before routing; full MVP remains S211.
+
+## DEV-012 integration clarification
+
+The sole implementation COMMIT_SEQUENCE DEV-012 governs completion of already
+approved P03 forms. Complete explicit v2 graph identity includes newly modeled
+authority; v1 rejects v2-only fields rather than omitting them. Structural ownership
+uses checked declared component closure; participation conflicts reject before
+evaluation. Scenario authoring uses the frozen v2 kind; subject manifests retain
+authored symbolic id with a separate typed canonical digest and strict exact
+occurrence/context matching. Declared development absence never grants trusted
+completeness. S039–S043 retain original comparison/provider/cohort and real parity
+criteria; no product values, operational authority or acceptance gate is invented.

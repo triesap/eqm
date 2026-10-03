@@ -1,5 +1,9 @@
 # Chapter 03: Shared sources target roles and exact subjects
 
+**Current authority:** DEV-012 in the sole COMMIT_SEQUENCE; 32 allocated numbered steps accepted.
+Six integration repairs then every S039–S043; mandatory independent review before S044.
+Historical frontier paragraphs below are subordinate to the current amendment.
+
 **Current authority:** DEV-011, S025-R2 → S026-R1 → S027–S043;
 24 numbered steps accepted, independent integration review before S044.
 Historical frontier paragraphs below are superseded by the current sole plan.
@@ -9,7 +13,7 @@ Historical frontier paragraphs below are superseded by the current sole plan.
 accepted for allocated scope. S022-R2 → S025-R1 → S026–S043; independent
 integration review before S044. Historical amendment text below is subordinate
 to that current frontier. All original criteria remain.
-Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P03, containing 16 separate ordered commits, S028–S043; it is not one combined commit. All implementation steps are pending.
+Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P03, containing 16 separate ordered commits, S028–S043; it is not one combined commit. Current implementation and acceptance states are recorded in progress.json; earlier frontier statements are historical.
 
 **Definition of green:** Shared-source dependencies, participant roles and exact multi-subject records validate without forced target symmetry.
 
@@ -214,11 +218,14 @@ Load overlapping shared-source targets safely.
 Remove duplicate-root rejection only where explicit shared ownership permits it.
 
 ### 3. Exact scope of code changes
-Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF47: S032-R1 uses the same checked transitive component closure for overlap and binding ownership, retaining confinement and unrelated-root rejection.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/loader.rs`
 - `crates/eqm_manifest/tests/`
+
+- `crates/eqm_engine/src/`
+- `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
 Two approved outputs share a component; undeclared root collision and path escape reject.
@@ -227,7 +234,7 @@ Two approved outputs share a component; undeclared root collision and path escap
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest
+cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -257,12 +264,16 @@ Validate artifacts against declared source ownership.
 Stop requiring every valid shared artifact under one output root.
 
 ### 3. Exact scope of code changes
-Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF46: S033-R1 routes resolved shared ownership into production CLI structural checking and executes declared-shared versus undeclared/escaped controls.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/conversion/`
 - `crates/eqm_engine/src/structure.rs`
 - `crates/eqm_engine/tests/`
+
+- `crates/eqm_cli/src/commands/check.rs`
+- `crates/eqm_application/tests/`
+- `crates/eqm_cli/tests/`
 
 ### 5. Unit tests or integration tests required
 Shared commonMain artifact validates for dependent outputs; unrelated component and escaped paths fail.
@@ -271,7 +282,7 @@ Shared commonMain artifact validates for dependent outputs; unrelated component 
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_engine
+cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application -p eqm
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -345,13 +356,16 @@ Author and resolve participation metadata.
 Make participation part of protected graph semantics.
 
 ### 3. Exact scope of code changes
-Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF50: S035-R1 rejects duplicate requirement/target coordinates at real graph preparation and public participation evaluation, never first-ID wins.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/dto/`
 - `crates/eqm_manifest/src/conversion/`
 - `crates/eqm_engine/src/resolve.rs`
 - `schemas/`
+
+- `crates/eqm_domain/src/graph.rs`
+- `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
 Round-trip participation rules; undeclared targets/profiles and weakening graph mutations are diagnosable.
@@ -361,7 +375,7 @@ Round-trip participation rules; undeclared targets/profiles and weakening graph 
 cargo xtask schemas generate
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_engine
+cargo test --all-targets --locked -p eqm_domain -p eqm_engine -p eqm_manifest -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 cargo xtask schemas check
@@ -392,7 +406,7 @@ Evaluate applicability per participant coordinate.
 Preserve target-specific applicability and unknown context.
 
 ### 3. Exact scope of code changes
-Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF50: retain coordinate evaluation contribution but reject ambiguous supplied authorities through S035-R1 before accepting this step.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_engine/src/applicability.rs`
@@ -435,12 +449,17 @@ Model role-bearing scenario occurrences.
 Represent multiple actors of one shipped target.
 
 ### 3. Exact scope of code changes
-Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF48: S037-R1 includes exact v2 scenario reader/schema/discovery/conversion/index/reference validation and complete graph identity, not domain-only modeling.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
 - `crates/eqm_domain/src/evidence_result.rs`
 - `crates/eqm_domain/tests/`
+
+- `crates/eqm_manifest/src/`
+- `crates/eqm_engine/src/`
+- `crates/eqm_application/tests/`
+- `schemas/v2/manifest/scenario.schema.json`
 
 ### 5. Unit tests or integration tests required
 Two mobile occurrences remain distinct; duplicate occurrence IDs and missing roles reject.
@@ -449,7 +468,7 @@ Two mobile occurrences remain distinct; duplicate occurrence IDs and missing rol
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_domain
+cargo test --all-targets --locked -p eqm_domain -p eqm_engine -p eqm_manifest -p eqm_protocol -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -479,12 +498,16 @@ Model exact multi-subject manifests.
 Bind each actor to its own source build artifact and configuration.
 
 ### 3. Exact scope of code changes
-Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF49: S038-R1 aligns symbolic id/domain/wire, rejects logical-key duplicates, validates exact occurrence/context assignments with explicit development absence, and projects a separately typed subject identity.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
 - `crates/eqm_protocol/src/`
 - `crates/eqm_protocol/tests/`
+
+- `crates/eqm_domain/src/subject_manifest.rs`
+- `crates/eqm_application/tests/`
+- `crates/eqm_manifest/src/canonical/`
 
 ### 5. Unit tests or integration tests required
 Different valid mobile/desktop builds coexist; substituted artifact/build/config mismatches reject.
@@ -493,7 +516,7 @@ Different valid mobile/desktop builds coexist; substituted artifact/build/config
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_domain -p eqm_protocol
+cargo test --all-targets --locked -p eqm_domain -p eqm_protocol -p eqm_manifest -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -703,7 +726,7 @@ Verify target model schema and identity parity.
 Close graph-model changes before obligation routing.
 
 ### 3. Exact scope of code changes
-Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF45-RF50: cycle exit verifies production v2 graph identity/version routing, checked transitive structural ownership, nonambiguous participation and exact scenario/subject/provider/cohort ingress with public parity.
 
 ### 4. Files/modules likely involved
 - `docs/concepts.md`

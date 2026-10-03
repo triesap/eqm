@@ -1,54 +1,27 @@
 # Verification and implementation status
 
-DEV-011 reviewed clean source `c774fe000bdecb50dd1b8ea4b16164900bd6032b`.
-24 numbered steps S001–S024 are accepted for allocated scope; prior acceptance
-preserved. S025 typed identities/chronology and S026 registry checks are retained
-contributions. S025-R2 adds real prepared-session projection-to-admission and
-temporal-matrix evidence for RF43 (acceptance pending). S026-R1 adds explicit
-definition-history ordering with the two historical deployment-input edges and
-canonical sorted references for RF42 (acceptance pending). S027 adds a shared
-deterministic cross-domain provenance corpus with literal raw/semantic oracles,
-bound-axis mutation controls and real-loader component identity controls
-(acceptance pending). S028 adds an authored extensible target role that is
-projected into the target v2 identity only when present, leaving legacy targets
-and the v1 projection unchanged (acceptance pending). S029 adds shared
-source-component authorities and canonical target source-component/dependency
-ID sets in the target v2 identity, with domain-only registry validation
-(acceptance pending). S030 indexes source components in the workspace graph and
-resolves source-component and target dependencies deterministically, rejecting
-missing or cyclic references at graph preparation (acceptance pending). S031
-adds the additive v2 workspace reader/DTO and generated schema carrying source
-components and target role/source/dependency references through the real loader
-while v1 stays frozen (acceptance pending). S032 keeps the portable output-root
-collision check while allowing declared shared component roots, rejecting
-ambiguous component overlaps and undeclared target/root overlaps (acceptance
-pending). S033 validates binding artifacts and structural evaluation against the
-target's declared source-component ownership, admitting declared shared
-artifacts while unrelated or escaped paths stay blocking (acceptance pending).
-S034 adds the domain capability-participation rule binding an exact requirement
-to explicit targets and typed applicability, with duplicate/ambiguous authority
-rejected (acceptance pending). S035 authors, decodes, converts and resolves the
-v2 participation manifest kind and its generated schema, rejecting duplicate and
-dangling authority (acceptance pending). S036 evaluates participation
-applicability for an exact requirement/participant/profile coordinate, keeping
-true, false and unknown distinct with no pre-fanout global drop (acceptance
-pending). S037 models role-bearing scenario participant occurrences with unique
-occurrence IDs, tagged target/provider subjects and explicit directed
-dependencies, keeping repeated occurrences distinct (acceptance pending). S038
-adds exact multi-participant subject manifests and their strict v2 protocol kind,
-keeping source/build/artifact axes separate from configuration identity and
-typed absence explicit (acceptance pending). RF44 final-tree gating and authority
-context are reconciled in current planning; implementation receipts must prove
-final trees, including reports/ledger.
+DEV-012 independently reviewed clean `38c125467084f41bb0414484d62f7efc59eb28d0`.
+All14 returned commits retained. S001–S031 and S034 accepted for allocated scope:
+32 numbered steps. P01/P02 complete for allocated implementation; P03 in progress.
+S032/S033/S035/S036/S037/S038 have retained contributions and require RF45–RF50
+integration corrections; S039–S043 unstarted. Every original criterion remains.
 
-Next **every ordered S039–S043**, pfc through EQM-P03.
-Independent model/schema/identity review before S044; full MVP remains S211.
-Standard gate independently passed 531 successful test executions, domain/protocol
-doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly
-rejected from later input; no product source/tests edited by Codex. See
-[review](reports/CODEX-c774fe0.md). Whole RA02/RA13 remain open at later integration.
+Next **P03-R1 → S032-R1 → S033-R1 → S035-R1 → S037-R1 → S038-R1 → S039–S043**,
+**pfc through EQM-P03**. Eleven substantial checkpoints. Required independent
+model/schema/identity review before S044; full MVP remains S211. Current native
+continuation completed nine S030–S038 steps, fourteen checkpoints total; its
+estimated-budget stop did not establish an observed forced runtime exhaustion.
 
-No release/human release-testing milestone reached. Full verify, current audit/deny,
-Linux, extended/live product/crypto/host/packaging/signing/operational lanes remain
-unverified here. All original R/AC/RA and Q01–Q15 apply; real Q02/Q06 facts do not
-blanket-block synthetic software. No operational/publication activation authorized.
+Independent standard gate passed 609 successful test executions; domain/protocol/
+application doctests passed eight. Isolated candidate probes reproduced graph
+identity omission, transitive ownership rejection, conflicting subject-occurrence
+acceptance and conflicting participation resolution. See
+[review](reports/CODEX-38c1254.md) and sole [plan](COMMIT_SEQUENCE.md).
+No supervisor product code/tests changed. Previously accepted work is preserved.
+Whole RA02/RA13 remain open at later integration; Q01–Q15 retain their original gates.
+
+No release or human release-testing milestone is reached. Full verify, current
+supply-chain, Linux, extended/live product/crypto/host/package/signing/operational
+lanes remain unverified here. Synthetic/simulator-capable implementation remains
+eligible; Q02/Q06 actual host/cohort facts cannot be fabricated. No operational,
+publication, deployment, signing or optional-native activation is authorized.

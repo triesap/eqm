@@ -1,5 +1,9 @@
 # Chapter 02: Canonical identities and evidence provenance
 
+**Current authority:** DEV-012 in the sole COMMIT_SEQUENCE; 32 allocated numbered steps accepted.
+Six integration repairs then every S039–S043; mandatory independent review before S044.
+Historical frontier paragraphs below are subordinate to the current amendment.
+
 **Current authority:** DEV-011, S025-R2 → S026-R1 → S027–S043;
 24 numbered steps accepted, independent integration review before S044.
 Historical frontier paragraphs below are superseded by the current sole plan.

@@ -1,5 +1,210 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-012 — Finish production shared-subject integration and the P03 boundary
+
+**Date/author:** 2026-10-03, Codex under owner delegation.
+**Reviewed candidate:** `38c125467084f41bb0414484d62f7efc59eb28d0`.
+[Independent review](reports/CODEX-38c1254.md) retains all14 returned commits and
+accepts S025–S031 and S034 for allocated scope, preserving S001–S024: **32 numbered
+steps accepted**. S032/S033/S035/S036/S037/S038 remain retained contributions with
+changes required. S039–S043 are unstarted. Original acceptance, RA02/RA13 and
+Q01–Q15 remain; no release readiness or human-only testing gate is reached.
+
+Execute **P03-R1 → S032-R1 → S033-R1 → S035-R1 → S037-R1 → S038-R1 → every
+ordered S039–S043**, using **pfc through EQM-P03**, endpoint S043 inclusive.
+This is six coherent repair/integration checkpoints followed by five original
+implementation checkpoints, not a correction-only batch. Independent model/schema/
+identity review before S044 remains required; full MVP ends at S211. Do not pause
+at a green checkpoint, a report, or an estimated context budget. Use focused
+reads and available native context management. Actual user/runtime limits,
+original review gates and genuine dependent external blockers remain legitimate.
+No owner-only decision remains for this allocated range.
+
+### P03-R1 — explicit complete v2 graph identity (RF45)
+
+Commit `fix: bind new graph semantics to explicit v2 identity`.
+Production prepare currently always calls canonicalize_graph (v1), which silently
+omits role/source_components/depends_on, component authorities and participation.
+Add explicit complete v2 graph projection under **eqm:v2:semantic-graph** with its
+own typed digest/carrier; retain the v1 label, schemas and byte oracles. The root
+uses the existing graph collection names and exact v2 semantic-graph schema marker,
+plus **source_components** and **participation**. Include every currently modeled
+normative field in those collections, using approved v2 numeric/NFC/omission/JCS
+set/extension-type rules and bounds. Reuse approved component projections where
+semantically complete; do not reuse lossy v1 representation bytes or extend frozen
+S019 ContractDigest membership. Each later scenario/provider/cohort introduction
+extends the v2 graph projection/schema atomically with its own collection.
+
+The v1 projection explicitly rejects graphs containing v2-only metadata/authority;
+it never silently omits it. Retain explicit authored version/authority provenance
+through loading/preparation and choose the matching graph representation in the
+application session. V2 documents/metadata must not be implicitly projected as v1.
+A compatibility structural SHA accessor may remain, but expose/retain the chosen
+version/domain so it cannot be called a v1 identity. Preserve all genuine v1
+session/output behavior. Update actual graph schema generation/parity from owning
+types, not placeholder schemas or generic unconstrained property bags. No domain
+or engine serialization back-edge.
+
+Test actual prepared sessions: one-axis role, component roots/owners/dependencies/
+extensions, target references and participation mutations each affect v2 identity;
+formatting/set permutations preserve identity; explicit v1 projection rejects new
+metadata. Execute independent literal canonical bytes/digest and real local schema
+conformance, including large exact integers and extension type distinctions.
+Owning lanes: domain/manifest/protocol/application and their changed doctests.
+
+### S032-R1 and S033-R1 — one resolved ownership boundary (RF47/RF46)
+
+S032-R1 commit `fix: honor transitive declared source ownership`.
+The current target/root overlap check accepts only direct component IDs, while
+binding conversion computes their transitive closure. Use one deterministic
+validated closure for overlap and ownership consumers. Target depends_on does not
+implicitly grant another target's roots; only its declared component closure does.
+Keep missing/cyclic/duplicate/portable-output-root/escape/ambiguous checks blocking.
+A dependency declaration cannot authorize the non-overlapping remainder of an
+otherwise unrelated root. Test nested direct/transitive overlap positively and
+same paths without the exact closure negatively, with unrelated roots rejected.
+
+S033-R1 commit `fix: route structural checks through resolved ownership`.
+The CLI still invokes output-root-only evaluate_structure; its new roots helper
+has no production caller. Pass the checked graph's exact target/component closure
+through the production structural path, preserving the pure injected view and v1
+behavior. Do not trust arbitrary caller root lists as authority or globally widen
+confinement. Execute real CLI check (and shared application path where present)
+against a declared shared artifact plus missing/undeclared/escaped/symlink controls.
+Do not assert overall conformance passes when unrelated evidence obligations fail;
+assert exact structural diagnostic/status and exit behavior at the real boundary.
+Owning lanes: manifest/engine/application and CLI package **eqm**.
+
+### S035-R1 — reject conflicting participation at production ingress (RF50)
+
+Commit `fix: reject ambiguous participation in prepared graphs`.
+WorkspaceGraph::new uses unique_index by rule ID and bypasses
+validate_participation_rules, allowing distinct IDs to conflict on the same
+(requirement,target). evaluate_participation then chooses the first ID. Route
+production graph construction/resolution through checked coordinate uniqueness
+with a typed stable error. Complete the already allocated independent ParticipationDigest
+projection under eqm:v2:participation over id,requirement,targets,applicability,extensions,
+with literal bytes/digest controls, retaining frozen ContractDigest membership.
+The public evaluation boundary must reject an ambiguous
+supplied registry, not select a winner; it may accept a checked carrier or explicitly
+validate before matching. Keep exact profile true/false/unknown behavior, no global
+inclusion, exclusion or waiver. Add real authored/load/resolve/prepare conflicting
+true/false and identical-value different-ID negatives, authority-order permutations,
+disjoint-coordinate positives and existing unknown/profile cases. S034's standalone
+validator contribution is retained. Owning lanes: domain/engine/manifest/application.
+
+### S037-R1 — complete authored scenarios (RF48)
+
+Commit `feat: integrate authored scenario occurrences`.
+The domain Scenario exists, but no v2 scenario reader/schema/discovery/conversion/
+graph authority exists. Implement the already frozen DEV-009 scenario members:
+**id, revision, participants, dependencies, extensions**; participant **id, role,
+subject** tagged target/provider, dependency **from,to**. Existing contract_sources
+routes exact v2 scenario kind, no new source aliases/CLI flags. Index scenarios,
+reject duplicate authority/occurrence, missing roles/targets/dependency endpoints,
+and preserve repeated target/provider occurrences and canonical full-member sets.
+Provider references remain explicit unresolved/non-authorizing until S040 supplies
+provider authority; do not synthesize it or skip S040. Occurrence dependencies are
+explicit directed relations; do not invent an additional scenario DAG requirement
+absent from the governing criteria. Generate actual schema and extend complete
+v2 graph projection atomically. Correct S037's report claiming S038 owns this work.
+Test real loader/prepare, malformed roles/tags/references and repeated actors.
+Owning lanes: domain/engine/manifest/protocol/application.
+
+### S038-R1 — exact subject admission and representation parity (RF49)
+
+Commit `fix: validate exact subject assignments at the protocol boundary`.
+The DTO accepts two entries sharing occurrence with conflicting builds, while the
+domain rejects them. It has no checked conversion, scenario/context matching or
+executed substitution matrix. Domain id is SelectorText but DTO id validates SHA.
+Keep the modeled **authored symbolic id** (validated SelectorText), revision and
+entries; compute **SubjectManifestDigest separately** over canonical root
+**id,revision,entries**, excluding schema. Id is not its own digest/seal. This
+resolves the existing carrier inconsistency without inventing an authority claim.
+Each entry keeps existing occurrence/repository/source_commit/source_content_digest/
+target_configuration_digest/provider_configuration_digest/build_id/artifact_digest
+names and omitted absence. Exactly one configuration kind remains required.
+
+Implement bytes-first strict checked conversion and revalidation of mutable DTOs:
+reject exact and logical-key duplicates before domain promotion. Match one exact
+assignment for every scenario occurrence (no missing/extra/target-provider kind
+substitution) against independently supplied immutable expected subject axes.
+All supplied expected repository/commit/source/config/build/artifact axes must
+match, not a context derived from the same untrusted DTO. Only explicitly declared
+development use admits allowed absent axes; completeness-requiring use rejects
+absence, without claiming signature/source/build verification. Preserve typed
+TargetConfigurationDigest; S040 introduces the allocated provider-config carrier,
+then extends this comparison atomically. Existing structural source SHA references
+may remain until their owning source acquisition supplies verified material; never
+cast/relabel raw hashes or substitute target configuration for source content.
+
+Add canonical projection/digest with independent literal oracle, domain/DTO/schema
+parity and real strict bytes ingress negatives for duplicates/null/NFC/schema/bounds.
+Execute two occurrences with different valid builds, every-axis substitutions,
+missing/extra occurrence and wrong kind, declared-development absence and required
+completeness failure. Schema value constraints and cross-field/token checks stay
+explicit layers. Owning lanes: domain/protocol/manifest/application.
+
+### Remaining representation mechanics settled before implementation
+
+S039's comparison-context semantic root is exactly the retained four members;
+the wire root adds only its exact schema marker. Use ContractDigest, ScenarioDigest
+and ComparisonContextDigest typed domains. ScenarioDigest projects exact scenario
+id/revision/participants/dependencies/typed semantic extensions. Profiles are the
+existing selected-profile definition/value projection, not whole selected policy
+or a profile-ID-only list. comparison_rule_digest is an explicitly supplied
+structural SHA reference to approved rule authority; no new rule format/domain,
+policy-digest substitution or implicit default is invented at S039. Missing rule
+material remains missing, while synthetic explicit references permit software
+tests. Comparison identity alone establishes neither subject validity nor trust;
+keep v1 equivalence behavior and add the explicit v2 path separately.
+
+S040 provider manifest remains id,configuration_digest,owners,extensions. Its
+configuration_digest is the declared external configuration content reference;
+the separate typed ProviderConfigurationDigest projects that entire validated
+provider-definition root under eqm:v2:provider-configuration. Never hash a digest
+string as a replacement projection or equate declared content with verified
+material. Subject provider_configuration_digest compares against the typed
+projected configuration authority; source/configuration verification remains
+later acquisition/trust work. Target providers are an explicit ProviderId set,
+extending target/v2 graph projections and resolution atomically, never all providers.
+
+S041 cohort root is id,revision,scenario,assignments,extensions; scenario is the
+exact ScenarioId reference to the uniquely indexed current scenario definition.
+assignments reuse S038's exact occurrence-assignment member names/forms, canonical
+full-member sets with unique occurrence keys. Resolve against that scenario and
+its exact graph revision/context: all and only required occurrences, correct
+subject kind and independently supplied exact configuration/source/build/artifact
+assignments. Each authored cohort declares one combination; multiple approved
+combinations are separate cohort authorities, never an inferred version range.
+Full graph identity binds the referenced scenario definition and cohort together.
+Synthetic positive/negative N/N+1 combinations establish this software behavior,
+not a real product support promise. Unknown actual provider/cohort material remains
+visible/non-authorizing; it does not block these synthetic implementations.
+
+### Continue S039–S043 and reconcile evidence
+
+After the six repairs, implement every original S039–S043 in order under DEV-009's
+exact comparison-context/provider/cohort/discovery/domain allocation. S039 uses
+canonical scenario and exact selected profiles, with shared comparison identity
+separate from participant build/source/artifact identities. S040 adds explicit
+provider authority and target providers references and typed provider-config
+identity; S041 authors complete declared cohorts; S042 synthetic asymmetric
+multi-runtime fixture; S043 real reader/schema/domain/application/CLI/public-example
+parity. Each introduced field extends its component and complete v2 graph identity
+atomically. Actual Q02/Q06 operational cohort/host facts remain unverified, not a
+blanket block on synthetic or simulator-capable software.
+
+Finalize all code/tests/generated schemas/reports/progress/status/mirrors before
+final per-checkpoint standard/schema/structure/diff gates. Use exclusive unique
+attempt logs, record exact exits/source tree and preserve failed attempts. Never
+amend reviewed commits, mask command exits or invent evidence. Backfill S038 SHA
+and report correctly that the continuation completed nine steps S030–S038, fourteen
+checkpoints total. Reconcile accepted/retained counts and one frontier; historical
+checks remain historical. Codex acceptance stays independent. All original64 R/AC,
+21 RA and Q gates, dependencies and full S211 scope remain unchanged.
+
+
 ## DEV-011 — Complete reusable lifecycle and provenance integration evidence
 
 **Date/author:** 2026-10-02, Codex under owner delegation.
@@ -3126,11 +3331,14 @@ Load overlapping shared-source targets safely.
 Remove duplicate-root rejection only where explicit shared ownership permits it.
 
 ### 3. Exact scope of code changes
-Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Update loader root handling to distinguish output identity from shared source roots, preserve portable collision checks, and reject ambiguous undeclared overlaps. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF47: S032-R1 uses the same checked transitive component closure for overlap and binding ownership, retaining confinement and unrelated-root rejection.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/loader.rs`
 - `crates/eqm_manifest/tests/`
+
+- `crates/eqm_engine/src/`
+- `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
 Two approved outputs share a component; undeclared root collision and path escape reject.
@@ -3139,7 +3347,7 @@ Two approved outputs share a component; undeclared root collision and path escap
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest
+cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -3169,12 +3377,16 @@ Validate artifacts against declared source ownership.
 Stop requiring every valid shared artifact under one output root.
 
 ### 3. Exact scope of code changes
-Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Update binding conversion and structural expectations to use declared source-component ownership; keep wrong-target and undeclared paths blocking. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF46: S033-R1 routes resolved shared ownership into production CLI structural checking and executes declared-shared versus undeclared/escaped controls.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/conversion/`
 - `crates/eqm_engine/src/structure.rs`
 - `crates/eqm_engine/tests/`
+
+- `crates/eqm_cli/src/commands/check.rs`
+- `crates/eqm_application/tests/`
+- `crates/eqm_cli/tests/`
 
 ### 5. Unit tests or integration tests required
 Shared commonMain artifact validates for dependent outputs; unrelated component and escaped paths fail.
@@ -3183,7 +3395,7 @@ Shared commonMain artifact validates for dependent outputs; unrelated component 
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_engine
+cargo test --all-targets --locked -p eqm_manifest -p eqm_engine -p eqm_application -p eqm
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -3257,13 +3469,16 @@ Author and resolve participation metadata.
 Make participation part of protected graph semantics.
 
 ### 3. Exact scope of code changes
-Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add strict DTO/conversion/resolution and semantic hashing for approved participation rules; regenerate schemas together. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF50: S035-R1 rejects duplicate requirement/target coordinates at real graph preparation and public participation evaluation, never first-ID wins.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_manifest/src/dto/`
 - `crates/eqm_manifest/src/conversion/`
 - `crates/eqm_engine/src/resolve.rs`
 - `schemas/`
+
+- `crates/eqm_domain/src/graph.rs`
+- `crates/eqm_application/tests/`
 
 ### 5. Unit tests or integration tests required
 Round-trip participation rules; undeclared targets/profiles and weakening graph mutations are diagnosable.
@@ -3273,7 +3488,7 @@ Round-trip participation rules; undeclared targets/profiles and weakening graph 
 cargo xtask schemas generate
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_manifest -p eqm_engine
+cargo test --all-targets --locked -p eqm_domain -p eqm_engine -p eqm_manifest -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 cargo xtask schemas check
@@ -3304,7 +3519,7 @@ Evaluate applicability per participant coordinate.
 Preserve target-specific applicability and unknown context.
 
 ### 3. Exact scope of code changes
-Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Extend engine context so participation/applicability can be evaluated for exact requirement/participant/profile combinations; keep true/false/unknown distinct. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF50: retain coordinate evaluation contribution but reject ambiguous supplied authorities through S035-R1 before accepting this step.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_engine/src/applicability.rs`
@@ -3347,12 +3562,17 @@ Model role-bearing scenario occurrences.
 Represent multiple actors of one shipped target.
 
 ### 3. Exact scope of code changes
-Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add scenario participant occurrence IDs/roles and exact dependency mappings for end-to-end scope; do not collapse repeated devices into a set. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF48: S037-R1 includes exact v2 scenario reader/schema/discovery/conversion/index/reference validation and complete graph identity, not domain-only modeling.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/entity.rs`
 - `crates/eqm_domain/src/evidence_result.rs`
 - `crates/eqm_domain/tests/`
+
+- `crates/eqm_manifest/src/`
+- `crates/eqm_engine/src/`
+- `crates/eqm_application/tests/`
+- `schemas/v2/manifest/scenario.schema.json`
 
 ### 5. Unit tests or integration tests required
 Two mobile occurrences remain distinct; duplicate occurrence IDs and missing roles reject.
@@ -3361,7 +3581,7 @@ Two mobile occurrences remain distinct; duplicate occurrence IDs and missing rol
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_domain
+cargo test --all-targets --locked -p eqm_domain -p eqm_engine -p eqm_manifest -p eqm_protocol -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -3391,12 +3611,16 @@ Model exact multi-subject manifests.
 Bind each actor to its own source build artifact and configuration.
 
 ### 3. Exact scope of code changes
-Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Add validated subject manifests for target/provider/scenario participants with explicit required identity fields and typed absence for allowed development cases. DEV-007: exact subjects retain separate target-configuration, source snapshot/component content and build artifact identities; a target digest alone cannot satisfy missing source/build inputs. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF49: S038-R1 aligns symbolic id/domain/wire, rejects logical-key duplicates, validates exact occurrence/context assignments with explicit development absence, and projects a separately typed subject identity.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/evidence_result.rs`
 - `crates/eqm_protocol/src/`
 - `crates/eqm_protocol/tests/`
+
+- `crates/eqm_domain/src/subject_manifest.rs`
+- `crates/eqm_application/tests/`
+- `crates/eqm_manifest/src/canonical/`
 
 ### 5. Unit tests or integration tests required
 Different valid mobile/desktop builds coexist; substituted artifact/build/config mismatches reject.
@@ -3405,7 +3629,7 @@ Different valid mobile/desktop builds coexist; substituted artifact/build/config
 ```sh
 cargo fmt --all --check
 cargo check --workspace --all-targets --locked
-cargo test --all-targets --locked -p eqm_domain -p eqm_protocol
+cargo test --all-targets --locked -p eqm_domain -p eqm_protocol -p eqm_manifest -p eqm_application
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo xtask check
 git diff --check
@@ -3615,7 +3839,7 @@ Verify target model schema and identity parity.
 Close graph-model changes before obligation routing.
 
 ### 3. Exact scope of code changes
-Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria.
+Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF45-RF50: cycle exit verifies production v2 graph identity/version routing, checked transitive structural ownership, nonambiguous participation and exact scenario/subject/provider/cohort ingress with public parity.
 
 ### 4. Files/modules likely involved
 - `docs/concepts.md`

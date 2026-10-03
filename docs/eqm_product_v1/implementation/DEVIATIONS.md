@@ -198,3 +198,14 @@ second plan, renumbering, v1 narrowing, trust promotion or external waiver.
 Independent standard/doctests pass; isolated probe confirms lifecycle defect.
 Continue both corrections and all17 S027–S043 steps, then required independent
 review. Full S211 and original gates remain. See reports/CODEX-c774fe0.md.
+
+## DEV-012 — Production shared-subject integration closure
+
+Codex, 2026-10-03, reviewed clean 38c1254; all14 commits retained, 32 numbered
+steps accepted for allocated scope. RF45–RF50 require explicit complete v2 graph
+identity, production shared ownership, checked participation and authored scenario/
+exact subject ingress parity. Sole COMMIT_SEQUENCE resolves all engineering
+decisions and orders six corrections followed by S039–S043. No renumbering,
+original acceptance relaxation, frozen ContractDigest change or external waiver.
+Independent standard609/doctests8 pass; isolated probes reproduce four defects.
+Required S043 review and full S211 scope remain; no release/human-only milestone.
