@@ -1,0 +1,28 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json"
+id = "cohort.n"
+revision = 1
+scenario = "signup.flow"
+
+[[assignments]]
+occurrence = "mailer"
+repository = "https://example.com/team/project"
+source_commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+source_content_digest = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+build_id = "build.n.mailer"
+artifact_digest = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+
+[[assignments]]
+occurrence = "phone_one"
+repository = "https://example.com/team/project"
+source_commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+source_content_digest = "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+build_id = "build.n.phone"
+artifact_digest = "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+
+[[assignments]]
+occurrence = "phone_two"
+repository = "https://example.com/team/project"
+source_commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+source_content_digest = "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+build_id = "build.n.phone"
+artifact_digest = "sha256:4444444444444444444444444444444444444444444444444444444444444444"

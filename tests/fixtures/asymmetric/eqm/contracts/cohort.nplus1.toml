@@ -1,0 +1,28 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json"
+id = "cohort.nplus1"
+revision = 1
+scenario = "signup.flow"
+
+[[assignments]]
+occurrence = "mailer"
+repository = "https://example.com/team/project"
+source_commit = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+source_content_digest = "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+build_id = "build.nplus1.mailer"
+artifact_digest = "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+
+[[assignments]]
+occurrence = "phone_one"
+repository = "https://example.com/team/project"
+source_commit = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+source_content_digest = "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+build_id = "build.nplus1.phone"
+artifact_digest = "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+
+[[assignments]]
+occurrence = "phone_two"
+repository = "https://example.com/team/project"
+source_commit = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+source_content_digest = "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+build_id = "build.nplus1.phone"
+artifact_digest = "sha256:8888888888888888888888888888888888888888888888888888888888888888"

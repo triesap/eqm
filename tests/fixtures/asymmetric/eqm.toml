@@ -1,0 +1,41 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json"
+contract_sources = ["eqm/contracts/**/*.toml"]
+binding_sources = ["eqm/bindings/**/*.toml"]
+policy_sources = ["eqm/policies/**/*.toml"]
+profile_sources = ["eqm/profiles/**/*.toml"]
+runner_sources = ["eqm/runners/**/*.toml"]
+waiver_sources = ["eqm/waivers/**/*.toml"]
+
+[targets.cli]
+root = "apps/cli"
+platform = "rust"
+framework = "clap"
+role = "control_tower"
+source_components = ["shared.core"]
+owners = ["owner://team/cli"]
+
+[targets.desktop]
+root = "apps/desktop"
+platform = "kmp"
+framework = "compose"
+role = "control_tower"
+source_components = ["shared.kmp"]
+owners = ["owner://team/desktop"]
+
+[targets.mobile]
+root = "apps/mobile"
+platform = "kmp"
+framework = "compose"
+role = "edge"
+source_components = ["shared.kmp"]
+owners = ["owner://team/mobile"]
+
+[source_components."shared.core"]
+roots = ["shared/core"]
+owners = ["owner://team/shared"]
+dependencies = []
+
+[source_components."shared.kmp"]
+roots = ["shared/kmp"]
+owners = ["owner://team/shared"]
+dependencies = ["shared.core"]

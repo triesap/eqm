@@ -1,0 +1,14 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/surface.schema.json"
+id = "account.create.signup.identifier"
+revision = 1
+title = "Create account"
+journey = "account.create.signup"
+status = "active"
+owners = ["owner://team/accounts"]
+
+[[requirements]]
+id = "create"
+level = "required"
+scope = "each_target"
+statement = "An account can be created."
+facets = ["behavior"]

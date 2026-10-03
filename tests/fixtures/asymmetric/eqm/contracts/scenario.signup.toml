@@ -1,0 +1,21 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json"
+id = "signup.flow"
+revision = 1
+
+[[participants]]
+id = "mailer"
+role = "provider"
+[participants.subject]
+provider = "provider.mailgun"
+
+[[participants]]
+id = "phone_one"
+role = "edge"
+[participants.subject]
+target = "mobile"
+
+[[participants]]
+id = "phone_two"
+role = "edge"
+[participants.subject]
+target = "mobile"

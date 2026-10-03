@@ -1,0 +1,4 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/provider.schema.json"
+id = "provider.mailgun"
+configuration_digest = "sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e"
+owners = ["owner://team/providers"]
