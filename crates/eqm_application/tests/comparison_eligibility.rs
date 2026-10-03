@@ -224,6 +224,86 @@ fn graph_with_cohorts(
     )?))
 }
 
+/// Rebuilds the fixture graph with an explicit scenario set and cohorts.
+fn graph_with_scenarios(
+    fixture: &Fixture,
+    scenarios: Vec<Scenario>,
+    cohorts: Vec<Cohort>,
+) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        WorkspaceGraphInput {
+            targets: vec![target()?],
+            providers: vec![provider()?],
+            scenarios,
+            policies: vec![fixture.policy.clone()],
+            profiles: vec![fixture.profile.clone()],
+            cohorts,
+            ..WorkspaceGraphInput::default()
+        },
+    )?))
+}
+
+/// Rebuilds the fixture graph with a substituted target configuration.
+fn graph_with_target(
+    fixture: &Fixture,
+    target: Target,
+    cohorts: Vec<Cohort>,
+) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        WorkspaceGraphInput {
+            targets: vec![target],
+            providers: vec![provider()?],
+            scenarios: vec![fixture.scenario.clone()],
+            policies: vec![fixture.policy.clone()],
+            profiles: vec![fixture.profile.clone()],
+            cohorts,
+            ..WorkspaceGraphInput::default()
+        },
+    )?))
+}
+
+/// Rebuilds the fixture graph with a substituted provider configuration.
+fn graph_with_provider(
+    fixture: &Fixture,
+    provider: Provider,
+    cohorts: Vec<Cohort>,
+) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        WorkspaceGraphInput {
+            targets: vec![target()?],
+            providers: vec![provider],
+            scenarios: vec![fixture.scenario.clone()],
+            policies: vec![fixture.policy.clone()],
+            profiles: vec![fixture.profile.clone()],
+            cohorts,
+            ..WorkspaceGraphInput::default()
+        },
+    )?))
+}
+
+/// A scenario with a different ID but identical occurrence names, roles and
+/// subjects to [`scenario`].
+fn other_scenario(revision: u64) -> Result<Scenario, Box<dyn Error>> {
+    Ok(Scenario::new(
+        ScenarioId::new("other.flow")?,
+        Revision::new(revision)?,
+        vec![
+            ScenarioParticipant::new(
+                OccurrenceId::new("phone")?,
+                RoleId::new("edge")?,
+                ScenarioSubject::Target(TargetId::new("web")?),
+            ),
+            ScenarioParticipant::new(
+                OccurrenceId::new("mailer")?,
+                RoleId::new("provider")?,
+                ScenarioSubject::Provider(ProviderId::new("provider.mailgun")?),
+            ),
+        ],
+        Vec::new(),
+        Extensions::default(),
+    )?)
+}
+
 /// One exact authored combination plus the values a matching candidate needs.
 struct Combination {
     cohort: Cohort,
@@ -744,5 +824,304 @@ fn distinct_rule_references_never_collapse() -> Result<(), Box<dyn Error>> {
     let first = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule-a")?.1;
     let second = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule-b")?.1;
     assert_ne!(first, second);
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// S039-R3: the consumed resolved cohort is bound to exact graph/scenario value
+// authority before any candidate matching can produce eligibility.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn foreign_or_missing_consuming_cohort_is_rejected() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let selection = selection(
+        &fixture.policy,
+        &fixture.profile,
+        SelectedDimensionStateV2::Unknown,
+    )?;
+    let rule = Sha256Digest::hash_content(b"rule");
+    let (checked, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule")?;
+    let combination = combination(1)?;
+
+    // Resolve against a graph that owns the cohort...
+    let owning = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&owning, &combination.cohort)?;
+    let candidate = candidate(&combination, 1)?;
+
+    // ...then consume against a graph that has no cohort at all. Foreign
+    // resolved authority must never yield Eligible.
+    let bare = graph_with_cohorts(&fixture, Vec::new())?;
+    assert_eq!(
+        evaluate_checked_comparison(
+            &bare,
+            &fixture.scenario,
+            &selection,
+            rule,
+            &checked,
+            &resolved,
+            &candidate,
+        ),
+        Err(ComparisonContextError::CohortNotInGraph)
+    );
+    Ok(())
+}
+
+#[test]
+fn another_scenarios_authority_with_matching_names_is_rejected() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let selection = selection(
+        &fixture.policy,
+        &fixture.profile,
+        SelectedDimensionStateV2::Unknown,
+    )?;
+    let rule = Sha256Digest::hash_content(b"rule");
+    let (checked, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule")?;
+
+    // A cohort authored for `other.flow` whose occurrence names, roles and
+    // subjects happen to match `signup.flow`.
+    let other_cohort = Cohort::new(
+        SelectorText::new("cohort.other")?,
+        Revision::new(1)?,
+        ScenarioId::new("other.flow")?,
+        vec![assignment("phone", 1)?, assignment("mailer", 2)?],
+        Extensions::default(),
+    )?;
+    let graph = graph_with_scenarios(
+        &fixture,
+        vec![fixture.scenario.clone(), other_scenario(1)?],
+        vec![other_cohort.clone()],
+    )?;
+    let resolved = resolve_cohort(&graph, &other_cohort)?;
+    let candidate = candidate(&combination(1)?, 1)?;
+    assert_eq!(
+        evaluate_checked_comparison(
+            &graph,
+            &fixture.scenario,
+            &selection,
+            rule,
+            &checked,
+            &resolved,
+            &candidate,
+        ),
+        Err(ComparisonContextError::CohortScenario)
+    );
+    Ok(())
+}
+
+#[test]
+fn altered_same_id_revision_cohort_is_rejected() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let selection = selection(
+        &fixture.policy,
+        &fixture.profile,
+        SelectedDimensionStateV2::Unknown,
+    )?;
+    let rule = Sha256Digest::hash_content(b"rule");
+    let (checked, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule")?;
+    let combination = combination(1)?;
+    let owning = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&owning, &combination.cohort)?;
+    let candidate = candidate(&combination, 1)?;
+
+    // Same id and revision, different assignment content: not the exact
+    // graph-owned value, so the retained authority is stale.
+    let altered = Cohort::new(
+        SelectorText::new("cohort.signup.1")?,
+        Revision::new(1)?,
+        ScenarioId::new("signup.flow")?,
+        vec![assignment("phone", 8)?, assignment("mailer", 9)?],
+        Extensions::default(),
+    )?;
+    let consuming = graph_with_cohorts(&fixture, vec![altered])?;
+    assert_eq!(
+        evaluate_checked_comparison(
+            &consuming,
+            &fixture.scenario,
+            &selection,
+            rule,
+            &checked,
+            &resolved,
+            &candidate,
+        ),
+        Err(ComparisonContextError::CohortNotInGraph)
+    );
+    Ok(())
+}
+
+#[test]
+fn changed_consuming_configuration_is_rejected() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let selection = selection(
+        &fixture.policy,
+        &fixture.profile,
+        SelectedDimensionStateV2::Unknown,
+    )?;
+    let rule = Sha256Digest::hash_content(b"rule");
+    let (checked, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule")?;
+    let combination = combination(1)?;
+    let owning = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&owning, &combination.cohort)?;
+    let candidate = candidate(&combination, 1)?;
+
+    // The authored cohort claim is unchanged, but the consuming graph projects
+    // a different target configuration. Re-resolution must reject it.
+    let changed_target = Target::new(
+        TargetId::new("web")?,
+        RepoPath::new("apps/web")?,
+        PlatformId::new("web")?,
+        FrameworkId::new("other_framework")?,
+        vec![owner("owner://team/web")?],
+        Extensions::default(),
+    )?;
+    let changed_target_graph =
+        graph_with_target(&fixture, changed_target, vec![combination.cohort.clone()])?;
+    assert!(matches!(
+        evaluate_checked_comparison(
+            &changed_target_graph,
+            &fixture.scenario,
+            &selection,
+            rule,
+            &checked,
+            &resolved,
+            &candidate,
+        ),
+        Err(ComparisonContextError::Cohort(
+            eqm_application::CohortError::ConfigurationMismatch(_)
+        ))
+    ));
+
+    // The same holds for a changed provider configuration.
+    let changed_provider = Provider::new(
+        ProviderId::new("provider.mailgun")?,
+        Sha256Digest::hash_content(b"other configuration"),
+        vec![owner("owner://team/other")?],
+        Extensions::default(),
+    )?;
+    let changed_provider_graph =
+        graph_with_provider(&fixture, changed_provider, vec![combination.cohort.clone()])?;
+    assert!(matches!(
+        evaluate_checked_comparison(
+            &changed_provider_graph,
+            &fixture.scenario,
+            &selection,
+            rule,
+            &checked,
+            &resolved,
+            &candidate,
+        ),
+        Err(ComparisonContextError::Cohort(
+            eqm_application::CohortError::ConfigurationMismatch(_)
+        ))
+    ));
+    Ok(())
+}
+
+#[test]
+fn different_consuming_scenario_revision_is_rejected() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let selection = selection(
+        &fixture.policy,
+        &fixture.profile,
+        SelectedDimensionStateV2::Unknown,
+    )?;
+    let rule = Sha256Digest::hash_content(b"rule");
+    let combination = combination(1)?;
+    let owning = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&owning, &combination.cohort)?; // revision 1
+    let candidate = candidate(&combination, 1)?;
+
+    // Consume with a selected scenario revision 2 that is present in the graph.
+    let revised = scenario(2)?;
+    let consuming = graph_with_scenarios(
+        &fixture,
+        vec![revised.clone()],
+        vec![combination.cohort.clone()],
+    )?;
+    let fixture_at_revision_two = Fixture {
+        finalized: consuming.clone(),
+        scenario: revised.clone(),
+        policy: fixture.policy.clone(),
+        profile: fixture.profile.clone(),
+    };
+    let (checked, _) = checked_context(
+        &fixture_at_revision_two,
+        SelectedDimensionStateV2::Unknown,
+        b"rule",
+    )?;
+    assert_eq!(
+        evaluate_checked_comparison(
+            &consuming, &revised, &selection, rule, &checked, &resolved, &candidate,
+        ),
+        Err(ComparisonContextError::CohortScenario)
+    );
+    Ok(())
+}
+
+#[test]
+fn substituted_candidate_content_is_rejected_after_binding() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let selection = selection(
+        &fixture.policy,
+        &fixture.profile,
+        SelectedDimensionStateV2::Unknown,
+    )?;
+    let rule = Sha256Digest::hash_content(b"rule");
+    let (checked, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule")?;
+    let combination = combination(1)?;
+    let graph = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&graph, &combination.cohort)?;
+
+    // A build-axis substitution in the candidate is still rejected by the
+    // bytes-first matcher after the cohort binding succeeds.
+    let mut wire = candidate_wire(&combination, 1)?;
+    wire["entries"][0]["build_id"] = json!("build.substituted");
+    let substituted = CheckedSubjectManifestV2::from_bytes(&serde_json::to_vec(&wire)?)?;
+    assert!(matches!(
+        evaluate_checked_comparison(
+            &graph,
+            &fixture.scenario,
+            &selection,
+            rule,
+            &checked,
+            &resolved,
+            &substituted,
+        ),
+        Err(ComparisonContextError::SubjectMatch(
+            SubjectMatchError::BuildMismatch(_)
+        ))
+    ));
+    Ok(())
+}
+
+#[test]
+fn independently_prepared_equivalent_authority_passes() -> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let selection = selection(
+        &fixture.policy,
+        &fixture.profile,
+        SelectedDimensionStateV2::Unknown,
+    )?;
+    let rule = Sha256Digest::hash_content(b"rule");
+    let (checked, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule")?;
+    let combination = combination(1)?;
+
+    // Resolution and consumption use two independently constructed graphs whose
+    // cohort/scenario/configuration values are equal. Value authority, not
+    // pointer identity, is what the consuming boundary requires.
+    let owning = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&owning, &combination.cohort)?;
+    let consuming = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let candidate = candidate(&combination, 1)?;
+    let outcome = evaluate_checked_comparison(
+        &consuming,
+        &fixture.scenario,
+        &selection,
+        rule,
+        &checked,
+        &resolved,
+        &candidate,
+    )?;
+    assert_eq!(outcome.eligibility(), ComparisonEligibility::Eligible);
     Ok(())
 }

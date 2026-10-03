@@ -64,8 +64,14 @@ impl From<CanonicalizationError> for CohortError {
 }
 
 /// One cohort resolved against, and retained from, the immutable graph.
+///
+/// The exact graph-owned [`Cohort`] value is retained alongside its identity
+/// and independently derived expected axes, so a consuming boundary can require
+/// the retained value to equal the current graph entry and re-derive its axes
+/// rather than trusting occurrence-name equality or a private constructor.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedCohort {
+    cohort: Cohort,
     cohort_id: SelectorText,
     cohort_revision: Revision,
     scenario_id: ScenarioId,
@@ -75,6 +81,12 @@ pub struct ResolvedCohort {
 }
 
 impl ResolvedCohort {
+    /// Returns the exact graph-owned cohort value retained at resolution.
+    #[must_use]
+    pub const fn cohort(&self) -> &Cohort {
+        &self.cohort
+    }
+
     /// Returns the exact graph-owned cohort identity.
     #[must_use]
     pub const fn cohort_id(&self) -> &SelectorText {
@@ -224,6 +236,7 @@ pub fn resolve_cohort(
     }
     let expected = ExpectedSubjectContext::new(axes).map_err(|_| CohortError::ScenarioNotFound)?;
     Ok(ResolvedCohort {
+        cohort: cohort.clone(),
         cohort_id: cohort.id().clone(),
         cohort_revision: cohort.revision(),
         scenario_id: scenario.id().clone(),
@@ -237,7 +250,11 @@ pub fn resolve_cohort(
 ///
 /// The authored cohort axes and the graph-projected configuration are the
 /// independent expected authority; the candidate supplies only its own axes and
-/// can never seed the expectations.
+/// can never seed the expectations. This matcher takes no graph: it establishes
+/// matching against the supplied resolved authority only and never claims
+/// current-graph or scenario validation. The checked comparison consumer
+/// ([`crate::evaluate_checked_comparison`]) performs that binding before it
+/// relies on a match.
 pub fn match_cohort_subjects(
     checked: &CheckedSubjectManifestV2,
     resolved: &ResolvedCohort,

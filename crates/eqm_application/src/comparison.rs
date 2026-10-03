@@ -10,11 +10,19 @@
 //! only after the existing bytes-first subject matching against independently
 //! resolved authority succeeds.
 //!
+//! S039-R3 binds the consumed resolved cohort to that same authority: the
+//! carrier's exact retained value must equal the consuming graph's exact
+//! ID/revision entry, name the selected scenario, and independently re-resolve
+//! against the consuming graph to the same expected axes. Value equality, not
+//! pointer identity, is authoritative, so independently prepared equivalent
+//! copies may pass while foreign, wrong-scenario, altered or re-configured
+//! authority is rejected with a typed cause before eligibility.
+//!
 //! The resulting [`ComparisonContextDigest`] is a shared comparison identity
 //! only; exact subject identity and any evaluator/trust conclusion remain
 //! separate.
 
-use crate::cohort::ResolvedCohort;
+use crate::cohort::{CohortError, ResolvedCohort, resolve_cohort};
 use eqm_domain::{
     ComparisonContextDigest, ComparisonContextInputV2, FinalizedWorkspaceGraph,
     PolicySelectionInputV2, Scenario, Sha256Digest, SubjectManifest, SubjectManifestDigest,
@@ -46,6 +54,17 @@ pub enum ComparisonContextError {
     ContextNotBound,
     /// The matched candidate coverage differs from the exact scenario coverage.
     ScenarioCoverage,
+    /// The retained resolved cohort belongs to a different scenario than the
+    /// selected exact scenario.
+    CohortScenario,
+    /// The retained cohort value is absent from, or altered relative to, the
+    /// consuming immutable graph's exact ID/revision entry.
+    CohortNotInGraph,
+    /// Re-resolving the retained cohort against the consuming graph failed.
+    Cohort(CohortError),
+    /// The independently re-derived expected axes differ from the carrier's
+    /// axes, so the retained authority is not current for this graph.
+    CohortRevalidation,
     /// The checked candidate subject manifest failed independent matching.
     SubjectMatch(SubjectMatchError),
 }
@@ -60,6 +79,7 @@ impl Error for ComparisonContextError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::SubjectMatch(error) => Some(error),
+            Self::Cohort(error) => Some(error),
             _ => None,
         }
     }
@@ -150,11 +170,14 @@ impl CheckedComparisonOutcome {
 /// Evaluates checked comparison eligibility at the real application boundary.
 ///
 /// The checked wire context must equal the graph-derived expected context. The
-/// candidate bytes are matched against the independently resolved expected
-/// subjects with the existing bytes-first matcher; a successful match must cover
-/// exactly the selected graph scenario's occurrences. Only after that match
-/// succeeds are the immutable participants constructed, so a public digest
-/// struct can never stand in for the matching proof.
+/// retained resolved cohort is value authority: it must equal the consuming
+/// graph's exact ID/revision entry and name the selected scenario, and
+/// re-resolving it against that graph with the owning resolver must reproduce
+/// the carrier's expected axes. Only then are the candidate bytes matched
+/// against the independently resolved expected subjects; a successful match
+/// must cover exactly the selected graph scenario's occurrences, and only after
+/// that match succeeds are the immutable participants constructed, so a public
+/// digest struct can never stand in for the matching proof.
 pub fn evaluate_checked_comparison(
     graph: &FinalizedWorkspaceGraph,
     scenario: &Scenario,
@@ -167,6 +190,28 @@ pub fn evaluate_checked_comparison(
     let expected = shared_comparison_context(graph, scenario, selection, rule_digest)?;
     if checked_context.digest() != expected {
         return Err(ComparisonContextError::ContextNotBound);
+    }
+    // The retained resolved cohort is value authority, not address identity:
+    // it must name the selected exact scenario, equal the consuming graph's
+    // exact ID/revision entry, and independently re-resolve against that graph
+    // to the same expected axes before any candidate matching occurs. This
+    // rejects foreign, wrong-scenario, altered same-ID/revision and changed
+    // configuration authority instead of trusting occurrence-name equality.
+    if resolved.scenario_id() != scenario.id()
+        || resolved.scenario_revision() != scenario.revision()
+    {
+        return Err(ComparisonContextError::CohortScenario);
+    }
+    let retained_key = (resolved.cohort_id().clone(), resolved.cohort_revision());
+    if graph.graph().cohorts().get(&retained_key) != Some(resolved.cohort()) {
+        return Err(ComparisonContextError::CohortNotInGraph);
+    }
+    if resolve_cohort(graph, resolved.cohort())
+        .map_err(ComparisonContextError::Cohort)?
+        .expected()
+        != resolved.expected()
+    {
+        return Err(ComparisonContextError::CohortRevalidation);
     }
     let scenario_occurrences: BTreeSet<eqm_domain::OccurrenceId> = scenario
         .participants()

@@ -7,8 +7,8 @@
 //! its intentional exclusions are not waivers.
 
 use eqm_application::{
-    ComparisonContextError, SessionRequest, evaluate_checked_comparison, match_cohort_subjects,
-    prepare, resolve_cohort, shared_comparison_context,
+    ComparisonContextError, PreparedSession, SessionRequest, evaluate_checked_comparison,
+    match_cohort_subjects, prepare, resolve_cohort, shared_comparison_context,
 };
 use eqm_domain::{
     ComparisonContextInputV2, DigestDomain, DimensionId, PolicySelectionInputV2, ScenarioId,
@@ -298,4 +298,158 @@ fn candidate(
     Ok(CheckedSubjectManifestV2::from_bytes(&serde_json::to_vec(
         &wire,
     )?)?)
+}
+
+/// Checked comparison inputs derived for one independently prepared session.
+struct ComparisonSetup<'a> {
+    selection: PolicySelectionInputV2<'a>,
+    rule: Sha256Digest,
+    checked: CheckedComparisonContextV2,
+    target_config: String,
+    provider_config: String,
+    scenario: &'a eqm_domain::Scenario,
+}
+
+/// Derives the checked comparison inputs for one independently prepared session.
+fn comparison_setup(session: &PreparedSession) -> Result<ComparisonSetup<'_>, Box<dyn Error>> {
+    let graph = session.finalized().graph();
+    let scenario = graph
+        .scenarios()
+        .values()
+        .find(|scenario| scenario.id().as_str() == "signup.flow")
+        .ok_or("scenario")?;
+    let policy = graph
+        .policies()
+        .values()
+        .find(|policy| policy.id().as_str() == "policy.default")
+        .ok_or("policy")?;
+    let profile = graph
+        .profiles()
+        .values()
+        .find(|profile| profile.id().as_str() == "audience.default")
+        .ok_or("profile")?;
+    let selection = PolicySelectionInputV2::new(
+        policy,
+        vec![SelectedProfileInputV2::new(
+            profile,
+            vec![(
+                DimensionId::new("locale")?,
+                SelectedDimensionStateV2::Known(SymbolicValueId::new("en")?),
+            )],
+        )?],
+    )?;
+    let rule = Sha256Digest::hash_content(b"approved.rule");
+    let contract = eqm_manifest::canonicalize_contract_v2(session.finalized())?.digest();
+    let input = ComparisonContextInputV2::new(contract, scenario, &selection, rule);
+    let mut wire = eqm_manifest::project_comparison_context_v2(&input)?;
+    wire["schema"] = json!(eqm_protocol::COMPARISON_CONTEXT_SCHEMA_V2.to_string());
+    let checked = CheckedComparisonContextV2::from_bytes(&serde_json::to_vec(&wire)?)?;
+    let mobile = graph
+        .targets()
+        .get(&TargetId::new("mobile")?)
+        .ok_or("mobile")?;
+    let provider = graph.providers().values().next().ok_or("provider")?;
+    let target_config = canonicalize_target_configuration_v2(mobile)?
+        .digest()
+        .to_string();
+    let provider_config = canonicalize_provider_configuration_v2(provider)?
+        .digest()
+        .to_string();
+    Ok(ComparisonSetup {
+        selection,
+        rule,
+        checked,
+        target_config,
+        provider_config,
+        scenario,
+    })
+}
+
+#[test]
+fn prepared_fixture_cross_session_cohort_authority_is_value_bound() -> Result<(), Box<dyn Error>> {
+    // Session A owns the exact resolved cohort used as retained authority.
+    let repository_a = fixture()?;
+    let session_a = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository_a.path(),
+    )?;
+    let cohort_a = session_a
+        .finalized()
+        .graph()
+        .cohorts()
+        .values()
+        .find(|cohort| cohort.id().as_str() == "cohort.n")
+        .ok_or("cohort.n")?;
+    let resolved_a = resolve_cohort(session_a.finalized(), cohort_a)?;
+
+    // An independently prepared but value-equal session may consume it: value
+    // authority, not pointer identity.
+    let repository_b = fixture()?;
+    let session_b = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository_b.path(),
+    )?;
+    let setup_b = comparison_setup(&session_b)?;
+    let cohort_b = session_b
+        .finalized()
+        .graph()
+        .cohorts()
+        .values()
+        .find(|cohort| cohort.id().as_str() == "cohort.n")
+        .ok_or("cohort.n")?;
+    let candidate_b = candidate(
+        setup_b.scenario,
+        cohort_b,
+        &setup_b.target_config,
+        &setup_b.provider_config,
+    )?;
+    let outcome = evaluate_checked_comparison(
+        session_b.finalized(),
+        setup_b.scenario,
+        &setup_b.selection,
+        setup_b.rule,
+        &setup_b.checked,
+        &resolved_a,
+        &candidate_b,
+    )?;
+    assert_eq!(outcome.eligibility(), ComparisonEligibility::Eligible);
+
+    // An independently valid session with altered same-ID/revision cohort
+    // content (a build-axis change) must reject the retained authority even
+    // though every occurrence name still matches.
+    let repository_c = fixture()?;
+    let cohort_path = repository_c.path().join("eqm/contracts/cohort.n.toml");
+    let text = fs::read_to_string(&cohort_path)?.replace("build.n.mailer", "build.altered.mailer");
+    fs::write(&cohort_path, text)?;
+    let session_c = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository_c.path(),
+    )?;
+    let setup_c = comparison_setup(&session_c)?;
+    let cohort_c = session_c
+        .finalized()
+        .graph()
+        .cohorts()
+        .values()
+        .find(|cohort| cohort.id().as_str() == "cohort.n")
+        .ok_or("cohort.n")?;
+    let candidate_c = candidate(
+        setup_c.scenario,
+        cohort_c,
+        &setup_c.target_config,
+        &setup_c.provider_config,
+    )?;
+    assert_eq!(
+        evaluate_checked_comparison(
+            session_c.finalized(),
+            setup_c.scenario,
+            &setup_c.selection,
+            setup_c.rule,
+            &setup_c.checked,
+            &resolved_a,
+            &candidate_c,
+        ),
+        Err(ComparisonContextError::CohortNotInGraph)
+    );
+    Ok(())
 }
