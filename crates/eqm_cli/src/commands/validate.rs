@@ -229,4 +229,51 @@ mod tests {
         assert!(!root.join("missing.toml").exists());
         Ok(())
     }
+
+    #[test]
+    fn asymmetric_fixture_is_admitted_and_cohort_failure_is_diagnosed() -> Result<(), Box<dyn Error>>
+    {
+        let repository = crate::test_support::asymmetric_repository()?;
+        let root = repository.path();
+        let ParseOutcome::Run(valid) = parse(["validate", "--format", "json", "--no-progress"])?
+        else {
+            return Err("unexpected help".into());
+        };
+        let valid = execute(valid, root)?;
+        assert_eq!(valid.exit_code, 0);
+        assert_eq!(valid.payload.json["result"]["valid"], true);
+        assert_eq!(valid.payload.json["result"]["entity_counts"]["targets"], 3);
+
+        // A mismatched authored cohort configuration is admitted as a diagnostic
+        // rather than silently substituted by the graph projection.
+        let cohort = root.join("eqm/contracts/cohort.n.toml");
+        let text = fs::read_to_string(&cohort)?;
+        let other = eqm_domain::Sha256Digest::hash_content(b"other");
+        let mutated = text
+            .lines()
+            .map(|line| {
+                if line.starts_with("provider_configuration_digest") {
+                    format!("provider_configuration_digest = \"{other}\"")
+                } else {
+                    line.to_owned()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(&cohort, mutated)?;
+
+        let ParseOutcome::Run(invalid) = parse(["validate", "--format", "json", "--no-progress"])?
+        else {
+            return Err("unexpected help".into());
+        };
+        let invalid = execute(invalid, root)?;
+        assert_eq!(invalid.exit_code, 3);
+        assert_eq!(invalid.payload.json["diagnostics"][0]["code"], "EQM-E0100");
+        assert!(
+            invalid.payload.json["diagnostics"][0]["message"]
+                .as_str()
+                .is_some_and(|message| message.contains("cohort"))
+        );
+        Ok(())
+    }
 }

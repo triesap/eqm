@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S043",
  "implementation": "in_progress",
- "local_verification": "candidate_d2c9c57_standard_693_doctests_9_passed;40_allocated_steps_accepted;S043_reached_integration_changes_required;RF55_RF56_RF57_RF58_RF59_open;not_release_ready",
+ "local_verification": "DEV015_four_checkpoints_implemented_verified_pending_codex_acceptance;RF55_RF56_RF57_RF58_RF59_corrected;independent_P03_review_required_before_S044;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1405,7 +1405,7 @@
    "report": "implementation/reports/S043.md",
    "verification": [],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
+   "implementation_status": "implemented_verified_pending_codex_acceptance",
    "supervisor_status": "changes_required_DEV015",
    "review_report": "implementation/reports/CODEX-d2c9c57.md"
   },
@@ -3413,7 +3413,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S043-R1",
+ "next_checkpoint": "independent_P03_review_before_S044",
  "supervisor_review": {
   "source_commit": "d2c9c57d2e5d3c8f448426619a49c48af45b211a",
   "report": "implementation/reports/CODEX-d2c9c57.md",
@@ -3422,7 +3422,7 @@
   "standard_check": "passed_693_test_executions",
   "doctests": "domain_manifest_protocol_engine_application_passed_9",
   "release_candidate": false,
-  "next_checkpoint": "S043-R1"
+  "next_checkpoint": "independent_P03_review_before_S044"
  },
  "execution_target": "S043 reached; independent integration review before S044; full MVP S211 remains",
  "supervisor_findings": [
@@ -4025,6 +4025,8 @@
    "owner": "S039",
    "checkpoint": "P03-R4",
    "status": "implemented_verified_pending_codex_acceptance",
+   "commit_sha": "37fed88daf1a508bf82a029e0f1c82938eb57d5e",
+   "commit_sha": "37fed88daf1a508bf82a029e0f1c82938eb57d5e",
    "summary": "Checked comparison ingress accepts domain-invalid profiles",
    "report": "implementation/reports/CODEX-d2c9c57.md",
    "closure_report": "implementation/reports/P03-R4.md"
@@ -4035,6 +4037,8 @@
    "owner": "S043",
    "checkpoint": "P03-R4",
    "status": "implemented_verified_pending_codex_acceptance",
+   "commit_sha": "37fed88daf1a508bf82a029e0f1c82938eb57d5e",
+   "commit_sha": "37fed88daf1a508bf82a029e0f1c82938eb57d5e",
    "summary": "Authored provider/cohort schema parity weakens value constraints",
    "report": "implementation/reports/CODEX-d2c9c57.md"
   }
@@ -4056,21 +4060,24 @@
    {
     "id": "S039-R2",
     "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "bbbd7c6c4817d99a6d238cf0b78aea82e63bc8a8",
     "supervisor_status": "not_accepted"
    },
    {
     "id": "S041-R1",
     "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "255d3af36e0aead58df5d8a58e86fe989c36e935",
     "supervisor_status": "not_accepted"
    },
    {
     "id": "P03-R4",
     "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "37fed88daf1a508bf82a029e0f1c82938eb57d5e",
     "supervisor_status": "not_accepted"
    },
    {
     "id": "S043-R1",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    }
   ]
@@ -4081,7 +4088,7 @@
   "implementation_delta": "none_observed",
   "returned_candidate": "not_available",
   "acceptance_changes": false,
-  "next_checkpoint": "S043-R1",
+  "next_checkpoint": "independent_P03_review_before_S044",
   "batch_endpoint": "S043-R1",
   "governing_amendment": "DEV-015"
  },

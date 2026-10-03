@@ -21,6 +21,21 @@ pub(crate) fn example_repository() -> Result<tempfile::TempDir, Box<dyn Error>> 
     Ok(repository)
 }
 
+/// Test-only materialization of the synthetic asymmetric product fixture.
+pub(crate) fn asymmetric_repository() -> Result<tempfile::TempDir, Box<dyn Error>> {
+    let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/asymmetric");
+    let repository = tempfile::tempdir()?;
+    copy_directory(&source, repository.path())?;
+    let head = repository.path().join("GIT_HEAD.fixture");
+    if head.exists() {
+        let git = repository.path().join(".git");
+        fs::create_dir_all(&git)?;
+        fs::copy(&head, git.join("HEAD"))?;
+        fs::remove_file(&head)?;
+    }
+    Ok(repository)
+}
+
 pub(crate) fn copy_directory(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
     fs::create_dir_all(destination)?;
     for entry in fs::read_dir(source)? {

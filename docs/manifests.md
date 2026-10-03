@@ -116,9 +116,11 @@ implicit v1/v2 conversion. The v2 workspace adds target `role`,
   `eqm:v2:provider-configuration` identity derived over the whole validated
   definition, and neither proves that external material was acquired or trusted;
 - `cohort`: `id`/`revision`/`scenario` plus `assignments` of the exact authored
-  source/build/artifact axes keyed by unique occurrence. Target/provider
-  configuration remains graph-backed authority; loading a cohort certifies no
-  material.
+  source/build/artifact axes keyed by unique occurrence and exactly one authored
+  `target_configuration_digest` or `provider_configuration_digest` claim. The
+  authored claim is compared to the independently projected typed graph
+  configuration and is never substituted; loading a cohort certifies no
+  material and grants no trust.
 
 The complete v2 semantic graph projects `source_components`, `providers`,
 `cohorts`, `participation` and `scenarios` alongside the existing collections;

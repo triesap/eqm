@@ -21,20 +21,23 @@ All four integrated checkpoints complete before independent review; no S044 star
 until that required gate passes. Full original MVP S211 remains. See the sole
 [plan](COMMIT_SEQUENCE.md), [review](reports/CODEX-d2c9c57.md) and progress.json.
 
-Implementation frontier update (Pi, 2026-10-03): **S039-R2 / RF55, S041-R1 /
-RF56+RF57 and P03-R4 / RF58+RF59 implemented and locally verified, pending
-independent Codex acceptance**. The pure engine rejects duplicate/missing/extra
-occurrences against the exact scenario set; the application derives the
-comparison contract from the graph, binds the checked wire context to it, and
-constructs matched participants only after bytes-first subject matching.
-Cohorts retain authored target/provider configuration claims, resolve only as
-the exact graph-owned record, compare those claims to the typed graph
-projection, and are validated before `PreparedSession` success. Comparison
-checked ingress now enforces full owning-domain profile and recursive extension
+Implementation frontier update (Pi, 2026-10-03): **all four DEV-015 checkpoints
+(S039-R2 / RF55, S041-R1 / RF56+RF57, P03-R4 / RF58+RF59, S043-R1) implemented
+and locally verified, pending independent Codex acceptance**. The pure engine
+rejects duplicate/missing/extra occurrences against the exact scenario set; the
+application derives the comparison contract from the graph, binds the checked
+wire context to it, and constructs matched participants only after bytes-first
+subject matching. Cohorts retain authored target/provider configuration claims,
+resolve only as the exact graph-owned record, compare those claims to the typed
+graph projection, and are validated before `PreparedSession` success. Comparison
+checked ingress enforces full owning-domain profile and recursive extension
 invariants, and the authored provider/cohort schemas carry exact markers,
-digest patterns and non-null optionals. Evidence: `reports/S039-R2.md`,
-`reports/S041-R1.md`, `reports/P03-R4.md`. The final checkpoint is **S043-R1**;
-S039/S041/S043 acceptance remains Codex-owned.
+digest patterns and non-null optionals. The synthetic asymmetric fixture now
+exercises the checked comparison/cohort consumer and public CLI
+admission/diagnostics. Evidence: `reports/S039-R2.md`, `reports/S041-R1.md`,
+`reports/P03-R4.md`, `reports/S043-R1.md`. Commits `bbbd7c6`, `255d3af`,
+`37fed88`, and this checkpoint. **Stop for mandatory independent P03 review
+before S044**; S039/S041/S043 acceptance remains Codex-owned.
 
 Independent candidate standard check passed693 successful test executions and
 changed doctests passed9; structure passed. Five isolated probes confirm defects,

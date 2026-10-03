@@ -6,9 +6,18 @@
 //! fixture is intentionally synthetic: it invents no real product build task and
 //! its intentional exclusions are not waivers.
 
-use eqm_application::{SessionRequest, match_cohort_subjects, prepare, resolve_cohort};
-use eqm_domain::{DigestDomain, ScenarioId, ScenarioSubject, SchemaVersion, TargetId};
+use eqm_application::{
+    ComparisonContextError, SessionRequest, evaluate_checked_comparison, match_cohort_subjects,
+    prepare, resolve_cohort, shared_comparison_context,
+};
+use eqm_domain::{
+    ComparisonContextInputV2, DigestDomain, DimensionId, PolicySelectionInputV2, ScenarioId,
+    ScenarioSubject, SchemaVersion, SelectedDimensionStateV2, SelectedProfileInputV2, Sha256Digest,
+    SymbolicValueId, TargetId,
+};
+use eqm_engine::ComparisonEligibility;
 use eqm_manifest::{canonicalize_provider_configuration_v2, canonicalize_target_configuration_v2};
+use eqm_protocol::schema_graph_v2::CheckedComparisonContextV2;
 use eqm_protocol::v2::CheckedSubjectManifestV2;
 use serde_json::json;
 use std::collections::BTreeMap;
@@ -131,6 +140,118 @@ fn asymmetric_fixture_loads_resolves_projects_and_matches_cohorts() -> Result<()
     // combinations are distinct.
     assert!(match_cohort_subjects(&candidate_n, &resolved_n1).is_err());
     assert!(match_cohort_subjects(&candidate_n1, &resolved_n).is_err());
+    Ok(())
+}
+
+#[test]
+fn asymmetric_fixture_exercises_checked_comparison_consumer() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let graph = session.finalized().graph();
+    let scenario = graph
+        .scenarios()
+        .values()
+        .find(|scenario| scenario.id().as_str() == "signup.flow")
+        .ok_or("scenario")?;
+    let policy = graph
+        .policies()
+        .values()
+        .find(|policy| policy.id().as_str() == "policy.default")
+        .ok_or("policy")?;
+    let profile = graph
+        .profiles()
+        .values()
+        .find(|profile| profile.id().as_str() == "audience.default")
+        .ok_or("profile")?;
+    let selection = PolicySelectionInputV2::new(
+        policy,
+        vec![SelectedProfileInputV2::new(
+            profile,
+            vec![(
+                DimensionId::new("locale")?,
+                SelectedDimensionStateV2::Known(SymbolicValueId::new("en")?),
+            )],
+        )?],
+    )?;
+    let rule = Sha256Digest::hash_content(b"approved.rule");
+    let contract = eqm_manifest::canonicalize_contract_v2(session.finalized())?.digest();
+    let input = ComparisonContextInputV2::new(contract, scenario, &selection, rule);
+    let mut wire = eqm_manifest::project_comparison_context_v2(&input)?;
+    wire["schema"] = json!(eqm_protocol::COMPARISON_CONTEXT_SCHEMA_V2.to_string());
+    let checked = CheckedComparisonContextV2::from_bytes(&serde_json::to_vec(&wire)?)?;
+    // The protocol reader reproduces the graph-derived comparison identity.
+    let derived = shared_comparison_context(session.finalized(), scenario, &selection, rule)?;
+    assert_eq!(checked.digest(), derived);
+
+    let mobile = graph
+        .targets()
+        .get(&TargetId::new("mobile")?)
+        .ok_or("mobile")?;
+    let provider = graph.providers().values().next().ok_or("provider")?;
+    let target_config = canonicalize_target_configuration_v2(mobile)?
+        .digest()
+        .to_string();
+    let provider_config = canonicalize_provider_configuration_v2(provider)?
+        .digest()
+        .to_string();
+
+    for cohort_id in ["cohort.n", "cohort.nplus1"] {
+        let cohort = graph
+            .cohorts()
+            .values()
+            .find(|cohort| cohort.id().as_str() == cohort_id)
+            .ok_or("cohort")?;
+        let resolved = resolve_cohort(session.finalized(), cohort)?;
+        // Retain the independently matched result; never rebuild a public
+        // digest struct in its place.
+        let candidate_subject = candidate(scenario, cohort, &target_config, &provider_config)?;
+        let matched = match_cohort_subjects(&candidate_subject, &resolved)?;
+        assert_eq!(matched.assignments().len(), 3);
+        let outcome = evaluate_checked_comparison(
+            session.finalized(),
+            scenario,
+            &selection,
+            rule,
+            &checked,
+            &resolved,
+            &candidate_subject,
+        )?;
+        assert_eq!(outcome.eligibility(), ComparisonEligibility::Eligible);
+        assert_eq!(outcome.matched().assignments().len(), 3);
+        assert_eq!(
+            outcome.subject_manifest_digest(),
+            candidate_subject.digest()
+        );
+    }
+
+    // Negative counterpart: a substituted rule context is not the graph context.
+    let other_rule = Sha256Digest::hash_content(b"other.rule");
+    let other_input = ComparisonContextInputV2::new(contract, scenario, &selection, other_rule);
+    let mut other_wire = eqm_manifest::project_comparison_context_v2(&other_input)?;
+    other_wire["schema"] = json!(eqm_protocol::COMPARISON_CONTEXT_SCHEMA_V2.to_string());
+    let other_checked = CheckedComparisonContextV2::from_bytes(&serde_json::to_vec(&other_wire)?)?;
+    let cohort_n = graph
+        .cohorts()
+        .values()
+        .find(|cohort| cohort.id().as_str() == "cohort.n")
+        .ok_or("cohort.n")?;
+    let resolved_n = resolve_cohort(session.finalized(), cohort_n)?;
+    let candidate_n = candidate(scenario, cohort_n, &target_config, &provider_config)?;
+    assert_eq!(
+        evaluate_checked_comparison(
+            session.finalized(),
+            scenario,
+            &selection,
+            rule,
+            &other_checked,
+            &resolved_n,
+            &candidate_n,
+        ),
+        Err(ComparisonContextError::ContextNotBound)
+    );
     Ok(())
 }
 
