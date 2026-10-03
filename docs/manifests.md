@@ -96,3 +96,32 @@ status but never satisfies an evidence obligation.
 
 For complete field shapes, read the committed schemas and the corresponding
 files in `examples/android-ios/`.
+
+## Version 2 authored kinds
+
+Version 2 uses the parallel namespace
+`.../schemas/v2/manifest/`; v1 documents and bytes are unchanged and there is no
+implicit v1/v2 conversion. The v2 workspace adds target `role`,
+`source_components`, `depends_on` and `providers` references plus a
+`source_components` table. New authored kinds discovered through the existing
+`contract_sources` are:
+
+- `participation`: an exact fully qualified `requirement`, explicit `targets`
+  and typed `applicability`;
+- `scenario`: exact `id`/`revision`, role-bearing `participants` with a tagged
+  target/provider `subject`, and explicit directed `dependencies` between
+  occurrence IDs;
+- `provider`: `id`, an external `configuration_digest` reference, `owners` and
+  extensions. The declared reference is distinct from the
+  `eqm:v2:provider-configuration` identity derived over the whole validated
+  definition, and neither proves that external material was acquired or trusted;
+- `cohort`: `id`/`revision`/`scenario` plus `assignments` of the exact authored
+  source/build/artifact axes keyed by unique occurrence. Target/provider
+  configuration remains graph-backed authority; loading a cohort certifies no
+  material.
+
+The complete v2 semantic graph projects `source_components`, `providers`,
+`cohorts`, `participation` and `scenarios` alongside the existing collections;
+a v1 workspace carrying v2-only authority is rejected rather than projected as
+v1. Read the committed `schemas/v2/manifest/` and `schemas/v2/protocol/`
+documents and `tests/fixtures/asymmetric/` for exact shapes.

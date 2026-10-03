@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S043",
+ "next_step": "S044",
  "implementation": "in_progress",
- "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;P03-R2_P03-R3_S039-R1_S040_S041_S042_implemented_verified_pending_review;RF45_partial_RF51_RF52_RF53_implemented;not_release_ready",
+ "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;DEV-014_batch_through_S043_implemented_verified_pending_review;RF45_RF51_RF52_RF53_implemented;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1397,11 +1397,13 @@
   },
   {
    "id": "S043",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
+   "report": "implementation/reports/S043.md",
    "verification": [],
-   "baseline_exceptions": []
+   "baseline_exceptions": [],
+   "implementation_status": "implemented_verified",
+   "supervisor_status": "pending_review"
   },
   {
    "id": "S044",
@@ -3080,7 +3082,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P03",
- "active_step": "S043",
+ "active_step": "S044_blocked_pending_independent_review",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3104,7 +3106,7 @@
    "first_step": "S028",
    "last_step": "S043",
    "status": "in_progress",
-   "completed_steps": 14,
+   "completed_steps": 15,
    "total_steps": 16,
    "accepted_steps": 11,
    "retained_implemented_steps": 12
@@ -3407,7 +3409,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S043",
+ "next_checkpoint": "S043_independent_integration_review_before_S044",
  "supervisor_review": {
   "source_commit": "667776537709f824efac48f6bf325be2c9ea2913",
   "report": "implementation/reports/CODEX-6677765.md",
@@ -3418,7 +3420,7 @@
   "release_candidate": false,
   "next_checkpoint": "P03-R2"
  },
- "execution_target": "S043 / EQM-P03 independent integration review; full MVP S211 remains",
+ "execution_target": "S043 reached; independent integration review before S044; full MVP S211 remains",
  "supervisor_findings": [
   {
    "id": "RF01",
@@ -3875,10 +3877,10 @@
    "priority": "P1",
    "owner": "S043",
    "checkpoint": "P03-R1",
-   "status": "partially_implemented_changes_required",
+   "status": "implemented_verified_pending_review",
    "summary": "V1 graph identity silently omits new normative graph metadata",
    "report": "implementation/reports/CODEX-38c1254.md",
-   "closure_report": "implementation/reports/P03-R1.md",
+   "closure_report": "implementation/reports/P03-R2.md",
    "supervisor_report": "implementation/reports/CODEX-6677765.md"
   },
   {
@@ -4026,7 +4028,7 @@
    },
    {
     "id": "S043",
-    "status": "pending",
+    "status": "implemented_verified",
     "supervisor_status": "not_accepted"
    }
   ]

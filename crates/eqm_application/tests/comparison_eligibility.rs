@@ -476,3 +476,47 @@ fn empty_provider_scenario_contract_digest_stays_explicit() -> Result<(), Box<dy
     assert_ne!(first, second);
     Ok(())
 }
+
+#[test]
+fn exact_subject_changes_stay_separate_from_context_and_target_configuration()
+-> Result<(), Box<dyn Error>> {
+    let fixture = fixture()?;
+    let (checked, digest) = checked_context(&fixture, SelectedDimensionStateV2::Unknown)?;
+    let first = CheckedSubjectManifestV2::from_bytes(&serde_json::to_vec(&subject_wire(
+        "build-a", '1', '3',
+    )?)?)?;
+    let second = CheckedSubjectManifestV2::from_bytes(&serde_json::to_vec(&subject_wire(
+        "build-n", '2', '4',
+    )?)?)?;
+
+    // Separate build/source/artifact axes move the exact subject identity.
+    assert_ne!(first.digest(), second.digest());
+    // The shared comparison identity and the target configuration are unchanged.
+    assert_eq!(checked.digest(), digest.shared);
+    let first_entries = first.record().entries.as_slice();
+    let second_entries = second.record().entries.as_slice();
+    assert_eq!(
+        first_entries[0].target_configuration_digest,
+        second_entries[0].target_configuration_digest
+    );
+    assert_eq!(
+        TargetConfigurationDigest::hash_content(b"web").to_string(),
+        first_entries[0]
+            .target_configuration_digest
+            .clone()
+            .ok_or("target configuration")?
+    );
+    // Both distinct subjects remain eligible under the one shared context.
+    for subject in [first.digest(), second.digest()] {
+        let participants = [eqm_engine::ComparisonParticipant {
+            occurrence: OccurrenceId::new("phone")?,
+            context: Some(digest.shared),
+            subject: Some(subject),
+        }];
+        assert_eq!(
+            checked_comparison_eligibility(&checked, &participants),
+            ComparisonEligibility::Eligible
+        );
+    }
+    Ok(())
+}

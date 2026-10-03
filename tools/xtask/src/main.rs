@@ -456,6 +456,7 @@ fn check_schema_parity() -> Result<()> {
     for scan_root in [
         root.join("examples/android-ios"),
         root.join("tests/fixtures/signup"),
+        root.join("tests/fixtures/asymmetric"),
     ] {
         for path in files_below(&scan_root)? {
             let Ok(contents) = fs::read_to_string(&path) else {
