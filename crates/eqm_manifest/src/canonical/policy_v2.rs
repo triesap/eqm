@@ -125,7 +125,7 @@ fn waiver_v2(value: &WaiverPolicy) -> Result<Value, CanonicalizationError> {
     Ok(projected)
 }
 
-fn policy_v2(value: &Policy) -> Result<Value, CanonicalizationError> {
+pub(super) fn policy_v2(value: &Policy) -> Result<Value, CanonicalizationError> {
     let mut projected = object([
         ("id", json!(value.id().as_str())),
         ("revision", wire_uint(value.revision().get())),
@@ -184,7 +184,7 @@ fn dimension_declaration_v2(value: &ProfileDimension) -> Result<Value, Canonical
     Ok(projected)
 }
 
-fn profile_definition_v2(value: &Profile) -> Result<Value, CanonicalizationError> {
+pub(super) fn profile_definition_v2(value: &Profile) -> Result<Value, CanonicalizationError> {
     let defaults = value
         .defaults()
         .iter()

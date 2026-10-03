@@ -3,6 +3,7 @@
 mod binding_v2;
 mod contract_v2;
 mod evidence_spec_v2;
+mod graph_v2;
 mod policy_v2;
 mod support;
 mod target_v2;
@@ -11,6 +12,9 @@ pub use binding_v2::{CanonicalBindingV2, binding_v2, canonicalize_binding_v2};
 pub use contract_v2::{CanonicalContractV2, canonicalize_contract_v2, contract_v2};
 pub use evidence_spec_v2::{
     CanonicalEvidenceSpecV2, canonicalize_evidence_spec_v2, evidence_spec_v2,
+};
+pub use graph_v2::{
+    CanonicalGraphV2, canonicalize_graph_v2, graph_v2, semantic_graph_v2_schema_uri,
 };
 pub use policy_v2::{
     CanonicalPolicySelectionV2, canonicalize_policy_selection_v2, policy_selection_v2,
@@ -74,10 +78,17 @@ impl CanonicalGraph {
 }
 
 /// Projects only a finalized graph, serializes it with JCS, and hashes it.
+///
+/// This is the v1 graph identity. It rejects a graph carrying any v2-only
+/// metadata or authority (target role/source-component/target-dependency
+/// references, source-component authorities or participation rules) instead of
+/// silently omitting it. A v2 workspace is projected by
+/// [`canonicalize_graph_v2`]; there is no implicit v2-to-v1 coercion.
 pub fn canonicalize_graph(
     finalized: &FinalizedWorkspaceGraph,
 ) -> Result<CanonicalGraph, CanonicalizationError> {
     let graph = finalized.graph();
+    reject_v2_only_graph(graph)?;
     let mut bindings: Vec<_> = graph.bindings().values().collect();
     bindings.sort_by_key(|value| (value.target(), value.unit(), value.id()));
     let root = object([
@@ -799,6 +810,23 @@ fn canonical_key(value: &Value) -> Vec<u8> {
     serde_json_canonicalizer::to_vec(value).unwrap_or_default()
 }
 
+/// Returns an error when a graph carries v2-only metadata or authority that the
+/// v1 graph projection cannot represent without silent loss.
+fn reject_v2_only_graph(graph: &eqm_domain::WorkspaceGraph) -> Result<(), CanonicalizationError> {
+    if !graph.source_components().is_empty() || !graph.participation().is_empty() {
+        return Err(CanonicalizationError::V2OnlyMetadata);
+    }
+    for target in graph.targets().values() {
+        if target.role().is_some()
+            || !target.source_components().is_empty()
+            || !target.depends_on().is_empty()
+        {
+            return Err(CanonicalizationError::V2OnlyMetadata);
+        }
+    }
+    Ok(())
+}
+
 /// Canonical projection failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CanonicalizationError {
@@ -806,6 +834,8 @@ pub enum CanonicalizationError {
     Serialization,
     /// Canonical projection exceeded 256 MiB.
     ProjectionTooLarge,
+    /// A v1 graph projection was asked to encode v2-only metadata/authority.
+    V2OnlyMetadata,
     /// A semantic set declared two members with identical canonical bytes.
     DuplicateMember,
 }

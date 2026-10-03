@@ -16,16 +16,18 @@ mod validation;
 
 pub use canonical::{
     CanonicalBindingV2, CanonicalContractV2, CanonicalEvidenceSpecV2, CanonicalFragment,
-    CanonicalGraph, CanonicalPolicySelectionV2, CanonicalTargetConfigurationV2,
+    CanonicalGraph, CanonicalGraphV2, CanonicalPolicySelectionV2, CanonicalTargetConfigurationV2,
     CanonicalizationError, binding as project_binding, binding_v2 as project_binding_v2,
     canonicalize_binding_v2, canonicalize_contract_v2, canonicalize_evidence_spec_v2,
-    canonicalize_fragment, canonicalize_graph, canonicalize_policy_selection_v2,
-    canonicalize_target_configuration_v2, capability as project_capability,
-    contract_v2 as project_contract_v2, evidence_spec_v2 as project_evidence_spec_v2,
-    fragment as project_fragment, journey as project_journey, policy as project_policy,
+    canonicalize_fragment, canonicalize_graph, canonicalize_graph_v2,
+    canonicalize_policy_selection_v2, canonicalize_target_configuration_v2,
+    capability as project_capability, contract_v2 as project_contract_v2,
+    evidence_spec_v2 as project_evidence_spec_v2, fragment as project_fragment,
+    graph_v2 as project_graph_v2, journey as project_journey, policy as project_policy,
     policy_selection_v2 as project_policy_selection_v2, profile as project_profile,
-    runner as project_runner, surface as project_surface, target as project_target,
-    target_configuration_v2 as project_target_configuration_v2, waiver as project_waiver,
+    runner as project_runner, semantic_graph_v2_schema_uri, surface as project_surface,
+    target as project_target, target_configuration_v2 as project_target_configuration_v2,
+    waiver as project_waiver,
 };
 pub use config::{ConfigError, WorkspaceConfig, select_workspace_config};
 pub use conversion::{

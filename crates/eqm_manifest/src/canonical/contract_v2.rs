@@ -64,7 +64,7 @@ fn with_description(mut value: Value, description: Option<&str>) -> Value {
     value
 }
 
-fn capability_v2(value: &Capability) -> Result<Value, CanonicalizationError> {
+pub(super) fn capability_v2(value: &Capability) -> Result<Value, CanonicalizationError> {
     Ok(with_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -88,7 +88,7 @@ fn transition_v2(value: &Transition) -> Value {
     ])
 }
 
-fn journey_v2(value: &Journey) -> Result<Value, CanonicalizationError> {
+pub(super) fn journey_v2(value: &Journey) -> Result<Value, CanonicalizationError> {
     Ok(with_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -162,7 +162,7 @@ fn fragment_use_v2(value: &FragmentUse) -> Result<Value, CanonicalizationError> 
     Ok(projected)
 }
 
-fn surface_v2(value: &Surface) -> Result<Value, CanonicalizationError> {
+pub(super) fn surface_v2(value: &Surface) -> Result<Value, CanonicalizationError> {
     Ok(with_description(
         object([
             ("id", json!(value.id().as_str())),
@@ -200,7 +200,7 @@ fn surface_v2(value: &Surface) -> Result<Value, CanonicalizationError> {
     ))
 }
 
-fn fragment_v2(value: &Fragment) -> Result<Value, CanonicalizationError> {
+pub(super) fn fragment_v2(value: &Fragment) -> Result<Value, CanonicalizationError> {
     Ok(with_description(
         object([
             ("id", json!(value.id().as_str())),

@@ -74,6 +74,73 @@ fn write_semantic_graph(root: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn write_semantic_graph_v2(root: &Path) -> Result<(), Box<dyn Error>> {
+    let arrays = [
+        "adapters",
+        "bindings",
+        "capabilities",
+        "fragments",
+        "imports",
+        "journeys",
+        "participation",
+        "policies",
+        "profiles",
+        "runners",
+        "source_components",
+        "surfaces",
+        "targets",
+        "waivers",
+    ];
+    let mut properties = serde_json::Map::new();
+    for name in arrays {
+        properties.insert(name.to_owned(), serde_json::json!({"type": "array"}));
+    }
+    properties.insert(
+        "extensions".to_owned(),
+        serde_json::json!({"type": "object"}),
+    );
+    properties.insert(
+        "schema".to_owned(),
+        serde_json::json!({
+            "const": SchemaUri::versioned(SchemaKind::SemanticGraph, SchemaVersion::V2)
+                .to_string()
+        }),
+    );
+    let required = [
+        "adapters",
+        "bindings",
+        "capabilities",
+        "extensions",
+        "fragments",
+        "imports",
+        "journeys",
+        "participation",
+        "policies",
+        "profiles",
+        "runners",
+        "schema",
+        "source_components",
+        "surfaces",
+        "targets",
+        "waivers",
+    ];
+    let value = serde_json::json!({
+        "$id": SchemaUri::versioned(SchemaKind::SemanticGraph, SchemaVersion::V2).to_string(),
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "description": "Complete canonical EQM v2 semantic graph projection.",
+        "properties": properties,
+        "required": required,
+        "title": "SemanticGraphV2",
+        "type": "object"
+    });
+    let mut bytes = serde_json::to_vec_pretty(&value)?;
+    bytes.push(b'\n');
+    fs::create_dir_all(root)?;
+    fs::write(root.join("semantic-graph.schema.json"), bytes)?;
+    Ok(())
+}
+
 fn write_v1(root: &Path) -> Result<(), Box<dyn Error>> {
     write::<ReportEnvelope<ValidateResultDto, EvidenceSubjectDto, EvidenceSubjectDto>>(
         root,
@@ -120,6 +187,7 @@ fn write_v2(root: &Path) -> Result<(), Box<dyn Error>> {
         "subject-manifest",
         &SUBJECT_MANIFEST_SCHEMA_V2.to_string(),
     )?;
+    write_semantic_graph_v2(root)?;
     Ok(())
 }
 

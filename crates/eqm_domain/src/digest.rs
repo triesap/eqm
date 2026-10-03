@@ -15,6 +15,8 @@ pub enum DigestDomain {
     Fragment,
     /// Finalized EQM v1 semantic graph identity.
     SemanticGraph,
+    /// Complete finalized EQM v2 semantic graph identity.
+    SemanticGraphV2,
     /// Exact stored raw object bytes (v2).
     RawObject,
     /// Normalized semantic evidence assertion (v2).
@@ -56,6 +58,7 @@ impl DigestDomain {
         match self {
             Self::Fragment => b"eqm:v1:fragment",
             Self::SemanticGraph => b"eqm:v1:semantic-graph",
+            Self::SemanticGraphV2 => b"eqm:v2:semantic-graph",
             Self::RawObject => b"eqm:v2:raw-object",
             Self::SemanticEvidence => b"eqm:v2:semantic-evidence",
             Self::Plan => b"eqm:v2:plan",
@@ -268,6 +271,12 @@ define_identity_digest!(
     DigestDomain::SubjectManifest
 );
 
+define_identity_digest!(
+    /// Complete finalized v2 semantic graph projection.
+    SemanticGraphV2Digest,
+    DigestDomain::SemanticGraphV2
+);
+
 fn decode_hex(byte: u8) -> Option<u8> {
     match byte {
         b'0'..=b'9' => Some(byte - b'0'),
@@ -397,6 +406,8 @@ mod tests {
             DigestDomain::PolicySelection,
             DigestDomain::Authority,
             DigestDomain::TrustConfiguration,
+            DigestDomain::SubjectManifest,
+            DigestDomain::SemanticGraphV2,
         ];
         let mut labels = BTreeSet::new();
         for domain in domains {

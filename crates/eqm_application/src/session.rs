@@ -6,10 +6,14 @@
 //! workspace or re-deriving conformance.
 
 use crate::clock::ClockError;
-use eqm_domain::{FinalizedWorkspaceGraph, RepoPath, RepoPathError, Sha256Digest, UtcInstant};
+use eqm_domain::{
+    DigestDomain, FinalizedWorkspaceGraph, RepoPath, RepoPathError, SchemaVersion, Sha256Digest,
+    UtcInstant,
+};
 use eqm_engine::{FragmentDigestMap, ResolutionError, expand_fragments, resolve_graph};
 use eqm_manifest::{
-    CanonicalizationError, LoadError, canonicalize_fragment, canonicalize_graph, load_workspace,
+    CanonicalizationError, LoadError, canonicalize_fragment, canonicalize_graph,
+    canonicalize_graph_v2, load_workspace,
 };
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -53,6 +57,7 @@ pub struct PreparedSession {
     finalized: FinalizedWorkspaceGraph,
     source_map: BTreeMap<Box<str>, RepoPath>,
     workspace_digest: Sha256Digest,
+    graph_version: SchemaVersion,
     evaluation_time: UtcInstant,
 }
 
@@ -79,6 +84,24 @@ impl PreparedSession {
     #[must_use]
     pub const fn workspace_digest(&self) -> Sha256Digest {
         self.workspace_digest
+    }
+
+    /// Returns the exact authored workspace version that selected the graph
+    /// representation. This is `V1` only for a genuine v1 projection; a v2
+    /// workspace is never silently labelled as v1.
+    #[must_use]
+    pub const fn semantic_graph_version(&self) -> SchemaVersion {
+        self.graph_version
+    }
+
+    /// Returns the domain label under which [`Self::workspace_digest`] was
+    /// produced, so an aggregate SHA cannot be mistaken for a v1 identity.
+    #[must_use]
+    pub const fn semantic_graph_domain(&self) -> DigestDomain {
+        match self.graph_version {
+            SchemaVersion::V1 => DigestDomain::SemanticGraph,
+            SchemaVersion::V2 => DigestDomain::SemanticGraphV2,
+        }
     }
 
     /// Returns the explicit evaluation instant captured for this session.
@@ -157,14 +180,26 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
         .collect::<Result<BTreeMap<_, _>, _>>()?;
     let finalized =
         expand_fragments(graph, &digests, loaded.source_map()).map_err(SessionError::Expand)?;
-    let workspace_digest = canonicalize_graph(&finalized)
-        .map_err(SessionError::Canonicalize)?
-        .digest();
+    // Choose the graph representation from the exact authored workspace
+    // version. A v2 workspace is never projected as v1 and a v1 graph carrying
+    // v2-only metadata is rejected by `canonicalize_graph` rather than lossily
+    // omitted.
+    let graph_version = loaded.authored_version();
+    let workspace_digest = match graph_version {
+        SchemaVersion::V1 => canonicalize_graph(&finalized)
+            .map_err(SessionError::Canonicalize)?
+            .digest(),
+        SchemaVersion::V2 => canonicalize_graph_v2(&finalized)
+            .map_err(SessionError::Canonicalize)?
+            .digest()
+            .as_digest(),
+    };
     Ok(PreparedSession {
         repository_root,
         finalized,
         source_map,
         workspace_digest,
+        graph_version,
         evaluation_time: request.evaluation_time(),
     })
 }

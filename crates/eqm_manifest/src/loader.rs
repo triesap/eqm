@@ -8,8 +8,8 @@ use crate::{
     decode_sources, discover_sources, load_lockfile, select_workspace_config,
 };
 use eqm_domain::{
-    AdapterLockIdentity, ImportLockIdentity, OwnerRef, RepoPath, RoleId, SourceComponent,
-    SourceComponentId, Target, TargetId, TrustLevel, WorkspaceGraphInput,
+    AdapterLockIdentity, ImportLockIdentity, OwnerRef, RepoPath, RoleId, SchemaVersion,
+    SourceComponent, SourceComponentId, Target, TargetId, TrustLevel, WorkspaceGraphInput,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -22,6 +22,7 @@ pub struct LoadedWorkspace {
     repository_root: PathBuf,
     graph_input: WorkspaceGraphInput,
     source_map: BTreeMap<Box<str>, RepoPath>,
+    version: SchemaVersion,
 }
 
 impl LoadedWorkspace {
@@ -39,6 +40,12 @@ impl LoadedWorkspace {
     #[must_use]
     pub const fn source_map(&self) -> &BTreeMap<Box<str>, RepoPath> {
         &self.source_map
+    }
+    /// Returns the exact authored workspace schema version that selected the
+    /// graph representation.
+    #[must_use]
+    pub const fn authored_version(&self) -> SchemaVersion {
+        self.version
     }
     /// Consumes the loader output into graph input for engine resolution.
     #[must_use]
@@ -359,10 +366,16 @@ pub fn load_workspace(
         );
     }
     apply_lock(&mut input, lock);
+    let version = if config.workspace_v2().is_some() {
+        SchemaVersion::V2
+    } else {
+        SchemaVersion::V1
+    };
     Ok(LoadedWorkspace {
         repository_root: config.repository_root().to_path_buf(),
         graph_input: input,
         source_map,
+        version,
     })
 }
 

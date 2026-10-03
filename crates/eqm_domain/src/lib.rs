@@ -70,7 +70,8 @@ pub use digest::{
     AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest, ContractDigest,
     DigestDomain, DigestParseError, EvaluationContextDigest, EvidenceSpecificationDigest,
     PlanDigest, PolicySelectionDigest, RawObjectDigest, RunnerDigest, SemanticEvidenceDigest,
-    Sha256Digest, SubjectManifestDigest, TargetConfigurationDigest, TrustConfigurationDigest,
+    SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest, TargetConfigurationDigest,
+    TrustConfigurationDigest,
 };
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,

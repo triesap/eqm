@@ -1,8 +1,8 @@
 # Verification and implementation status
 
-Execution revalidation, 2026-10-03: no additional product implementation changes
-are available after the preceding planning checkpoint. The eleven-checkpoint
-DEV-012 batch remains pending; no new acceptance or gate closure is recorded.
+Execution revalidation, 2026-10-03: P03-R1 is implemented and locally verified
+under DEV-012; Codex acceptance remains pending. The remaining ten DEV-012
+checkpoints (S032-R1 through S043) are still pending.
 
 DEV-012 independently reviewed clean `38c125467084f41bb0414484d62f7efc59eb28d0`.
 All14 returned commits retained. S001–S031 and S034 accepted for allocated scope:
@@ -10,17 +10,21 @@ All14 returned commits retained. S001–S031 and S034 accepted for allocated sco
 S032/S033/S035/S036/S037/S038 have retained contributions and require RF45–RF50
 integration corrections; S039–S043 unstarted. Every original criterion remains.
 
-Next **P03-R1 → S032-R1 → S033-R1 → S035-R1 → S037-R1 → S038-R1 → S039–S043**,
-**pfc through EQM-P03**. Eleven substantial checkpoints. Required independent
-model/schema/identity review before S044; full MVP remains S211. Current native
-continuation completed nine S030–S038 steps, fourteen checkpoints total; its
-estimated-budget stop did not establish an observed forced runtime exhaustion.
+P03-R1 adds the explicit complete `eqm:v2:semantic-graph` identity and
+application version routing: a genuine v1 workspace still projects under the
+frozen v1 domain, while an authored v2 workspace projects under the complete v2
+identity (role/source_components/depends_on, source_components, participation).
+The v1 projection rejects v2-only metadata instead of omitting it.
 
-Independent standard gate passed 609 successful test executions; domain/protocol/
-application doctests passed eight. Isolated candidate probes reproduced graph
-identity omission, transitive ownership rejection, conflicting subject-occurrence
-acceptance and conflicting participation resolution. See
-[review](reports/CODEX-38c1254.md) and sole [plan](COMMIT_SEQUENCE.md).
+Next **S032-R1 → S033-R1 → S035-R1 → S037-R1 → S038-R1 → S039–S043**,
+**pfc through EQM-P03**. Required independent model/schema/identity review before
+S044; full MVP remains S211. Actual user/runtime limits, original review gates and
+genuine dependent external blockers remain legitimate stops.
+
+P03-R1 verification: `cargo xtask check` passed, `cargo xtask schemas check`
+passed, changed domain/manifest/protocol/application doctests passed, structure
+validator passed and `git diff --check` is clean. See
+[report](reports/P03-R1.md) and sole [plan](COMMIT_SEQUENCE.md).
 No supervisor product code/tests changed. Previously accepted work is preserved.
 Whole RA02/RA13 remain open at later integration; Q01–Q15 retain their original gates.
 
