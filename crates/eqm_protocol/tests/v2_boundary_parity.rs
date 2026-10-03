@@ -812,6 +812,99 @@ fn authored_workspace_component_roots_match_owner_and_cardinality() -> Result<()
 }
 
 #[test]
+fn graph_capability_value_vocabularies_are_closed() -> Result<(), Box<dyn Error>> {
+    let graph = validator("schemas/v2/protocol/semantic-graph.schema.json")?;
+    let mut document = graph_document();
+    document["capabilities"] = json!([{
+        "id": "account.create",
+        "title": "Account creation",
+        "status": "active",
+        "owners": ["owner://team/accounts"],
+        "extensions": {}
+    }]);
+    assert!(graph.is_valid(&document), "valid capability positive");
+
+    for bad_status in ["Active", "inactive", "removed", ""] {
+        let mut mutated = document.clone();
+        mutated["capabilities"][0]["status"] = json!(bad_status);
+        assert!(!graph.is_valid(&mutated), "status accepted {bad_status:?}");
+    }
+    for bad_id in ["account", "Account.Create", "account..create"] {
+        let mut mutated = document.clone();
+        mutated["capabilities"][0]["id"] = json!(bad_id);
+        assert!(!graph.is_valid(&mutated), "id accepted {bad_id:?}");
+    }
+    let long_title = repeated(b'a', 161);
+    for bad_title in ["", long_title.as_str()] {
+        let mut mutated = document.clone();
+        mutated["capabilities"][0]["title"] = json!(bad_title);
+        assert!(!graph.is_valid(&mutated), "title accepted {bad_title:?}");
+    }
+    let mut no_owners = document.clone();
+    no_owners["capabilities"][0]["owners"] = json!([]);
+    assert!(!graph.is_valid(&no_owners), "empty owners accepted");
+    Ok(())
+}
+
+#[test]
+fn authored_target_root_matches_portable_owner() -> Result<(), Box<dyn Error>> {
+    let workspace = validator("schemas/v2/manifest/workspace.schema.json")?;
+    assert!(workspace.is_valid(&workspace_document()), "valid positive");
+    for value in [
+        "apps/web",
+        "apps/web/nested",
+        "apps/café/view.swift",
+        "../escape",
+        "/abs",
+        "a\\b",
+        "CON",
+        "a.",
+        "a ",
+        "",
+    ] {
+        let mut document = workspace_document();
+        document["targets"]["web"]["root"] = json!(value);
+        let schema_ok = workspace.is_valid(&document);
+        let owner_ok = RepoPath::new(value).is_ok();
+        assert_eq!(
+            schema_ok, owner_ok,
+            "root={value:?} schema={schema_ok} owner={owner_ok}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn authored_scenario_collections_reject_exact_duplicates() -> Result<(), Box<dyn Error>> {
+    let scenario = validator("schemas/v2/manifest/scenario.schema.json")?;
+    assert!(scenario.is_valid(&scenario_document()), "valid positive");
+
+    let participant = scenario_document()["participants"][0].clone();
+    let mut duplicate_participants = scenario_document();
+    duplicate_participants["participants"] = json!([participant.clone(), participant]);
+    assert!(
+        !scenario.is_valid(&duplicate_participants),
+        "duplicate participant accepted"
+    );
+
+    let dependency = json!({"from": "mailer", "to": "mailer"});
+    let mut duplicate_dependencies = scenario_document();
+    duplicate_dependencies["dependencies"] = json!([dependency.clone(), dependency]);
+    assert!(
+        !scenario.is_valid(&duplicate_dependencies),
+        "duplicate dependency accepted"
+    );
+
+    let mut no_participants = scenario_document();
+    no_participants["participants"] = json!([]);
+    assert!(
+        !scenario.is_valid(&no_participants),
+        "empty participants accepted"
+    );
+    Ok(())
+}
+
+#[test]
 fn v1_schema_compatibility_control_remains_parseable() -> Result<(), Box<dyn Error>> {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     for relative in [

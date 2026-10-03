@@ -125,7 +125,8 @@
       "items": {
         "$ref": "#/$defs/ScenarioDependencyV2Dto"
       },
-      "type": "array"
+      "type": "array",
+      "uniqueItems": true
     },
     "extensions": {
       "additionalProperties": {
@@ -147,7 +148,8 @@
         "$ref": "#/$defs/ScenarioParticipantV2Dto"
       },
       "minItems": 1,
-      "type": "array"
+      "type": "array",
+      "uniqueItems": true
     },
     "revision": {
       "format": "uint64",

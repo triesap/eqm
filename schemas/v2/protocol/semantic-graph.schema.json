@@ -8,6 +8,8 @@
           "type": "string"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "protocol": {
@@ -15,7 +17,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -25,18 +27,30 @@
           ]
         },
         "resolved": {
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
           "type": "string"
         },
         "signature": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         },
         "source": {
+          "maxLength": 1024,
+          "pattern": "^https://[\\x20-\\x22\\x24-\\x2e\\x30-\\x3e\\x5b-\\x7e]+/[^\\x00-\\x20\\x7f?#@]*[^\\x00-\\x20\\x7f/?#@]$",
           "type": "string"
         },
         "trust": {
+          "enum": [
+            "untrusted_local",
+            "trusted_ci",
+            "signed_ci"
+          ],
           "type": "string"
         },
         "version": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -177,6 +191,8 @@
               "type": "string"
             },
             "value": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -237,9 +253,13 @@
               "type": "string"
             },
             "language": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "name": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -257,9 +277,19 @@
               "type": "string"
             },
             "method": {
+              "enum": [
+                "get",
+                "post",
+                "put",
+                "patch",
+                "delete",
+                "options"
+              ],
               "type": "string"
             },
             "path": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -273,6 +303,8 @@
           "additionalProperties": false,
           "properties": {
             "framework": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "kind": {
@@ -280,9 +312,13 @@
               "type": "string"
             },
             "suite": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "test_id": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -297,6 +333,8 @@
           "additionalProperties": false,
           "properties": {
             "key": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "kind": {
@@ -304,9 +342,13 @@
               "type": "string"
             },
             "record_type": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "value": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -332,21 +374,38 @@
           "type": "object"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "path": {
+          "maxLength": 1024,
+          "pattern": "^(?!.*(?:/[^/]*){128})(?!^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?!.*/(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .])(?:/(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]))*$",
           "type": "string"
         },
         "role": {
+          "enum": [
+            "entrypoint",
+            "view",
+            "route",
+            "component",
+            "service",
+            "test",
+            "configuration",
+            "asset"
+          ],
           "type": "string"
         },
         "selector": {
           "$ref": "#/$defs/ArtifactSelectorV2Dto"
         },
         "surface": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
           "type": "string"
         },
         "symbol": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -362,7 +421,7 @@
       "additionalProperties": false,
       "properties": {
         "artifacts": {
-          "$ref": "#/$defs/CanonicalSet_ArtifactV2Dto"
+          "$ref": "#/$defs/NonEmptySet_ArtifactV2Dto"
         },
         "evidence": {
           "$ref": "#/$defs/CanonicalSet_EvidenceSpecV2Dto"
@@ -380,17 +439,25 @@
           "type": "object"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "revision": {
           "anyOf": [
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -400,9 +467,13 @@
           ]
         },
         "target": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
           "type": "string"
         },
         "unit": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         }
       },
@@ -422,13 +493,6 @@
     "CanonicalSet_AdapterLockV2Dto": {
       "items": {
         "$ref": "#/$defs/AdapterLockV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
-    "CanonicalSet_ArtifactV2Dto": {
-      "items": {
-        "$ref": "#/$defs/ArtifactV2Dto"
       },
       "type": "array",
       "uniqueItems": true
@@ -475,6 +539,23 @@
       "type": "array",
       "uniqueItems": true
     },
+    "CanonicalSet_FacetText": {
+      "items": {
+        "enum": [
+          "structure",
+          "reachability",
+          "behavior",
+          "accessibility",
+          "visual",
+          "analytics",
+          "runtime_exposure",
+          "release_presence"
+        ],
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
     "CanonicalSet_FragmentUseV2Dto": {
       "items": {
         "$ref": "#/$defs/FragmentUseV2Dto"
@@ -506,13 +587,6 @@
     "CanonicalSet_ParticipationV2Dto": {
       "items": {
         "$ref": "#/$defs/ParticipationV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
-    "CanonicalSet_PolicyRuleV2Dto": {
-      "items": {
-        "$ref": "#/$defs/PolicyRuleV2Dto"
       },
       "type": "array",
       "uniqueItems": true
@@ -550,6 +624,19 @@
     "CanonicalSet_RequirementV2Dto": {
       "items": {
         "$ref": "#/$defs/RequirementV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "CanonicalSet_RunnerGuaranteeText": {
+      "items": {
+        "enum": [
+          "network_denied",
+          "read_only_source",
+          "isolated_process",
+          "resource_limited"
+        ],
+        "type": "string"
       },
       "type": "array",
       "uniqueItems": true
@@ -635,17 +722,12 @@
       "type": "array",
       "uniqueItems": true
     },
-    "CanonicalSet_string": {
-      "items": {
-        "type": "string"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
     "CapabilityV2Dto": {
       "additionalProperties": false,
       "properties": {
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "extensions": {
@@ -658,15 +740,31 @@
           "type": "object"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "status": {
+          "enum": [
+            "draft",
+            "active",
+            "deprecated",
+            "retired"
+          ],
           "type": "string"
         },
         "title": {
+          "maxLength": 160,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -832,12 +930,22 @@
       "additionalProperties": false,
       "properties": {
         "name": {
+          "maxLength": 128,
+          "pattern": "^[A-Z_][A-Z0-9_]*$",
           "type": "string"
         },
         "source": {
+          "enum": [
+            "literal",
+            "trusted_path",
+            "canonical_locale",
+            "utc_timezone"
+          ],
           "type": "string"
         },
         "value": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -857,9 +965,13 @@
               "type": "string"
             },
             "language": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "name": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -877,9 +989,19 @@
               "type": "string"
             },
             "method": {
+              "enum": [
+                "get",
+                "post",
+                "put",
+                "patch",
+                "delete",
+                "options"
+              ],
               "type": "string"
             },
             "path": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -893,6 +1015,8 @@
           "additionalProperties": false,
           "properties": {
             "framework": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "kind": {
@@ -900,9 +1024,13 @@
               "type": "string"
             },
             "suite": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "test_id": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -917,6 +1045,8 @@
           "additionalProperties": false,
           "properties": {
             "key": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "kind": {
@@ -924,9 +1054,13 @@
               "type": "string"
             },
             "record_type": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "value": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -945,9 +1079,13 @@
               "type": "string"
             },
             "snapshot_id": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             },
             "variant": {
+              "maxLength": 512,
+              "minLength": 1,
               "type": "string"
             }
           },
@@ -972,7 +1110,7 @@
           "type": "object"
         },
         "facets": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_FacetText"
         },
         "freshness": {
           "anyOf": [
@@ -989,9 +1127,19 @@
           ]
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "kind": {
+          "enum": [
+            "structural_check",
+            "static_inventory",
+            "test",
+            "snapshot",
+            "manual_review",
+            "runtime_snapshot",
+            "release_record"
+          ],
           "type": "string"
         },
         "minimum_count": {
@@ -999,7 +1147,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1009,9 +1157,11 @@
           ]
         },
         "requirements": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_RequirementText"
         },
         "runner": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "selector": {
@@ -1043,12 +1193,20 @@
           "type": "object"
         },
         "route": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         },
         "state": {
+          "enum": [
+            "required",
+            "prohibited"
+          ],
           "type": "string"
         },
         "surface": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
           "type": "string"
         }
       },
@@ -1178,9 +1336,13 @@
           "type": "string"
         },
         "fragment": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "prefix": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         },
         "revision": {
@@ -1188,7 +1350,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1209,6 +1371,8 @@
       "additionalProperties": false,
       "properties": {
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "extensions": {
@@ -1221,13 +1385,21 @@
           "type": "object"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "requirements": {
-          "$ref": "#/$defs/CanonicalSet_RequirementV2Dto"
+          "$ref": "#/$defs/NonEmptySet_RequirementV2Dto"
         },
         "revision": {
           "anyOf": [
@@ -1244,9 +1416,17 @@
           ]
         },
         "risk_class": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
           "type": "string"
         },
         "title": {
+          "maxLength": 160,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -1269,9 +1449,12 @@
           "type": "string"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "resolved": {
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
           "type": "string"
         },
         "revision": {
@@ -1279,7 +1462,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1289,12 +1472,21 @@
           ]
         },
         "signature": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         },
         "source": {
+          "maxLength": 1024,
+          "pattern": "^https://[\\x20-\\x22\\x24-\\x2e\\x30-\\x3e\\x5b-\\x7e]+/[^\\x00-\\x20\\x7f?#@]*[^\\x00-\\x20\\x7f/?#@]$",
           "type": "string"
         },
         "trust": {
+          "enum": [
+            "untrusted_local",
+            "trusted_ci",
+            "signed_ci"
+          ],
           "type": "string"
         }
       },
@@ -1312,9 +1504,13 @@
       "additionalProperties": false,
       "properties": {
         "capability": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "extensions": {
@@ -1327,17 +1523,25 @@
           "type": "object"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "revision": {
           "anyOf": [
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1347,18 +1551,34 @@
           ]
         },
         "risk_class": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
           "type": "string"
         },
         "status": {
+          "enum": [
+            "draft",
+            "active",
+            "deprecated",
+            "retired"
+          ],
           "type": "string"
         },
         "surfaces": {
           "items": {
+            "maxLength": 255,
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
             "type": "string"
           },
           "type": "array"
         },
         "title": {
+          "maxLength": 160,
+          "minLength": 1,
           "type": "string"
         },
         "transitions": {
@@ -1387,9 +1607,53 @@
       "type": "array",
       "uniqueItems": true
     },
+    "NonEmptySet_ArtifactV2Dto": {
+      "items": {
+        "$ref": "#/$defs/ArtifactV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
     "NonEmptySet_DimensionDeclarationV2Dto": {
       "items": {
         "$ref": "#/$defs/DimensionDeclarationV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_FacetText": {
+      "items": {
+        "enum": [
+          "structure",
+          "reachability",
+          "behavior",
+          "accessibility",
+          "visual",
+          "analytics",
+          "runtime_exposure",
+          "release_presence"
+        ],
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_PolicyRuleV2Dto": {
+      "items": {
+        "$ref": "#/$defs/PolicyRuleV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_ProfileIdText": {
+      "items": {
+        "maxLength": 255,
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
+        "type": "string"
       },
       "minItems": 1,
       "type": "array",
@@ -1399,6 +1663,51 @@
       "items": {
         "maxLength": 1024,
         "pattern": "^(?!.*(?:/[^/]*){128})(?!^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?!.*/(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .])(?:/(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]))*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_RequirementScopeText": {
+      "items": {
+        "enum": [
+          "each_target",
+          "shared_provider",
+          "end_to_end"
+        ],
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_RequirementText": {
+      "items": {
+        "maxLength": 320,
+        "pattern": "^(?=[^#]{2,255}#)[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+#[a-z][a-z0-9_]{0,62}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_RequirementV2Dto": {
+      "items": {
+        "$ref": "#/$defs/RequirementV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_RiskClassText": {
+      "items": {
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "critical"
+        ],
         "type": "string"
       },
       "minItems": 1,
@@ -1426,6 +1735,16 @@
       "items": {
         "maxLength": 255,
         "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_UnitIdText": {
+      "items": {
+        "maxLength": 255,
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
         "type": "string"
       },
       "minItems": 1,
@@ -1474,7 +1793,7 @@
       "additionalProperties": false,
       "properties": {
         "facets": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_FacetText"
         },
         "maximum_age": {
           "anyOf": [
@@ -1495,7 +1814,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1505,9 +1824,19 @@
           ]
         },
         "minimum_level": {
+          "enum": [
+            "optional",
+            "recommended",
+            "required"
+          ],
           "type": "string"
         },
         "minimum_trust": {
+          "enum": [
+            "untrusted_local",
+            "trusted_ci",
+            "signed_ci"
+          ],
           "type": "string"
         },
         "selector": {
@@ -1528,19 +1857,19 @@
       "additionalProperties": false,
       "properties": {
         "facets": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_FacetText"
         },
         "requirements": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_RequirementText"
         },
         "risk_classes": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_RiskClassText"
         },
         "scopes": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_RequirementScopeText"
         },
         "units": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_UnitIdText"
         }
       },
       "type": "object"
@@ -1549,6 +1878,8 @@
       "additionalProperties": false,
       "properties": {
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "extensions": {
@@ -1561,23 +1892,31 @@
           "type": "object"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "profiles": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_ProfileIdText"
         },
         "required_targets": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_TargetIdText"
         },
         "revision": {
           "anyOf": [
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1587,9 +1926,11 @@
           ]
         },
         "rules": {
-          "$ref": "#/$defs/CanonicalSet_PolicyRuleV2Dto"
+          "$ref": "#/$defs/NonEmptySet_PolicyRuleV2Dto"
         },
         "title": {
+          "maxLength": 160,
+          "minLength": 1,
           "type": "string"
         },
         "waivers": {
@@ -1739,24 +2080,45 @@
           "type": "object"
         },
         "facets": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_FacetText"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "level": {
+          "enum": [
+            "optional",
+            "recommended",
+            "required"
+          ],
           "type": "string"
         },
         "provider": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "risk_class": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
           "type": "string"
         },
         "scope": {
+          "enum": [
+            "each_target",
+            "shared_provider",
+            "end_to_end"
+          ],
           "type": "string"
         },
         "statement": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -1781,6 +2143,8 @@
               "type": "string"
             },
             "path": {
+              "maxLength": 1024,
+              "pattern": "^(?!.*(?:/[^/]*){128})(?!^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?!.*/(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .])(?:/(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]))*$",
               "type": "string"
             }
           },
@@ -1802,6 +2166,8 @@
               "type": "string"
             },
             "resolved": {
+              "maxLength": 1024,
+              "pattern": "^https://[\\x20-\\x22\\x24-\\x2e\\x30-\\x3e\\x5b-\\x7e]+/[^\\x00-\\x20\\x7f?#@]*[^\\x00-\\x20\\x7f/?#@]$",
               "type": "string"
             }
           },
@@ -1824,6 +2190,10 @@
           "type": "array"
         },
         "backend": {
+          "enum": [
+            "local",
+            "container"
+          ],
           "type": "string"
         },
         "cwd": {
@@ -1842,9 +2212,11 @@
           "type": "object"
         },
         "guarantees": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/CanonicalSet_RunnerGuaranteeText"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "max_concurrency": {
@@ -1852,7 +2224,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1866,7 +2238,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1876,7 +2248,13 @@
           ]
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "program": {
           "$ref": "#/$defs/RunnerProgramV2Dto"
@@ -1886,7 +2264,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1903,7 +2281,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -2061,68 +2439,17 @@
       ],
       "type": "object"
     },
-    "ScopeSubjectV2Dto": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "const": "target",
-              "type": "string"
-            },
-            "target": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "target"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "const": "provider",
-              "type": "string"
-            },
-            "provider": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "provider"
-          ],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": {
-              "const": "target_set",
-              "type": "string"
-            },
-            "targets": {
-              "$ref": "#/$defs/CanonicalSet_string"
-            }
-          },
-          "required": [
-            "kind",
-            "targets"
-          ],
-          "type": "object"
-        }
-      ]
-    },
     "SecretBindingV2Dto": {
       "additionalProperties": false,
       "properties": {
         "name": {
+          "maxLength": 128,
+          "pattern": "^[A-Z_][A-Z0-9_]*$",
           "type": "string"
         },
         "provider": {
+          "maxLength": 512,
+          "pattern": "^secret://[a-z][a-z0-9_]{0,62}/[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         }
       },
@@ -2178,6 +2505,8 @@
       "additionalProperties": false,
       "properties": {
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "extensions": {
@@ -2193,13 +2522,23 @@
           "$ref": "#/$defs/CanonicalSet_FragmentUseV2Dto"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
           "type": "string"
         },
         "journey": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "requirements": {
           "$ref": "#/$defs/CanonicalSet_RequirementV2Dto"
@@ -2209,7 +2548,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -2219,9 +2558,17 @@
           ]
         },
         "status": {
+          "enum": [
+            "draft",
+            "active",
+            "deprecated",
+            "retired"
+          ],
           "type": "string"
         },
         "title": {
+          "maxLength": 160,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -2286,6 +2633,8 @@
           "type": "string"
         },
         "root": {
+          "maxLength": 1024,
+          "pattern": "^(?!.*(?:/[^/]*){128})(?!^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?!.*/(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .])(?:/(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]))*$",
           "type": "string"
         },
         "source_components": {
@@ -2306,12 +2655,18 @@
       "additionalProperties": false,
       "properties": {
         "from": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
           "type": "string"
         },
         "to": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
           "type": "string"
         },
         "trigger": {
+          "maxLength": 256,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -2333,7 +2688,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -2347,7 +2702,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -2357,7 +2712,7 @@
           ]
         },
         "required_controls": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/CanonicalSet_FacetText"
         }
       },
       "required": [
@@ -2371,24 +2726,94 @@
       "additionalProperties": false,
       "properties": {
         "facets": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_FacetText"
         },
         "profiles": {
           "additionalProperties": {
             "additionalProperties": {
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
               "type": "string"
             },
+            "minProperties": 1,
+            "propertyNames": {
+              "pattern": "^[a-z][a-z0-9_]{0,62}$"
+            },
             "type": "object"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "maxLength": 255,
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$"
           },
           "type": "object"
         },
         "requirement": {
+          "maxLength": 320,
+          "pattern": "^(?=[^#]{2,255}#)[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+#[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "target": {
-          "$ref": "#/$defs/ScopeSubjectV2Dto"
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "target",
+                  "type": "string"
+                },
+                "target": {
+                  "maxLength": 255,
+                  "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "target"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "provider",
+                  "type": "string"
+                },
+                "provider": {
+                  "maxLength": 255,
+                  "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "provider"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "target_set",
+                  "type": "string"
+                },
+                "targets": {
+                  "$ref": "#/$defs/NonEmptySet_TargetIdText"
+                }
+              },
+              "required": [
+                "kind",
+                "targets"
+              ],
+              "type": "object"
+            }
+          ]
         },
         "unit": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         }
       },
@@ -2405,12 +2830,20 @@
       "additionalProperties": false,
       "properties": {
         "approvers": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "controls": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/CanonicalSet_FacetText"
         },
         "expires_on": {
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
           "type": "string"
         },
         "extensions": {
@@ -2423,18 +2856,32 @@
           "type": "object"
         },
         "id": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "issue": {
+          "maxLength": 512,
+          "pattern": "^issue://[A-Z][A-Z0-9]{1,15}-[1-9][0-9]{0,11}$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "policy": {
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "reason": {
+          "maxLength": 2048,
+          "minLength": 1,
           "type": "string"
         },
         "revision": {
@@ -2442,7 +2889,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -2455,6 +2902,8 @@
           "$ref": "#/$defs/WaiverScopeV2Dto"
         },
         "starts_on": {
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
           "type": "string"
         }
       },
@@ -2497,6 +2946,8 @@
               "type": "string"
             },
             "path": {
+              "maxLength": 1024,
+              "pattern": "^(?!.*(?:/[^/]*){128})(?!^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?!.*/(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\\.|/|$))(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .])(?:/(?:[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]|[^/\\\\\\x00-\\x1f\\x7f:*?\"<>|]+[^/\\\\\\x00-\\x1f\\x7f:*?\"<>| .]))*$",
               "type": "string"
             }
           },

@@ -154,6 +154,178 @@ bounded_pattern_text!(RequirementText, REQUIREMENT_PATTERN, 320);
 pattern_text!(ComparisonOperatorText, "^(?:eq|ne)$");
 pattern_text!(MembershipOperatorText, "^(?:in|not_in)$");
 
+// Three or more lowercase dotted segments, each <= 63 bytes.
+const TRIPLE_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$";
+// Four or more lowercase dotted segments, each <= 63 bytes.
+const QUADRUPLE_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$";
+
+bounded_pattern_text!(CapabilityIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(FragmentIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(UnitIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(BindingIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(PolicyIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(RunnerIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(WaiverIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(AdapterIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(JourneyIdText, TRIPLE_ID_PATTERN, 255);
+bounded_pattern_text!(SurfaceIdText, QUADRUPLE_ID_PATTERN, 255);
+pattern_text!(LocalRequirementIdText, SEGMENT_ID_PATTERN);
+pattern_text!(ArtifactIdText, SEGMENT_ID_PATTERN);
+pattern_text!(EvidenceSpecIdText, SEGMENT_ID_PATTERN);
+
+/// The closed owning vocabularies used by the graph/comparison wire surface.
+///
+/// Each variant set is copied from the owning `eqm_domain` `closed_vocabulary!`
+/// definition, not invented here.
+macro_rules! closed_vocabulary_text {
+    ($name:ident, [$($wire:literal),+ $(,)?]) => {
+        struct $name;
+
+        impl JsonSchema for $name {
+            fn schema_name() -> Cow<'static, str> {
+                stringify!($name).into()
+            }
+
+            fn inline_schema() -> bool {
+                true
+            }
+
+            fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+                json_schema!({
+                    "type": "string",
+                    "enum": [$($wire),+],
+                })
+            }
+        }
+    };
+}
+
+closed_vocabulary_text!(
+    LifecycleStatusText,
+    ["draft", "active", "deprecated", "retired"]
+);
+closed_vocabulary_text!(RiskClassText, ["low", "medium", "high", "critical"]);
+closed_vocabulary_text!(
+    RequirementLevelText,
+    ["optional", "recommended", "required"]
+);
+closed_vocabulary_text!(
+    RequirementScopeText,
+    ["each_target", "shared_provider", "end_to_end"]
+);
+closed_vocabulary_text!(
+    FacetText,
+    [
+        "structure",
+        "reachability",
+        "behavior",
+        "accessibility",
+        "visual",
+        "analytics",
+        "runtime_exposure",
+        "release_presence",
+    ]
+);
+closed_vocabulary_text!(
+    ArtifactRoleText,
+    [
+        "entrypoint",
+        "view",
+        "route",
+        "component",
+        "service",
+        "test",
+        "configuration",
+        "asset",
+    ]
+);
+closed_vocabulary_text!(
+    HttpMethodText,
+    ["get", "post", "put", "patch", "delete", "options"]
+);
+closed_vocabulary_text!(IntendedExposureStateText, ["required", "prohibited"]);
+closed_vocabulary_text!(
+    EvidenceKindText,
+    [
+        "structural_check",
+        "static_inventory",
+        "test",
+        "snapshot",
+        "manual_review",
+        "runtime_snapshot",
+        "release_record",
+    ]
+);
+closed_vocabulary_text!(
+    TrustLevelText,
+    ["untrusted_local", "trusted_ci", "signed_ci"]
+);
+closed_vocabulary_text!(RunnerBackendText, ["local", "container"]);
+closed_vocabulary_text!(
+    RunnerGuaranteeText,
+    [
+        "network_denied",
+        "read_only_source",
+        "isolated_process",
+        "resource_limited",
+    ]
+);
+closed_vocabulary_text!(
+    EnvironmentSourceText,
+    [
+        "literal",
+        "trusted_path",
+        "canonical_locale",
+        "utc_timezone"
+    ]
+);
+
+/// One normalized bounded text of at most 256 UTF-8 bytes.
+fn transition_trigger_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({"type": "string", "minLength": 1, "maxLength": 256})
+}
+
+/// One normalized bounded waiver reason of at most 2,048 UTF-8 bytes.
+fn waiver_reason_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({"type": "string", "minLength": 1, "maxLength": 2048})
+}
+
+/// One exact `YYYY-MM-DD` calendar date (the owning parser validates the day).
+fn calendar_date_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "string",
+        "format": "date",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+    })
+}
+
+/// The owning uppercase project ticket reference grammar.
+fn issue_ref_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "string",
+        "maxLength": 512,
+        "pattern": "^issue://[A-Z][A-Z0-9]{1,15}-[1-9][0-9]{0,11}$",
+    })
+}
+
+/// The owning portable uppercase environment-name grammar.
+fn environment_name_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "string",
+        "maxLength": 128,
+        "pattern": "^[A-Z_][A-Z0-9_]*$",
+    })
+}
+
+/// The owning opaque `secret://<provider>/<name>` reference grammar.
+fn secret_provider_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "string",
+        "maxLength": 512,
+        "pattern": "^secret://[a-z][a-z0-9_]{0,62}/[a-z][a-z0-9_]{0,62}$",
+    })
+}
+
 // The schema-expressible lexical subset of a portable repository-relative path.
 //
 // The owning `RepoPath` contract additionally enforces Unicode NFC, UTF-8 byte
@@ -265,6 +437,91 @@ impl JsonSchema for ProfileDefaults {
             "type": "object",
             "propertyNames": {"pattern": SEGMENT_ID_PATTERN},
             "additionalProperties": {"type": "string", "pattern": SEGMENT_ID_PATTERN},
+        })
+    }
+}
+
+/// The graph waiver-scope subject union introduced into the wire surface.
+///
+/// The owning `EvidenceScopeSubject` accepts a single target, a single provider
+/// or a nonempty target set; the same owner rules are enforced by the checked
+/// subject reader. This mirrors that union for the graph waiver projection.
+struct WaiverSubjectV2;
+
+impl JsonSchema for WaiverSubjectV2 {
+    fn schema_name() -> Cow<'static, str> {
+        "WaiverSubjectV2".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let target = serde_json::to_value(generator.subschema_for::<TargetIdText>())
+            .unwrap_or(serde_json::Value::Null);
+        let provider = serde_json::to_value(generator.subschema_for::<ProviderIdText>())
+            .unwrap_or(serde_json::Value::Null);
+        let targets = serde_json::to_value(generator.subschema_for::<NonEmptySet<TargetIdText>>())
+            .unwrap_or(serde_json::Value::Null);
+        let value = serde_json::json!({
+            "oneOf": [
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["kind", "target"],
+                    "properties": {
+                        "kind": {"const": "target", "type": "string"},
+                        "target": target,
+                    },
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["kind", "provider"],
+                    "properties": {
+                        "kind": {"const": "provider", "type": "string"},
+                        "provider": provider,
+                    },
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["kind", "targets"],
+                    "properties": {
+                        "kind": {"const": "target_set", "type": "string"},
+                        "targets": targets,
+                    },
+                },
+            ]
+        });
+        Schema::from(value.as_object().cloned().unwrap_or_default())
+    }
+}
+
+/// Exact nonempty waiver profile coordinates keyed by profile then dimension.
+struct WaiverProfiles;
+
+impl JsonSchema for WaiverProfiles {
+    fn schema_name() -> Cow<'static, str> {
+        "WaiverProfiles".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "object",
+            "minProperties": 1,
+            "propertyNames": {"pattern": DOTTED_ID_PATTERN, "maxLength": 255},
+            "additionalProperties": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": {"pattern": SEGMENT_ID_PATTERN},
+                "additionalProperties": {"type": "string", "pattern": SEGMENT_ID_PATTERN},
+            },
         })
     }
 }
@@ -423,45 +680,51 @@ pub enum ApplicabilityV2Dto {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ArtifactSelectorV2Dto {
     Symbol {
+        #[schemars(schema_with = "selector_text_schema")]
         name: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(schema_with = "selector_text_schema")]
         language: Option<String>,
     },
     Route {
+        #[schemars(schema_with = "selector_text_schema")]
         path: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(with = "HttpMethodText")]
         method: Option<String>,
     },
     Test {
+        #[schemars(schema_with = "selector_text_schema")]
         framework: String,
+        #[schemars(schema_with = "selector_text_schema")]
         test_id: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(schema_with = "selector_text_schema")]
         suite: Option<String>,
     },
     Inventory {
+        #[schemars(schema_with = "selector_text_schema")]
         record_type: String,
+        #[schemars(schema_with = "selector_text_schema")]
         key: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(schema_with = "selector_text_schema")]
         value: Option<String>,
     },
 }
@@ -470,55 +733,62 @@ pub enum ArtifactSelectorV2Dto {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum EvidenceSelectorV2Dto {
     Symbol {
+        #[schemars(schema_with = "selector_text_schema")]
         name: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(schema_with = "selector_text_schema")]
         language: Option<String>,
     },
     Route {
+        #[schemars(schema_with = "selector_text_schema")]
         path: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(with = "HttpMethodText")]
         method: Option<String>,
     },
     Test {
+        #[schemars(schema_with = "selector_text_schema")]
         framework: String,
+        #[schemars(schema_with = "selector_text_schema")]
         test_id: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(schema_with = "selector_text_schema")]
         suite: Option<String>,
     },
     Inventory {
+        #[schemars(schema_with = "selector_text_schema")]
         record_type: String,
+        #[schemars(schema_with = "selector_text_schema")]
         key: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(schema_with = "selector_text_schema")]
         value: Option<String>,
     },
     Snapshot {
+        #[schemars(schema_with = "selector_text_schema")]
         snapshot_id: String,
         #[serde(
             default,
             deserialize_with = "crate::v2::deserialize_present",
             skip_serializing_if = "Option::is_none"
         )]
-        #[schemars(with = "String")]
+        #[schemars(schema_with = "selector_text_schema")]
         variant: Option<String>,
     },
 }
@@ -530,16 +800,20 @@ pub enum EvidenceSelectorV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CapabilityV2Dto {
+    #[schemars(with = "CapabilityIdText")]
     pub id: String,
+    #[schemars(schema_with = "title_schema")]
     pub title: String,
+    #[schemars(with = "LifecycleStatusText")]
     pub status: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "description_schema")]
     pub description: Option<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -548,21 +822,32 @@ pub struct CapabilityV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct TransitionV2Dto {
+    #[schemars(with = "SurfaceIdText")]
     pub from: String,
+    #[schemars(with = "SurfaceIdText")]
     pub to: String,
+    #[schemars(schema_with = "transition_trigger_schema")]
     pub trigger: String,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct JourneyV2Dto {
+    #[schemars(with = "JourneyIdText")]
     pub id: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(schema_with = "title_schema")]
     pub title: String,
+    #[schemars(with = "CapabilityIdText")]
     pub capability: String,
+    #[schemars(with = "LifecycleStatusText")]
     pub status: String,
+    #[schemars(with = "RiskClassText")]
     pub risk_class: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
+    #[schemars(with = "Vec<SurfaceIdText>")]
     pub surfaces: Vec<String>,
     pub transitions: CanonicalSet<TransitionV2Dto>,
     #[serde(
@@ -570,7 +855,7 @@ pub struct JourneyV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "description_schema")]
     pub description: Option<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -579,10 +864,15 @@ pub struct JourneyV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RequirementV2Dto {
+    #[schemars(with = "LocalRequirementIdText")]
     pub id: String,
+    #[schemars(with = "RequirementLevelText")]
     pub level: String,
+    #[schemars(with = "RequirementScopeText")]
     pub scope: String,
+    #[schemars(schema_with = "description_schema")]
     pub statement: String,
+    #[schemars(with = "NonEmptySet<FacetText>")]
     pub facets: CanonicalSet<String>,
     pub applicability: ApplicabilityV2Dto,
     #[serde(
@@ -590,14 +880,14 @@ pub struct RequirementV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(with = "RiskClassText")]
     pub risk_class: Option<String>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(with = "ProviderIdText")]
     pub provider: Option<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -606,7 +896,9 @@ pub struct RequirementV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct FragmentUseV2Dto {
+    #[schemars(with = "FragmentIdText")]
     pub fragment: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
     #[schemars(with = "Sha256Text")]
     pub digest: String,
@@ -615,18 +907,24 @@ pub struct FragmentUseV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "selector_text_schema")]
     pub prefix: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SurfaceV2Dto {
+    #[schemars(with = "SurfaceIdText")]
     pub id: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(schema_with = "title_schema")]
     pub title: String,
+    #[schemars(with = "JourneyIdText")]
     pub journey: String,
+    #[schemars(with = "LifecycleStatusText")]
     pub status: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
     pub requirements: CanonicalSet<RequirementV2Dto>,
     pub fragment_origins: CanonicalSet<FragmentUseV2Dto>,
@@ -635,7 +933,7 @@ pub struct SurfaceV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "description_schema")]
     pub description: Option<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -644,19 +942,24 @@ pub struct SurfaceV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct FragmentV2Dto {
+    #[schemars(with = "FragmentIdText")]
     pub id: String,
     #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(schema_with = "title_schema")]
     pub title: String,
+    #[schemars(with = "RiskClassText")]
     pub risk_class: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
+    #[schemars(with = "NonEmptySet<RequirementV2Dto>")]
     pub requirements: CanonicalSet<RequirementV2Dto>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "description_schema")]
     pub description: Option<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -671,6 +974,7 @@ pub struct FragmentV2Dto {
 pub struct TargetConfigurationV2Dto {
     #[schemars(with = "TargetIdText")]
     pub id: String,
+    #[schemars(with = "RepoPathText")]
     pub root: String,
     #[schemars(with = "PlatformText")]
     pub platform: String,
@@ -820,22 +1124,25 @@ pub struct ParticipationV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ArtifactV2Dto {
+    #[schemars(with = "ArtifactIdText")]
     pub id: String,
+    #[schemars(with = "ArtifactRoleText")]
     pub role: String,
+    #[schemars(with = "RepoPathText")]
     pub path: String,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(with = "SurfaceIdText")]
     pub surface: Option<String>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "selector_text_schema")]
     pub symbol: Option<String>,
     #[serde(
         default,
@@ -851,7 +1158,9 @@ pub struct ArtifactV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExposureV2Dto {
+    #[schemars(with = "SurfaceIdText")]
     pub surface: String,
+    #[schemars(with = "IntendedExposureStateText")]
     pub state: String,
     pub applicability: ApplicabilityV2Dto,
     #[serde(
@@ -859,7 +1168,7 @@ pub struct ExposureV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "selector_text_schema")]
     pub route: Option<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -868,16 +1177,20 @@ pub struct ExposureV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EvidenceSpecV2Dto {
+    #[schemars(with = "EvidenceSpecIdText")]
     pub id: String,
+    #[schemars(with = "EvidenceKindText")]
     pub kind: String,
+    #[schemars(with = "NonEmptySet<RequirementText>")]
     pub requirements: CanonicalSet<String>,
+    #[schemars(with = "NonEmptySet<FacetText>")]
     pub facets: CanonicalSet<String>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(with = "RunnerIdText")]
     pub runner: Option<String>,
     #[serde(
         default,
@@ -891,7 +1204,7 @@ pub struct EvidenceSpecV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "WireUint")]
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub minimum_count: Option<WireUint>,
     #[serde(
         default,
@@ -907,11 +1220,17 @@ pub struct EvidenceSpecV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct BindingV2Dto {
+    #[schemars(with = "BindingIdText")]
     pub id: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(with = "TargetIdText")]
     pub target: String,
+    #[schemars(with = "UnitIdText")]
     pub unit: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
+    #[schemars(with = "NonEmptySet<ArtifactV2Dto>")]
     pub artifacts: CanonicalSet<ArtifactV2Dto>,
     pub exposures: CanonicalSet<ExposureV2Dto>,
     pub evidence: CanonicalSet<EvidenceSpecV2Dto>,
@@ -981,35 +1300,35 @@ pub struct PolicySelectorV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "CanonicalSet<String>")]
+    #[schemars(with = "NonEmptySet<UnitIdText>")]
     pub units: Option<CanonicalSet<String>>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "CanonicalSet<String>")]
+    #[schemars(with = "NonEmptySet<RequirementText>")]
     pub requirements: Option<CanonicalSet<String>>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "CanonicalSet<String>")]
+    #[schemars(with = "NonEmptySet<RiskClassText>")]
     pub risk_classes: Option<CanonicalSet<String>>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "CanonicalSet<String>")]
+    #[schemars(with = "NonEmptySet<FacetText>")]
     pub facets: Option<CanonicalSet<String>>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "CanonicalSet<String>")]
+    #[schemars(with = "NonEmptySet<RequirementScopeText>")]
     pub scopes: Option<CanonicalSet<String>>,
 }
 
@@ -1017,10 +1336,14 @@ pub struct PolicySelectorV2Dto {
 #[serde(deny_unknown_fields)]
 pub struct PolicyRuleV2Dto {
     pub selector: PolicySelectorV2Dto,
+    #[schemars(with = "RequirementLevelText")]
     pub minimum_level: String,
+    #[schemars(with = "NonEmptySet<FacetText>")]
     pub facets: CanonicalSet<String>,
+    #[schemars(with = "TrustLevelText")]
     pub minimum_trust: String,
     pub maximum_age: WireUint,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub minimum_count: WireUint,
 }
 
@@ -1028,26 +1351,35 @@ pub struct PolicyRuleV2Dto {
 #[serde(deny_unknown_fields)]
 pub struct WaiverPolicyV2Dto {
     pub allowed: bool,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub minimum_approvers: WireUint,
+    #[schemars(with = "CanonicalSet<FacetText>")]
     pub required_controls: CanonicalSet<String>,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "WireUint")]
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub maximum_days: Option<WireUint>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct PolicyV2Dto {
+    #[schemars(with = "PolicyIdText")]
     pub id: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(schema_with = "title_schema")]
     pub title: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
+    #[schemars(with = "NonEmptySet<ProfileIdText>")]
     pub profiles: CanonicalSet<String>,
+    #[schemars(with = "NonEmptySet<TargetIdText>")]
     pub required_targets: CanonicalSet<String>,
+    #[schemars(with = "NonEmptySet<PolicyRuleV2Dto>")]
     pub rules: CanonicalSet<PolicyRuleV2Dto>,
     pub waivers: WaiverPolicyV2Dto,
     #[serde(
@@ -1055,7 +1387,7 @@ pub struct PolicyV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "description_schema")]
     pub description: Option<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -1158,9 +1490,11 @@ pub struct SelectedProfileV2Dto {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum RunnerProgramV2Dto {
     Repository {
+        #[schemars(with = "RepoPathText")]
         path: String,
     },
     Locked {
+        #[schemars(schema_with = "repository_schema")]
         resolved: String,
         #[schemars(with = "Sha256Text")]
         digest: String,
@@ -1170,7 +1504,10 @@ pub enum RunnerProgramV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ArgumentV2Dto {
-    Literal { value: String },
+    Literal {
+        #[schemars(schema_with = "selector_text_schema")]
+        value: String,
+    },
     TargetRoot,
     SelectorJson,
     ResultPath,
@@ -1180,46 +1517,61 @@ pub enum ArgumentV2Dto {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum WorkingDirectoryV2Dto {
     TargetRoot,
-    Repository { path: String },
+    Repository {
+        #[schemars(with = "RepoPathText")]
+        path: String,
+    },
     ResultPath,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct EnvironmentBindingV2Dto {
+    #[schemars(schema_with = "environment_name_schema")]
     pub name: String,
+    #[schemars(with = "EnvironmentSourceText")]
     pub source: String,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "selector_text_schema")]
     pub value: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct SecretBindingV2Dto {
+    #[schemars(schema_with = "environment_name_schema")]
     pub name: String,
+    #[schemars(schema_with = "secret_provider_schema")]
     pub provider: String,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct RunnerV2Dto {
+    #[schemars(with = "RunnerIdText")]
     pub id: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
+    #[schemars(with = "RunnerBackendText")]
     pub backend: String,
     pub program: RunnerProgramV2Dto,
     pub args: Vec<ArgumentV2Dto>,
     pub cwd: WorkingDirectoryV2Dto,
     pub environment: CanonicalSet<EnvironmentBindingV2Dto>,
     pub secrets: CanonicalSet<SecretBindingV2Dto>,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub timeout_ms: WireUint,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub max_output_bytes: WireUint,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub max_concurrency: WireUint,
+    #[schemars(with = "CanonicalSet<RunnerGuaranteeText>")]
     pub guarantees: CanonicalSet<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -1232,26 +1584,41 @@ pub struct RunnerV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct WaiverScopeV2Dto {
+    #[schemars(with = "WaiverSubjectV2")]
     pub target: crate::v2::ScopeSubjectV2Dto,
+    #[schemars(with = "UnitIdText")]
     pub unit: String,
+    #[schemars(with = "RequirementText")]
     pub requirement: String,
+    #[schemars(with = "NonEmptySet<FacetText>")]
     pub facets: CanonicalSet<String>,
+    #[schemars(with = "WaiverProfiles")]
     pub profiles: BTreeMap<String, BTreeMap<String, String>>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct WaiverV2Dto {
+    #[schemars(with = "WaiverIdText")]
     pub id: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
+    #[schemars(with = "PolicyIdText")]
     pub policy: String,
     pub scope: WaiverScopeV2Dto,
+    #[schemars(schema_with = "waiver_reason_schema")]
     pub reason: String,
+    #[schemars(schema_with = "issue_ref_schema")]
     pub issue: String,
+    #[schemars(schema_with = "owners_schema")]
     pub approvers: CanonicalSet<String>,
+    #[schemars(schema_with = "calendar_date_schema")]
     pub starts_on: String,
+    #[schemars(schema_with = "calendar_date_schema")]
     pub expires_on: String,
+    #[schemars(with = "CanonicalSet<FacetText>")]
     pub controls: CanonicalSet<String>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -1264,39 +1631,50 @@ pub struct WaiverV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ImportLockV2Dto {
+    #[schemars(with = "FragmentIdText")]
     pub id: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub revision: WireUint,
+    #[schemars(schema_with = "repository_schema")]
     pub source: String,
+    #[schemars(with = "SourceCommitText")]
     pub resolved: String,
     #[schemars(with = "Sha256Text")]
     pub digest: String,
+    #[schemars(with = "TrustLevelText")]
     pub trust: String,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "selector_text_schema")]
     pub signature: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct AdapterLockV2Dto {
+    #[schemars(with = "AdapterIdText")]
     pub id: String,
+    #[schemars(schema_with = "selector_text_schema")]
     pub version: String,
+    #[schemars(schema_with = "repository_schema")]
     pub source: String,
+    #[schemars(with = "SourceCommitText")]
     pub resolved: String,
     #[schemars(with = "Sha256Text")]
     pub digest: String,
+    #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub protocol: WireUint,
+    #[schemars(with = "TrustLevelText")]
     pub trust: String,
     #[serde(
         default,
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "selector_text_schema")]
     pub signature: Option<String>,
 }
 

@@ -334,6 +334,51 @@ impl JsonSchema for NonEmptyRepoPathList {
     }
 }
 
+/// A nonempty duplicate-free authored scenario participant list.
+struct NonEmptyScenarioParticipantList;
+
+impl JsonSchema for NonEmptyScenarioParticipantList {
+    fn schema_name() -> Cow<'static, str> {
+        "NonEmptyScenarioParticipantList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let items = generator.subschema_for::<ScenarioParticipantV2Dto>();
+        json_schema!({
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": items,
+        })
+    }
+}
+
+/// A duplicate-free authored scenario dependency list.
+struct UniqueScenarioDependencyList;
+
+impl JsonSchema for UniqueScenarioDependencyList {
+    fn schema_name() -> Cow<'static, str> {
+        "UniqueScenarioDependencyList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let items = generator.subschema_for::<ScenarioDependencyV2Dto>();
+        json_schema!({
+            "type": "array",
+            "uniqueItems": true,
+            "items": items,
+        })
+    }
+}
+
 /// Authored extension data keyed by the owning >= 3 segment namespace.
 pub struct AuthoredExtensions;
 
@@ -487,6 +532,7 @@ pub struct WorkspaceV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct TargetV2Dto {
+    #[schemars(with = "RepoPathText")]
     pub root: String,
     #[schemars(with = "PlatformText")]
     pub platform: String,
@@ -560,9 +606,10 @@ pub struct ScenarioV2Dto {
     pub id: String,
     #[schemars(range(min = 1))]
     pub revision: u64,
-    #[schemars(length(min = 1))]
+    #[schemars(with = "NonEmptyScenarioParticipantList")]
     pub participants: Vec<ScenarioParticipantV2Dto>,
     #[serde(default)]
+    #[schemars(with = "UniqueScenarioDependencyList")]
     pub dependencies: Vec<ScenarioDependencyV2Dto>,
     #[serde(default)]
     #[schemars(with = "AuthoredExtensions")]

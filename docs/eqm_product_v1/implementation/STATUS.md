@@ -1,8 +1,8 @@
 # Verification and implementation status
 
-Latest-batch status: the first DEV-022 checkpoint is implemented and locally
-verified; no acceptance change. P03-R9, P03-R10 and S043-R4 remain pending under
-the DEV-022 decisions.
+Latest-batch status: P03-R8 and P03-R9 are implemented and locally verified; no
+acceptance change. P03-R10 and S043-R4 remain pending under the DEV-022
+decisions.
 
 Codex independently reviewed clean `1836b3512272a78b28f7548debd2a61f4ebbfd84`.
 The returned run completed all three DEV-020 checkpoints plus ledger backfill and
@@ -12,8 +12,8 @@ including all 41 previous acceptances. Whole RA02/RA13 remain open.
 
 S043/P03 remain changes-required. RF65: graph scenario subject references still
 admit invalid IDs; source-root collections admit empty roots. RF45 graph parity
-remains partial. Current sole DEV-022 frontier **P03-R9 → P03-R10 → S043-R4**; P03-R8 is
-implemented and locally verified pending independent acceptance. All remaining
+remains partial. Current sole DEV-022 frontier **P03-R10 → S043-R4**; P03-R8 and P03-R9 are
+implemented and locally verified pending independent acceptance. The remaining
 checkpoints precede independent P03 acceptance and S044.
 See [review](reports/CODEX-1836b35.md) and [plan](COMMIT_SEQUENCE.md). Pi records
 implementation/verification; acceptance is Codex-owned. P04–P15 pending.
