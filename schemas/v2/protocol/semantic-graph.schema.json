@@ -527,6 +527,13 @@
       "type": "array",
       "uniqueItems": true
     },
+    "CanonicalSet_ProviderV2Dto": {
+      "items": {
+        "$ref": "#/$defs/ProviderV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
     "CanonicalSet_RequirementV2Dto": {
       "items": {
         "$ref": "#/$defs/RequirementV2Dto"
@@ -1418,6 +1425,34 @@
       ],
       "type": "object"
     },
+    "ProviderV2Dto": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ExtensionValueV2Dto"
+          },
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "owners": {
+          "$ref": "#/$defs/CanonicalSet_string"
+        }
+      },
+      "required": [
+        "id",
+        "configuration_digest",
+        "owners",
+        "extensions"
+      ],
+      "type": "object"
+    },
     "RequirementV2Dto": {
       "additionalProperties": false,
       "properties": {
@@ -1923,6 +1958,9 @@
         "platform": {
           "type": "string"
         },
+        "providers": {
+          "$ref": "#/$defs/CanonicalSet_string"
+        },
         "role": {
           "type": "string"
         },
@@ -2198,6 +2236,9 @@
     "profiles": {
       "$ref": "#/$defs/CanonicalSet_ProfileDefinitionV2Dto"
     },
+    "providers": {
+      "$ref": "#/$defs/CanonicalSet_ProviderV2Dto"
+    },
     "runners": {
       "$ref": "#/$defs/CanonicalSet_RunnerV2Dto"
     },
@@ -2229,6 +2270,7 @@
     "fragments",
     "targets",
     "source_components",
+    "providers",
     "participation",
     "bindings",
     "scenarios",

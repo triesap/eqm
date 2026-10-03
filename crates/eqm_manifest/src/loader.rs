@@ -4,11 +4,12 @@ use crate::conversion::extensions;
 use crate::{
     ConfigError, ContractEntity, ConversionError, DiscoveryError, DocumentDto, LockError,
     ValidationError, WorkspaceLock, convert_binding_with_roots, convert_contract,
-    convert_participation, convert_policy, convert_profile, convert_runner, convert_scenario,
-    convert_waiver, decode_sources, discover_sources, load_lockfile, select_workspace_config,
+    convert_participation, convert_policy, convert_profile, convert_provider, convert_runner,
+    convert_scenario, convert_waiver, decode_sources, discover_sources, load_lockfile,
+    select_workspace_config,
 };
 use eqm_domain::{
-    AdapterLockIdentity, ImportLockIdentity, OwnerRef, RepoPath, RoleId, SchemaVersion,
+    AdapterLockIdentity, ImportLockIdentity, OwnerRef, ProviderId, RepoPath, RoleId, SchemaVersion,
     SourceComponent, SourceComponentId, Target, TargetId, TrustLevel, WorkspaceGraphInput,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -182,6 +183,19 @@ pub fn load_workspace(
                         .collect::<Result<_, _>>()?,
                 )
                 .map_err(|_| LoadError::WorkspaceTarget)?;
+            authority = authority
+                .with_providers(
+                    target
+                        .providers
+                        .iter()
+                        .map(|provider| {
+                            provider
+                                .parse::<ProviderId>()
+                                .map_err(|_| LoadError::WorkspaceTarget)
+                        })
+                        .collect::<Result<_, _>>()?,
+                )
+                .map_err(|_| LoadError::WorkspaceTarget)?;
             source_map.insert(
                 format!("target:{}", authority.id()).into(),
                 config_source.clone(),
@@ -349,6 +363,14 @@ pub fn load_workspace(
                     document.source().clone(),
                 );
                 input.scenarios.push(value);
+            }
+            DocumentDto::Provider(_) => {
+                let value = convert_provider(document).map_err(conversion_error)?;
+                source_map.insert(
+                    format!("provider:{}", value.id()).into(),
+                    document.source().clone(),
+                );
+                input.providers.push(value);
             }
         }
     }

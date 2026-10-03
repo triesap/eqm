@@ -1,8 +1,8 @@
 //! S038: exact multi-participant subject manifests and completeness.
 
 use eqm_domain::{
-    OccurrenceId, Revision, SelectorText, Sha256Digest, SourceCommit, SubjectAssignment,
-    SubjectManifest, SubjectManifestError, TargetConfigurationDigest,
+    OccurrenceId, ProviderConfigurationDigest, Revision, SelectorText, Sha256Digest, SourceCommit,
+    SubjectAssignment, SubjectManifest, SubjectManifestError, TargetConfigurationDigest,
 };
 use std::error::Error;
 
@@ -79,7 +79,7 @@ fn configuration_authority_and_duplicate_occurrence_reject() -> Result<(), Box<d
             "a".repeat(40).parse::<SourceCommit>()?,
             None,
             Some(TargetConfigurationDigest::hash_content(b"config")),
-            Some(Sha256Digest::hash_content(b"provider")),
+            Some(ProviderConfigurationDigest::hash_content(b"provider")),
             None,
             None,
         ),
@@ -92,7 +92,7 @@ fn configuration_authority_and_duplicate_occurrence_reject() -> Result<(), Box<d
         "a".repeat(40).parse::<SourceCommit>()?,
         Some(Sha256Digest::hash_content(b"source-content")),
         None,
-        Some(Sha256Digest::hash_content(b"provider")),
+        Some(ProviderConfigurationDigest::hash_content(b"provider")),
         Some(SelectorText::new("build.one")?),
         Some(Sha256Digest::hash_content(b"artifact")),
     )?;

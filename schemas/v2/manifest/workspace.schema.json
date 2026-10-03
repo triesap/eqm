@@ -61,6 +61,13 @@
         "platform": {
           "type": "string"
         },
+        "providers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "role": {
           "type": [
             "string",

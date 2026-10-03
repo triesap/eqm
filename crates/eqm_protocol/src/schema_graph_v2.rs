@@ -397,6 +397,13 @@ pub struct TargetConfigurationV2Dto {
     )]
     #[schemars(with = "CanonicalSet<String>")]
     pub depends_on: Option<CanonicalSet<String>>,
+    #[serde(
+        default,
+        deserialize_with = "crate::v2::deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "CanonicalSet<String>")]
+    pub providers: Option<CanonicalSet<String>>,
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -407,6 +414,16 @@ pub struct SourceComponentV2Dto {
     pub roots: CanonicalSet<String>,
     pub owners: CanonicalSet<String>,
     pub dependencies: CanonicalSet<String>,
+    pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
+}
+
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProviderV2Dto {
+    pub id: String,
+    #[schemars(with = "Sha256Text")]
+    pub configuration_digest: String,
+    pub owners: CanonicalSet<String>,
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -889,6 +906,7 @@ pub struct SemanticGraphV2Dto {
     pub fragments: CanonicalSet<FragmentV2Dto>,
     pub targets: CanonicalSet<TargetConfigurationV2Dto>,
     pub source_components: CanonicalSet<SourceComponentV2Dto>,
+    pub providers: CanonicalSet<ProviderV2Dto>,
     pub participation: CanonicalSet<ParticipationV2Dto>,
     pub bindings: CanonicalSet<BindingV2Dto>,
     pub scenarios: CanonicalSet<ScenarioV2Dto>,

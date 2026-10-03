@@ -92,6 +92,8 @@ pub enum SchemaKind {
     Policy,
     /// Profile authority.
     Profile,
+    /// Declared external provider authority (v2).
+    Provider,
     /// Runner authority.
     Runner,
     /// Waiver authority.
@@ -132,7 +134,7 @@ pub enum SchemaKind {
 
 impl SchemaKind {
     /// Every accepted kind in stable lexical-identity order.
-    pub const ALL: [Self; 26] = [
+    pub const ALL: [Self; 27] = [
         Self::AdapterRequest,
         Self::AdapterResponse,
         Self::Attestation,
@@ -148,6 +150,7 @@ impl SchemaKind {
         Self::Participation,
         Self::Policy,
         Self::Profile,
+        Self::Provider,
         Self::ReleaseRecord,
         Self::Result,
         Self::Runner,
@@ -173,6 +176,7 @@ impl SchemaKind {
             Self::Binding => "binding",
             Self::Policy => "policy",
             Self::Profile => "profile",
+            Self::Provider => "provider",
             Self::Runner => "runner",
             Self::Waiver => "waiver",
             Self::Lock => "lock",
@@ -206,6 +210,7 @@ impl SchemaKind {
             | Self::Binding
             | Self::Policy
             | Self::Profile
+            | Self::Provider
             | Self::Runner
             | Self::Waiver
             | Self::Lock

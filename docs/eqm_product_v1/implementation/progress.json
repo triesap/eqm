@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S039",
+ "next_step": "S041",
  "implementation": "in_progress",
- "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;P03-R2_P03-R3_S039-R1_implemented_verified_pending_review;RF45_partial_RF51_RF52_RF53_implemented;not_release_ready",
+ "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;P03-R2_P03-R3_S039-R1_S040_implemented_verified_pending_review;RF45_partial_RF51_RF52_RF53_implemented;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1367,11 +1367,13 @@
   },
   {
    "id": "S040",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
+   "report": "implementation/reports/S040.md",
    "verification": [],
-   "baseline_exceptions": []
+   "baseline_exceptions": [],
+   "implementation_status": "implemented_verified",
+   "supervisor_status": "pending_review"
   },
   {
    "id": "S041",
@@ -3074,7 +3076,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P03",
- "active_step": "S039",
+ "active_step": "S041",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3098,7 +3100,7 @@
    "first_step": "S028",
    "last_step": "S043",
    "status": "in_progress",
-   "completed_steps": 11,
+   "completed_steps": 12,
    "total_steps": 16,
    "accepted_steps": 11,
    "retained_implemented_steps": 12
@@ -3401,7 +3403,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S040",
+ "next_checkpoint": "S041",
  "supervisor_review": {
   "source_commit": "667776537709f824efac48f6bf325be2c9ea2913",
   "report": "implementation/reports/CODEX-6677765.md",
@@ -4005,7 +4007,7 @@
    },
    {
     "id": "S040",
-    "status": "pending",
+    "status": "implemented_verified",
     "supervisor_status": "not_accepted"
    },
    {

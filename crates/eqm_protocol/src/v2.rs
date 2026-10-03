@@ -13,11 +13,11 @@
 use crate::{CanonicalSet, WireInt, WireUint};
 use eqm_domain::{
     AdapterId, AttemptOutcome, DimensionId, EvidenceCounts, EvidenceKind, Facet, FullRequirementId,
-    HttpMethod, InventoryCompleteness, OccurrenceId, OwnerRef, ProducerRef, ProfileId, ProviderId,
-    RawObjectDigest, ReleaseChannel, RepoPath, RepositoryIdentity, Revision, SelectorText,
-    SemanticEvidenceDigest, Sha256Digest, SourceCommit, SubjectAssignment, SubjectManifest,
-    SubjectManifestDigest, SurfaceId, SymbolicValueId, TargetConfigurationDigest, TargetId,
-    TrustLevel, UnitId, UtcInstantV2, V2_UTC_PATTERN,
+    HttpMethod, InventoryCompleteness, OccurrenceId, OwnerRef, ProducerRef, ProfileId,
+    ProviderConfigurationDigest, ProviderId, RawObjectDigest, ReleaseChannel, RepoPath,
+    RepositoryIdentity, Revision, SelectorText, SemanticEvidenceDigest, Sha256Digest, SourceCommit,
+    SubjectAssignment, SubjectManifest, SubjectManifestDigest, SurfaceId, SymbolicValueId,
+    TargetConfigurationDigest, TargetId, TrustLevel, UnitId, UtcInstantV2, V2_UTC_PATTERN,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, de};
@@ -1416,8 +1416,8 @@ impl CheckedSubjectManifestV2 {
 pub enum ExpectedSubjectConfiguration {
     /// The occurrence is a shipped target with this exact typed configuration.
     Target(TargetConfigurationDigest),
-    /// The occurrence is a provider with this exact external configuration digest.
-    Provider(Sha256Digest),
+    /// The occurrence is a provider with this exact typed provider-configuration identity.
+    Provider(ProviderConfigurationDigest),
 }
 
 impl Display for ExpectedSubjectConfiguration {

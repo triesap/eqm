@@ -1241,6 +1241,7 @@ pub struct Target {
     role: Option<RoleId>,
     source_components: BTreeSet<SourceComponentId>,
     depends_on: BTreeSet<TargetId>,
+    providers: BTreeSet<ProviderId>,
     owners: BTreeSet<OwnerRef>,
     extensions: Extensions,
 }
@@ -1266,6 +1267,7 @@ impl Target {
             role: None,
             source_components: BTreeSet::new(),
             depends_on: BTreeSet::new(),
+            providers: BTreeSet::new(),
             owners: owner_set(owners)?,
             extensions,
         })
@@ -1312,6 +1314,21 @@ impl Target {
         self.depends_on = set;
         Ok(self)
     }
+
+    /// Returns a copy of this target referencing the given declared providers.
+    ///
+    /// Duplicate references are rejected. A provider reference is an exact
+    /// declared dependency, never a universal or implicit attachment; the
+    /// engine resolves it against declared provider authority.
+    pub fn with_providers(mut self, providers: Vec<ProviderId>) -> Result<Self, EntityBuildError> {
+        let count = providers.len();
+        let set: BTreeSet<_> = providers.into_iter().collect();
+        if set.len() != count {
+            return Err(EntityBuildError::DuplicateTargetProvider);
+        }
+        self.providers = set;
+        Ok(self)
+    }
     /// Returns the target ID.
     #[must_use]
     pub const fn id(&self) -> &TargetId {
@@ -1345,6 +1362,11 @@ impl Target {
     #[must_use]
     pub const fn depends_on(&self) -> &BTreeSet<TargetId> {
         &self.depends_on
+    }
+    /// Returns any explicitly declared provider references in canonical order.
+    #[must_use]
+    pub const fn providers(&self) -> &BTreeSet<ProviderId> {
+        &self.providers
     }
     /// Returns the extensible framework ID.
     #[must_use]
@@ -1719,6 +1741,8 @@ pub enum EntityBuildError {
     DuplicateTargetSourceComponent,
     /// A target declared the same target dependency twice.
     DuplicateTargetDependency,
+    /// A target declared the same provider reference twice.
+    DuplicateTargetProvider,
     /// A binding did not declare any artifacts.
     ArtifactsRequired,
     /// A local artifact ID appeared more than once.
@@ -1772,6 +1796,7 @@ impl Display for EntityBuildError {
             Self::DuplicateSourceDependency => "source component dependencies contain a duplicate",
             Self::DuplicateTargetSourceComponent => "target source components contain a duplicate",
             Self::DuplicateTargetDependency => "target dependencies contain a duplicate",
+            Self::DuplicateTargetProvider => "target providers contain a duplicate",
             Self::ArtifactsRequired => "binding requires at least one artifact",
             Self::DuplicateArtifact => "binding artifacts contain a duplicate local ID",
             Self::DuplicateExposure => "binding exposures contain a duplicate declaration",

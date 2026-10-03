@@ -55,6 +55,8 @@ pub enum DigestDomain {
     Participation,
     /// Exact multi-participant subject manifest (v2).
     SubjectManifest,
+    /// Validated provider definition projection (v2).
+    ProviderConfiguration,
 }
 
 impl DigestDomain {
@@ -83,6 +85,7 @@ impl DigestDomain {
             Self::Authority => b"eqm:v2:authority",
             Self::TrustConfiguration => b"eqm:v2:trust-configuration",
             Self::Participation => b"eqm:v2:participation",
+            Self::ProviderConfiguration => b"eqm:v2:provider-configuration",
             Self::SubjectManifest => b"eqm:v2:subject-manifest",
         }
     }
@@ -302,6 +305,12 @@ define_identity_digest!(
     /// Shared comparison-context projection.
     ComparisonContextDigest,
     DigestDomain::ComparisonContext
+);
+
+define_identity_digest!(
+    /// Validated provider definition projection.
+    ProviderConfigurationDigest,
+    DigestDomain::ProviderConfiguration
 );
 
 fn decode_hex(byte: u8) -> Option<u8> {

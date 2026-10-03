@@ -172,6 +172,7 @@ fn dangling_findings(
         .keys()
         .map(|id| id.as_str())
         .collect();
+    let provider_ids: BTreeSet<_> = graph.providers().keys().map(|id| id.as_str()).collect();
     let profile_ids: BTreeSet<_> = graph.profiles().keys().map(|(id, _)| id.as_str()).collect();
     let policy_ids: BTreeSet<_> = graph.policies().keys().map(|(id, _)| id.as_str()).collect();
     let runner_ids: BTreeSet<_> = graph.runners().keys().map(|(id, _)| id.as_str()).collect();
@@ -466,6 +467,46 @@ fn dangling_findings(
                 &mut findings,
             )?;
         }
+        for provider in target.providers() {
+            require(
+                provider_ids.contains(provider.as_str()),
+                &owner,
+                "provider",
+                provider.as_str(),
+                sources,
+                &mut findings,
+            )?;
+        }
+    }
+    for surface in graph.surfaces().values() {
+        let owner = format!("surface:{}@{}", surface.id(), surface.revision().get());
+        for requirement in surface.requirements().values() {
+            if let Some(provider) = requirement.provider() {
+                require(
+                    provider_ids.contains(provider.as_str()),
+                    &owner,
+                    "provider",
+                    provider.as_str(),
+                    sources,
+                    &mut findings,
+                )?;
+            }
+        }
+    }
+    for fragment in graph.fragments().values() {
+        let owner = format!("fragment:{}@{}", fragment.id(), fragment.revision().get());
+        for requirement in fragment.requirements().values() {
+            if let Some(provider) = requirement.provider() {
+                require(
+                    provider_ids.contains(provider.as_str()),
+                    &owner,
+                    "provider",
+                    provider.as_str(),
+                    sources,
+                    &mut findings,
+                )?;
+            }
+        }
     }
     for component in graph.source_components().values() {
         let owner = format!("source_component:{}", component.id());
@@ -513,6 +554,16 @@ fn dangling_findings(
                     &owner,
                     "participants.subject.target",
                     target.as_str(),
+                    sources,
+                    &mut findings,
+                )?;
+            }
+            if let ScenarioSubject::Provider(provider) = participant.subject() {
+                require(
+                    provider_ids.contains(provider.as_str()),
+                    &owner,
+                    "participants.subject.provider",
+                    provider.as_str(),
                     sources,
                     &mut findings,
                 )?;

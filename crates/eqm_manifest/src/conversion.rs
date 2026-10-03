@@ -12,8 +12,8 @@ use eqm_domain::{
     EvidenceSpecification, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Facet,
     Fragment, FragmentUse, HttpMethod, Journey, MembershipOperator, OwnerRef, ParticipationRule,
     ParticipationRuleId, Policy, PolicyRule, PolicySelector, PositiveCount, PositiveDays, Profile,
-    ProfileDimension, RepoPath, Requirement, RequirementStatement, Revision, RouteSelector,
-    RunnerDefinition, RunnerLimits, RunnerProgram, Scenario, ScenarioDependency,
+    ProfileDimension, Provider, RepoPath, Requirement, RequirementStatement, Revision,
+    RouteSelector, RunnerDefinition, RunnerLimits, RunnerProgram, Scenario, ScenarioDependency,
     ScenarioParticipant, ScenarioSubject, SecretBinding, SecretProviderRef, SelectorText, Surface,
     SymbolicValueId, TargetId, Title, Transition, TransitionTrigger, Waiver, WaiverPolicy,
     WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate,
@@ -297,6 +297,26 @@ pub fn convert_scenario(document: &ValidatedDocument) -> Result<Scenario, Conver
         extensions(&dto.extensions, source)?,
     )
     .map_err(|_| ConversionError::at(source, "scenario"))
+}
+
+/// Converts one strict v2 provider DTO into a declared provider authority.
+///
+/// The declared `configuration_digest` is an external content reference only;
+/// its presence never asserts that the referenced material was acquired or
+/// trusted. The canonical `eqm:v2:provider-configuration` identity is derived
+/// later over this whole validated definition.
+pub fn convert_provider(document: &ValidatedDocument) -> Result<Provider, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Provider(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    Provider::new(
+        parse(&dto.id, "id", source)?,
+        parse(&dto.configuration_digest, "configuration_digest", source)?,
+        owners(&dto.owners, source)?,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "provider"))
 }
 
 /// Converts one strict profile DTO into a finite symbolic profile family.

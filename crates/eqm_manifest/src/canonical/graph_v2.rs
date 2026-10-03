@@ -32,8 +32,8 @@ use super::{
 };
 use eqm_domain::{
     AdapterLockIdentity, ArgumentTemplate, EnvironmentSource, EvidenceScopeSubject,
-    FinalizedWorkspaceGraph, ImportLockIdentity, RunnerDefinition, RunnerProgram, SchemaKind,
-    SchemaUri, SchemaVersion, SemanticGraphV2Digest, SourceComponent, Waiver,
+    FinalizedWorkspaceGraph, ImportLockIdentity, Provider, RunnerDefinition, RunnerProgram,
+    SchemaKind, SchemaUri, SchemaVersion, SemanticGraphV2Digest, SourceComponent, Waiver,
     WorkingDirectoryTemplate,
 };
 use serde_json::{Value, json};
@@ -84,6 +84,21 @@ fn source_component_v2(value: &SourceComponent) -> Result<Value, Canonicalizatio
                     .iter()
                     .map(|dependency| dependency.as_str().to_owned()),
             )?,
+        ),
+        ("extensions", extensions_v2(value.extensions())?),
+    ]))
+}
+
+fn provider_v2(value: &Provider) -> Result<Value, CanonicalizationError> {
+    Ok(object([
+        ("id", json!(value.id().as_str())),
+        (
+            "configuration_digest",
+            json!(value.configuration_digest().to_string()),
+        ),
+        (
+            "owners",
+            canonical_strings(value.owners().iter().map(|owner| owner.as_str().to_owned()))?,
         ),
         ("extensions", extensions_v2(value.extensions())?),
     ]))
@@ -382,6 +397,16 @@ pub fn graph_v2(finalized: &FinalizedWorkspaceGraph) -> Result<Value, Canonicali
                     .source_components()
                     .values()
                     .map(source_component_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )?,
+        ),
+        (
+            "providers",
+            canonical_set(
+                graph
+                    .providers()
+                    .values()
+                    .map(provider_v2)
                     .collect::<Result<Vec<_>, _>>()?,
             )?,
         ),

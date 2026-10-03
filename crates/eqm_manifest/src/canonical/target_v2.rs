@@ -96,6 +96,18 @@ pub fn target_configuration_v2(value: &Target) -> Result<Value, Canonicalization
             )?),
         );
     }
+    if !value.providers().is_empty() {
+        insert_optional(
+            &mut projected,
+            "providers",
+            Some(canonical_strings(
+                value
+                    .providers()
+                    .iter()
+                    .map(|provider| provider.as_str().to_owned()),
+            )?),
+        );
+    }
     Ok(projected)
 }
 

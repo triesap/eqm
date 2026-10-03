@@ -1,6 +1,6 @@
 //! Exact-current schema dispatch and bounded strict DTO decoding.
 
-use crate::dto::v2::{ParticipationV2Dto, ScenarioV2Dto};
+use crate::dto::v2::{ParticipationV2Dto, ProviderV2Dto, ScenarioV2Dto};
 use crate::dto::{
     BindingDto, CapabilityDto, FragmentDto, JourneyDto, PolicyDto, ProfileDto, RunnerDto,
     SurfaceDto, WaiverDto,
@@ -47,6 +47,8 @@ pub enum DocumentDto {
     Participation(ParticipationV2Dto),
     /// Role-bearing scenario occurrence authority (v2).
     Scenario(ScenarioV2Dto),
+    /// Declared external provider authority (v2).
+    Provider(ProviderV2Dto),
 }
 
 impl DocumentDto {
@@ -63,6 +65,7 @@ impl DocumentDto {
             Self::Waiver(dto) => format!("waiver:{}", dto.id),
             Self::Participation(dto) => format!("participation:{}", dto.id),
             Self::Scenario(dto) => format!("scenario:{}@{}", dto.id, dto.revision),
+            Self::Provider(dto) => format!("provider:{}", dto.id),
         }
         .into_boxed_str()
     }
@@ -161,6 +164,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
         (SchemaVersion::V1, _) => false,
         (SchemaVersion::V2, SchemaKind::Participation) => true,
         (SchemaVersion::V2, SchemaKind::Scenario) => true,
+        (SchemaVersion::V2, SchemaKind::Provider) => true,
         _ => return Err(ValidationErrorKind::WrongSchema),
     };
     let kind = schema.kind();
@@ -169,6 +173,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
             (class, kind),
             (SourceClass::Contract, SchemaKind::Participation)
                 | (SourceClass::Contract, SchemaKind::Scenario)
+                | (SourceClass::Contract, SchemaKind::Provider)
         )
     } else {
         matches!(
@@ -208,6 +213,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
         SchemaKind::Waiver => decode!(WaiverDto, Waiver),
         SchemaKind::Participation => decode!(ParticipationV2Dto, Participation),
         SchemaKind::Scenario => decode!(ScenarioV2Dto, Scenario),
+        SchemaKind::Provider => decode!(ProviderV2Dto, Provider),
         _ => Err(ValidationErrorKind::WrongSchema),
     }
 }

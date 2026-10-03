@@ -43,6 +43,8 @@ pub struct TargetV2Dto {
     pub source_components: Vec<String>,
     #[serde(default)]
     pub depends_on: Vec<String>,
+    #[serde(default)]
+    pub providers: Vec<String>,
     pub owners: Vec<String>,
     #[serde(default)]
     pub extensions: ExtensionsDto,
@@ -115,4 +117,21 @@ pub struct ScenarioSubjectV2Dto {
 pub struct ScenarioDependencyV2Dto {
     pub from: String,
     pub to: String,
+}
+
+/// One strict v2 provider authority document.
+///
+/// `configuration_digest` is an external content reference declared by the
+/// author. It is distinct from the `eqm:v2:provider-configuration` identity the
+/// canonical projection derives over this whole validated definition, and it
+/// proves neither acquisition nor trust of the referenced material.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ProviderV2Dto {
+    pub schema: String,
+    pub id: String,
+    pub configuration_digest: String,
+    pub owners: Vec<String>,
+    #[serde(default)]
+    pub extensions: ExtensionsDto,
 }

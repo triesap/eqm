@@ -291,9 +291,14 @@ role = "edge"
 target = "web"
 "#;
 
+const PROVIDER: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/provider.schema.json"
+id = "provider.mailgun"
+configuration_digest = "sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e"
+owners = ["owner://team/providers"]
+"#;
+
 #[test]
-fn v2_scenario_with_declared_target_and_unresolved_provider_prepares() -> Result<(), Box<dyn Error>>
-{
+fn v2_scenario_with_known_provider_prepares() -> Result<(), Box<dyn Error>> {
     let repository = fixture()?;
     fs::write(
         repository.path().join("eqm.toml"),
@@ -303,12 +308,46 @@ fn v2_scenario_with_declared_target_and_unresolved_provider_prepares() -> Result
         repository.path().join("eqm/contracts/scenario.signup.toml"),
         SCENARIO,
     )?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/contracts/provider.mailgun.toml"),
+        PROVIDER,
+    )?;
     let session = prepare(
         &SessionRequest::new(None, evaluation_time()?),
         repository.path(),
     )?;
     assert_eq!(session.semantic_graph_version(), SchemaVersion::V2);
     assert_eq!(session.finalized().graph().scenarios().len(), 1);
+    assert_eq!(session.finalized().graph().providers().len(), 1);
+    Ok(())
+}
+
+#[test]
+fn v2_scenario_with_missing_provider_is_rejected() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/scenario.signup.toml"),
+        SCENARIO,
+    )?;
+    match prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    ) {
+        Err(SessionError::Resolve(eqm_engine::ResolutionError::Findings(findings))) => {
+            assert!(!findings.is_empty());
+        }
+        other => {
+            return Err(
+                format!("expected a missing-provider resolution finding, got {other:?}").into(),
+            );
+        }
+    }
     Ok(())
 }
 

@@ -262,7 +262,7 @@ fn missing_extra_and_wrong_kind_occurrences_reject() -> Result<(), Box<dyn Error
             occurrence("phone_two")?,
             ExpectedSubjectAxis {
                 configuration: ExpectedSubjectConfiguration::Provider(
-                    eqm_domain::TargetConfigurationDigest::hash_content(b"config-two").as_digest(),
+                    eqm_domain::ProviderConfigurationDigest::hash_content(b"config-two"),
                 ),
                 ..axis("phone_two", "two")?.1
             },

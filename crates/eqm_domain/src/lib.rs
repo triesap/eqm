@@ -50,6 +50,7 @@ mod id;
 mod inventory;
 mod path;
 mod policy;
+mod provider;
 mod record;
 mod reference;
 mod runner;
@@ -70,9 +71,9 @@ pub use digest::{
     AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest,
     ComparisonContextDigest, ContractDigest, DigestDomain, DigestParseError,
     EvaluationContextDigest, EvidenceSpecificationDigest, ParticipationDigest, PlanDigest,
-    PolicySelectionDigest, RawObjectDigest, RunnerDigest, ScenarioDigest, SemanticEvidenceDigest,
-    SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest, TargetConfigurationDigest,
-    TrustConfigurationDigest,
+    PolicySelectionDigest, ProviderConfigurationDigest, RawObjectDigest, RunnerDigest,
+    ScenarioDigest, SemanticEvidenceDigest, SemanticGraphV2Digest, Sha256Digest,
+    SubjectManifestDigest, TargetConfigurationDigest, TrustConfigurationDigest,
 };
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
@@ -111,6 +112,7 @@ pub use policy::{
     ParticipationError, ParticipationRule, Policy, PolicyBuildError, PolicyRule, PolicySelector,
     PositiveDays, Profile, ProfileDimension, WaiverPolicy, validate_participation_rules,
 };
+pub use provider::{Provider, ProviderBuildError};
 pub use record::{
     RecordDescriptor, RecordError, RecordKind, RecordRef, ValidatedRecords, validate_records,
 };

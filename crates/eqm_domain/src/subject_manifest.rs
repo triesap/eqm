@@ -8,8 +8,8 @@
 //! development context; trusted completeness requires every relevant axis.
 
 use crate::{
-    OccurrenceId, RepositoryIdentity, Revision, SelectorText, Sha256Digest, SourceCommit,
-    TargetConfigurationDigest,
+    OccurrenceId, ProviderConfigurationDigest, RepositoryIdentity, Revision, SelectorText,
+    Sha256Digest, SourceCommit, TargetConfigurationDigest,
 };
 use std::collections::BTreeSet;
 use std::error::Error;
@@ -23,7 +23,7 @@ pub struct SubjectAssignment {
     source_commit: SourceCommit,
     source_content: Option<Sha256Digest>,
     target_configuration: Option<TargetConfigurationDigest>,
-    provider_configuration: Option<Sha256Digest>,
+    provider_configuration: Option<ProviderConfigurationDigest>,
     build_id: Option<SelectorText>,
     artifact_digest: Option<Sha256Digest>,
 }
@@ -37,7 +37,7 @@ impl SubjectAssignment {
         source_commit: SourceCommit,
         source_content: Option<Sha256Digest>,
         target_configuration: Option<TargetConfigurationDigest>,
-        provider_configuration: Option<Sha256Digest>,
+        provider_configuration: Option<ProviderConfigurationDigest>,
         build_id: Option<SelectorText>,
         artifact_digest: Option<Sha256Digest>,
     ) -> Result<Self, SubjectManifestError> {
@@ -88,7 +88,7 @@ impl SubjectAssignment {
 
     /// Returns the exact provider-configuration identity, if this is a provider.
     #[must_use]
-    pub const fn provider_configuration(&self) -> Option<Sha256Digest> {
+    pub const fn provider_configuration(&self) -> Option<ProviderConfigurationDigest> {
         self.provider_configuration
     }
 

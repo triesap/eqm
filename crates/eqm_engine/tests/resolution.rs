@@ -60,8 +60,8 @@ fn resolution_diagnostic_registry_is_complete_and_sorted() -> Result<(), Box<dyn
 
 use eqm_domain::{
     Applicability, Extensions, FrameworkId, FullRequirementId, OwnerRef, ParticipationRule,
-    ParticipationRuleId, PlatformId, RepoPath, SourceComponent, SourceComponentId, Target,
-    TargetId, WorkspaceGraphInput,
+    ParticipationRuleId, PlatformId, Provider, ProviderId, RepoPath, Sha256Digest, SourceComponent,
+    SourceComponentId, Target, TargetId, WorkspaceGraphInput,
 };
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -295,5 +295,77 @@ fn participation_references_resolve_and_missing_references_reject() -> Result<()
         .err()
         .ok_or("missing requirement accepted")?;
     assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0301");
+    Ok(())
+}
+
+#[test]
+fn declared_provider_references_resolve_and_missing_provider_is_rejected()
+-> Result<(), Box<dyn Error>> {
+    let (_repository, loaded) = support::loaded_example()?;
+    let base = loaded.graph_input().clone();
+    let provider_id = ProviderId::new("provider.mailgun")?;
+    let provider = Provider::new(
+        provider_id.clone(),
+        Sha256Digest::hash_content(b"provider configuration"),
+        vec!["owner://team/providers".parse()?],
+        Extensions::default(),
+    )?;
+
+    // A target may reference a declared provider; an unrelated declared provider
+    // is not attached to any target automatically.
+    let mut declared = base.clone();
+    declared.providers.push(provider);
+    for target in &mut declared.targets {
+        *target = target.clone().with_providers(vec![provider_id.clone()])?;
+    }
+    let graph = resolve_graph(declared, loaded.source_map())?;
+    assert_eq!(graph.providers().len(), 1);
+    assert!(
+        graph
+            .targets()
+            .values()
+            .all(|target| { target.providers().contains(&provider_id) })
+    );
+
+    // A target referencing an undeclared provider fails preparation.
+    let mut missing = base.clone();
+    for target in &mut missing.targets {
+        *target = target
+            .clone()
+            .with_providers(vec![ProviderId::new("provider.absent")?])?;
+    }
+    match resolve_graph(missing, loaded.source_map()) {
+        Err(ResolutionError::Findings(findings)) => assert!(!findings.is_empty()),
+        other => return Err(format!("expected missing-provider findings, got {other:?}").into()),
+    }
+    Ok(())
+}
+
+#[test]
+fn scenario_provider_reference_requires_declared_provider() -> Result<(), Box<dyn Error>> {
+    use eqm_domain::{
+        OccurrenceId, ProviderId, Revision, RoleId, Scenario, ScenarioId, ScenarioParticipant,
+        ScenarioSubject,
+    };
+    let (_repository, loaded) = support::loaded_example()?;
+    let scenario = Scenario::new(
+        ScenarioId::new("signup.flow")?,
+        Revision::new(1)?,
+        vec![ScenarioParticipant::new(
+            OccurrenceId::new("mailer")?,
+            RoleId::new("provider")?,
+            ScenarioSubject::Provider(ProviderId::new("provider.mailgun")?),
+        )],
+        Vec::new(),
+        Extensions::default(),
+    )?;
+    let mut input = loaded.graph_input().clone();
+    input.scenarios.push(scenario);
+    match resolve_graph(input, loaded.source_map()) {
+        Err(ResolutionError::Findings(findings)) => assert!(!findings.is_empty()),
+        other => {
+            return Err(format!("expected unresolved provider findings, got {other:?}").into());
+        }
+    }
     Ok(())
 }

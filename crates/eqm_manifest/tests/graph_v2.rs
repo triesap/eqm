@@ -12,11 +12,11 @@ use eqm_domain::{
     DurationMillis, EvidenceScopeSubject, ExtensionNamespace, ExtensionValue, Extensions, Facet,
     FinalizedWorkspaceGraph, FrameworkId, FullRequirementId, LifecycleStatus, OwnerRef,
     ParticipationRule, ParticipationRuleId, PlatformId, PolicyId, PositiveCount, ProfileId,
-    ProviderId, RepoPath, Revision, RoleId, RunnerBackend, RunnerDefinition, RunnerId,
-    RunnerLimits, RunnerProgram, SelectorText, SemanticGraphV2Digest, SourceComponent,
-    SourceComponentId, SymbolicValueId, Target, TargetId, Title, UnitId, Waiver, WaiverId,
-    WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate, WorkspaceGraph,
-    WorkspaceGraphInput,
+    Provider, ProviderId, RepoPath, Revision, RoleId, RunnerBackend, RunnerDefinition, RunnerId,
+    RunnerLimits, RunnerProgram, SelectorText, SemanticGraphV2Digest, Sha256Digest,
+    SourceComponent, SourceComponentId, SymbolicValueId, Target, TargetId, Title, UnitId, Waiver,
+    WaiverId, WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate,
+    WorkspaceGraph, WorkspaceGraphInput,
 };
 use eqm_manifest::{canonicalize_graph, canonicalize_graph_v2, project_graph_v2};
 use jsonschema::{Draft, Validator};
@@ -117,9 +117,9 @@ fn extra_extensions(value: ExtensionValue) -> Result<Extensions, Box<dyn Error>>
     )]))?)
 }
 
-const V2_GRAPH_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[{"extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[{"applicability":{"always":true},"extensions":{},"id":"participation.mobile","requirement":"account.create#create","targets":["web"]}],"policies":[],"profiles":[],"runners":[],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[{"dependencies":[],"extensions":{},"id":"shared.kmp","owners":["owner://team/shared"],"roots":["shared/kmp"]}],"surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","role":"control_tower","root":"apps/web","source_components":["shared.kmp"]}],"waivers":[]}"#;
+const V2_GRAPH_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[{"extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[{"applicability":{"always":true},"extensions":{},"id":"participation.mobile","requirement":"account.create#create","targets":["web"]}],"policies":[],"profiles":[],"providers":[],"runners":[],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[{"dependencies":[],"extensions":{},"id":"shared.kmp","owners":["owner://team/shared"],"roots":["shared/kmp"]}],"surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","role":"control_tower","root":"apps/web","source_components":["shared.kmp"]}],"waivers":[]}"#;
 const V2_GRAPH_DIGEST: &str =
-    "sha256:2f86564cb2f6894b0221c6912ec15dd2e491698b3bf3e3a02ba1f191a5ffc4a6";
+    "sha256:ff425ec893a45d3a3ab92b353b813afaa4b80c6f5b1665e4aaceb75e6a15121d";
 
 #[test]
 fn literal_v2_graph_bytes_and_digest_match_independent_oracle() -> Result<(), Box<dyn Error>> {
@@ -608,12 +608,12 @@ fn runner_graph(
 
 /// The literal `{target_root}` argument text and repository-path placeholder
 /// lookalikes are independent graph identity members.
-const RUNNER_LITERAL_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[],"policies":[],"profiles":[],"runners":[{"args":[{"kind":"literal","value":"{target_root}"}],"backend":"local","cwd":{"kind":"repository","path":"{target_root}"},"environment":[],"extensions":{},"guarantees":[],"id":"runner.tests","max_concurrency":1,"max_output_bytes":1024,"owners":["owner://team/platform"],"program":{"kind":"repository","path":"tools/test-runner"},"revision":1,"secrets":[],"timeout_ms":30000}],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[],"surfaces":[],"targets":[],"waivers":[]}"#;
+const RUNNER_LITERAL_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[],"policies":[],"profiles":[],"providers":[],"runners":[{"args":[{"kind":"literal","value":"{target_root}"}],"backend":"local","cwd":{"kind":"repository","path":"{target_root}"},"environment":[],"extensions":{},"guarantees":[],"id":"runner.tests","max_concurrency":1,"max_output_bytes":1024,"owners":["owner://team/platform"],"program":{"kind":"repository","path":"tools/test-runner"},"revision":1,"secrets":[],"timeout_ms":30000}],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[],"surfaces":[],"targets":[],"waivers":[]}"#;
 const RUNNER_LITERAL_DIGEST: &str =
-    "sha256:9338d3e2e0240c640e628f5551480d3dd1425a80af3d309533f1bbb7bcbe82af";
-const RUNNER_TEMPLATE_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[],"policies":[],"profiles":[],"runners":[{"args":[{"kind":"target_root"}],"backend":"local","cwd":{"kind":"target_root"},"environment":[],"extensions":{},"guarantees":[],"id":"runner.tests","max_concurrency":1,"max_output_bytes":1024,"owners":["owner://team/platform"],"program":{"kind":"repository","path":"tools/test-runner"},"revision":1,"secrets":[],"timeout_ms":30000}],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[],"surfaces":[],"targets":[],"waivers":[]}"#;
+    "sha256:e795f295468ff101b6eb3fd8261879a2b09a205463d584097ce51ba172c09774";
+const RUNNER_TEMPLATE_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[],"policies":[],"profiles":[],"providers":[],"runners":[{"args":[{"kind":"target_root"}],"backend":"local","cwd":{"kind":"target_root"},"environment":[],"extensions":{},"guarantees":[],"id":"runner.tests","max_concurrency":1,"max_output_bytes":1024,"owners":["owner://team/platform"],"program":{"kind":"repository","path":"tools/test-runner"},"revision":1,"secrets":[],"timeout_ms":30000}],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[],"surfaces":[],"targets":[],"waivers":[]}"#;
 const RUNNER_TEMPLATE_DIGEST: &str =
-    "sha256:fe3ad9d1da58566bb886a04070d7392e71ed254957981369927bb3852bbbfdbf";
+    "sha256:faa90811aa8e3bcc7b3dcb7140c91ee52c5cafade52dcedd6874646c2a0b7c02";
 
 #[test]
 fn literal_placeholder_text_and_expanded_runner_arguments_stay_distinct()
@@ -745,6 +745,62 @@ fn waiver_subject_kind_survives_v2_graph_projection() -> Result<(), Box<dyn Erro
     assert_eq!(
         set_projection["waivers"][0]["scope"]["target"],
         serde_json::json!({"kind": "target_set", "targets": ["ios", "web"]})
+    );
+    Ok(())
+}
+
+fn provider_graph(seed: &[u8]) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        WorkspaceGraphInput {
+            providers: vec![Provider::new(
+                ProviderId::new("provider.mailgun")?,
+                Sha256Digest::hash_content(seed),
+                vec![owner("owner://team/providers")?],
+                Extensions::default(),
+            )?],
+            ..WorkspaceGraphInput::default()
+        },
+    )?))
+}
+
+#[test]
+fn provider_definition_and_target_reference_participate_in_v2_identity()
+-> Result<(), Box<dyn Error>> {
+    let first = canonicalize_graph_v2(&provider_graph(b"configuration-a")?)?;
+    let second = canonicalize_graph_v2(&provider_graph(b"configuration-b")?)?;
+    assert_ne!(first.digest(), second.digest());
+    let projected = project_graph_v2(&provider_graph(b"configuration-a")?)?;
+    assert_eq!(
+        projected["providers"][0]["configuration_digest"],
+        serde_json::json!(Sha256Digest::hash_content(b"configuration-a").to_string())
+    );
+
+    // A target provider reference is a distinct member and is not inferred.
+    let plain = FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![web_target("control_tower")?],
+        ..WorkspaceGraphInput::default()
+    })?);
+    let referenced =
+        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+            targets: vec![
+                web_target("control_tower")?
+                    .with_providers(vec![ProviderId::new("provider.mailgun")?])?,
+            ],
+            providers: vec![Provider::new(
+                ProviderId::new("provider.mailgun")?,
+                Sha256Digest::hash_content(b"configuration-a"),
+                vec![owner("owner://team/providers")?],
+                Extensions::default(),
+            )?],
+            ..WorkspaceGraphInput::default()
+        })?);
+    assert_ne!(
+        canonicalize_graph_v2(&plain)?.digest(),
+        canonicalize_graph_v2(&referenced)?.digest()
+    );
+    assert_eq!(
+        project_graph_v2(&referenced)?["targets"][0]["providers"],
+        serde_json::json!(["provider.mailgun"])
     );
     Ok(())
 }
