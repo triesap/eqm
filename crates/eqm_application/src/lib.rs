@@ -48,7 +48,8 @@ pub use authority::{AuthorityError, AuthorityProvider, AuthorityRequest};
 pub use clock::{ClockError, host_evaluation_time};
 pub use cohort::{CohortError, ResolvedCohort, match_cohort_subjects, resolve_cohort};
 pub use comparison::{
-    ComparisonContextError, checked_comparison_eligibility, shared_comparison_context,
+    CheckedComparisonOutcome, ComparisonContextError, evaluate_checked_comparison,
+    shared_comparison_context,
 };
 pub use evaluation::{
     EvaluationRequest, EvidenceReadError, EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ,
