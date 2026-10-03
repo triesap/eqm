@@ -156,6 +156,20 @@ fn cohort_assignment_v2(value: &CohortAssignment) -> Result<Value, Canonicalizat
     );
     insert_optional(
         &mut projected,
+        "target_configuration_digest",
+        value
+            .target_configuration()
+            .map(|item| json!(item.to_string())),
+    );
+    insert_optional(
+        &mut projected,
+        "provider_configuration_digest",
+        value
+            .provider_configuration()
+            .map(|item| json!(item.to_string())),
+    );
+    insert_optional(
+        &mut projected,
         "build_id",
         value.build_id().map(|item| json!(item.as_str())),
     );

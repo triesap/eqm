@@ -333,7 +333,7 @@ pub fn convert_cohort(document: &ValidatedDocument) -> Result<Cohort, Conversion
         .assignments
         .iter()
         .map(|assignment| {
-            Ok(CohortAssignment::new(
+            CohortAssignment::new(
                 parse(&assignment.occurrence, "assignments.occurrence", source)?,
                 parse(&assignment.repository, "assignments.repository", source)?,
                 parse(
@@ -347,6 +347,16 @@ pub fn convert_cohort(document: &ValidatedDocument) -> Result<Cohort, Conversion
                     .map(|value| parse(value, "assignments.source_content_digest", source))
                     .transpose()?,
                 assignment
+                    .target_configuration_digest
+                    .as_deref()
+                    .map(|value| parse(value, "assignments.target_configuration_digest", source))
+                    .transpose()?,
+                assignment
+                    .provider_configuration_digest
+                    .as_deref()
+                    .map(|value| parse(value, "assignments.provider_configuration_digest", source))
+                    .transpose()?,
+                assignment
                     .build_id
                     .as_deref()
                     .map(|value| build(SelectorText::new(value), "assignments.build_id", source))
@@ -356,7 +366,8 @@ pub fn convert_cohort(document: &ValidatedDocument) -> Result<Cohort, Conversion
                     .as_deref()
                     .map(|value| parse(value, "assignments.artifact_digest", source))
                     .transpose()?,
-            ))
+            )
+            .map_err(|_| ConversionError::at(source, "assignments"))
         })
         .collect::<Result<Vec<_>, ConversionError>>()?;
     Cohort::new(

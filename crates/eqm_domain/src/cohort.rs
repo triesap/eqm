@@ -17,35 +17,50 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 /// One authored cohort assignment for an exact scenario occurrence.
+///
+/// The assignment retains the authored target/provider configuration claim
+/// exactly one of which must be present. That claim is validated SHA-256 text
+/// compared against the independently projected typed graph configuration at
+/// resolution time; it is never substituted, and the graph projection is not
+/// authorized to delete it.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CohortAssignment {
     occurrence: OccurrenceId,
     repository: RepositoryIdentity,
     source_commit: SourceCommit,
     source_content: Option<Sha256Digest>,
+    target_configuration: Option<Sha256Digest>,
+    provider_configuration: Option<Sha256Digest>,
     build_id: Option<SelectorText>,
     artifact_digest: Option<Sha256Digest>,
 }
 
 impl CohortAssignment {
-    /// Creates one assignment from explicit content axes.
-    #[must_use]
-    pub const fn new(
+    /// Creates one assignment with exactly one authored configuration claim.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
         occurrence: OccurrenceId,
         repository: RepositoryIdentity,
         source_commit: SourceCommit,
         source_content: Option<Sha256Digest>,
+        target_configuration: Option<Sha256Digest>,
+        provider_configuration: Option<Sha256Digest>,
         build_id: Option<SelectorText>,
         artifact_digest: Option<Sha256Digest>,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, CohortError> {
+        if target_configuration.is_some() == provider_configuration.is_some() {
+            return Err(CohortError::ConfigurationAuthority);
+        }
+        Ok(Self {
             occurrence,
             repository,
             source_commit,
             source_content,
+            target_configuration,
+            provider_configuration,
             build_id,
             artifact_digest,
-        }
+        })
     }
 
     /// Returns the occurrence this assignment keys.
@@ -70,6 +85,18 @@ impl CohortAssignment {
     #[must_use]
     pub const fn source_content(&self) -> Option<Sha256Digest> {
         self.source_content
+    }
+
+    /// Returns the authored target-configuration claim, if this is a target.
+    #[must_use]
+    pub const fn target_configuration(&self) -> Option<Sha256Digest> {
+        self.target_configuration
+    }
+
+    /// Returns the authored provider-configuration claim, if this is a provider.
+    #[must_use]
+    pub const fn provider_configuration(&self) -> Option<Sha256Digest> {
+        self.provider_configuration
     }
 
     /// Returns the exact build identifier, if present.
@@ -161,13 +188,15 @@ impl Cohort {
     }
 }
 
-/// Cohort construction failure.
+/// Cohort construction or assignment failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CohortError {
     /// No occurrence assignment was declared.
     AssignmentsRequired,
     /// Two assignments shared one occurrence ID.
     DuplicateAssignment,
+    /// Neither or both of the target/provider configuration claims were set.
+    ConfigurationAuthority,
 }
 
 impl Display for CohortError {
@@ -175,6 +204,9 @@ impl Display for CohortError {
         formatter.write_str(match self {
             Self::AssignmentsRequired => "cohort requires at least one assignment",
             Self::DuplicateAssignment => "cohort assignments contain a duplicate occurrence",
+            Self::ConfigurationAuthority => {
+                "cohort assignment requires exactly one configuration authority"
+            }
         })
     }
 }

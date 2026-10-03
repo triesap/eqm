@@ -205,6 +205,25 @@ fn fixture() -> Result<Fixture, Box<dyn Error>> {
     fixture_with(scenario(1)?)
 }
 
+/// Rebuilds the fixture graph with the supplied graph-owned cohorts so that
+/// `resolve_cohort` can consume the exact retained authority.
+fn graph_with_cohorts(
+    fixture: &Fixture,
+    cohorts: Vec<Cohort>,
+) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        WorkspaceGraphInput {
+            targets: vec![target()?],
+            providers: vec![provider()?],
+            scenarios: vec![fixture.scenario.clone()],
+            policies: vec![fixture.policy.clone()],
+            profiles: vec![fixture.profile.clone()],
+            cohorts,
+            ..WorkspaceGraphInput::default()
+        },
+    )?))
+}
+
 /// One exact authored combination plus the values a matching candidate needs.
 struct Combination {
     cohort: Cohort,
@@ -213,14 +232,35 @@ struct Combination {
 }
 
 fn assignment(occurrence: &str, seed: u8) -> Result<CohortAssignment, Box<dyn Error>> {
+    let (target_configuration, provider_configuration) = if occurrence == "mailer" {
+        (
+            None,
+            Some(
+                eqm_manifest::canonicalize_provider_configuration_v2(&provider()?)?
+                    .digest()
+                    .as_digest(),
+            ),
+        )
+    } else {
+        (
+            Some(
+                eqm_manifest::canonicalize_target_configuration_v2(&target()?)?
+                    .digest()
+                    .as_digest(),
+            ),
+            None,
+        )
+    };
     Ok(CohortAssignment::new(
         OccurrenceId::new(occurrence)?,
         "https://example.com/team/project".parse()?,
         "a".repeat(40).parse::<SourceCommit>()?,
         Some(Sha256Digest::hash_content(&[seed, 1])),
+        target_configuration,
+        provider_configuration,
         Some(SelectorText::new(format!("build.{seed}.{occurrence}"))?),
         Some(Sha256Digest::hash_content(&[seed, 2])),
-    ))
+    )?)
 }
 
 fn combination(seed: u8) -> Result<Combination, Box<dyn Error>> {
@@ -390,10 +430,11 @@ fn evaluate(
         &fixture.profile,
         SelectedDimensionStateV2::Unknown,
     )?;
-    let resolved = resolve_cohort(&fixture.finalized, &combination.cohort)?;
+    let graph = graph_with_cohorts(fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&graph, &combination.cohort)?;
     let candidate = candidate(combination, seed)?;
     Ok(evaluate_checked_comparison(
-        &fixture.finalized,
+        &graph,
         &fixture.scenario,
         &selection,
         Sha256Digest::hash_content(b"rule"),
@@ -472,14 +513,16 @@ fn context_and_rule_substitution_is_rejected() -> Result<(), Box<dyn Error>> {
         &fixture.profile,
         SelectedDimensionStateV2::Unknown,
     )?;
-    let resolved = resolve_cohort(&fixture.finalized, &combination(1)?.cohort)?;
-    let candidate = candidate(&combination(1)?, 1)?;
+    let combination = combination(1)?;
+    let graph = graph_with_cohorts(&fixture, vec![combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&graph, &combination.cohort)?;
+    let candidate = candidate(&combination, 1)?;
 
     // A checked context built from a different rule is not the graph context.
     let (other_rule, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"other")?;
     assert_eq!(
         evaluate_checked_comparison(
-            &fixture.finalized,
+            &graph,
             &fixture.scenario,
             &selection,
             Sha256Digest::hash_content(b"rule"),
@@ -498,7 +541,7 @@ fn context_and_rule_substitution_is_rejected() -> Result<(), Box<dyn Error>> {
     )?;
     assert_eq!(
         evaluate_checked_comparison(
-            &fixture.finalized,
+            &graph,
             &fixture.scenario,
             &selection,
             Sha256Digest::hash_content(b"rule"),
@@ -515,7 +558,9 @@ fn context_and_rule_substitution_is_rejected() -> Result<(), Box<dyn Error>> {
 fn subset_extra_wrong_kind_and_wrong_occurrence_fail_matching() -> Result<(), Box<dyn Error>> {
     let fixture = fixture()?;
     let (checked, _) = checked_context(&fixture, SelectedDimensionStateV2::Unknown, b"rule")?;
-    let resolved = resolve_cohort(&fixture.finalized, &combination(1)?.cohort)?;
+    let base_combination = combination(1)?;
+    let graph = graph_with_cohorts(&fixture, vec![base_combination.cohort.clone()])?;
+    let resolved = resolve_cohort(&graph, &base_combination.cohort)?;
     let selection = selection(
         &fixture.policy,
         &fixture.profile,
@@ -524,7 +569,7 @@ fn subset_extra_wrong_kind_and_wrong_occurrence_fail_matching() -> Result<(), Bo
     let rule = Sha256Digest::hash_content(b"rule");
     let evaluate = |candidate: &CheckedSubjectManifestV2| {
         evaluate_checked_comparison(
-            &fixture.finalized,
+            &graph,
             &fixture.scenario,
             &selection,
             rule,

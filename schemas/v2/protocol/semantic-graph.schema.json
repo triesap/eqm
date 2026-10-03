@@ -679,6 +679,10 @@
         "occurrence": {
           "type": "string"
         },
+        "provider_configuration_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
         "repository": {
           "type": "string"
         },
@@ -686,6 +690,10 @@
           "type": "string"
         },
         "source_content_digest": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "target_configuration_digest": {
           "pattern": "^sha256:[0-9a-f]{64}$",
           "type": "string"
         }

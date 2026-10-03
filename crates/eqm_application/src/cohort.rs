@@ -1,14 +1,19 @@
 //! Graph-backed compatibility-cohort resolution and candidate matching.
 //!
-//! S041 resolves an authored cohort against the immutable prepared graph: the
-//! scenario must identify exactly one graph definition, every declared
-//! occurrence must be covered exactly, and each assignment's target/provider
-//! configuration must equal the graph projection. The authored source/build/
-//! artifact axes remain the independent authority a candidate checked subject
-//! manifest is matched against; expected values are never copied from the
-//! candidate. Resolution and matching grant no acquisition or trust.
+//! S041-R1 consumes only the exact graph-owned cohort: a caller-created record
+//! with an absent or altered id/revision/value is rejected. The authored
+//! target/provider configuration claim is retained and compared to the
+//! independently projected typed graph configuration; the graph projection is
+//! never authorized to delete or substitute the authored field, and a raw
+//! digest string is never used in place of the typed projection. The authored
+//! source/build/artifact axes remain the independent authority a candidate
+//! checked subject manifest is matched against. Resolution and matching grant
+//! no acquisition or trust.
 
-use eqm_domain::{Cohort, FinalizedWorkspaceGraph, OccurrenceId, ScenarioSubject, SubjectManifest};
+use eqm_domain::{
+    Cohort, FinalizedWorkspaceGraph, OccurrenceId, Revision, ScenarioId, ScenarioSubject,
+    SelectorText, SubjectManifest,
+};
 use eqm_manifest::{
     CanonicalizationError, canonicalize_provider_configuration_v2,
     canonicalize_target_configuration_v2,
@@ -24,6 +29,8 @@ use std::fmt::{self, Display, Formatter};
 /// Graph-backed cohort resolution failure.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CohortError {
+    /// The supplied cohort is not the exact graph-owned cohort.
+    NotInGraph,
     /// No graph scenario definition carries the cohort's scenario ID.
     ScenarioNotFound,
     /// More than one graph scenario revision carries the cohort's scenario ID.
@@ -32,9 +39,9 @@ pub enum CohortError {
     UndeclaredOccurrence(OccurrenceId),
     /// A scenario occurrence has no cohort assignment.
     MissingOccurrence(OccurrenceId),
-    /// The assignment configuration kind disagrees with the occurrence kind.
-    ConfigurationKind,
-    /// The assignment configuration differs from the immutable graph projection.
+    /// The authored configuration kind disagrees with the occurrence kind.
+    ConfigurationKind(OccurrenceId),
+    /// The authored configuration differs from the immutable graph projection.
     ConfigurationMismatch(OccurrenceId),
     /// The authored combination omits a source, build or artifact axis.
     IncompleteOccurrence(OccurrenceId),
@@ -56,14 +63,42 @@ impl From<CanonicalizationError> for CohortError {
     }
 }
 
-/// One cohort resolved against the immutable graph.
+/// One cohort resolved against, and retained from, the immutable graph.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedCohort {
+    cohort_id: SelectorText,
+    cohort_revision: Revision,
+    scenario_id: ScenarioId,
+    scenario_revision: Revision,
     expected: ExpectedSubjectContext,
     occurrences: usize,
 }
 
 impl ResolvedCohort {
+    /// Returns the exact graph-owned cohort identity.
+    #[must_use]
+    pub const fn cohort_id(&self) -> &SelectorText {
+        &self.cohort_id
+    }
+
+    /// Returns the exact graph-owned cohort revision.
+    #[must_use]
+    pub const fn cohort_revision(&self) -> Revision {
+        self.cohort_revision
+    }
+
+    /// Returns the exact resolved graph scenario identity.
+    #[must_use]
+    pub const fn scenario_id(&self) -> &ScenarioId {
+        &self.scenario_id
+    }
+
+    /// Returns the exact resolved graph scenario revision.
+    #[must_use]
+    pub const fn scenario_revision(&self) -> Revision {
+        self.scenario_revision
+    }
+
     /// Returns the exact independently supplied expected subject context.
     #[must_use]
     pub const fn expected(&self) -> &ExpectedSubjectContext {
@@ -78,10 +113,23 @@ impl ResolvedCohort {
 }
 
 /// Resolves one authored cohort against the immutable prepared graph.
+///
+/// The cohort must be the exact graph-owned record. Its scenario must resolve
+/// to exactly one graph revision, every scenario occurrence must be covered
+/// exactly, each assignment must be content-complete, and each authored
+/// configuration claim must equal the typed graph projection.
 pub fn resolve_cohort(
     graph: &FinalizedWorkspaceGraph,
     cohort: &Cohort,
 ) -> Result<ResolvedCohort, CohortError> {
+    let retained = graph
+        .graph()
+        .cohorts()
+        .get(&(cohort.id().clone(), cohort.revision()));
+    if retained != Some(cohort) {
+        return Err(CohortError::NotInGraph);
+    }
+
     let mut definitions = graph
         .graph()
         .scenarios()
@@ -107,6 +155,9 @@ pub fn resolve_cohort(
         if !assignment.is_complete() {
             return Err(CohortError::IncompleteOccurrence(occurrence.clone()));
         }
+        // Derive the typed configuration from the graph and require the
+        // retained authored claim to equal it exactly. A target can never be
+        // relabeled a provider and a raw digest string is never substituted.
         let configuration =
             match subject {
                 ScenarioSubject::Target(target) => {
@@ -114,18 +165,38 @@ pub fn resolve_cohort(
                         graph.graph().targets().get(target).ok_or_else(|| {
                             CohortError::ConfigurationMismatch(occurrence.clone())
                         })?;
-                    ExpectedSubjectConfiguration::Target(
-                        canonicalize_target_configuration_v2(target)?.digest(),
-                    )
+                    let projected = canonicalize_target_configuration_v2(target)?.digest();
+                    match (
+                        assignment.target_configuration(),
+                        assignment.provider_configuration(),
+                    ) {
+                        (Some(claimed), None) if claimed == projected.as_digest() => {
+                            ExpectedSubjectConfiguration::Target(projected)
+                        }
+                        (Some(_), None) => {
+                            return Err(CohortError::ConfigurationMismatch(occurrence.clone()));
+                        }
+                        _ => return Err(CohortError::ConfigurationKind(occurrence.clone())),
+                    }
                 }
                 ScenarioSubject::Provider(provider) => {
                     let provider =
                         graph.graph().providers().get(provider).ok_or_else(|| {
                             CohortError::ConfigurationMismatch(occurrence.clone())
                         })?;
-                    ExpectedSubjectConfiguration::Provider(
-                        canonicalize_provider_configuration_v2(provider)?.digest(),
-                    )
+                    let projected = canonicalize_provider_configuration_v2(provider)?.digest();
+                    match (
+                        assignment.target_configuration(),
+                        assignment.provider_configuration(),
+                    ) {
+                        (None, Some(claimed)) if claimed == projected.as_digest() => {
+                            ExpectedSubjectConfiguration::Provider(projected)
+                        }
+                        (None, Some(_)) => {
+                            return Err(CohortError::ConfigurationMismatch(occurrence.clone()));
+                        }
+                        _ => return Err(CohortError::ConfigurationKind(occurrence.clone())),
+                    }
                 }
             };
         axes.push((
@@ -153,6 +224,10 @@ pub fn resolve_cohort(
     }
     let expected = ExpectedSubjectContext::new(axes).map_err(|_| CohortError::ScenarioNotFound)?;
     Ok(ResolvedCohort {
+        cohort_id: cohort.id().clone(),
+        cohort_revision: cohort.revision(),
+        scenario_id: scenario.id().clone(),
+        scenario_revision: scenario.revision(),
         expected,
         occurrences: participants.len(),
     })

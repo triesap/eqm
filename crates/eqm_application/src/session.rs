@@ -6,6 +6,7 @@
 //! workspace or re-deriving conformance.
 
 use crate::clock::ClockError;
+use crate::cohort::{CohortError, resolve_cohort};
 use eqm_domain::{
     DigestDomain, FinalizedWorkspaceGraph, RepoPath, RepoPathError, SchemaVersion, Sha256Digest,
     UtcInstant,
@@ -128,6 +129,8 @@ pub enum SessionError {
     Expand(ResolutionError),
     /// The expanded graph could not be canonicalized.
     Canonicalize(CanonicalizationError),
+    /// A loaded compatibility cohort failed graph-owned validation.
+    Cohort(CohortError),
 }
 
 impl Display for SessionError {
@@ -146,6 +149,9 @@ impl Display for SessionError {
             Self::Canonicalize(error) => {
                 write!(formatter, "session canonicalization failed: {error}")
             }
+            Self::Cohort(error) => {
+                write!(formatter, "session cohort validation failed: {error}")
+            }
         }
     }
 }
@@ -158,6 +164,7 @@ impl Error for SessionError {
             Self::Load(error) => Some(error),
             Self::Resolve(error) | Self::Expand(error) => Some(error),
             Self::FragmentDigest(error) | Self::Canonicalize(error) => Some(error),
+            Self::Cohort(error) => Some(error),
         }
     }
 }
@@ -180,6 +187,13 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
         .collect::<Result<BTreeMap<_, _>, _>>()?;
     let finalized =
         expand_fragments(graph, &digests, loaded.source_map()).map_err(SessionError::Expand)?;
+    // Validate every loaded cohort before a prepared session can succeed. Each
+    // cohort must be the exact graph-owned record, resolve exactly one scenario
+    // revision, cover all and only the scenario occurrences with complete
+    // content axes, and carry the independently projected graph configuration.
+    for cohort in finalized.graph().cohorts().values() {
+        resolve_cohort(&finalized, cohort).map_err(SessionError::Cohort)?;
+    }
     // Choose the graph representation from the exact authored workspace
     // version. A v2 workspace is never projected as v1 and a v1 graph carrying
     // v2-only metadata is rejected by `canonicalize_graph` rather than lossily

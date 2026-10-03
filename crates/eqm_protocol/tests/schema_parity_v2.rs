@@ -51,6 +51,7 @@ fn cohort_member() -> Value {
             "repository": "https://example.com/team/project",
             "source_commit": "a".repeat(40),
             "source_content_digest": digest('2'),
+            "provider_configuration_digest": digest('4'),
             "build_id": "build.n.mailer",
             "artifact_digest": digest('3')
         }],
@@ -134,16 +135,13 @@ fn cohort_manifest_schema_accepts_and_rejects_one_axis() -> Result<(), Box<dyn E
     wrong_axis_type["assignments"][0]["source_content_digest"] = json!(5);
     assert!(!validator.is_valid(&wrong_axis_type));
 
+    let mut bad_configuration = cohort_document();
+    bad_configuration["assignments"][0]["provider_configuration_digest"] = json!(5);
+    assert!(!validator.is_valid(&bad_configuration));
+
     let mut unknown_assignment_member = cohort_document();
     unknown_assignment_member["assignments"][0]["unknown_member"] = json!(true);
     assert!(!validator.is_valid(&unknown_assignment_member));
-
-    let mut unknown_axis = cohort_document();
-    unknown_axis["assignments"][0]["target_configuration_digest"] = json!(digest('9'));
-    assert!(
-        !validator.is_valid(&unknown_axis),
-        "authored cohort cannot declare graph-backed configuration"
-    );
     Ok(())
 }
 

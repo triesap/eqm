@@ -164,6 +164,10 @@ pub struct CohortAssignmentV2Dto {
     #[serde(default)]
     pub source_content_digest: Option<String>,
     #[serde(default)]
+    pub target_configuration_digest: Option<String>,
+    #[serde(default)]
+    pub provider_configuration_digest: Option<String>,
+    #[serde(default)]
     pub build_id: Option<String>,
     #[serde(default)]
     pub artifact_digest: Option<String>,

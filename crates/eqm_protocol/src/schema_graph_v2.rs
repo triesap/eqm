@@ -445,6 +445,20 @@ pub struct CohortAssignmentV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
+    #[schemars(with = "Sha256Text")]
+    pub target_configuration_digest: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::v2::deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "Sha256Text")]
+    pub provider_configuration_digest: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::v2::deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
     #[schemars(with = "String")]
     pub build_id: Option<String>,
     #[serde(

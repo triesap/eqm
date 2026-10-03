@@ -21,13 +21,17 @@ All four integrated checkpoints complete before independent review; no S044 star
 until that required gate passes. Full original MVP S211 remains. See the sole
 [plan](COMMIT_SEQUENCE.md), [review](reports/CODEX-d2c9c57.md) and progress.json.
 
-Implementation frontier update (Pi, 2026-10-03): **S039-R2 / RF55 implemented and
-locally verified, pending independent Codex acceptance**. The pure engine now
-rejects duplicate/missing/extra occurrences against the exact scenario set; the
-application derives the comparison contract from the graph, binds the checked
-wire context to it, and constructs matched participants only after bytes-first
-subject matching. Evidence: `reports/S039-R2.md`. The next checkpoint is
-**S041-R1**; S039/S041/S043 acceptance remains Codex-owned.
+Implementation frontier update (Pi, 2026-10-03): **S039-R2 / RF55 and S041-R1 /
+RF56+RF57 implemented and locally verified, pending independent Codex acceptance**.
+The pure engine rejects duplicate/missing/extra occurrences against the exact
+scenario set; the application derives the comparison contract from the graph,
+binds the checked wire context to it, and constructs matched participants only
+after bytes-first subject matching. Cohorts retain authored target/provider
+configuration claims, resolve only as the exact graph-owned record, compare
+those claims to the typed graph projection, and are validated before
+`PreparedSession` success. Evidence: `reports/S039-R2.md`,
+`reports/S041-R1.md`. The next checkpoint is **P03-R4**; S039/S041/S043
+acceptance remains Codex-owned.
 
 Independent candidate standard check passed693 successful test executions and
 changed doctests passed9; structure passed. Five isolated probes confirm defects,

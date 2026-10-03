@@ -7,7 +7,10 @@
 //! authority is rejected rather than projected as v1.
 
 use eqm_application::{SessionError, SessionRequest, prepare};
-use eqm_domain::{DigestDomain, SchemaVersion, UtcInstant};
+use eqm_domain::{
+    DigestDomain, Extensions, FrameworkId, OwnerRef, PlatformId, Provider, ProviderId, RepoPath,
+    RoleId, SchemaVersion, Sha256Digest, SourceComponentId, Target, TargetId, UtcInstant,
+};
 use serde_json::json;
 use std::error::Error;
 use std::fs;
@@ -452,7 +455,42 @@ fn prepared_session_runner_argument_mutation_moves_the_workspace_digest()
     Ok(())
 }
 
-const COHORT: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json"
+fn control_tower_target() -> Result<Target, Box<dyn Error>> {
+    let owner: OwnerRef = "owner://team/web".parse()?;
+    Ok(Target::new(
+        TargetId::new("web")?,
+        RepoPath::new("apps/web")?,
+        PlatformId::new("web")?,
+        FrameworkId::new("sveltekit")?,
+        vec![owner],
+        Extensions::default(),
+    )?
+    .with_role(RoleId::new("control_tower")?)
+    .with_source_components(vec![SourceComponentId::new("shared.kmp")?])?)
+}
+
+fn mailgun_provider() -> Result<Provider, Box<dyn Error>> {
+    let owner: OwnerRef = "owner://team/providers".parse()?;
+    Ok(Provider::new(
+        ProviderId::new("provider.mailgun")?,
+        "sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e"
+            .parse::<Sha256Digest>()?,
+        vec![owner],
+        Extensions::default(),
+    )?)
+}
+
+/// Builds a cohort document whose authored configuration claims equal the
+/// graph projections for the `v2_config` target/provider definitions.
+fn cohort_document() -> Result<String, Box<dyn Error>> {
+    let target = eqm_manifest::canonicalize_target_configuration_v2(&control_tower_target()?)?
+        .digest()
+        .as_digest();
+    let provider = eqm_manifest::canonicalize_provider_configuration_v2(&mailgun_provider()?)?
+        .digest()
+        .as_digest();
+    Ok(format!(
+        r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json"
 id = "cohort.signup"
 revision = 1
 scenario = "signup.flow"
@@ -462,6 +500,7 @@ occurrence = "mailer"
 repository = "https://example.com/team/project"
 source_commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 source_content_digest = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+provider_configuration_digest = "{provider}"
 build_id = "build.mailer"
 artifact_digest = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
 
@@ -470,9 +509,12 @@ occurrence = "phone"
 repository = "https://example.com/team/project"
 source_commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 source_content_digest = "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+target_configuration_digest = "{target}"
 build_id = "build.phone"
 artifact_digest = "sha256:4444444444444444444444444444444444444444444444444444444444444444"
-"#;
+"#
+    ))
+}
 
 #[test]
 fn v2_cohort_document_is_discovered_and_indexed() -> Result<(), Box<dyn Error>> {
@@ -493,7 +535,7 @@ fn v2_cohort_document_is_discovered_and_indexed() -> Result<(), Box<dyn Error>> 
     )?;
     fs::write(
         repository.path().join("eqm/contracts/cohort.signup.toml"),
-        COHORT,
+        cohort_document()?,
     )?;
     let session = prepare(
         &SessionRequest::new(None, evaluation_time()?),
@@ -508,5 +550,82 @@ fn v2_cohort_document_is_discovered_and_indexed() -> Result<(), Box<dyn Error>> 
         .next()
         .ok_or("cohort missing")?;
     assert_eq!(cohort.assignments().len(), 2);
+    Ok(())
+}
+
+#[test]
+fn v2_dangling_cohort_scenario_is_rejected_at_prepare() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    let dangling =
+        cohort_document()?.replace("scenario = \"signup.flow\"", "scenario = \"absent.flow\"");
+    fs::write(
+        repository.path().join("eqm/contracts/cohort.dangling.toml"),
+        dangling,
+    )?;
+    match prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    ) {
+        Err(SessionError::Cohort(eqm_application::CohortError::ScenarioNotFound)) => {}
+        other => {
+            return Err(
+                format!("expected a dangling-cohort rejection at prepare, got {other:?}").into(),
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn v2_cohort_configuration_mismatch_is_rejected_at_prepare() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/scenario.signup.toml"),
+        SCENARIO,
+    )?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/contracts/provider.mailgun.toml"),
+        PROVIDER,
+    )?;
+    // A valid-shaped but different provider claim does not equal the graph
+    // projection, so preparation fails rather than substituting it.
+    let other = Sha256Digest::hash_content(b"other");
+    let mismatched = cohort_document()?
+        .lines()
+        .map(|line| {
+            if line.starts_with("provider_configuration_digest") {
+                format!("provider_configuration_digest = \"{other}\"")
+            } else {
+                line.to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    fs::write(
+        repository.path().join("eqm/contracts/cohort.signup.toml"),
+        mismatched,
+    )?;
+    match prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    ) {
+        Err(SessionError::Cohort(eqm_application::CohortError::ConfigurationMismatch(_))) => {}
+        other => {
+            return Err(format!(
+                "expected a cohort configuration mismatch at prepare, got {other:?}"
+            )
+            .into());
+        }
+    }
     Ok(())
 }
