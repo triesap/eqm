@@ -259,3 +259,68 @@ fn v2_conflicting_participation_is_rejected_at_prepare() -> Result<(), Box<dyn E
     }
     Ok(())
 }
+
+const SCENARIO: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json"
+id = "signup.flow"
+revision = 1
+
+[[participants]]
+id = "mailer"
+role = "provider"
+[participants.subject]
+provider = "provider.mailgun"
+
+[[participants]]
+id = "phone"
+role = "edge"
+[participants.subject]
+target = "web"
+"#;
+
+#[test]
+fn v2_scenario_with_declared_target_and_unresolved_provider_prepares() -> Result<(), Box<dyn Error>>
+{
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/scenario.signup.toml"),
+        SCENARIO,
+    )?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    assert_eq!(session.semantic_graph_version(), SchemaVersion::V2);
+    assert_eq!(session.finalized().graph().scenarios().len(), 1);
+    Ok(())
+}
+
+#[test]
+fn v2_scenario_missing_target_reference_is_rejected() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/scenario.signup.toml"),
+        SCENARIO.replace("target = \"web\"", "target = \"absent\""),
+    )?;
+    match prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    ) {
+        Err(SessionError::Resolve(eqm_engine::ResolutionError::Findings(findings))) => {
+            assert!(!findings.is_empty());
+        }
+        other => {
+            return Err(
+                format!("expected a missing-target resolution finding, got {other:?}").into(),
+            );
+        }
+    }
+    Ok(())
+}

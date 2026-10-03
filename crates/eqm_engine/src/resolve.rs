@@ -3,8 +3,8 @@
 use crate::{diagnostic_registry, explain_diagnostic};
 use eqm_domain::{
     Diagnostic, DiagnosticBuildError, DiagnosticCode, DiagnosticDescriptor, EvidenceScopeSubject,
-    RepoPath, SourceLocation, SourceName, SourcePosition, WorkspaceGraph, WorkspaceGraphBuildError,
-    WorkspaceGraphInput,
+    RepoPath, ScenarioSubject, SourceLocation, SourceName, SourcePosition, WorkspaceGraph,
+    WorkspaceGraphBuildError, WorkspaceGraphInput,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -499,6 +499,24 @@ fn dangling_findings(
                 sources,
                 &mut findings,
             )?;
+        }
+    }
+    for scenario in graph.scenarios().values() {
+        let owner = format!("scenario:{}@{}", scenario.id(), scenario.revision().get());
+        for participant in scenario.participants() {
+            // Target subjects must reference a declared target. Provider
+            // subjects stay explicit unresolved/non-authorizing until the
+            // provider-authority step; they are never synthesized here.
+            if let ScenarioSubject::Target(target) = participant.subject() {
+                require(
+                    target_ids.contains(target.as_str()),
+                    &owner,
+                    "participants.subject.target",
+                    target.as_str(),
+                    sources,
+                    &mut findings,
+                )?;
+            }
         }
     }
     findings.extend(dependency_cycles(graph, sources)?);

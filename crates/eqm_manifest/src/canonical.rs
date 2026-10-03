@@ -817,7 +817,10 @@ fn canonical_key(value: &Value) -> Vec<u8> {
 /// Returns an error when a graph carries v2-only metadata or authority that the
 /// v1 graph projection cannot represent without silent loss.
 fn reject_v2_only_graph(graph: &eqm_domain::WorkspaceGraph) -> Result<(), CanonicalizationError> {
-    if !graph.source_components().is_empty() || !graph.participation().is_empty() {
+    if !graph.source_components().is_empty()
+        || !graph.participation().is_empty()
+        || !graph.scenarios().is_empty()
+    {
         return Err(CanonicalizationError::V2OnlyMetadata);
     }
     for target in graph.targets().values() {

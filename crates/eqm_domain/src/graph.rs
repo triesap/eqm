@@ -5,9 +5,9 @@ use crate::policy::{ParticipationError, ParticipationRule, validate_participatio
 use crate::{
     AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Extensions,
     Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId, RepoPath,
-    RepositoryIdentity, Revision, RunnerDefinition, RunnerId, SelectorText, Sha256Digest,
-    SourceCommit, SourceComponent, SourceComponentId, Surface, SurfaceId, Target, TargetId,
-    TrustLevel, Waiver, WaiverId,
+    RepositoryIdentity, Revision, RunnerDefinition, RunnerId, Scenario, ScenarioId, SelectorText,
+    Sha256Digest, SourceCommit, SourceComponent, SourceComponentId, Surface, SurfaceId, Target,
+    TargetId, TrustLevel, Waiver, WaiverId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -70,6 +70,8 @@ pub struct WorkspaceGraphInput {
     pub source_components: Vec<SourceComponent>,
     /// Capability-participation rule authorities (v2).
     pub participation: Vec<ParticipationRule>,
+    /// Role-bearing scenario occurrence authorities (v2).
+    pub scenarios: Vec<Scenario>,
     /// Target-to-unit bindings.
     pub bindings: Vec<Binding>,
     /// Exact policy revisions.
@@ -103,6 +105,7 @@ pub struct WorkspaceGraph {
     targets: BTreeMap<TargetId, Target>,
     source_components: BTreeMap<SourceComponentId, SourceComponent>,
     participation: BTreeMap<ParticipationRuleId, ParticipationRule>,
+    scenarios: BTreeMap<(ScenarioId, Revision), Scenario>,
     bindings: BTreeMap<BindingId, Binding>,
     binding_coordinates: BTreeMap<(TargetId, crate::UnitId), BindingId>,
     policies: BTreeMap<(PolicyId, Revision), Policy>,
@@ -141,6 +144,10 @@ impl WorkspaceGraph {
                     WorkspaceGraphBuildError::DuplicateParticipationCoordinate
                 }
             })?;
+        let scenarios = unique_index(input.scenarios, |value| {
+            (value.id().clone(), value.revision())
+        })
+        .map_err(|()| WorkspaceGraphBuildError::DuplicateScenario)?;
         let bindings = unique_index(input.bindings, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateBinding)?;
         let mut binding_coordinates = BTreeMap::new();
@@ -191,6 +198,7 @@ impl WorkspaceGraph {
             targets,
             source_components,
             participation,
+            scenarios,
             bindings,
             binding_coordinates,
             policies,
@@ -238,6 +246,11 @@ impl WorkspaceGraph {
     #[must_use]
     pub const fn participation(&self) -> &BTreeMap<ParticipationRuleId, ParticipationRule> {
         &self.participation
+    }
+    /// Returns scenarios in `(id, revision)` order.
+    #[must_use]
+    pub const fn scenarios(&self) -> &BTreeMap<(ScenarioId, Revision), Scenario> {
+        &self.scenarios
     }
     /// Returns bindings in authority-ID order.
     #[must_use]
@@ -337,6 +350,7 @@ impl WorkspaceGraph {
             targets: self.targets.into_values().collect(),
             source_components: self.source_components.into_values().collect(),
             participation: self.participation.into_values().collect(),
+            scenarios: self.scenarios.into_values().collect(),
             bindings: self.bindings.into_values().collect(),
             policies: self.policies.into_values().collect(),
             profiles: self.profiles.into_values().collect(),
@@ -399,6 +413,8 @@ pub enum WorkspaceGraphBuildError {
     DuplicateTarget,
     /// Source-component authority ID repeated.
     DuplicateSourceComponent,
+    /// Exact scenario authority `(id, revision)` repeated.
+    DuplicateScenario,
     /// Participation rule authority ID repeated.
     DuplicateParticipation,
     /// Two participation rules constrained the same `(requirement, target)` coordinate.

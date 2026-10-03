@@ -71,3 +71,48 @@ pub struct ParticipationV2Dto {
     #[serde(default)]
     pub extensions: ExtensionsDto,
 }
+
+/// One strict v2 role-bearing scenario document.
+///
+/// Participants carry a unique occurrence ID, an explicit role and a tagged
+/// target/provider subject; dependencies are explicit directed occurrence
+/// references. Repeated target/provider references with different occurrence
+/// IDs remain distinct members. Provider references stay unresolved until their
+/// owning step supplies provider authority.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ScenarioV2Dto {
+    pub schema: String,
+    pub id: String,
+    pub revision: u64,
+    pub participants: Vec<ScenarioParticipantV2Dto>,
+    #[serde(default)]
+    pub dependencies: Vec<ScenarioDependencyV2Dto>,
+    #[serde(default)]
+    pub extensions: ExtensionsDto,
+}
+
+/// One scenario participant occurrence.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ScenarioParticipantV2Dto {
+    pub id: String,
+    pub role: String,
+    pub subject: ScenarioSubjectV2Dto,
+}
+
+/// One tagged target/provider scenario subject. Exactly one tag must be present.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ScenarioSubjectV2Dto {
+    pub target: Option<String>,
+    pub provider: Option<String>,
+}
+
+/// One explicit directed occurrence dependency.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ScenarioDependencyV2Dto {
+    pub from: String,
+    pub to: String,
+}

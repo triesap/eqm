@@ -13,8 +13,9 @@ use eqm_domain::{
     Fragment, FragmentUse, HttpMethod, Journey, MembershipOperator, OwnerRef, ParticipationRule,
     ParticipationRuleId, Policy, PolicyRule, PolicySelector, PositiveCount, PositiveDays, Profile,
     ProfileDimension, RepoPath, Requirement, RequirementStatement, Revision, RouteSelector,
-    RunnerDefinition, RunnerLimits, RunnerProgram, SecretBinding, SecretProviderRef, SelectorText,
-    Surface, SymbolicValueId, TargetId, Title, Transition, TransitionTrigger, Waiver, WaiverPolicy,
+    RunnerDefinition, RunnerLimits, RunnerProgram, Scenario, ScenarioDependency,
+    ScenarioParticipant, ScenarioSubject, SecretBinding, SecretProviderRef, SelectorText, Surface,
+    SymbolicValueId, TargetId, Title, Transition, TransitionTrigger, Waiver, WaiverPolicy,
     WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate,
 };
 use serde_json::Value;
@@ -247,6 +248,55 @@ pub fn convert_participation(
         extensions(&dto.extensions, source)?,
     )
     .map_err(|_| ConversionError::at(source, "participation"))
+}
+
+/// Converts one strict v2 scenario document into a validated scenario.
+pub fn convert_scenario(document: &ValidatedDocument) -> Result<Scenario, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Scenario(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    let participants = dto
+        .participants
+        .iter()
+        .map(|participant| {
+            let subject = match (&participant.subject.target, &participant.subject.provider) {
+                (Some(target), None) => {
+                    ScenarioSubject::Target(parse(target, "participants.subject.target", source)?)
+                }
+                (None, Some(provider)) => ScenarioSubject::Provider(parse(
+                    provider,
+                    "participants.subject.provider",
+                    source,
+                )?),
+                _ => return Err(ConversionError::at(source, "participants.subject")),
+            };
+            Ok(ScenarioParticipant::new(
+                parse(&participant.id, "participants.id", source)?,
+                parse(&participant.role, "participants.role", source)?,
+                subject,
+            ))
+        })
+        .collect::<Result<Vec<_>, ConversionError>>()?;
+    let dependencies = dto
+        .dependencies
+        .iter()
+        .map(|dependency| {
+            ScenarioDependency::new(
+                parse(&dependency.from, "dependencies.from", source)?,
+                parse(&dependency.to, "dependencies.to", source)?,
+            )
+            .map_err(|_| ConversionError::at(source, "dependencies"))
+        })
+        .collect::<Result<Vec<_>, ConversionError>>()?;
+    Scenario::new(
+        parse(&dto.id, "id", source)?,
+        build(Revision::new(dto.revision), "revision", source)?,
+        participants,
+        dependencies,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "scenario"))
 }
 
 /// Converts one strict profile DTO into a finite symbolic profile family.

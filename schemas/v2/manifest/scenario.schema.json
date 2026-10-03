@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "ScenarioDependencyV2Dto": {
+      "additionalProperties": false,
+      "description": "One explicit directed occurrence dependency.",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "ScenarioParticipantV2Dto": {
+      "additionalProperties": false,
+      "description": "One scenario participant occurrence.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "subject": {
+          "$ref": "#/$defs/ScenarioSubjectV2Dto"
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "subject"
+      ],
+      "type": "object"
+    },
+    "ScenarioSubjectV2Dto": {
+      "additionalProperties": false,
+      "description": "One tagged target/provider scenario subject. Exactly one tag must be present.",
+      "properties": {
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One strict v2 role-bearing scenario document.\n\nParticipants carry a unique occurrence ID, an explicit role and a tagged\ntarget/provider subject; dependencies are explicit directed occurrence\nreferences. Repeated target/provider references with different occurrence\nIDs remain distinct members. Provider references stay unresolved until their\nowning step supplies provider authority.",
+  "properties": {
+    "dependencies": {
+      "items": {
+        "$ref": "#/$defs/ScenarioDependencyV2Dto"
+      },
+      "type": "array"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "id": {
+      "type": "string"
+    },
+    "participants": {
+      "items": {
+        "$ref": "#/$defs/ScenarioParticipantV2Dto"
+      },
+      "type": "array"
+    },
+    "revision": {
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "revision",
+    "participants"
+  ],
+  "title": "ScenarioV2Dto",
+  "type": "object"
+}

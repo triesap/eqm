@@ -114,9 +114,9 @@ fn extra_extensions(value: ExtensionValue) -> Result<Extensions, Box<dyn Error>>
     )]))?)
 }
 
-const V2_GRAPH_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[{"extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[{"applicability":{"always":true},"extensions":{},"id":"participation.mobile","requirement":"account.create#create","targets":["web"]}],"policies":[],"profiles":[],"runners":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[{"dependencies":[],"extensions":{},"id":"shared.kmp","owners":["owner://team/shared"],"roots":["shared/kmp"]}],"surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","role":"control_tower","root":"apps/web","source_components":["shared.kmp"]}],"waivers":[]}"#;
+const V2_GRAPH_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[{"extensions":{},"id":"account.create","owners":["owner://team/accounts"],"status":"active","title":"Account creation"}],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[{"applicability":{"always":true},"extensions":{},"id":"participation.mobile","requirement":"account.create#create","targets":["web"]}],"policies":[],"profiles":[],"runners":[],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[{"dependencies":[],"extensions":{},"id":"shared.kmp","owners":["owner://team/shared"],"roots":["shared/kmp"]}],"surfaces":[],"targets":[{"extensions":{},"framework":"sveltekit","id":"web","owners":["owner://team/web"],"platform":"web","role":"control_tower","root":"apps/web","source_components":["shared.kmp"]}],"waivers":[]}"#;
 const V2_GRAPH_DIGEST: &str =
-    "sha256:2a7eea14d8a5a532296905aa51110be89a7536896810cb33d3cd86b525ffb6df";
+    "sha256:2f86564cb2f6894b0221c6912ec15dd2e491698b3bf3e3a02ba1f191a5ffc4a6";
 
 #[test]
 fn literal_v2_graph_bytes_and_digest_match_independent_oracle() -> Result<(), Box<dyn Error>> {
@@ -345,5 +345,78 @@ fn large_component_extension_integer_and_text_never_collide() -> Result<(), Box<
     )?)?;
     assert_ne!(integer.bytes(), text.bytes());
     assert_ne!(integer.digest(), text.digest());
+    Ok(())
+}
+
+#[test]
+fn scenario_collection_participates_in_v2_identity_and_v1_rejects() -> Result<(), Box<dyn Error>> {
+    use eqm_domain::{
+        OccurrenceId, ProviderId, Revision, Scenario, ScenarioDependency, ScenarioId,
+        ScenarioParticipant, ScenarioSubject,
+    };
+    let scenario = Scenario::new(
+        ScenarioId::new("signup.flow")?,
+        Revision::new(1)?,
+        vec![
+            ScenarioParticipant::new(
+                OccurrenceId::new("phone_one")?,
+                RoleId::new("edge")?,
+                ScenarioSubject::Target(TargetId::new("web")?),
+            ),
+            ScenarioParticipant::new(
+                OccurrenceId::new("phone_two")?,
+                RoleId::new("edge")?,
+                ScenarioSubject::Target(TargetId::new("web")?),
+            ),
+            ScenarioParticipant::new(
+                OccurrenceId::new("mailer")?,
+                RoleId::new("provider")?,
+                ScenarioSubject::Provider(ProviderId::new("provider.mailgun")?),
+            ),
+        ],
+        vec![ScenarioDependency::new(
+            OccurrenceId::new("phone_two")?,
+            OccurrenceId::new("phone_one")?,
+        )?],
+        Extensions::default(),
+    )?;
+    let plain = FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![Target::new(
+            TargetId::new("web")?,
+            RepoPath::new("apps/web")?,
+            PlatformId::new("web")?,
+            FrameworkId::new("sveltekit")?,
+            vec![owner("owner://team/web")?],
+            Extensions::default(),
+        )?],
+        ..WorkspaceGraphInput::default()
+    })?);
+    let with_scenario =
+        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+            targets: vec![Target::new(
+                TargetId::new("web")?,
+                RepoPath::new("apps/web")?,
+                PlatformId::new("web")?,
+                FrameworkId::new("sveltekit")?,
+                vec![owner("owner://team/web")?],
+                Extensions::default(),
+            )?],
+            scenarios: vec![scenario],
+            ..WorkspaceGraphInput::default()
+        })?);
+    assert_ne!(
+        canonicalize_graph_v2(&plain)?.digest(),
+        canonicalize_graph_v2(&with_scenario)?.digest()
+    );
+    let projected = project_graph_v2(&with_scenario)?;
+    assert!(
+        projected["scenarios"]
+            .as_array()
+            .is_some_and(|v| v.len() == 1)
+    );
+    assert_eq!(
+        canonicalize_graph(&with_scenario).map(|_| ()),
+        Err(eqm_manifest::CanonicalizationError::V2OnlyMetadata)
+    );
     Ok(())
 }

@@ -1,6 +1,6 @@
 //! Exact-current schema dispatch and bounded strict DTO decoding.
 
-use crate::dto::v2::ParticipationV2Dto;
+use crate::dto::v2::{ParticipationV2Dto, ScenarioV2Dto};
 use crate::dto::{
     BindingDto, CapabilityDto, FragmentDto, JourneyDto, PolicyDto, ProfileDto, RunnerDto,
     SurfaceDto, WaiverDto,
@@ -45,6 +45,8 @@ pub enum DocumentDto {
     Waiver(WaiverDto),
     /// Capability-participation rule authority (v2).
     Participation(ParticipationV2Dto),
+    /// Role-bearing scenario occurrence authority (v2).
+    Scenario(ScenarioV2Dto),
 }
 
 impl DocumentDto {
@@ -60,6 +62,7 @@ impl DocumentDto {
             Self::Runner(dto) => format!("runner:{}", dto.id),
             Self::Waiver(dto) => format!("waiver:{}", dto.id),
             Self::Participation(dto) => format!("participation:{}", dto.id),
+            Self::Scenario(dto) => format!("scenario:{}@{}", dto.id, dto.revision),
         }
         .into_boxed_str()
     }
@@ -157,6 +160,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
     let v2 = match (schema.version(), schema.kind()) {
         (SchemaVersion::V1, _) => false,
         (SchemaVersion::V2, SchemaKind::Participation) => true,
+        (SchemaVersion::V2, SchemaKind::Scenario) => true,
         _ => return Err(ValidationErrorKind::WrongSchema),
     };
     let kind = schema.kind();
@@ -164,6 +168,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
         matches!(
             (class, kind),
             (SourceClass::Contract, SchemaKind::Participation)
+                | (SourceClass::Contract, SchemaKind::Scenario)
         )
     } else {
         matches!(
@@ -202,6 +207,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
         SchemaKind::Runner => decode!(RunnerDto, Runner),
         SchemaKind::Waiver => decode!(WaiverDto, Waiver),
         SchemaKind::Participation => decode!(ParticipationV2Dto, Participation),
+        SchemaKind::Scenario => decode!(ScenarioV2Dto, Scenario),
         _ => Err(ValidationErrorKind::WrongSchema),
     }
 }

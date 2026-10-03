@@ -31,9 +31,9 @@ use super::{
 };
 use eqm_domain::{
     AdapterLockIdentity, ArgumentTemplate, EnvironmentSource, EvidenceScopeSubject,
-    FinalizedWorkspaceGraph, ImportLockIdentity, RunnerDefinition, RunnerProgram, SchemaKind,
-    SchemaUri, SchemaVersion, SemanticGraphV2Digest, SourceComponent, Waiver,
-    WorkingDirectoryTemplate,
+    FinalizedWorkspaceGraph, ImportLockIdentity, RunnerDefinition, RunnerProgram, Scenario,
+    ScenarioParticipant, ScenarioSubject, SchemaKind, SchemaUri, SchemaVersion,
+    SemanticGraphV2Digest, SourceComponent, Waiver, WorkingDirectoryTemplate,
 };
 use serde_json::{Value, json};
 
@@ -83,6 +83,51 @@ fn source_component_v2(value: &SourceComponent) -> Result<Value, Canonicalizatio
                     .iter()
                     .map(|dependency| dependency.as_str().to_owned()),
             )?,
+        ),
+        ("extensions", extensions_v2(value.extensions())?),
+    ]))
+}
+
+fn scenario_participant_v2(value: &ScenarioParticipant) -> Result<Value, CanonicalizationError> {
+    let subject = match value.subject() {
+        ScenarioSubject::Target(target) => object([
+            ("kind", json!("target")),
+            ("target", json!(target.as_str())),
+        ]),
+        ScenarioSubject::Provider(provider) => object([
+            ("kind", json!("provider")),
+            ("provider", json!(provider.as_str())),
+        ]),
+    };
+    Ok(object([
+        ("id", json!(value.occurrence().as_str())),
+        ("role", json!(value.role().as_str())),
+        ("subject", subject),
+    ]))
+}
+
+fn scenario_v2(value: &Scenario) -> Result<Value, CanonicalizationError> {
+    Ok(object([
+        ("id", json!(value.id().as_str())),
+        ("revision", wire_uint(value.revision().get())),
+        (
+            "participants",
+            canonical_set(
+                value
+                    .participants()
+                    .iter()
+                    .map(scenario_participant_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )?,
+        ),
+        (
+            "dependencies",
+            canonical_set(value.dependencies().iter().map(|dependency| {
+                object([
+                    ("from", json!(dependency.from().as_str())),
+                    ("to", json!(dependency.to().as_str())),
+                ])
+            }))?,
         ),
         ("extensions", extensions_v2(value.extensions())?),
     ]))
@@ -380,6 +425,16 @@ pub fn graph_v2(finalized: &FinalizedWorkspaceGraph) -> Result<Value, Canonicali
                     .bindings()
                     .values()
                     .map(binding_v2)
+                    .collect::<Result<Vec<_>, _>>()?,
+            )?,
+        ),
+        (
+            "scenarios",
+            canonical_set(
+                graph
+                    .scenarios()
+                    .values()
+                    .map(scenario_v2)
                     .collect::<Result<Vec<_>, _>>()?,
             )?,
         ),
