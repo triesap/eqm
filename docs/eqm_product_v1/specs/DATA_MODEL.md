@@ -101,3 +101,13 @@ Comparison coverage comes from the graph scenario and checked independent subjec
 matching, never submitted occurrence lists or public digests. Domain definition
 invariants and generated v2 value schemas remain aligned. Required independent
 P03 integration review precedes S044; original trust/operational criteria remain.
+
+## DEV-017 consuming authority and value parity
+
+The sole COMMIT_SEQUENCE DEV-017 requires exact retained cohort value membership
+at comparison consumption, selected scenario identity/revision equality and
+independently rederived configuration/content expectations. A private carrier or
+matching occurrence names alone cannot bind authority to the current graph.
+Equivalent independently prepared authority is permitted by value, without new
+wire identities. Owning v2 generated value contracts and reader/domain validation
+layers must agree, preserving development absence, completeness modes and v1.

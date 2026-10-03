@@ -1,14 +1,101 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
-## Execution revalidation — 2026-10-03
+## DEV-017 — Bind consumed cohort authority and complete P03 value parity
 
-The latest issued batch has no subsequent implementation delta available in
-this checkout and no matching returned run was located. No new candidate or
-acceptance is recorded. DEV-015 remains the governing technical amendment;
-all four checkpoints S039-R2 → S041-R1 → P03-R4 → S043-R1 remain pending.
-Continue the full range under those settled decisions, retaining 40 allocated
-step acceptances, RF55–RF59 corrections and required independent P03 acceptance
-before S044. Full original MVP S211 and all original gates remain unchanged.
+**Date/author:** 2026-10-03, Codex under owner delegation.
+**Reviewed candidate:** `8e5f21867bdaa7ccf32c4c2d626b2f269184380e`.
+[Independent review](reports/CODEX-8e5f218.md) retains all five commits and the
+40 prior allocated numbered-step acceptances. RF56/RF58 close for allocated scope;
+RF55/RF57/RF59 remain partial, RF60/RF61 are reproduced integration defects.
+S039/S041/S043 and the required independent P03 gate remain changes-required.
+All original 64 R/AC, 21 RA, Q01–Q15 and full MVP S211 remain unchanged.
+
+Execute **S039-R3 → P03-R5 → S043-R2**, **pfc through EQM-P03**. This is the
+complete eligible integration batch: bind the actual application consumer,
+audit/fix the owning generated value contracts, then execute original cycle-exit
+parity through real preparation and CLI diagnostics. Continue through all three;
+one green correction is not an endpoint. S044 cannot precede independent P03
+acceptance. All ordinary decisions below are settled; no owner-only blocker.
+DEV-015 and retained earlier decisions remain except these consuming-boundary
+clarifications. This is the sole current governing amendment.
+
+### S039-R3 — Revalidate retained cohort at consuming boundary (RF60)
+
+Commit `fix: bind consumed cohort to exact graph and scenario authority`.
+Retain the exact resolved cohort value privately, in addition to the resolved
+scenario ID/revision and expected axes. Before comparison matches candidates,
+require that value to equal the consuming immutable graph's exact ID/revision
+entry and its resolved scenario to equal the selected exact scenario. Re-resolve
+that retained authority against the consuming graph with the owning resolver,
+and require its independently derived expected axes to equal the carrier's axes.
+Neither occurrence-name equality nor a private constructor proves this binding.
+
+This is value authority, not address identity: independently prepared copies with
+identical retained cohort/scenario/configuration values may pass. Do not add a
+new wire digest/domain or require unrelated graph content to change comparison
+identity. Missing/altered same-ID/revision cohort, wrong scenario ID/revision,
+changed target/provider configuration, source/build/artifact substitution and
+foreign resolved authority must reject with typed causes before Eligible. Retain
+candidate SubjectManifestDigest separately and do not promote matching to trust.
+Audit every consuming call, including any standalone matcher: a matcher with no
+graph input must be described only as matching its supplied resolved authority,
+never as current-graph/scenario validation. Preserve pure engine boundaries.
+
+Tests through the real application API include the two reproduced negatives,
+same-ID/revision altered content and graph configuration substitutions, same-name
+occurrences with different scenario roles/subjects, and equivalent independently
+prepared graph positives. Retain all prior coverage/repeated-actor/distinct-build
+controls and execute actual prepared asymmetric fixture counterparts. Owning
+application/domain/manifest/protocol/engine lanes and changed doctests.
+
+### P03-R5 — Complete owning v2 value contracts (RF61/RF59)
+
+Commit `fix: align v2 value schemas with owning validation contracts`.
+Audit all newly introduced P03 authored provider/cohort and graph/comparison
+member forms against existing owning domain and ADR-0013 rules. Implement the
+JSON Schema-expressible constraints in DTO/generator source: exact markers,
+symbol vocabulary and bounds, positive authority revisions with actual wire
+range/representation, SHA/source-commit forms, repository and owner vocabulary,
+nonempty/unique sets, nonempty bounded text and finite profile declarations,
+absent-or-present optionals, and exactly one target/provider configuration claim.
+Do not merely fix the six demonstrated examples. Include provider duplicate owners,
+profile title/owner/dimension/value forms and recursive extension union/key rules.
+Use correct local schema definitions/references; no hand-edited generated schemas
+or broadened `additionalProperties` fallback after generator failures.
+
+Derive constraints from owning types, not new product values. Character-length
+constraints cannot prove UTF-8 byte bounds; retain exact NFC/byte/depth/node limits
+in owning reader/domain checks. Raw duplicate members, normalized/logical-key
+collisions and relationships not faithfully expressible in schemas stay separate
+explicit validation layers. Required exact-one field presence is schema-expressible
+and must reject both/neither. Do not require development-optional build/source axes
+in every structural form; completeness remains the consuming mode's obligation.
+
+Add independent positive and one-axis negative matrices across generated manifest,
+graph and comparison schemas using the existing local-only real Draft 2020-12
+validator with format assertions, plus actual authored loader/conversion and checked
+reader controls. Clearly distinguish schema/token/semantic failures. Regenerate
+owning schemas atomically; v1 bytes unchanged, valid approved boundaries preserved.
+Owning domain/manifest/protocol/application/xtask lanes and changed doctests.
+
+### S043-R2 — Complete consumer and cycle-exit parity
+
+Commit `test: close graph-bound comparison and v2 value parity`.
+Integrate both checkpoints into the real asymmetric prepared fixture, checked
+comparison/cohort consumer and public CLI admission/diagnostics. Add cross-session,
+cross-scenario, changed exact authority and schema-reader mismatch negatives;
+retain repeated actors, distinct builds, separate N/N+1 combinations, transitive
+sources and all existing role/source/configuration/subject mutations. Exercise
+public usage examples and generated schemas, independently expected literal
+bytes/digests and actual consumer paths. Do not describe helper success as whole
+acceptance or synthetic material as real-product certification.
+
+Execute original S039/S041/S043 and P03 exit commands plus all affected owning
+lanes, doctests and full standard/schema/structure gates after finalizing every
+report/status/progress edit. Preserve historical failures honestly. Stop only
+after all three checkpoints for required independent P03 review before S044;
+full S211, original criteria and external gates remain. Actual unavailable real
+facts do not block synthetic/simulator-capable implementation or local automation.
 
 ## DEV-015 — Close checked comparison and cohort authority before P04
 
@@ -3954,7 +4041,7 @@ Separate comparison context identity.
 Prevent exact build identity from blocking valid comparability.
 
 ### 3. Exact scope of code changes
-Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 supplies retained clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria. DEV-015 governs checked comparison coverage, exact retained cohort/configuration authority at preparation, full definition/schema invariants and real asymmetric consumer parity; all original criteria and the independent S043 gate remain.
+Define shared contract/scenario/logical-profile/comparison-rule identity separately from subject manifest/evaluation identity and project it canonically. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 supplies retained clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria. DEV-015 governs checked comparison coverage, exact retained cohort/configuration authority at preparation, full definition/schema invariants and real asymmetric consumer parity; all original criteria and the independent S043 gate remain. DEV-017 binds consumed resolved cohort values to the exact current graph/scenario and independently rederived axes, and completes owning v2 schema value parity before independent P03 acceptance; no original criterion is relaxed.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/digest.rs`
@@ -4042,7 +4129,7 @@ Author compatibility cohorts.
 Support approved mixed-version combinations without inventing a support window.
 
 ### 3. Exact scope of code changes
-Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 supplies retained clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria. DEV-015 governs checked comparison coverage, exact retained cohort/configuration authority at preparation, full definition/schema invariants and real asymmetric consumer parity; all original criteria and the independent S043 gate remain.
+Add strict data representation and validation for declared required participant/build cohorts and scenario coverage; leave operational cohort values explicit. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-014 supplies retained clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria. DEV-015 governs checked comparison coverage, exact retained cohort/configuration authority at preparation, full definition/schema invariants and real asymmetric consumer parity; all original criteria and the independent S043 gate remain. DEV-017 binds consumed resolved cohort values to the exact current graph/scenario and independently rederived axes, and completes owning v2 schema value parity before independent P03 acceptance; no original criterion is relaxed.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_domain/src/policy.rs`
@@ -4134,7 +4221,7 @@ Verify target model schema and identity parity.
 Close graph-model changes before obligation routing.
 
 ### 3. Exact scope of code changes
-Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF45-RF50: cycle exit verifies production v2 graph identity/version routing, checked transitive structural ownership, nonambiguous participation and exact scenario/subject/provider/cohort ingress with public parity. DEV-014 supplies retained clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria. DEV-015 governs checked comparison coverage, exact retained cohort/configuration authority at preparation, full definition/schema invariants and real asymmetric consumer parity; all original criteria and the independent S043 gate remain.
+Update public usage examples and schema parity assertions for new target/subject/participation records, preserving explicit compatibility decisions. DEV-007: include regressions proving role/source-reference changes invalidate target configuration while separately bound source/build content changes invalidate the appropriate subject; missing axes never become success. DEV-009 closes the exact engineering allocation for this step; apply its EQM-P03 representation table together with this original scope and criteria. DEV-012 RF45-RF50: cycle exit verifies production v2 graph identity/version routing, checked transitive structural ownership, nonambiguous participation and exact scenario/subject/provider/cohort ingress with public parity. DEV-014 supplies retained clarification: complete RF51/RF52/RF53 corrections before S040, graph-backed provider/cohort matching and genuine asymmetric parity; preserve all original tests, dependencies and criteria. DEV-015 governs checked comparison coverage, exact retained cohort/configuration authority at preparation, full definition/schema invariants and real asymmetric consumer parity; all original criteria and the independent S043 gate remain. DEV-017 binds consumed resolved cohort values to the exact current graph/scenario and independently rederived axes, and completes owning v2 schema value parity before independent P03 acceptance; no original criterion is relaxed.
 
 ### 4. Files/modules likely involved
 - `docs/concepts.md`

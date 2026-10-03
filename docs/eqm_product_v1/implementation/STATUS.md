@@ -1,52 +1,34 @@
 # Verification and implementation status
 
-Execution revalidation, 2026-10-03: no product delta since the preceding planning
-checkpoint and no matching returned run located. No additional acceptance.
-The complete four-checkpoint DEV-015 batch remains pending; the current frontier
-and original criteria below apply.
+DEV-017 independently reviewed clean `8e5f21867bdaa7ccf32c4c2d626b2f269184380e`.
+All four issued checkpoints plus one ledger backfill were committed; Pi stopped
+correctly at required independent review. Preserve all commits and **40 prior
+allocated numbered-step acceptances**. S039/S041/S043 remain changes-required;
+P03 gate is not passed, P04–P15 remain pending.
 
-DEV-015 independently reviewed clean `d2c9c57d2e5d3c8f448426619a49c48af45b211a`.
-Seven checkpoints reached S043. All returned commits and prior acceptance remain;
-S040/S042 are accepted for allocated scope, total 40 numbered steps. S039/S041/S043
-are retained changes-required. Reaching S043 did not pass its independent gate.
+RF56 restored configuration forms and RF58 full profile validation close for
+allocated scope. RF55 coverage/matching, RF57 cohort preparation/resolution and
+RF59 schema constraints improve but remain partial. RF60 comparison consumes
+foreign/wrong-scenario resolved authority; RF61 generated schemas still admit
+invalid owning values. RF45/RF53 and whole RA02/RA13 remain open.
 
-RF51/RF52 close for allocated scope; RF45/RF53 remain partial. RF55–RF59 require
-checked comparison coverage, frozen cohort configuration fields, graph-bound cohort
-preparation/membership, complete profile validation and authored schema parity.
-RF54 current tracking recurrence is reconciled; the historically red P03-R2 report
-repaired at P03-R3 remains recorded. No whole AC/RA closes from helper tests.
+Current frontier **S039-R3 → P03-R5 → S043-R2**, **pfc through EQM-P03**.
+All three integrated checkpoints precede another independent P03 review before
+S044. Full original 64 R/AC, 21 RA, Q01–Q15 and S211 remain. See the sole
+[plan](COMMIT_SEQUENCE.md), [review](reports/CODEX-8e5f218.md) and progress.json.
 
-Current frontier **S039-R2 → S041-R1 → P03-R4 → S043-R1**, **pfc through EQM-P03**.
-All four integrated checkpoints complete before independent review; no S044 start
-until that required gate passes. Full original MVP S211 remains. See the sole
-[plan](COMMIT_SEQUENCE.md), [review](reports/CODEX-d2c9c57.md) and progress.json.
+Independent standard gate passed **704 successful test executions** and changed
+doctests passed **9**; structure and diff checks passed. Four isolated probes
+reproduce defective acceptance; they do not establish correctness. Initial probe
+compile failure was repaired only in the isolated review worktree. v1 schemas
+and Cargo.lock unchanged. No supervisor production code/test edits.
 
-Implementation frontier update (Pi, 2026-10-03): **all four DEV-015 checkpoints
-(S039-R2 / RF55, S041-R1 / RF56+RF57, P03-R4 / RF58+RF59, S043-R1) implemented
-and locally verified, pending independent Codex acceptance**. The pure engine
-rejects duplicate/missing/extra occurrences against the exact scenario set; the
-application derives the comparison contract from the graph, binds the checked
-wire context to it, and constructs matched participants only after bytes-first
-subject matching. Cohorts retain authored target/provider configuration claims,
-resolve only as the exact graph-owned record, compare those claims to the typed
-graph projection, and are validated before `PreparedSession` success. Comparison
-checked ingress enforces full owning-domain profile and recursive extension
-invariants, and the authored provider/cohort schemas carry exact markers,
-digest patterns and non-null optionals. The synthetic asymmetric fixture now
-exercises the checked comparison/cohort consumer and public CLI
-admission/diagnostics. Evidence: `reports/S039-R2.md`, `reports/S041-R1.md`,
-`reports/P03-R4.md`, `reports/S043-R1.md`. Commits `bbbd7c6`, `255d3af`,
-`37fed88`, and this checkpoint. **Stop for mandatory independent P03 review
-before S044**; S039/S041/S043 acceptance remains Codex-owned.
+Historical missing-run revalidations and earlier reports remain historical; the
+latest run is now located and reviewed. Prior P03-R2 report-marker failure repaired
+at P03-R3 remains recorded. No whole AC/RA closes from allocated helper evidence.
 
-Independent candidate standard check passed693 successful test executions and
-changed doctests passed9; structure passed. Five isolated probes confirm defects,
-not acceptance. No supervisor product code/tests changed in the production checkout.
-P01/P02 allocated implementation complete; P03 has13 of16 numbered steps accepted;
-P04–P15 pending. All original64 R/AC,21 RA,Q01–Q15 remain; RA02/RA13 globally open.
-
-No release/human release-testing milestone reached. Full verify, current supply-chain,
-Linux, coverage/mutation/fuzz/benchmark/package and live product/crypto/host/signing/
-operational evidence remains unverified. Synthetic/simulator-capable software is
-eligible; actual Q02/Q06 facts remain separate. No live/publication/deployment/signing
-or optional-native activation authority is granted.
+No release or human release-testing gate reached. Full verify, Linux, coverage,
+mutation/fuzz/benchmark/package and live product/crypto/host/signing/operational
+acceptance remain unverified. Synthetic/simulator software remains eligible;
+real Q02/Q06 material is separate. No live/publication/deployment/signing or
+optional-native activation is authorized.
