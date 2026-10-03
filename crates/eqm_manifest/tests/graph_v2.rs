@@ -8,10 +8,14 @@
 //! committed local v2 semantic-graph schema.
 
 use eqm_domain::{
-    Applicability, Capability, CapabilityId, ExtensionNamespace, ExtensionValue, Extensions,
+    Applicability, ArgumentTemplate, CalendarDate, Capability, CapabilityId, DimensionId,
+    DurationMillis, EvidenceScopeSubject, ExtensionNamespace, ExtensionValue, Extensions, Facet,
     FinalizedWorkspaceGraph, FrameworkId, FullRequirementId, LifecycleStatus, OwnerRef,
-    ParticipationRule, ParticipationRuleId, PlatformId, RepoPath, RoleId, SemanticGraphV2Digest,
-    SourceComponent, SourceComponentId, Target, TargetId, Title, WorkspaceGraph,
+    ParticipationRule, ParticipationRuleId, PlatformId, PolicyId, PositiveCount, ProfileId,
+    ProviderId, RepoPath, Revision, RoleId, RunnerBackend, RunnerDefinition, RunnerId,
+    RunnerLimits, RunnerProgram, SelectorText, SemanticGraphV2Digest, SourceComponent,
+    SourceComponentId, SymbolicValueId, Target, TargetId, Title, UnitId, Waiver, WaiverId,
+    WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate, WorkspaceGraph,
     WorkspaceGraphInput,
 };
 use eqm_manifest::{
@@ -417,6 +421,185 @@ fn scenario_collection_participates_in_v2_identity_and_v1_rejects() -> Result<()
     assert_eq!(
         canonicalize_graph(&with_scenario).map(|_| ()),
         Err(eqm_manifest::CanonicalizationError::V2OnlyMetadata)
+    );
+    Ok(())
+}
+
+fn runner(
+    args: Vec<ArgumentTemplate>,
+    cwd: Option<WorkingDirectoryTemplate>,
+) -> Result<RunnerDefinition, Box<dyn Error>> {
+    Ok(RunnerDefinition::new(
+        RunnerId::new("runner.tests")?,
+        Revision::new(1)?,
+        vec![owner("owner://team/platform")?],
+        RunnerBackend::Local,
+        RunnerProgram::Repository(RepoPath::new("tools/test-runner")?),
+        args,
+        cwd,
+        Vec::new(),
+        Vec::new(),
+        RunnerLimits::new(
+            DurationMillis::new(30_000)?,
+            PositiveCount::new(1_024)?,
+            None,
+        )?,
+        Vec::new(),
+        Extensions::default(),
+    )?)
+}
+
+fn runner_graph(
+    args: Vec<ArgumentTemplate>,
+    cwd: Option<WorkingDirectoryTemplate>,
+) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        WorkspaceGraphInput {
+            runners: vec![runner(args, cwd)?],
+            ..WorkspaceGraphInput::default()
+        },
+    )?))
+}
+
+/// The literal `{target_root}` argument text and repository-path placeholder
+/// lookalikes are independent graph identity members.
+const RUNNER_LITERAL_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[],"policies":[],"profiles":[],"runners":[{"args":[{"kind":"literal","value":"{target_root}"}],"backend":"local","cwd":{"kind":"repository","path":"{target_root}"},"environment":[],"extensions":{},"guarantees":[],"id":"runner.tests","max_concurrency":1,"max_output_bytes":1024,"owners":["owner://team/platform"],"program":{"kind":"repository","path":"tools/test-runner"},"revision":1,"secrets":[],"timeout_ms":30000}],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[],"surfaces":[],"targets":[],"waivers":[]}"#;
+const RUNNER_LITERAL_DIGEST: &str =
+    "sha256:9338d3e2e0240c640e628f5551480d3dd1425a80af3d309533f1bbb7bcbe82af";
+const RUNNER_TEMPLATE_BYTES: &str = r#"{"adapters":[],"bindings":[],"capabilities":[],"extensions":{},"fragments":[],"imports":[],"journeys":[],"participation":[],"policies":[],"profiles":[],"runners":[{"args":[{"kind":"target_root"}],"backend":"local","cwd":{"kind":"target_root"},"environment":[],"extensions":{},"guarantees":[],"id":"runner.tests","max_concurrency":1,"max_output_bytes":1024,"owners":["owner://team/platform"],"program":{"kind":"repository","path":"tools/test-runner"},"revision":1,"secrets":[],"timeout_ms":30000}],"scenarios":[],"schema":"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/semantic-graph.schema.json","source_components":[],"surfaces":[],"targets":[],"waivers":[]}"#;
+const RUNNER_TEMPLATE_DIGEST: &str =
+    "sha256:fe3ad9d1da58566bb886a04070d7392e71ed254957981369927bb3852bbbfdbf";
+
+#[test]
+fn literal_placeholder_text_and_expanded_runner_arguments_stay_distinct()
+-> Result<(), Box<dyn Error>> {
+    let literal = canonicalize_graph_v2(&runner_graph(
+        vec![ArgumentTemplate::Literal(SelectorText::new(
+            "{target_root}",
+        )?)],
+        Some(WorkingDirectoryTemplate::Repository(RepoPath::new(
+            "{target_root}",
+        )?)),
+    )?)?;
+    let template = canonicalize_graph_v2(&runner_graph(
+        vec![ArgumentTemplate::TargetRoot],
+        Some(WorkingDirectoryTemplate::TargetRoot),
+    )?)?;
+    assert_eq!(std::str::from_utf8(literal.bytes())?, RUNNER_LITERAL_BYTES);
+    assert_eq!(literal.digest().to_string(), RUNNER_LITERAL_DIGEST);
+    assert_eq!(
+        std::str::from_utf8(template.bytes())?,
+        RUNNER_TEMPLATE_BYTES
+    );
+    assert_eq!(template.digest().to_string(), RUNNER_TEMPLATE_DIGEST);
+    assert_ne!(literal.bytes(), template.bytes());
+    assert_ne!(literal.digest(), template.digest());
+    Ok(())
+}
+
+#[test]
+fn runner_argument_order_and_cwd_variants_are_bound() -> Result<(), Box<dyn Error>> {
+    let forward = canonicalize_graph_v2(&runner_graph(
+        vec![ArgumentTemplate::TargetRoot, ArgumentTemplate::SelectorJson],
+        None,
+    )?)?;
+    let reversed = canonicalize_graph_v2(&runner_graph(
+        vec![ArgumentTemplate::SelectorJson, ArgumentTemplate::TargetRoot],
+        None,
+    )?)?;
+    assert_ne!(forward.bytes(), reversed.bytes());
+    assert_ne!(forward.digest(), reversed.digest());
+
+    // A repository path that merely looks like a placeholder is distinct from an
+    // actual result-path expansion.
+    let lookalike = canonicalize_graph_v2(&runner_graph(
+        vec![ArgumentTemplate::SelectorJson],
+        Some(WorkingDirectoryTemplate::Repository(RepoPath::new(
+            "{result_path}",
+        )?)),
+    )?)?;
+    let expanded = canonicalize_graph_v2(&runner_graph(
+        vec![ArgumentTemplate::SelectorJson],
+        Some(WorkingDirectoryTemplate::ResultPath),
+    )?)?;
+    assert_ne!(lookalike.bytes(), expanded.bytes());
+    assert_ne!(lookalike.digest(), expanded.digest());
+    Ok(())
+}
+
+fn waiver(subject: EvidenceScopeSubject) -> Result<Waiver, Box<dyn Error>> {
+    Ok(Waiver::new(
+        WaiverId::new("waiver.signup")?,
+        Revision::new(1)?,
+        vec![owner("owner://team/product")?],
+        PolicyId::new("release.default")?,
+        WaiverScope::new(
+            subject,
+            UnitId::new("account.create.signup.start")?,
+            FullRequirementId::new("account.create.signup.start#reachable")?,
+            vec![Facet::Behavior],
+            vec![WaiverProfileScope::new(
+                ProfileId::new("audience.default")?,
+                vec![(DimensionId::new("region")?, SymbolicValueId::new("eu")?)],
+            )?],
+        )?,
+        WaiverReason::new("Temporary remediation")?,
+        "issue://PRODUCT-42".parse()?,
+        vec![owner("owner://role/reviewer")?],
+        "2026-08-01".parse::<CalendarDate>()?,
+        "2026-08-08".parse::<CalendarDate>()?,
+        vec![Facet::Accessibility],
+        Extensions::default(),
+    )?)
+}
+
+fn waiver_graph(subject: EvidenceScopeSubject) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        WorkspaceGraphInput {
+            waivers: vec![waiver(subject)?],
+            ..WorkspaceGraphInput::default()
+        },
+    )?))
+}
+
+#[test]
+fn waiver_subject_kind_survives_v2_graph_projection() -> Result<(), Box<dyn Error>> {
+    let target = canonicalize_graph_v2(&waiver_graph(EvidenceScopeSubject::Target(
+        TargetId::new("web")?,
+    ))?)?;
+    let provider = canonicalize_graph_v2(&waiver_graph(EvidenceScopeSubject::Provider(
+        ProviderId::new("provider.mailgun")?,
+    ))?)?;
+    let set = canonicalize_graph_v2(&waiver_graph(EvidenceScopeSubject::target_set(vec![
+        TargetId::new("web")?,
+        TargetId::new("ios")?,
+    ])?)?)?;
+    assert_ne!(target.digest(), provider.digest());
+    assert_ne!(target.digest(), set.digest());
+    assert_ne!(provider.digest(), set.digest());
+
+    let target_projection = project_graph_v2(&waiver_graph(EvidenceScopeSubject::Target(
+        TargetId::new("web")?,
+    ))?)?;
+    assert_eq!(
+        target_projection["waivers"][0]["scope"]["target"],
+        serde_json::json!({"kind": "target", "target": "web"})
+    );
+    let provider_projection = project_graph_v2(&waiver_graph(EvidenceScopeSubject::Provider(
+        ProviderId::new("provider.mailgun")?,
+    ))?)?;
+    assert_eq!(
+        provider_projection["waivers"][0]["scope"]["target"],
+        serde_json::json!({"kind": "provider", "provider": "provider.mailgun"})
+    );
+    let set_projection =
+        project_graph_v2(&waiver_graph(EvidenceScopeSubject::target_set(vec![
+            TargetId::new("web")?,
+            TargetId::new("ios")?,
+        ])?)?)?;
+    assert_eq!(
+        set_projection["waivers"][0]["scope"]["target"],
+        serde_json::json!({"kind": "target_set", "targets": ["ios", "web"]})
     );
     Ok(())
 }

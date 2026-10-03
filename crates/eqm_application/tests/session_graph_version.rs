@@ -8,6 +8,7 @@
 
 use eqm_application::{SessionError, SessionRequest, prepare};
 use eqm_domain::{DigestDomain, SchemaVersion, UtcInstant};
+use serde_json::json;
 use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -260,6 +261,19 @@ fn v2_conflicting_participation_is_rejected_at_prepare() -> Result<(), Box<dyn E
     Ok(())
 }
 
+const RUNNER: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/runner.schema.json"
+id = "runner.tests"
+revision = 1
+owners = ["owner://team/platform"]
+backend = "local"
+program = "tools/test-runner"
+args = ["{target_root}", "{selector_json}", "{result_path}"]
+cwd = "{target_root}"
+timeout_ms = 30000
+max_output_bytes = 1048576
+max_concurrency = 1
+"#;
+
 const SCENARIO: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json"
 id = "signup.flow"
 revision = 1
@@ -322,5 +336,79 @@ fn v2_scenario_missing_target_reference_is_rejected() -> Result<(), Box<dyn Erro
             );
         }
     }
+    Ok(())
+}
+
+#[test]
+fn prepared_session_runner_templates_project_as_lossless_tagged_records()
+-> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    fs::create_dir_all(repository.path().join("eqm/runners"))?;
+    fs::write(
+        repository.path().join("eqm/runners/runner.tests.toml"),
+        RUNNER,
+    )?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    assert_eq!(session.semantic_graph_version(), SchemaVersion::V2);
+    assert_eq!(
+        session.semantic_graph_domain(),
+        DigestDomain::SemanticGraphV2
+    );
+    let projected = eqm_manifest::project_graph_v2(session.finalized())?;
+    assert_eq!(
+        projected["runners"][0]["args"],
+        json!([
+            {"kind": "target_root"},
+            {"kind": "selector_json"},
+            {"kind": "result_path"}
+        ])
+    );
+    assert_eq!(
+        projected["runners"][0]["cwd"],
+        json!({"kind": "target_root"})
+    );
+    // The session digest is exactly the domain-separated digest of the v2 bytes.
+    let canonical = eqm_manifest::canonicalize_graph_v2(session.finalized())?;
+    assert_eq!(session.workspace_digest(), canonical.digest().as_digest());
+    Ok(())
+}
+
+#[test]
+fn prepared_session_runner_argument_mutation_moves_the_workspace_digest()
+-> Result<(), Box<dyn Error>> {
+    let baseline = fixture()?;
+    fs::write(baseline.path().join("eqm.toml"), v2_config("control_tower"))?;
+    fs::create_dir_all(baseline.path().join("eqm/runners"))?;
+    fs::write(
+        baseline.path().join("eqm/runners/runner.tests.toml"),
+        RUNNER,
+    )?;
+    let baseline = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        baseline.path(),
+    )?;
+
+    let changed = fixture()?;
+    fs::write(changed.path().join("eqm.toml"), v2_config("control_tower"))?;
+    fs::create_dir_all(changed.path().join("eqm/runners"))?;
+    fs::write(
+        changed.path().join("eqm/runners/runner.tests.toml"),
+        RUNNER.replace("\"{target_root}\", ", "\"target_root\", "),
+    )?;
+    let changed = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        changed.path(),
+    )?;
+
+    // A literal `target_root` argument is distinct from the substitution
+    // template, so one axis moves the v2 workspace identity.
+    assert_ne!(baseline.workspace_digest(), changed.workspace_digest());
     Ok(())
 }

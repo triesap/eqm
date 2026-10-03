@@ -157,21 +157,32 @@ fn runner_program_v2(value: &RunnerProgram) -> Value {
     }
 }
 
+/// Projects one complete argument template as an explicit tagged record. A
+/// literal `{target_root}` text and the substitution template are distinct
+/// graph identity members, matching the approved runner v2 representation.
 fn argument_v2(value: &ArgumentTemplate) -> Value {
-    json!(match value {
-        ArgumentTemplate::Literal(value) => value.as_str(),
-        ArgumentTemplate::TargetRoot => "{target_root}",
-        ArgumentTemplate::SelectorJson => "{selector_json}",
-        ArgumentTemplate::ResultPath => "{result_path}",
-    })
+    match value {
+        ArgumentTemplate::Literal(text) => {
+            object([("kind", json!("literal")), ("value", json!(text.as_str()))])
+        }
+        ArgumentTemplate::TargetRoot => object([("kind", json!("target_root"))]),
+        ArgumentTemplate::SelectorJson => object([("kind", json!("selector_json"))]),
+        ArgumentTemplate::ResultPath => object([("kind", json!("result_path"))]),
+    }
 }
 
+/// Projects one complete working-directory template as a tagged record. A
+/// repository path that merely looks like a placeholder stays distinct from an
+/// expanded substitution template.
 fn working_directory_v2(value: &WorkingDirectoryTemplate) -> Value {
-    json!(match value {
-        WorkingDirectoryTemplate::TargetRoot => "{target_root}",
-        WorkingDirectoryTemplate::Repository(path) => path.as_str(),
-        WorkingDirectoryTemplate::ResultPath => "{result_path}",
-    })
+    match value {
+        WorkingDirectoryTemplate::TargetRoot => object([("kind", json!("target_root"))]),
+        WorkingDirectoryTemplate::Repository(path) => object([
+            ("kind", json!("repository")),
+            ("path", json!(path.as_str())),
+        ]),
+        WorkingDirectoryTemplate::ResultPath => object([("kind", json!("result_path"))]),
+    }
 }
 
 fn environment_v2(
@@ -224,11 +235,21 @@ fn waiver_v2(value: &Waiver) -> Result<Value, CanonicalizationError> {
 
 fn waiver_scope_v2(value: &eqm_domain::WaiverScope) -> Result<Value, CanonicalizationError> {
     let target = match value.target() {
-        EvidenceScopeSubject::Target(target) => json!(target.as_str()),
-        EvidenceScopeSubject::Provider(provider) => json!(provider.as_str()),
-        EvidenceScopeSubject::TargetSet(targets) => {
-            canonical_strings(targets.iter().map(|target| target.as_str().to_owned()))?
-        }
+        EvidenceScopeSubject::Target(target) => object([
+            ("kind", json!("target")),
+            ("target", json!(target.as_str())),
+        ]),
+        EvidenceScopeSubject::Provider(provider) => object([
+            ("kind", json!("provider")),
+            ("provider", json!(provider.as_str())),
+        ]),
+        EvidenceScopeSubject::TargetSet(targets) => object([
+            ("kind", json!("target_set")),
+            (
+                "targets",
+                canonical_strings(targets.iter().map(|target| target.as_str().to_owned()))?,
+            ),
+        ]),
     };
     Ok(object([
         ("target", target),
