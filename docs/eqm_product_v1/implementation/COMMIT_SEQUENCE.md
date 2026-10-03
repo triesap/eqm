@@ -1,5 +1,15 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## Execution revalidation — 2026-10-03
+
+The source remains at the preceding planning checkpoint with no subsequent product
+implementation changes available for review. The DEV-012 eleven-checkpoint batch
+is still pending; no additional implementation or acceptance is recorded. Continue
+P03-R1 through S043 under the complete decisions below, preserving the required
+independent review before S044 and the full S211 MVP scope. The prior 32 allocated
+step acceptances and RF45–RF50 findings remain unchanged.
+
+
 ## DEV-012 — Finish production shared-subject integration and the P03 boundary
 
 **Date/author:** 2026-10-03, Codex under owner delegation.
