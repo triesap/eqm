@@ -1,33 +1,29 @@
 # Verification and implementation status
 
-DEV-014 independently reviewed clean `667776537709f824efac48f6bf325be2c9ea2913`.
-All seven returned checkpoints are retained. S001–S038 are accepted for allocated
-implementation scope: 38 numbered steps, preserving prior acceptance. Whole R/AC/RA
-and live acceptance remain separate; RA02/RA13 remain open at later integration.
+DEV-015 independently reviewed clean `d2c9c57d2e5d3c8f448426619a49c48af45b211a`.
+Seven checkpoints reached S043. All returned commits and prior acceptance remain;
+S040/S042 are accepted for allocated scope, total40 numbered steps. S039/S041/S043
+are retained changes-required. Reaching S043 did not pass its independent gate.
 
-RF46–RF50 close for allocated scope. RF45 remains partial: explicit v2 graph
-routing and v1 rejection work, but typed runner variants collide and schemas
-are incomplete. RF51–RF53 require lossless graph projection, real typed schemas,
-checked comparison ingress and genuine distinct-subject consumer evidence.
-S039 is retained changes-required. S040–S043 are unstarted. RF54 current tracking
-is reconciled in DEV-014; historical receipts remain historical.
+RF51/RF52 close for allocated scope; RF45/RF53 remain partial. RF55–RF59 require
+checked comparison coverage, frozen cohort configuration fields, graph-bound cohort
+preparation/membership, complete profile validation and authored schema parity.
+RF54 current tracking recurrence is reconciled; the historically red P03-R2 report
+repaired at P03-R3 remains recorded. No whole AC/RA closes from helper tests.
 
-Current frontier **P03-R2 → P03-R3 → S039-R1 → S040 → S041 → S042 → S043**,
-**pfc through EQM-P03**. Required independent model/schema/identity review before
-S044; full MVP remains S211. See the sole [plan](COMMIT_SEQUENCE.md), current
-[independent review](reports/CODEX-6677765.md) and progress.json.
+Current frontier **S039-R2 → S041-R1 → P03-R4 → S043-R1**, **pfc through EQM-P03**.
+All four integrated checkpoints complete before independent review; no S044 start
+until that required gate passes. Full original MVP S211 remains. See the sole
+[plan](COMMIT_SEQUENCE.md), [review](reports/CODEX-d2c9c57.md) and progress.json.
 
-At the reviewed candidate, independent standard check passed 658 successful test
-executions and changed doctests passed 9. Four isolated probes reproduced graph
-identity collisions and malformed schema acceptance. Passing standard gates does
-not close these defects. No product code/tests were changed by the supervisor.
+Independent candidate standard check passed693 successful test executions and
+changed doctests passed9; structure passed. Five isolated probes confirm defects,
+not acceptance. No supervisor product code/tests changed in the production checkout.
+P01/P02 allocated implementation complete; P03 has13 of16 numbered steps accepted;
+P04–P15 pending. All original64 R/AC,21 RA,Q01–Q15 remain; RA02/RA13 globally open.
 
-P01/P02 are complete for allocated implementation; P03 is in progress (11 of16
-numbered steps accepted); P04–P15 remain pending. Provider/cohort authority and
-complete model/application/CLI parity are still required. Q01–Q15 retain original
-dependent gates; synthetic/simulator-capable work remains eligible.
-
-No release or human release-testing milestone is reached. Full verify, current
-supply-chain, Linux, coverage/mutation/fuzz/benchmark/package and live product/
-crypto/host/signing/operational lanes remain unverified. No publication/deployment/
-signing/operational or optional-native activation authority is granted.
+No release/human release-testing milestone reached. Full verify, current supply-chain,
+Linux, coverage/mutation/fuzz/benchmark/package and live product/crypto/host/signing/
+operational evidence remains unverified. Synthetic/simulator-capable software is
+eligible; actual Q02/Q06 facts remain separate. No live/publication/deployment/signing
+or optional-native activation authority is granted.

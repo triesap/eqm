@@ -96,3 +96,13 @@ comes from immutable graph authority; authored cohort source/build/artifact axes
 are independently supplied when matching candidate subjects. Ambiguous scenario
 revisions reject rather than infer latest. Parsing and eligibility grant no trust.
 S040–S043 remain ordered; required independent review before S044 is preserved.
+
+## DEV-015 checked integration closure
+
+The sole COMMIT_SEQUENCE DEV-015 retains exact S038 cohort assignment fields,
+checks their configuration claims against graph authority, validates cohorts
+before prepared-session success and requires exact retained cohort membership.
+Comparison coverage comes from the graph scenario and checked independent subject
+matching, never submitted occurrence lists or public digests. Domain definition
+invariants and generated v2 value schemas remain aligned. Required independent
+P03 integration review precedes S044; original trust/operational criteria remain.
