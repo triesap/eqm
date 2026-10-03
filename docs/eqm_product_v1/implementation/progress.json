@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S039",
  "implementation": "in_progress",
- "local_verification": "DEV017_checkpoints_S039-R3_and_P03-R5_implemented_verified_pending_codex_acceptance;cohort_value_authority_bound_at_consuming_boundary;v2_manifest_and_graph_comparison_schemas_enforce_owning_value_contracts;RF59_RF60_RF61_corrected;RF55_RF57_open;P03_gate_not_passed;not_release_ready",
+ "local_verification": "DEV017_three_checkpoints_S039-R3_P03-R5_S043-R2_implemented_verified_pending_codex_acceptance;comparison_binds_consumed_cohort_to_exact_graph_scenario_value_authority;v2_manifest_and_graph_comparison_schemas_enforce_owning_value_contracts;real_prepared_fixture_and_public_CLI_cycle_exit_exercised;RF55_RF57_RF59_RF60_RF61_corrected_pending_acceptance;RF45_RF53_open;P03_gate_not_passed;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1360,10 +1360,10 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
+   "implementation_status": "implemented_verified_pending_codex_acceptance",
    "supervisor_status": "changes_required_DEV017",
    "review_report": "implementation/reports/CODEX-8e5f218.md",
-   "repair_report": "implementation/reports/S039-R1.md"
+   "repair_report": "implementation/reports/S039-R3.md"
   },
   {
    "id": "S040",
@@ -1383,9 +1383,10 @@
    "report": "implementation/reports/S041.md",
    "verification": [],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
+   "implementation_status": "implemented_verified_pending_codex_acceptance",
    "supervisor_status": "changes_required_DEV017",
-   "review_report": "implementation/reports/CODEX-8e5f218.md"
+   "review_report": "implementation/reports/CODEX-8e5f218.md",
+   "repair_report": "implementation/reports/S043-R2.md"
   },
   {
    "id": "S042",
@@ -1405,9 +1406,10 @@
    "report": "implementation/reports/S043.md",
    "verification": [],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
+   "implementation_status": "implemented_verified_pending_codex_acceptance",
    "supervisor_status": "changes_required_DEV017",
-   "review_report": "implementation/reports/CODEX-8e5f218.md"
+   "review_report": "implementation/reports/CODEX-8e5f218.md",
+   "repair_report": "implementation/reports/S043-R2.md"
   },
   {
    "id": "S044",
@@ -3413,7 +3415,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S043-R2",
+ "next_checkpoint": "independent_P03_review_before_S044",
  "supervisor_review": {
   "source_commit": "8e5f21867bdaa7ccf32c4c2d626b2f269184380e",
   "report": "implementation/reports/CODEX-8e5f218.md",
@@ -3422,7 +3424,7 @@
   "standard_check": "passed_704_test_executions",
   "doctests": "passed_9",
   "release_candidate": false,
-  "next_checkpoint": "S039-R3"
+  "next_checkpoint": "independent_P03_review_before_S044"
  },
  "execution_target": "S043 reached; independent integration review before S044; full MVP S211 remains",
  "supervisor_findings": [
@@ -3991,10 +3993,10 @@
    "priority": "P1",
    "owner": "S039",
    "checkpoint": "S039-R2",
-   "status": "partially_implemented_changes_required",
+   "status": "implemented_verified_pending_codex_acceptance",
    "summary": "Comparison eligibility omits expected scenario coverage and checked subject matching",
    "report": "implementation/reports/CODEX-d2c9c57.md",
-   "closure_report": "implementation/reports/S039-R2.md",
+   "closure_report": "implementation/reports/S039-R3.md",
    "commit_sha": "bbbd7c6c4817d99a6d238cf0b78aea82e63bc8a8",
    "supervisor_report": "implementation/reports/CODEX-8e5f218.md"
   },
@@ -4015,11 +4017,11 @@
    "priority": "P1",
    "owner": "S041",
    "checkpoint": "S041-R1",
-   "status": "partially_implemented_changes_required",
+   "status": "implemented_verified_pending_codex_acceptance",
    "commit_sha": "255d3af36e0aead58df5d8a58e86fe989c36e935",
    "summary": "Cohort preparation and exact graph membership are unchecked",
    "report": "implementation/reports/CODEX-d2c9c57.md",
-   "closure_report": "implementation/reports/S041-R1.md",
+   "closure_report": "implementation/reports/S039-R3.md",
    "supervisor_report": "implementation/reports/CODEX-8e5f218.md"
   },
   {
@@ -4039,29 +4041,34 @@
    "priority": "P2",
    "owner": "S043",
    "checkpoint": "P03-R4",
-   "status": "partially_implemented_changes_required",
+   "status": "implemented_verified_pending_codex_acceptance",
    "commit_sha": "37fed88daf1a508bf82a029e0f1c82938eb57d5e",
    "summary": "Authored provider/cohort schema parity weakens value constraints",
    "report": "implementation/reports/CODEX-d2c9c57.md",
-   "supervisor_report": "implementation/reports/CODEX-8e5f218.md"
+   "supervisor_report": "implementation/reports/CODEX-8e5f218.md",
+   "closure_report": "implementation/reports/P03-R5.md"
   },
   {
    "id": "RF60",
    "priority": "P1",
    "owner": "S039",
    "checkpoint": "S039-R3",
-   "status": "changes_required",
+   "status": "implemented_verified_pending_codex_acceptance",
    "summary": "Resolved cohort authority is not bound to consuming graph and exact scenario",
-   "report": "implementation/reports/CODEX-8e5f218.md"
+   "report": "implementation/reports/CODEX-8e5f218.md",
+   "closure_report": "implementation/reports/S039-R3.md",
+   "supervisor_report": "implementation/reports/CODEX-8e5f218.md"
   },
   {
    "id": "RF61",
    "priority": "P2",
    "owner": "S043",
    "checkpoint": "P03-R5",
-   "status": "changes_required",
+   "status": "implemented_verified_pending_codex_acceptance",
    "summary": "Generated v2 value schemas accept domain-invalid cohort/profile values",
-   "report": "implementation/reports/CODEX-8e5f218.md"
+   "report": "implementation/reports/CODEX-8e5f218.md",
+   "closure_report": "implementation/reports/P03-R5.md",
+   "supervisor_report": "implementation/reports/CODEX-8e5f218.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
@@ -4086,11 +4093,12 @@
    {
     "id": "P03-R5",
     "status": "implemented_verified_pending_codex_acceptance",
-    "supervisor_status": "not_accepted"
+    "supervisor_status": "not_accepted",
+    "commit_sha": "310113e"
    },
    {
     "id": "S043-R2",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    }
   ]

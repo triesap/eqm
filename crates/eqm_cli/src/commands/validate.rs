@@ -276,4 +276,73 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn asymmetric_fixture_cohort_value_defects_are_diagnosed() -> Result<(), Box<dyn Error>> {
+        fn validate_mutated(mutate: impl Fn(&str) -> String) -> Result<u8, Box<dyn Error>> {
+            let repository = crate::test_support::asymmetric_repository()?;
+            let path = repository.path().join("eqm/contracts/cohort.n.toml");
+            let text = fs::read_to_string(&path)?;
+            fs::write(&path, mutate(&text))?;
+            run_validate(repository.path())
+        }
+
+        // Control: the unmutated synthetic fixture is admitted.
+        assert_eq!(
+            run_validate(crate::test_support::asymmetric_repository()?.path())?,
+            0
+        );
+
+        assert_eq!(
+            validate_mutated(|text| text.replace("revision = 1", "revision = 0"))?,
+            3,
+            "revision 0 was admitted"
+        );
+        assert_eq!(
+            validate_mutated(
+                |text| text.replace("scenario = \"signup.flow\"", "scenario = \"Bad Scenario\"")
+            )?,
+            3,
+            "invalid scenario was admitted"
+        );
+        assert_eq!(
+            validate_mutated(
+                |text| text.replace("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "xyz")
+            )?,
+            3,
+            "malformed source commit was admitted"
+        );
+        assert_eq!(
+            validate_mutated(|text| text
+                .lines()
+                .filter(|line| !line.starts_with("provider_configuration_digest"))
+                .collect::<Vec<_>>()
+                .join("\n"))?,
+            3,
+            "neither configuration kind was admitted"
+        );
+        assert_eq!(
+            validate_mutated(|text| text
+                .lines()
+                .flat_map(|line| {
+                    if line.starts_with("provider_configuration_digest") {
+                        vec![
+                            line.to_owned(),
+                            concat!(
+                                "target_configuration_digest = \"sha256:",
+                                "1111111111111111111111111111111111111111111111111111111111111111\""
+                            )
+                            .to_owned(),
+                        ]
+                    } else {
+                        vec![line.to_owned()]
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n"))?,
+            3,
+            "both configuration kinds were admitted"
+        );
+        Ok(())
+    }
 }

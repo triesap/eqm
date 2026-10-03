@@ -453,3 +453,75 @@ fn prepared_fixture_cross_session_cohort_authority_is_value_bound() -> Result<()
     );
     Ok(())
 }
+
+/// A second scenario in the real fixture whose occurrence names, roles and
+/// subjects are identical to `signup.flow`.
+const OTHER_SCENARIO: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json"
+id = "other.flow"
+revision = 1
+
+[[participants]]
+id = "mailer"
+role = "provider"
+[participants.subject]
+provider = "provider.mailgun"
+
+[[participants]]
+id = "phone_one"
+role = "edge"
+[participants.subject]
+target = "mobile"
+
+[[participants]]
+id = "phone_two"
+role = "edge"
+[participants.subject]
+target = "mobile"
+"#;
+
+#[test]
+fn prepared_fixture_cross_scenario_cohort_authority_is_rejected() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm/contracts/scenario.other.toml"),
+        OTHER_SCENARIO,
+    )?;
+    // Retarget `cohort.n` to the other scenario while its occurrence names,
+    // roles and subjects still match `signup.flow` exactly.
+    let cohort_path = repository.path().join("eqm/contracts/cohort.n.toml");
+    let text = fs::read_to_string(&cohort_path)?
+        .replace("scenario = \"signup.flow\"", "scenario = \"other.flow\"");
+    fs::write(&cohort_path, text)?;
+
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let graph = session.finalized().graph();
+    let cohort_n = graph
+        .cohorts()
+        .values()
+        .find(|cohort| cohort.id().as_str() == "cohort.n")
+        .ok_or("cohort.n")?;
+    let resolved = resolve_cohort(session.finalized(), cohort_n)?;
+    let setup = comparison_setup(&session)?;
+    let candidate_subject = candidate(
+        setup.scenario,
+        cohort_n,
+        &setup.target_config,
+        &setup.provider_config,
+    )?;
+    assert_eq!(
+        evaluate_checked_comparison(
+            session.finalized(),
+            setup.scenario,
+            &setup.selection,
+            setup.rule,
+            &setup.checked,
+            &resolved,
+            &candidate_subject,
+        ),
+        Err(ComparisonContextError::CohortScenario)
+    );
+    Ok(())
+}
