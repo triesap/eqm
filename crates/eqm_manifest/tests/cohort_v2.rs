@@ -104,3 +104,40 @@ fn valid_cohort_loads_and_owning_value_defects_reject() -> Result<(), Box<dyn Er
     assert!(load_workspace(repository(&both)?.path(), None).is_err());
     Ok(())
 }
+
+#[test]
+fn authored_repository_and_extension_boundaries_use_real_loader() -> Result<(), Box<dyn Error>> {
+    // The owning parser accepts an explicit port.
+    let explicit_port = COHORT.replace(
+        "https://example.com/team/project",
+        "https://example.com:443/team/repo",
+    );
+    assert!(load_workspace(repository(&explicit_port)?.path(), None).is_ok());
+
+    // Parser-invalid repository forms reject at the same authored ingress.
+    for invalid in [
+        "https://Example.com/team/repo",
+        "https://example.com/team/repo/",
+        "https://example.com/team/repo?x=1",
+    ] {
+        let mutated = COHORT.replace("https://example.com/team/project", invalid);
+        assert!(
+            load_workspace(repository(&mutated)?.path(), None).is_err(),
+            "repository {invalid} must reject"
+        );
+    }
+
+    // A valid authored extension namespace with a nested key loads.
+    let valid_extension = format!("{COHORT}\n[extensions.\"dev.example.ext\"]\nflag = true\n");
+    assert!(load_workspace(repository(&valid_extension)?.path(), None).is_ok());
+
+    // A two-segment namespace rejects.
+    let bad_namespace = format!("{COHORT}\n[extensions.\"dev.example\"]\nflag = true\n");
+    assert!(load_workspace(repository(&bad_namespace)?.path(), None).is_err());
+
+    // An invalid nested object key rejects.
+    let bad_key =
+        format!("{COHORT}\n[extensions.\"dev.example.ext\"]\nnested = {{ Bad = true }}\n");
+    assert!(load_workspace(repository(&bad_key)?.path(), None).is_err());
+    Ok(())
+}

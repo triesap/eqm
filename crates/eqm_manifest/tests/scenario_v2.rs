@@ -142,6 +142,10 @@ fn subject_tag_and_dependency_endpoints_are_strict() -> Result<(), Box<dyn Error
     let dangling = SCENARIO.replace("from = \"phone_two\"", "from = \"phone_absent\"");
     assert!(load_workspace(repository(&dangling)?.path(), None).is_err());
 
+    // Occurrence endpoints use the owning single-segment grammar.
+    let bad_endpoint = SCENARIO.replace("from = \"phone_two\"", "from = \"phone.two\"");
+    assert!(load_workspace(repository(&bad_endpoint)?.path(), None).is_err());
+
     // Self dependency.
     let self_edge = SCENARIO.replace("to = \"phone_one\"", "to = \"phone_two\"");
     assert!(load_workspace(repository(&self_edge)?.path(), None).is_err());

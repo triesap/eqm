@@ -11,13 +11,14 @@ bounds, RF63 recursive extension keys and RF64 repository overrestriction requir
 completion. RF45/RF53 and whole RA02/RA13 remain open. See
 [review](reports/CODEX-aa55563.md) and sole [plan](COMMIT_SEQUENCE.md).
 
-DEV-020 checkpoint **P03-R6** is implemented and locally verified (RF62/RF63/
-RF64 repaired in source generators and seven regenerated v2 schemas; v1 bytes
-unchanged). The remaining frontier is **P03-R7 → S043-R3**, **pfc through
-EQM-P03**, both before independent acceptance and S044. Pi records implementation
-and verification, not supervisor acceptance. P04–P15 remain pending. Original 64
-R/AC, 21 RA, Q01–Q15 and full S211 remain unchanged. External startup receipts
-identify actual repository/revision/runtime; unavailable handles are explicit.
+DEV-020 checkpoints **P03-R6** and **P03-R7** are implemented and locally
+verified (RF62/RF63/RF64 repaired in source generators and seven regenerated v2
+schemas, plus an independent cross-layer boundary corpus; v1 bytes unchanged).
+The remaining frontier is **S043-R3**, **pfc through EQM-P03**, before
+independent acceptance and S044. Pi records implementation and verification, not
+supervisor acceptance. P04–P15 remain pending. Original 64 R/AC, 21 RA, Q01–Q15
+and full S211 remain unchanged. External startup receipts identify actual
+repository/revision/runtime; unavailable handles are explicit.
 
 Independent standard gate passed **720 successful test executions**, owning
 doctests **9**, structure/diff checks passed. Isolated probes confirm remaining
