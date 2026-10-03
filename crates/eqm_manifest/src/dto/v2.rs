@@ -102,27 +102,73 @@ macro_rules! pattern_text {
     };
 }
 
-// One or more lowercase dotted segments separated by `.`.
-const DOTTED_ID_PATTERN: &str = "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$";
-// A single lowercase segment.
-const SEGMENT_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}$";
-// One or more lowercase dotted segments (single segment allowed).
-const EXTENSIBLE_ID_PATTERN: &str = "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$";
+/// A pattern-constrained string schema with an exact ASCII code-point bound.
+///
+/// Every owning identifier grammar is restricted to ASCII, so a JSON Schema
+/// `maxLength` in code points equals the owning byte bound here.
+macro_rules! bounded_pattern_text {
+    ($name:ident, $pattern:expr, $max:literal) => {
+        struct $name;
 
-pattern_text!(ProviderIdText, DOTTED_ID_PATTERN);
-pattern_text!(ScenarioIdText, DOTTED_ID_PATTERN);
-pattern_text!(TargetIdText, EXTENSIBLE_ID_PATTERN);
-pattern_text!(ParticipationRuleIdText, DOTTED_ID_PATTERN);
-pattern_text!(RoleText, EXTENSIBLE_ID_PATTERN);
-pattern_text!(PlatformText, EXTENSIBLE_ID_PATTERN);
-pattern_text!(FrameworkText, EXTENSIBLE_ID_PATTERN);
+        impl JsonSchema for $name {
+            fn schema_name() -> Cow<'static, str> {
+                stringify!($name).into()
+            }
+
+            fn inline_schema() -> bool {
+                true
+            }
+
+            fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+                json_schema!({
+                    "type": "string",
+                    "pattern": $pattern,
+                    "maxLength": $max,
+                })
+            }
+        }
+    };
+}
+
+// Two or more lowercase dotted segments separated by `.`, each <= 63 bytes.
+const DOTTED_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$";
+// A single lowercase segment of <= 63 bytes.
+const SEGMENT_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}$";
+// One or more lowercase dotted segments, each <= 63 bytes.
+const EXTENSIBLE_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$";
+// A full requirement: owner (>= 2 segments, <= 255 bytes) `#` single local.
+const REQUIREMENT_PATTERN: &str =
+    "^(?=[^#]{2,255}#)[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+#[a-z][a-z0-9_]{0,62}$";
+// A reverse-domain extension namespace of at least three lowercase segments.
+const EXTENSION_NAMESPACE_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$";
+// One lowercase extension object key segment of <= 63 bytes.
+const EXTENSION_KEY_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}$";
+
+bounded_pattern_text!(ProviderIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(ScenarioIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(TargetIdText, EXTENSIBLE_ID_PATTERN, 255);
+bounded_pattern_text!(ParticipationRuleIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(RoleText, EXTENSIBLE_ID_PATTERN, 255);
+bounded_pattern_text!(PlatformText, EXTENSIBLE_ID_PATTERN, 255);
+bounded_pattern_text!(FrameworkText, EXTENSIBLE_ID_PATTERN, 255);
 pattern_text!(OccurrenceText, SEGMENT_ID_PATTERN);
 pattern_text!(SourceCommitText, "^(?:[0-9a-f]{40}|[0-9a-f]{64})$");
-pattern_text!(RepositoryText, "^https://[a-z0-9.-]+/[^?#@\\s]*[^/?#@\\s]$");
-pattern_text!(
-    RequirementText,
-    "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+#[a-z][a-z0-9_]{0,62}$"
-);
+bounded_pattern_text!(RequirementText, REQUIREMENT_PATTERN, 320);
+
+/// The existing `RepositoryIdentity` HTTPS parser, expressible in JSON Schema.
+///
+/// The owning parser requires a nonempty ASCII host (no uppercase or control
+/// characters), a nonempty path without control characters or spaces, no
+/// `?`/`#`/`@`, no trailing slash and at most 1,024 bytes. Explicit ports and
+/// other host punctuation remain accepted. The code-point `maxLength` is the
+/// expressible approximation of the owning UTF-8 byte bound.
+fn repository_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "string",
+        "maxLength": 1024,
+        "pattern": "^https://[\\x20-\\x22\\x24-\\x2e\\x30-\\x3e\\x5b-\\x7e]+/[^\\x00-\\x20\\x7f?#@]*[^\\x00-\\x20\\x7f/?#@]$",
+    })
+}
 
 /// A nonempty duplicate-free owner array matching the owner grammar.
 struct OwnerList;
@@ -162,7 +208,7 @@ impl JsonSchema for SourceComponentIdList {
         json_schema!({
             "type": "array",
             "uniqueItems": true,
-            "items": {"type": "string", "pattern": DOTTED_ID_PATTERN},
+            "items": {"type": "string", "pattern": DOTTED_ID_PATTERN, "maxLength": 255},
         })
     }
 }
@@ -183,7 +229,7 @@ impl JsonSchema for TargetIdList {
         json_schema!({
             "type": "array",
             "uniqueItems": true,
-            "items": {"type": "string", "pattern": EXTENSIBLE_ID_PATTERN},
+            "items": {"type": "string", "pattern": EXTENSIBLE_ID_PATTERN, "maxLength": 255},
         })
     }
 }
@@ -204,7 +250,7 @@ impl JsonSchema for ProviderIdList {
         json_schema!({
             "type": "array",
             "uniqueItems": true,
-            "items": {"type": "string", "pattern": DOTTED_ID_PATTERN},
+            "items": {"type": "string", "pattern": DOTTED_ID_PATTERN, "maxLength": 255},
         })
     }
 }
@@ -226,7 +272,104 @@ impl JsonSchema for NonEmptyTargetIdList {
             "type": "array",
             "minItems": 1,
             "uniqueItems": true,
-            "items": {"type": "string", "pattern": EXTENSIBLE_ID_PATTERN},
+            "items": {"type": "string", "pattern": EXTENSIBLE_ID_PATTERN, "maxLength": 255},
+        })
+    }
+}
+
+/// Authored extension data keyed by the owning >= 3 segment namespace.
+pub struct AuthoredExtensions;
+
+impl JsonSchema for AuthoredExtensions {
+    fn schema_name() -> Cow<'static, str> {
+        "AuthoredExtensions".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let value = generator.subschema_for::<AuthoredExtensionValue>();
+        json_schema!({
+            "type": "object",
+            "propertyNames": {"pattern": EXTENSION_NAMESPACE_PATTERN},
+            "additionalProperties": value,
+        })
+    }
+}
+
+/// One recursively untagged authored extension value (never `null`).
+pub struct AuthoredExtensionValue;
+
+impl JsonSchema for AuthoredExtensionValue {
+    fn schema_name() -> Cow<'static, str> {
+        "AuthoredExtensionValue".into()
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let recursive = generator.subschema_for::<AuthoredExtensionValue>();
+        json_schema!({
+            "oneOf": [
+                {"type": "boolean"},
+                {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": i64::MIN,
+                    "maximum": i64::MAX,
+                },
+                {"type": "string"},
+                {"type": "array", "items": recursive},
+                {
+                    "type": "object",
+                    "propertyNames": {"pattern": EXTENSION_KEY_PATTERN},
+                    "additionalProperties": recursive,
+                },
+            ]
+        })
+    }
+}
+
+/// The authored `source_components` table keyed by the owning dotted ID.
+pub struct SourceComponentMap;
+
+impl JsonSchema for SourceComponentMap {
+    fn schema_name() -> Cow<'static, str> {
+        "SourceComponentMap".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let value = generator.subschema_for::<SourceComponentV2Dto>();
+        json_schema!({
+            "type": "object",
+            "propertyNames": {"pattern": DOTTED_ID_PATTERN, "maxLength": 255},
+            "additionalProperties": value,
+        })
+    }
+}
+
+/// The authored `targets` table keyed by the owning extensible ID.
+pub struct TargetMap;
+
+impl JsonSchema for TargetMap {
+    fn schema_name() -> Cow<'static, str> {
+        "TargetMap".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let value = generator.subschema_for::<TargetV2Dto>();
+        json_schema!({
+            "type": "object",
+            "propertyNames": {"pattern": EXTENSIBLE_ID_PATTERN, "maxLength": 255},
+            "additionalProperties": value,
         })
     }
 }
@@ -274,10 +417,13 @@ pub struct WorkspaceV2Dto {
     pub lockfile: Option<String>,
     pub generated_root: Option<String>,
     #[serde(default)]
+    #[schemars(with = "TargetMap")]
     pub targets: BTreeMap<String, TargetV2Dto>,
     #[serde(default)]
+    #[schemars(with = "SourceComponentMap")]
     pub source_components: BTreeMap<String, SourceComponentV2Dto>,
     #[serde(default)]
+    #[schemars(with = "AuthoredExtensions")]
     pub extensions: ExtensionsDto,
 }
 
@@ -304,6 +450,7 @@ pub struct TargetV2Dto {
     #[schemars(with = "OwnerList")]
     pub owners: Vec<String>,
     #[serde(default)]
+    #[schemars(with = "AuthoredExtensions")]
     pub extensions: ExtensionsDto,
 }
 
@@ -317,6 +464,7 @@ pub struct SourceComponentV2Dto {
     #[schemars(with = "SourceComponentIdList")]
     pub dependencies: Vec<String>,
     #[serde(default)]
+    #[schemars(with = "AuthoredExtensions")]
     pub extensions: ExtensionsDto,
 }
 
@@ -334,6 +482,7 @@ pub struct ParticipationV2Dto {
     pub targets: Vec<String>,
     pub applicability: ApplicabilityDto,
     #[serde(default)]
+    #[schemars(with = "AuthoredExtensions")]
     pub extensions: ExtensionsDto,
 }
 
@@ -358,6 +507,7 @@ pub struct ScenarioV2Dto {
     #[serde(default)]
     pub dependencies: Vec<ScenarioDependencyV2Dto>,
     #[serde(default)]
+    #[schemars(with = "AuthoredExtensions")]
     pub extensions: ExtensionsDto,
 }
 
@@ -392,7 +542,9 @@ pub struct ScenarioSubjectV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ScenarioDependencyV2Dto {
+    #[schemars(with = "OccurrenceText")]
     pub from: String,
+    #[schemars(with = "OccurrenceText")]
     pub to: String,
 }
 
@@ -414,6 +566,7 @@ pub struct ProviderV2Dto {
     #[schemars(with = "OwnerList")]
     pub owners: Vec<String>,
     #[serde(default)]
+    #[schemars(with = "AuthoredExtensions")]
     pub extensions: ExtensionsDto,
 }
 
@@ -437,6 +590,7 @@ pub struct CohortV2Dto {
     #[schemars(schema_with = "cohort_assignments_schema")]
     pub assignments: Vec<CohortAssignmentV2Dto>,
     #[serde(default)]
+    #[schemars(with = "AuthoredExtensions")]
     pub extensions: ExtensionsDto,
 }
 
@@ -446,7 +600,7 @@ pub struct CohortV2Dto {
 pub struct CohortAssignmentV2Dto {
     #[schemars(with = "OccurrenceText")]
     pub occurrence: String,
-    #[schemars(with = "RepositoryText")]
+    #[schemars(schema_with = "repository_schema")]
     pub repository: String,
     #[schemars(with = "SourceCommitText")]
     pub source_commit: String,

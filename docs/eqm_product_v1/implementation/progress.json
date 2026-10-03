@@ -3415,7 +3415,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P03-R6",
+ "next_checkpoint": "P03-R7",
  "supervisor_review": {
   "source_commit": "aa5556336075aae2065862ed65166176717888f6",
   "report": "implementation/reports/CODEX-aa55563.md",
@@ -3424,7 +3424,7 @@
   "standard_check": "passed_720_test_executions",
   "doctests": "passed_9",
   "release_candidate": false,
-  "next_checkpoint": "P03-R6"
+  "next_checkpoint": "P03-R7"
  },
  "execution_target": "S043 reached; independent integration review before S044; full MVP S211 remains",
  "supervisor_findings": [
@@ -4073,29 +4073,32 @@
   {
    "id": "RF62",
    "priority": "P2",
-   "status": "open",
+   "status": "implemented_verified_pending_codex_acceptance",
    "owner": "S043",
    "checkpoint": "P03-R6",
    "summary": "Owning ASCII identifier segment and total bounds omitted",
-   "report": "implementation/reports/CODEX-aa55563.md"
+   "report": "implementation/reports/CODEX-aa55563.md",
+   "closure_report": "implementation/reports/P03-R6.md"
   },
   {
    "id": "RF63",
    "priority": "P2",
-   "status": "open",
+   "status": "implemented_verified_pending_codex_acceptance",
    "owner": "S043",
    "checkpoint": "P03-R6",
    "summary": "Recursive extension namespace/object-key vocabulary omitted",
-   "report": "implementation/reports/CODEX-aa55563.md"
+   "report": "implementation/reports/CODEX-aa55563.md",
+   "closure_report": "implementation/reports/P03-R6.md"
   },
   {
    "id": "RF64",
    "priority": "P2",
-   "status": "open",
+   "status": "implemented_verified_pending_codex_acceptance",
    "owner": "S043",
    "checkpoint": "P03-R6",
    "summary": "Repository schemas reject domain-valid explicit-port authority",
-   "report": "implementation/reports/CODEX-aa55563.md"
+   "report": "implementation/reports/CODEX-aa55563.md",
+   "closure_report": "implementation/reports/P03-R6.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
@@ -4113,7 +4116,7 @@
   "checkpoints": [
    {
     "id": "P03-R6",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    },
    {

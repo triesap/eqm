@@ -1,4 +1,37 @@
 {
+  "$defs": {
+    "AuthoredExtensionValue": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "format": "int64",
+          "maximum": 9223372036854775807,
+          "minimum": -9223372036854775808,
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+          },
+          "type": "object"
+        }
+      ]
+    }
+  },
   "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/provider.schema.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
@@ -9,12 +42,18 @@
       "type": "string"
     },
     "extensions": {
-      "additionalProperties": true,
+      "additionalProperties": {
+        "$ref": "#/$defs/AuthoredExtensionValue"
+      },
       "default": {},
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$"
+      },
       "type": "object"
     },
     "id": {
-      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+      "maxLength": 255,
+      "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
       "type": "string"
     },
     "owners": {

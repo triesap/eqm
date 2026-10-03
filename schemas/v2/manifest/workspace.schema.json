@@ -1,20 +1,57 @@
 {
   "$defs": {
+    "AuthoredExtensionValue": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "format": "int64",
+          "maximum": 9223372036854775807,
+          "minimum": -9223372036854775808,
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+          },
+          "type": "object"
+        }
+      ]
+    },
     "SourceComponentV2Dto": {
       "additionalProperties": false,
       "properties": {
         "dependencies": {
           "default": [],
           "items": {
-            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+            "maxLength": 255,
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
             "type": "string"
           },
           "type": "array",
           "uniqueItems": true
         },
         "extensions": {
-          "additionalProperties": true,
+          "additionalProperties": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
           "default": {},
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$"
+          },
           "type": "object"
         },
         "owners": {
@@ -45,19 +82,26 @@
         "depends_on": {
           "default": [],
           "items": {
-            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+            "maxLength": 255,
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
             "type": "string"
           },
           "type": "array",
           "uniqueItems": true
         },
         "extensions": {
-          "additionalProperties": true,
+          "additionalProperties": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
           "default": {},
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$"
+          },
           "type": "object"
         },
         "framework": {
-          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
           "type": "string"
         },
         "owners": {
@@ -70,13 +114,15 @@
           "uniqueItems": true
         },
         "platform": {
-          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
           "type": "string"
         },
         "providers": {
           "default": [],
           "items": {
-            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+            "maxLength": 255,
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
             "type": "string"
           },
           "type": "array",
@@ -84,7 +130,8 @@
         },
         "role": {
           "default": null,
-          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
           "type": "string"
         },
         "root": {
@@ -93,7 +140,8 @@
         "source_components": {
           "default": [],
           "items": {
-            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+            "maxLength": 255,
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
             "type": "string"
           },
           "type": "array",
@@ -126,8 +174,13 @@
       "type": "array"
     },
     "extensions": {
-      "additionalProperties": true,
+      "additionalProperties": {
+        "$ref": "#/$defs/AuthoredExtensionValue"
+      },
       "default": {},
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$"
+      },
       "type": "object"
     },
     "generated_root": {
@@ -168,11 +221,19 @@
       "additionalProperties": {
         "$ref": "#/$defs/SourceComponentV2Dto"
       },
+      "propertyNames": {
+        "maxLength": 255,
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$"
+      },
       "type": "object"
     },
     "targets": {
       "additionalProperties": {
         "$ref": "#/$defs/TargetV2Dto"
+      },
+      "propertyNames": {
+        "maxLength": 255,
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$"
       },
       "type": "object"
     },

@@ -1,13 +1,46 @@
 {
   "$defs": {
+    "AuthoredExtensionValue": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "format": "int64",
+          "maximum": 9223372036854775807,
+          "minimum": -9223372036854775808,
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/AuthoredExtensionValue"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}$"
+          },
+          "type": "object"
+        }
+      ]
+    },
     "ScenarioDependencyV2Dto": {
       "additionalProperties": false,
       "description": "One explicit directed occurrence dependency.",
       "properties": {
         "from": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "to": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         }
       },
@@ -26,7 +59,8 @@
           "type": "string"
         },
         "role": {
-          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
           "type": "string"
         },
         "subject": {
@@ -68,12 +102,14 @@
       "properties": {
         "provider": {
           "default": null,
-          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "target": {
           "default": null,
-          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$",
           "type": "string"
         }
       },
@@ -92,12 +128,18 @@
       "type": "array"
     },
     "extensions": {
-      "additionalProperties": true,
+      "additionalProperties": {
+        "$ref": "#/$defs/AuthoredExtensionValue"
+      },
       "default": {},
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$"
+      },
       "type": "object"
     },
     "id": {
-      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+      "maxLength": 255,
+      "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
       "type": "string"
     },
     "participants": {

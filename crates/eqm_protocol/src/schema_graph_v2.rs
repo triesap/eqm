@@ -95,30 +95,145 @@ macro_rules! pattern_text {
     };
 }
 
-const DOTTED_ID_PATTERN: &str = "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$";
-const SEGMENT_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}$";
-const EXTENSIBLE_ID_PATTERN: &str = "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$";
+/// A pattern-constrained string schema with an exact ASCII code-point bound.
+///
+/// Every owning identifier grammar is restricted to ASCII, so a JSON Schema
+/// `maxLength` in code points equals the owning byte bound here.
+macro_rules! bounded_pattern_text {
+    ($name:ident, $pattern:expr, $max:literal) => {
+        struct $name;
 
-pattern_text!(ProviderIdText, DOTTED_ID_PATTERN);
-pattern_text!(ScenarioIdText, DOTTED_ID_PATTERN);
-pattern_text!(TargetIdText, EXTENSIBLE_ID_PATTERN);
-pattern_text!(SourceComponentIdText, DOTTED_ID_PATTERN);
-pattern_text!(ParticipationRuleIdText, DOTTED_ID_PATTERN);
-pattern_text!(RoleText, EXTENSIBLE_ID_PATTERN);
-pattern_text!(PlatformText, EXTENSIBLE_ID_PATTERN);
-pattern_text!(FrameworkText, EXTENSIBLE_ID_PATTERN);
-pattern_text!(ProfileIdText, DOTTED_ID_PATTERN);
+        impl JsonSchema for $name {
+            fn schema_name() -> Cow<'static, str> {
+                stringify!($name).into()
+            }
+
+            fn inline_schema() -> bool {
+                true
+            }
+
+            fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+                json_schema!({
+                    "type": "string",
+                    "pattern": $pattern,
+                    "maxLength": $max,
+                })
+            }
+        }
+    };
+}
+
+// Two or more lowercase dotted segments, each <= 63 bytes.
+const DOTTED_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$";
+// A single lowercase segment of <= 63 bytes.
+const SEGMENT_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}$";
+// One or more lowercase dotted segments, each <= 63 bytes.
+const EXTENSIBLE_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})*$";
+// A full requirement: owner (>= 2 segments, <= 255 bytes) `#` single local.
+const REQUIREMENT_PATTERN: &str =
+    "^(?=[^#]{2,255}#)[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+#[a-z][a-z0-9_]{0,62}$";
+// A reverse-domain extension namespace of at least three lowercase segments.
+const EXTENSION_NAMESPACE_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$";
+// One lowercase extension object key segment of <= 63 bytes.
+const EXTENSION_KEY_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}$";
+
+bounded_pattern_text!(ProviderIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(ScenarioIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(TargetIdText, EXTENSIBLE_ID_PATTERN, 255);
+bounded_pattern_text!(SourceComponentIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(ParticipationRuleIdText, DOTTED_ID_PATTERN, 255);
+bounded_pattern_text!(RoleText, EXTENSIBLE_ID_PATTERN, 255);
+bounded_pattern_text!(PlatformText, EXTENSIBLE_ID_PATTERN, 255);
+bounded_pattern_text!(FrameworkText, EXTENSIBLE_ID_PATTERN, 255);
+bounded_pattern_text!(ProfileIdText, DOTTED_ID_PATTERN, 255);
 pattern_text!(OccurrenceText, SEGMENT_ID_PATTERN);
 pattern_text!(DimensionIdText, SEGMENT_ID_PATTERN);
 pattern_text!(SymbolicValueText, SEGMENT_ID_PATTERN);
 pattern_text!(SourceCommitText, "^(?:[0-9a-f]{40}|[0-9a-f]{64})$");
-pattern_text!(RepositoryText, "^https://[a-z0-9.-]+/[^?#@\\s]*[^/?#@\\s]$");
-pattern_text!(
-    RequirementText,
-    "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+#[a-z][a-z0-9_]{0,62}$"
-);
+bounded_pattern_text!(RequirementText, REQUIREMENT_PATTERN, 320);
 pattern_text!(ComparisonOperatorText, "^(?:eq|ne)$");
 pattern_text!(MembershipOperatorText, "^(?:in|not_in)$");
+
+/// The existing `RepositoryIdentity` HTTPS parser, expressible in JSON Schema.
+///
+/// The owning parser requires a nonempty ASCII host (no uppercase or control
+/// characters), a nonempty path without control characters or spaces, no
+/// `?`/`#`/`@`, no trailing slash and at most 1,024 bytes. Explicit ports and
+/// other host punctuation remain accepted. The code-point `maxLength` is the
+/// expressible approximation of the owning UTF-8 byte bound.
+fn repository_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "string",
+        "maxLength": 1024,
+        "pattern": "^https://[\\x20-\\x22\\x24-\\x2e\\x30-\\x3e\\x5b-\\x7e]+/[^\\x00-\\x20\\x7f?#@]*[^\\x00-\\x20\\x7f/?#@]$",
+    })
+}
+
+/// A namespaced-and-recursively-keyed map of tagged v2 extension values.
+struct NamespacedExtensions;
+
+impl JsonSchema for NamespacedExtensions {
+    fn schema_name() -> Cow<'static, str> {
+        "NamespacedExtensions".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let value = generator.subschema_for::<ExtensionValueV2Dto>();
+        json_schema!({
+            "type": "object",
+            "propertyNames": {"pattern": EXTENSION_NAMESPACE_PATTERN},
+            "additionalProperties": value,
+        })
+    }
+}
+
+/// The recursive object payload of a tagged extension value, keyed by one
+/// lowercase segment.
+struct ExtensionObjectMap;
+
+impl JsonSchema for ExtensionObjectMap {
+    fn schema_name() -> Cow<'static, str> {
+        "ExtensionObjectMap".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let value = generator.subschema_for::<ExtensionValueV2Dto>();
+        json_schema!({
+            "type": "object",
+            "propertyNames": {"pattern": EXTENSION_KEY_PATTERN},
+            "additionalProperties": value,
+        })
+    }
+}
+
+/// Profile defaults keyed by a dimension ID with symbolic-value values.
+struct ProfileDefaults;
+
+impl JsonSchema for ProfileDefaults {
+    fn schema_name() -> Cow<'static, str> {
+        "ProfileDefaults".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "object",
+            "propertyNames": {"pattern": SEGMENT_ID_PATTERN},
+            "additionalProperties": {"type": "string", "pattern": SEGMENT_ID_PATTERN},
+        })
+    }
+}
 
 /// A nonempty, duplicate-free canonical set of a constrained member form.
 struct NonEmptySet<T>(std::marker::PhantomData<T>);
@@ -199,7 +314,7 @@ pub enum ExtensionValueV2Dto {
     Integer(WireInt),
     String(String),
     Array(Vec<ExtensionValueV2Dto>),
-    Object(BTreeMap<String, ExtensionValueV2Dto>),
+    Object(#[schemars(with = "ExtensionObjectMap")] BTreeMap<String, ExtensionValueV2Dto>),
 }
 
 // ---------------------------------------------------------------------------
@@ -392,6 +507,7 @@ pub struct CapabilityV2Dto {
     )]
     #[schemars(with = "String")]
     pub description: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -422,6 +538,7 @@ pub struct JourneyV2Dto {
     )]
     #[schemars(with = "String")]
     pub description: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -448,6 +565,7 @@ pub struct RequirementV2Dto {
     )]
     #[schemars(with = "String")]
     pub provider: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -485,6 +603,7 @@ pub struct SurfaceV2Dto {
     )]
     #[schemars(with = "String")]
     pub description: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -505,6 +624,7 @@ pub struct FragmentV2Dto {
     )]
     #[schemars(with = "String")]
     pub description: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -552,6 +672,7 @@ pub struct TargetConfigurationV2Dto {
     )]
     #[schemars(with = "CanonicalSet<ProviderIdText>")]
     pub providers: Option<CanonicalSet<String>>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -565,6 +686,7 @@ pub struct SourceComponentV2Dto {
     pub owners: CanonicalSet<String>,
     #[schemars(with = "CanonicalSet<SourceComponentIdText>")]
     pub dependencies: CanonicalSet<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -577,6 +699,7 @@ pub struct ProviderV2Dto {
     pub configuration_digest: String,
     #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -585,7 +708,7 @@ pub struct ProviderV2Dto {
 pub struct CohortAssignmentV2Dto {
     #[schemars(with = "OccurrenceText")]
     pub occurrence: String,
-    #[schemars(with = "RepositoryText")]
+    #[schemars(schema_with = "repository_schema")]
     pub repository: String,
     #[schemars(with = "SourceCommitText")]
     pub source_commit: String,
@@ -637,6 +760,7 @@ pub struct CohortV2Dto {
     pub scenario: String,
     #[schemars(schema_with = "cohort_assignments_schema")]
     pub assignments: CanonicalSet<CohortAssignmentV2Dto>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -650,6 +774,7 @@ pub struct ParticipationV2Dto {
     #[schemars(with = "NonEmptySet<TargetIdText>")]
     pub targets: CanonicalSet<String>,
     pub applicability: ApplicabilityV2Dto,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -684,6 +809,7 @@ pub struct ArtifactV2Dto {
     )]
     #[schemars(with = "ArtifactSelectorV2Dto")]
     pub selector: Option<ArtifactSelectorV2Dto>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -700,6 +826,7 @@ pub struct ExposureV2Dto {
     )]
     #[schemars(with = "String")]
     pub route: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -738,6 +865,7 @@ pub struct EvidenceSpecV2Dto {
     )]
     #[schemars(with = "WireUint")]
     pub freshness: Option<WireUint>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -752,6 +880,7 @@ pub struct BindingV2Dto {
     pub artifacts: CanonicalSet<ArtifactV2Dto>,
     pub exposures: CanonicalSet<ExposureV2Dto>,
     pub evidence: CanonicalSet<EvidenceSpecV2Dto>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -779,7 +908,9 @@ pub struct ScenarioParticipantV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ScenarioDependencyV2Dto {
+    #[schemars(with = "OccurrenceText")]
     pub from: String,
+    #[schemars(with = "OccurrenceText")]
     pub to: String,
 }
 
@@ -793,6 +924,7 @@ pub struct ScenarioV2Dto {
     #[schemars(with = "NonEmptySet<ScenarioParticipantV2Dto>")]
     pub participants: CanonicalSet<ScenarioParticipantV2Dto>,
     pub dependencies: CanonicalSet<ScenarioDependencyV2Dto>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -884,6 +1016,7 @@ pub struct PolicyV2Dto {
     )]
     #[schemars(with = "String")]
     pub description: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -916,6 +1049,7 @@ pub struct ProfileDefinitionV2Dto {
     pub owners: CanonicalSet<String>,
     #[schemars(with = "NonEmptySet<DimensionDeclarationV2Dto>")]
     pub dimensions: CanonicalSet<DimensionDeclarationV2Dto>,
+    #[schemars(with = "ProfileDefaults")]
     pub defaults: BTreeMap<String, String>,
     #[serde(
         default,
@@ -924,6 +1058,7 @@ pub struct ProfileDefinitionV2Dto {
     )]
     #[schemars(schema_with = "description_schema")]
     pub description: Option<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -1045,6 +1180,7 @@ pub struct RunnerV2Dto {
     pub max_output_bytes: WireUint,
     pub max_concurrency: WireUint,
     pub guarantees: CanonicalSet<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -1076,6 +1212,7 @@ pub struct WaiverV2Dto {
     pub starts_on: String,
     pub expires_on: String,
     pub controls: CanonicalSet<String>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 
@@ -1149,6 +1286,7 @@ pub struct SemanticGraphV2Dto {
     pub waivers: CanonicalSet<WaiverV2Dto>,
     pub imports: CanonicalSet<ImportLockV2Dto>,
     pub adapters: CanonicalSet<AdapterLockV2Dto>,
+    #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
 

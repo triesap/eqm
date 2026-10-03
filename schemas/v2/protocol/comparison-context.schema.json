@@ -167,6 +167,9 @@
               "additionalProperties": {
                 "$ref": "#/$defs/ExtensionValueV2Dto"
               },
+              "propertyNames": {
+                "pattern": "^[a-z][a-z0-9_]{0,62}$"
+              },
               "type": "object"
             }
           },
@@ -223,7 +226,11 @@
       "properties": {
         "defaults": {
           "additionalProperties": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}$",
             "type": "string"
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}$"
           },
           "type": "object"
         },
@@ -239,10 +246,14 @@
           "additionalProperties": {
             "$ref": "#/$defs/ExtensionValueV2Dto"
           },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){2,}$"
+          },
           "type": "object"
         },
         "id": {
-          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+          "maxLength": 255,
+          "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62})+$",
           "type": "string"
         },
         "owners": {
