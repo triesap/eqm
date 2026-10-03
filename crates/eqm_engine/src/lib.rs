@@ -4,6 +4,7 @@
 
 mod affected;
 mod applicability;
+mod comparison;
 mod conformance;
 mod coverage;
 mod diagnostics;
@@ -27,6 +28,9 @@ pub use affected::{AffectedIndexes, AffectedSet, ChangedFile, analyze_affected_s
 pub use applicability::{
     ApplicabilityContext, ApplicabilityError, TruthValue, evaluate_applicability,
     evaluate_participation,
+};
+pub use comparison::{
+    ComparisonEligibility, ComparisonParticipant, evaluate_comparison_eligibility,
 };
 pub use conformance::{
     ConformanceError, FacetEvaluationInput, FacetStatus, SupportingCheck, TargetConformance,

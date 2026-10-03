@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S039",
  "implementation": "in_progress",
- "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;P03-R2_P03-R3_implemented_verified_pending_review;RF45_partial_RF51_RF52_implemented_RF53_changes_required;not_release_ready",
+ "local_verification": "candidate_6677765_standard_658_doctests_9_passed;38_allocated_steps_accepted;P03-R2_P03-R3_S039-R1_implemented_verified_pending_review;RF45_partial_RF51_RF52_RF53_implemented;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1360,9 +1360,10 @@
     "git diff --check"
    ],
    "baseline_exceptions": [],
-   "implementation_status": "retained_committed_changes_required",
-   "supervisor_status": "changes_required_DEV014",
-   "review_report": "implementation/reports/CODEX-6677765.md"
+   "implementation_status": "repair_r1_implemented_verified_pending_review",
+   "supervisor_status": "pending_review_DEV014",
+   "review_report": "implementation/reports/CODEX-6677765.md",
+   "repair_report": "implementation/reports/S039-R1.md"
   },
   {
    "id": "S040",
@@ -3400,7 +3401,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S039-R1",
+ "next_checkpoint": "S040",
  "supervisor_review": {
   "source_commit": "667776537709f824efac48f6bf325be2c9ea2913",
   "report": "implementation/reports/CODEX-6677765.md",
@@ -3954,9 +3955,10 @@
    "priority": "P2",
    "owner": "S039",
    "checkpoint": "S039-R1",
-   "status": "changes_required",
+   "status": "implemented_verified_pending_review",
    "summary": "Checked comparison reader and distinct-subject consumer evidence missing",
-   "report": "implementation/reports/CODEX-6677765.md"
+   "report": "implementation/reports/CODEX-6677765.md",
+   "closure_report": "implementation/reports/S039-R1.md"
   },
   {
    "id": "RF54",
@@ -3998,7 +4000,7 @@
    },
    {
     "id": "S039-R1",
-    "status": "pending",
+    "status": "implemented_verified",
     "supervisor_status": "not_accepted"
    },
    {

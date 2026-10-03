@@ -33,6 +33,7 @@ use std::fmt::{self, Display, Formatter};
 pub mod acquisition;
 pub mod authority;
 pub mod clock;
+pub mod comparison;
 pub mod evaluation;
 pub mod provenance;
 pub mod session;
@@ -44,6 +45,9 @@ pub use acquisition::{
 };
 pub use authority::{AuthorityError, AuthorityProvider, AuthorityRequest};
 pub use clock::{ClockError, host_evaluation_time};
+pub use comparison::{
+    ComparisonContextError, checked_comparison_eligibility, shared_comparison_context,
+};
 pub use evaluation::{
     EvaluationRequest, EvidenceReadError, EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ,
 };
