@@ -9,7 +9,7 @@ use chrono::{DateTime, SecondsFormat, Utc};
 use eqm_domain::{ArtifactRole, Diagnostic, DiagnosticCode, RepoPath, Severity, UtcInstant};
 use eqm_engine::{
     RepositoryEntry, RepositoryEntryKind, RepositoryView, ScopeSubject, diagnostic_registry,
-    evaluate_structure,
+    evaluate_structure_with_roots,
 };
 use eqm_protocol::{
     CheckResultDto, CommandIdentity, DiagnosticDto, EvaluationModeDto, FacetStatusDto, FindingDto,
@@ -38,12 +38,14 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         (units.is_empty() || units.contains(binding.unit().as_str()))
             && (targets.is_empty() || targets.contains(binding.target().as_str()))
     }) {
-        let target = graph
-            .targets()
-            .get(binding.target())
+        // Structural checking uses the checked graph's exact target/component
+        // ownership closure, never an output-root-only view and never an
+        // arbitrary caller-supplied root list.
+        let roots = graph
+            .owned_roots(binding.target())
             .ok_or("binding target")?;
         let view = repository_view(session.repository_root(), binding)?;
-        for finding in evaluate_structure(binding, target, &view, false).findings {
+        for finding in evaluate_structure_with_roots(binding, &roots, &view, false).findings {
             let coordinate = format!("structure:{}:{}", binding.id(), finding.artifact);
             findings.insert(FindingDto {
                 diagnostic_code: "EQM-E0200".to_owned(),
@@ -227,6 +229,180 @@ mod tests {
             fs::read_dir(root.join(".eqm"))
                 .ok()
                 .map(|entries| entries.count())
+        );
+        Ok(())
+    }
+
+    const V2_SHARED_WORKSPACE: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json"
+
+contract_sources = ["eqm/contracts/**/*.toml"]
+binding_sources = ["eqm/bindings/**/*.toml"]
+policy_sources = ["eqm/policies/**/*.toml"]
+profile_sources = ["eqm/profiles/**/*.toml"]
+runner_sources = ["eqm/runners/**/*.toml"]
+waiver_sources = ["eqm/waivers/**/*.toml"]
+
+[targets.android]
+root = "apps/android"
+platform = "android"
+framework = "compose"
+source_components = ["shared.ui"]
+owners = ["owner://team/android"]
+
+[targets.ios]
+root = "apps/ios"
+platform = "ios"
+framework = "swiftui"
+owners = ["owner://team/ios"]
+
+[source_components."shared.ui"]
+roots = ["shared/ui"]
+owners = ["owner://team/shared"]
+dependencies = []
+"#;
+
+    fn shared_binding(path: &str) -> String {
+        format!(
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/binding.schema.json"
+id = "binding.android.shared"
+revision = 1
+owners = ["owner://team/android"]
+target = "android"
+unit = "account.create.signup.identifier"
+
+[[artifacts]]
+id = "shared_view"
+role = "view"
+path = "{path}"
+surface = "account.create.signup.identifier"
+
+[[exposures]]
+surface = "account.create.signup.identifier"
+state = "required"
+route = "signup"
+
+[[evidence]]
+id = "shared_behavior"
+kind = "test"
+requirements = ["account.create.signup.identifier#email_default"]
+facets = ["behavior"]
+runner = "runner.android"
+
+[evidence.selector]
+kind = "test"
+framework = "junit"
+test_id = "sharedView"
+"#
+        )
+    }
+
+    fn shared_workspace(binding_path: &str) -> Result<tempfile::TempDir, Box<dyn Error>> {
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
+        fs::write(root.join("eqm.toml"), V2_SHARED_WORKSPACE)?;
+        fs::create_dir_all(root.join("shared/ui"))?;
+        fs::write(root.join("shared/ui/Shared.kt"), b"// shared\n")?;
+        // Replace the shipped android binding with one whose artifact lives in
+        // the declared shared component root, keeping one binding per
+        // (target, unit) coordinate.
+        let _ = fs::remove_file(root.join("eqm/bindings/android.auth_signup.toml"));
+        fs::write(
+            root.join("eqm/bindings/android.shared.toml"),
+            shared_binding(binding_path),
+        )?;
+        Ok(repository)
+    }
+
+    fn structural_findings(
+        execution: &CommandExecution,
+    ) -> Result<Vec<serde_json::Value>, Box<dyn Error>> {
+        let findings = execution.payload.json["result"]["findings"]
+            .as_array()
+            .ok_or("findings")?
+            .iter()
+            .filter(|finding| finding["diagnostic_code"] == "EQM-E0200")
+            .cloned()
+            .collect();
+        Ok(findings)
+    }
+
+    #[test]
+    fn structural_check_accepts_declared_shared_artifact() -> Result<(), Box<dyn Error>> {
+        let repository = shared_workspace("shared/ui/Shared.kt")?;
+        let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+        else {
+            return Err("unexpected help".into());
+        };
+        let execution = execute(parsed, repository.path())?;
+        let findings = structural_findings(&execution)?;
+        // A declared shared artifact is owned by the target's component closure,
+        // so it must not report OutsideTargetRoot/Missing.
+        assert!(
+            !findings
+                .iter()
+                .any(|finding| finding["obligation"]
+                    == "structure:binding.android.shared:shared_view"),
+            "declared shared artifact must pass structural ownership: {findings:?}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn structural_check_reports_missing_declared_shared_artifact() -> Result<(), Box<dyn Error>> {
+        let repository = shared_workspace("shared/ui/Missing.kt")?;
+        let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+        else {
+            return Err("unexpected help".into());
+        };
+        let execution = execute(parsed, repository.path())?;
+        let findings = structural_findings(&execution)?;
+        assert!(
+            findings.iter().any(|finding| finding["obligation"]
+                == "structure:binding.android.shared:shared_view"
+                && finding["status"] == "failed"),
+            "missing declared shared artifact must fail structurally: {findings:?}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn structural_check_rejects_undeclared_and_escaped_paths() -> Result<(), Box<dyn Error>> {
+        // A path outside the checked closure is rejected at the real loading
+        // boundary, not silently accepted by a structural helper.
+        for path in ["unrelated/Path.kt", "../escape.kt"] {
+            let repository = shared_workspace(path)?;
+            let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+            else {
+                return Err("unexpected help".into());
+            };
+            assert!(
+                execute(parsed, repository.path()).is_err(),
+                "undeclared/escaped artifact path `{path}` must be rejected"
+            );
+        }
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn structural_check_reports_invalid_artifact_symlink() -> Result<(), Box<dyn Error>> {
+        let repository = shared_workspace("shared/ui/link.kt")?;
+        std::os::unix::fs::symlink(
+            repository.path().join("shared/ui/Shared.kt"),
+            repository.path().join("shared/ui/link.kt"),
+        )?;
+        let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+        else {
+            return Err("unexpected help".into());
+        };
+        let execution = execute(parsed, repository.path())?;
+        let findings = structural_findings(&execution)?;
+        assert!(
+            findings
+                .iter()
+                .any(|finding| finding["obligation"]
+                    == "structure:binding.android.shared:shared_view"),
+            "a forbidden artifact symlink must fail structurally: {findings:?}"
         );
         Ok(())
     }

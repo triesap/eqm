@@ -4,12 +4,12 @@ use crate::id::ParticipationRuleId;
 use crate::policy::ParticipationRule;
 use crate::{
     AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Extensions,
-    Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId,
+    Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId, RepoPath,
     RepositoryIdentity, Revision, RunnerDefinition, RunnerId, SelectorText, Sha256Digest,
     SourceCommit, SourceComponent, SourceComponentId, Surface, SurfaceId, Target, TargetId,
     TrustLevel, Waiver, WaiverId,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
@@ -291,6 +291,34 @@ impl WorkspaceGraph {
         &self.extensions
     }
 
+    /// Returns the exact deterministic roots one target owns: its shipped output
+    /// root plus every root reachable through its declared `source_components`
+    /// component dependency closure.
+    ///
+    /// Target `depends_on` edges never contribute another target's roots. This
+    /// is a pure graph query over already-validated authority; it performs no
+    /// filesystem access. A missing target returns `None`.
+    #[must_use]
+    pub fn owned_roots(&self, target: &TargetId) -> Option<Vec<RepoPath>> {
+        let target = self.targets.get(target)?;
+        let mut roots = vec![target.root().clone()];
+        let mut seen = BTreeSet::new();
+        let mut stack: Vec<SourceComponentId> =
+            target.source_components().iter().cloned().collect();
+        while let Some(id) = stack.pop() {
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+            if let Some(component) = self.source_components.get(&id) {
+                roots.extend(component.roots().iter().cloned());
+                stack.extend(component.dependencies().iter().cloned());
+            }
+        }
+        roots.sort();
+        roots.dedup();
+        Some(roots)
+    }
+
     /// Consumes the indexes back into deterministic graph input.
     #[must_use]
     pub fn into_input(self) -> WorkspaceGraphInput {
@@ -444,7 +472,7 @@ pub fn validate_source_components(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{LifecycleStatus, OwnerRef, Title};
+    use crate::{FrameworkId, LifecycleStatus, OwnerRef, PlatformId, Title};
     use std::str::FromStr;
 
     fn capability(id: &str) -> Result<Capability, Box<dyn Error>> {
@@ -500,6 +528,60 @@ mod tests {
         assert!(graph.bindings().is_empty());
         assert!(graph.adapters().is_empty());
         assert!(graph.extensions().is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn owned_roots_follow_the_component_closure_not_target_dependencies()
+    -> Result<(), Box<dyn Error>> {
+        let web = Target::new(
+            TargetId::new("web")?,
+            RepoPath::new("apps/web")?,
+            PlatformId::new("web")?,
+            FrameworkId::new("sveltekit")?,
+            vec![OwnerRef::from_str("owner://team/web")?],
+            Extensions::default(),
+        )?
+        .with_source_components(vec![SourceComponentId::new("shared.a")?])?
+        .with_depends_on(vec![TargetId::new("other")?])?;
+        let other = Target::new(
+            TargetId::new("other")?,
+            RepoPath::new("apps/other")?,
+            PlatformId::new("web")?,
+            FrameworkId::new("sveltekit")?,
+            vec![OwnerRef::from_str("owner://team/other")?],
+            Extensions::default(),
+        )?;
+        let graph = WorkspaceGraph::new(WorkspaceGraphInput {
+            targets: vec![web, other],
+            source_components: vec![
+                SourceComponent::new(
+                    SourceComponentId::new("shared.a")?,
+                    vec![RepoPath::new("shared/a")?],
+                    vec![OwnerRef::from_str("owner://team/shared")?],
+                    vec![SourceComponentId::new("shared.b")?],
+                    Extensions::default(),
+                )?,
+                SourceComponent::new(
+                    SourceComponentId::new("shared.b")?,
+                    vec![RepoPath::new("shared/b")?],
+                    vec![OwnerRef::from_str("owner://team/shared")?],
+                    vec![],
+                    Extensions::default(),
+                )?,
+            ],
+            ..WorkspaceGraphInput::default()
+        })?;
+        let roots: Vec<String> = graph
+            .owned_roots(&TargetId::new("web")?)
+            .ok_or("web roots")?
+            .into_iter()
+            .map(|root| root.as_str().to_owned())
+            .collect();
+        assert_eq!(roots, ["apps/web", "shared/a", "shared/b"]);
+        // A target dependency never contributes the other target's root.
+        assert!(!roots.contains(&"apps/other".to_owned()));
+        assert!(graph.owned_roots(&TargetId::new("absent")?).is_none());
         Ok(())
     }
 }
