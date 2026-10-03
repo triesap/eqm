@@ -13,7 +13,7 @@
 use crate::{CanonicalSet, WireInt, WireUint};
 use eqm_domain::{
     AdapterId, AttemptOutcome, DimensionId, EvidenceCounts, EvidenceKind, Facet, FullRequirementId,
-    HttpMethod, InventoryCompleteness, OwnerRef, ProducerRef, ProfileId, ProviderId,
+    HttpMethod, InventoryCompleteness, OccurrenceId, OwnerRef, ProducerRef, ProfileId, ProviderId,
     RawObjectDigest, ReleaseChannel, RepoPath, RepositoryIdentity, Revision, SelectorText,
     SemanticEvidenceDigest, Sha256Digest, SourceCommit, SurfaceId, SymbolicValueId, TargetId,
     TrustLevel, UnitId, UtcInstantV2, V2_UTC_PATTERN,
@@ -155,6 +155,10 @@ v2_schema_marker!(
 v2_schema_marker!(
     adapter_response_schema_marker,
     crate::ADAPTER_RESPONSE_SCHEMA_V2
+);
+v2_schema_marker!(
+    subject_manifest_schema_marker,
+    crate::SUBJECT_MANIFEST_SCHEMA_V2
 );
 
 // ---------------------------------------------------------------------------
@@ -1204,6 +1208,110 @@ impl AdapterResponseV2Dto {
     }
 }
 
+// ---------------------------------------------------------------------------
+// subject-manifest
+// ---------------------------------------------------------------------------
+
+/// One strict v2 multi-participant subject manifest.
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SubjectManifestV2Dto {
+    #[schemars(schema_with = "subject_manifest_schema_marker")]
+    pub schema: String,
+    pub id: String,
+    pub revision: WireUint,
+    pub entries: CanonicalSet<SubjectManifestEntryV2Dto>,
+}
+
+/// One exact occurrence subject assignment.
+#[derive(Clone, Debug, Deserialize, JsonSchema, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SubjectManifestEntryV2Dto {
+    pub occurrence: String,
+    pub repository: String,
+    pub source_commit: String,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "String")]
+    pub source_content_digest: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "String")]
+    pub target_configuration_digest: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "String")]
+    pub provider_configuration_digest: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "String")]
+    pub build_id: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_present",
+        skip_serializing_if = "Option::is_none"
+    )]
+    #[schemars(with = "String")]
+    pub artifact_digest: Option<String>,
+}
+
+impl SubjectManifestV2Dto {
+    /// Strictly decodes and validates one v2 subject manifest.
+    pub fn from_json(bytes: &[u8]) -> Result<Self, V2DtoError> {
+        let value: Self = crate::strict::from_slice(bytes).map_err(|_| V2DtoError::Json)?;
+        value.validate()?;
+        Ok(value)
+    }
+
+    fn validate(&self) -> Result<(), V2DtoError> {
+        if self.schema != crate::SUBJECT_MANIFEST_SCHEMA_V2.to_string() {
+            return Err(V2DtoError::InvalidSchema);
+        }
+        validate_digest(&self.id)?;
+        Revision::new(self.revision.get()).map_err(|_| V2DtoError::InvalidVocabulary)?;
+        if self.entries.is_empty() {
+            return Err(V2DtoError::InvalidOrdering);
+        }
+        for entry in self.entries.iter() {
+            parse_typed::<OccurrenceId>(&entry.occurrence, V2DtoError::InvalidVocabulary)?;
+            parse_typed::<RepositoryIdentity>(&entry.repository, V2DtoError::InvalidSubject)?;
+            parse_typed::<SourceCommit>(&entry.source_commit, V2DtoError::InvalidSubject)?;
+            for digest in [
+                &entry.source_content_digest,
+                &entry.target_configuration_digest,
+                &entry.provider_configuration_digest,
+                &entry.artifact_digest,
+            ]
+            .into_iter()
+            .flatten()
+            {
+                validate_digest(digest)?;
+            }
+            if entry.target_configuration_digest.is_some()
+                == entry.provider_configuration_digest.is_some()
+            {
+                return Err(V2DtoError::InvalidSubject);
+            }
+            if let Some(build_id) = &entry.build_id {
+                validate_selector_text(build_id, V2DtoError::InvalidSubject)?;
+            }
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1803,6 +1911,10 @@ mod tests {
             (
                 crate::ADAPTER_RESPONSE_SCHEMA_V2,
                 eqm_domain::SchemaKind::AdapterResponse,
+            ),
+            (
+                crate::SUBJECT_MANIFEST_SCHEMA_V2,
+                eqm_domain::SchemaKind::SubjectManifest,
             ),
         ];
         assert_eq!(identities.len(), crate::V2_PROTOCOL_SCHEMAS.len());

@@ -56,6 +56,7 @@ mod runner;
 mod scenario;
 mod schema;
 mod selection;
+mod subject_manifest;
 mod time;
 mod vocabulary;
 mod waiver;
@@ -69,7 +70,7 @@ pub use digest::{
     AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest, ContractDigest,
     DigestDomain, DigestParseError, EvaluationContextDigest, EvidenceSpecificationDigest,
     PlanDigest, PolicySelectionDigest, RawObjectDigest, RunnerDigest, SemanticEvidenceDigest,
-    Sha256Digest, TargetConfigurationDigest, TrustConfigurationDigest,
+    Sha256Digest, SubjectManifestDigest, TargetConfigurationDigest, TrustConfigurationDigest,
 };
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
@@ -129,6 +130,7 @@ pub use selection::{
     PolicySelectionInputError, PolicySelectionInputV2, SelectedDimensionStateV2,
     SelectedProfileInputV2,
 };
+pub use subject_manifest::{SubjectAssignment, SubjectManifest, SubjectManifestError};
 pub use time::{
     CalendarDate, DurationMillis, TimeParseError, UtcInstant, UtcInstantV2, V2_UTC_PATTERN,
 };

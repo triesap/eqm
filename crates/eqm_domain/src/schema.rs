@@ -102,6 +102,8 @@ pub enum SchemaKind {
     Participation,
     /// Finalized semantic graph projection.
     SemanticGraph,
+    /// Exact multi-participant subject manifest (v2).
+    SubjectManifest,
     /// Common result envelope.
     Result,
     /// Public diagnostic.
@@ -126,7 +128,7 @@ pub enum SchemaKind {
 
 impl SchemaKind {
     /// Every accepted kind in stable lexical-identity order.
-    pub const ALL: [Self; 23] = [
+    pub const ALL: [Self; 24] = [
         Self::AdapterRequest,
         Self::AdapterResponse,
         Self::Attestation,
@@ -146,6 +148,7 @@ impl SchemaKind {
         Self::Runner,
         Self::RuntimeFacts,
         Self::SemanticGraph,
+        Self::SubjectManifest,
         Self::Surface,
         Self::TestResult,
         Self::Waiver,
@@ -169,6 +172,7 @@ impl SchemaKind {
             Self::Lock => "lock",
             Self::Participation => "participation",
             Self::SemanticGraph => "semantic-graph",
+            Self::SubjectManifest => "subject-manifest",
             Self::Result => "result",
             Self::Diagnostic => "diagnostic",
             Self::TestResult => "test-result",
@@ -199,6 +203,7 @@ impl SchemaKind {
             | Self::Lock
             | Self::Participation => SchemaGroup::Manifest,
             Self::SemanticGraph
+            | Self::SubjectManifest
             | Self::Result
             | Self::Diagnostic
             | Self::TestResult

@@ -45,6 +45,8 @@ pub enum DigestDomain {
     Authority,
     /// Trust configuration projection (v2).
     TrustConfiguration,
+    /// Exact multi-participant subject manifest (v2).
+    SubjectManifest,
 }
 
 impl DigestDomain {
@@ -69,6 +71,7 @@ impl DigestDomain {
             Self::PolicySelection => b"eqm:v2:policy-selection",
             Self::Authority => b"eqm:v2:authority",
             Self::TrustConfiguration => b"eqm:v2:trust-configuration",
+            Self::SubjectManifest => b"eqm:v2:subject-manifest",
         }
     }
 }
@@ -257,6 +260,12 @@ define_identity_digest!(
     /// Trust-configuration projection.
     TrustConfigurationDigest,
     DigestDomain::TrustConfiguration
+);
+
+define_identity_digest!(
+    /// Exact multi-participant subject manifest projection.
+    SubjectManifestDigest,
+    DigestDomain::SubjectManifest
 );
 
 fn decode_hex(byte: u8) -> Option<u8> {

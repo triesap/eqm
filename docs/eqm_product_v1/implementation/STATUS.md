@@ -34,11 +34,14 @@ applicability for an exact requirement/participant/profile coordinate, keeping
 true, false and unknown distinct with no pre-fanout global drop (acceptance
 pending). S037 models role-bearing scenario participant occurrences with unique
 occurrence IDs, tagged target/provider subjects and explicit directed
-dependencies, keeping repeated occurrences distinct (acceptance pending). RF44
-final-tree gating and authority context are reconciled in current planning;
-implementation receipts must prove final trees, including reports/ledger.
+dependencies, keeping repeated occurrences distinct (acceptance pending). S038
+adds exact multi-participant subject manifests and their strict v2 protocol kind,
+keeping source/build/artifact axes separate from configuration identity and
+typed absence explicit (acceptance pending). RF44 final-tree gating and authority
+context are reconciled in current planning; implementation receipts must prove
+final trees, including reports/ledger.
 
-Next **every ordered S038–S043**, pfc through EQM-P03.
+Next **every ordered S039–S043**, pfc through EQM-P03.
 Independent model/schema/identity review before S044; full MVP remains S211.
 Standard gate independently passed 531 successful test executions, domain/protocol
 doctests passed. Isolated lifecycle probe confirms existing receipt incorrectly

@@ -115,6 +115,11 @@ fn write_v2(root: &Path) -> Result<(), Box<dyn Error>> {
         "adapter-response",
         &ADAPTER_RESPONSE_SCHEMA_V2.to_string(),
     )?;
+    write::<v2::SubjectManifestV2Dto>(
+        root,
+        "subject-manifest",
+        &SUBJECT_MANIFEST_SCHEMA_V2.to_string(),
+    )?;
     Ok(())
 }
 
