@@ -1,5 +1,15 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## Execution revalidation — 2026-10-03
+
+No subsequent implementation delta is present in this checkout and no matching
+returned run is available for the latest issued batch. No new acceptance is
+recorded. DEV-017 remains the governing technical amendment; all three pending
+checkpoints S039-R3 → P03-R5 → S043-R2 remain eligible under its settled decisions.
+Preserve 40 prior allocated numbered-step acceptances, RF56/RF58 allocated closure,
+all outstanding findings and the required independent P03 gate before S044.
+Full original MVP S211 and all original acceptance criteria remain unchanged.
+
 ## DEV-017 — Bind consumed cohort authority and complete P03 value parity
 
 **Date/author:** 2026-10-03, Codex under owner delegation.

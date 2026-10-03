@@ -1,5 +1,10 @@
 # Verification and implementation status
 
+Execution revalidation, 2026-10-03: latest issued batch has no matching returned
+run available and no subsequent implementation delta in this checkout. No new
+candidate acceptance. All three DEV-017 checkpoints remain pending; preserve the
+reviewed implementation, prior acceptances and original P03/S211 gates below.
+
 DEV-017 independently reviewed clean `8e5f21867bdaa7ccf32c4c2d626b2f269184380e`.
 All four issued checkpoints plus one ledger backfill were committed; Pi stopped
 correctly at required independent review. Preserve all commits and **40 prior
@@ -24,8 +29,8 @@ compile failure was repaired only in the isolated review worktree. v1 schemas
 and Cargo.lock unchanged. No supervisor production code/test edits.
 
 Historical missing-run revalidations and earlier reports remain historical; the
-latest run is now located and reviewed. Prior P03-R2 report-marker failure repaired
-at P03-R3 remains recorded. No whole AC/RA closes from allocated helper evidence.
+previous implementation run was located and reviewed. Prior P03-R2 report-marker
+failure repaired at P03-R3 remains recorded. No whole AC/RA closes from allocated helper evidence.
 
 No release or human release-testing gate reached. Full verify, Linux, coverage,
 mutation/fuzz/benchmark/package and live product/crypto/host/signing/operational
