@@ -38,6 +38,15 @@ impl JsonSchema for Sha256Text {
     }
 }
 
+fn owners_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {"type": "string", "minLength": 1},
+    })
+}
+
 fn semantic_graph_schema_marker(_: &mut SchemaGenerator) -> Schema {
     json_schema!({
         "const": crate::schema::SEMANTIC_GRAPH_SCHEMA_V2.to_string(),
@@ -423,6 +432,7 @@ pub struct ProviderV2Dto {
     pub id: String,
     #[schemars(with = "Sha256Text")]
     pub configuration_digest: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
 }
@@ -739,6 +749,7 @@ pub struct ProfileDefinitionV2Dto {
     pub id: String,
     pub revision: WireUint,
     pub title: String,
+    #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
     pub dimensions: CanonicalSet<DimensionDeclarationV2Dto>,
     pub defaults: BTreeMap<String, String>,
@@ -993,10 +1004,13 @@ pub struct ComparisonContextV2Dto {
 // ---------------------------------------------------------------------------
 
 use eqm_domain::{
-    ComparisonContextDigest, DimensionId, ProfileId, Revision, Sha256Digest, SymbolicValueId,
+    ComparisonContextDigest, Description, DimensionId, ExtensionKey, ExtensionNamespace,
+    ExtensionValue, Extensions, OwnerRef, Profile, ProfileDimension, ProfileId, Revision,
+    Sha256Digest, SymbolicValueId, Title,
 };
 use std::collections::BTreeSet;
 use std::fmt::{self, Display, Formatter};
+use std::str::FromStr;
 
 /// Strict comparison-context ingress failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1021,6 +1035,8 @@ pub enum ComparisonContextError {
     UndeclaredValue,
     /// A dimension declaration repeated an identity or value.
     InvalidDefinition,
+    /// A recursive extension value, namespace or bound was invalid.
+    InvalidExtension,
     /// The supplied bytes did not parse to an equal record.
     RecordMismatch,
 }
@@ -1050,35 +1066,123 @@ impl DimensionValueV2Dto {
 }
 
 impl ProfileDefinitionV2Dto {
-    fn declared_dimensions(
-        &self,
-    ) -> Result<BTreeMap<String, BTreeSet<String>>, ComparisonContextError> {
-        let mut declared: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-        for dimension in self.dimensions.iter() {
-            DimensionId::new(dimension.id.as_str())
-                .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
-            if declared.contains_key(dimension.id.as_str()) {
-                return Err(ComparisonContextError::InvalidDefinition);
-            }
-            let mut values = BTreeSet::new();
-            for value in dimension.values.iter() {
-                SymbolicValueId::new(value.as_str())
+    /// Rebuilds the owning domain profile so that full construction invariants
+    /// (nonempty valid title/owners/dimensions, duplicate logical keys, finite
+    /// values, defaults, optional description and recursive extension bounds)
+    /// are enforced by the shared domain validator. The rebuilt value is only a
+    /// validation artifact and grants no trust.
+    fn to_domain_profile(&self) -> Result<Profile, ComparisonContextError> {
+        let id = ProfileId::new(self.id.as_str())
+            .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
+        let revision = Revision::new(self.revision.get())
+            .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
+        let title = Title::new(self.title.as_str())
+            .map_err(|_| ComparisonContextError::InvalidDefinition)?;
+        let owners = self
+            .owners
+            .iter()
+            .map(|owner| {
+                OwnerRef::from_str(owner.as_str())
+                    .map_err(|_| ComparisonContextError::InvalidDefinition)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let dimensions = self
+            .dimensions
+            .iter()
+            .map(|dimension| {
+                let id = DimensionId::new(dimension.id.as_str())
                     .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
-                if !values.insert(value.clone()) {
-                    return Err(ComparisonContextError::InvalidDefinition);
-                }
-            }
-            declared.insert(dimension.id.clone(), values);
-        }
-        for (dimension, value) in &self.defaults {
-            let values = declared
-                .get(dimension)
-                .ok_or(ComparisonContextError::UndeclaredDimension)?;
-            if !values.contains(value) {
-                return Err(ComparisonContextError::UndeclaredValue);
-            }
-        }
-        Ok(declared)
+                let values = dimension
+                    .values
+                    .iter()
+                    .map(|value| {
+                        SymbolicValueId::new(value.as_str())
+                            .map_err(|_| ComparisonContextError::InvalidVocabulary)
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let description = dimension
+                    .description
+                    .as_deref()
+                    .map(Description::new)
+                    .transpose()
+                    .map_err(|_| ComparisonContextError::InvalidDefinition)?;
+                ProfileDimension::new(id, values, description)
+                    .map_err(|_| ComparisonContextError::InvalidDefinition)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let defaults = self
+            .defaults
+            .iter()
+            .map(|(dimension, value)| {
+                Ok((
+                    DimensionId::new(dimension.as_str())
+                        .map_err(|_| ComparisonContextError::InvalidVocabulary)?,
+                    SymbolicValueId::new(value.as_str())
+                        .map_err(|_| ComparisonContextError::InvalidVocabulary)?,
+                ))
+            })
+            .collect::<Result<Vec<_>, ComparisonContextError>>()?;
+        let description = self
+            .description
+            .as_deref()
+            .map(Description::new)
+            .transpose()
+            .map_err(|_| ComparisonContextError::InvalidDefinition)?;
+        let extensions = domain_extensions(&self.extensions)?;
+        Profile::new(
+            id,
+            revision,
+            title,
+            owners,
+            dimensions,
+            defaults,
+            description,
+            extensions,
+        )
+        .map_err(|_| ComparisonContextError::InvalidDefinition)
+    }
+}
+
+fn domain_extensions(
+    values: &BTreeMap<String, ExtensionValueV2Dto>,
+) -> Result<Extensions, ComparisonContextError> {
+    let converted = values
+        .iter()
+        .map(|(namespace, value)| {
+            Ok((
+                ExtensionNamespace::new(namespace.as_str())
+                    .map_err(|_| ComparisonContextError::InvalidExtension)?,
+                domain_extension_value(value)?,
+            ))
+        })
+        .collect::<Result<BTreeMap<_, _>, ComparisonContextError>>()?;
+    Extensions::new(converted).map_err(|_| ComparisonContextError::InvalidExtension)
+}
+
+fn domain_extension_value(
+    value: &ExtensionValueV2Dto,
+) -> Result<ExtensionValue, ComparisonContextError> {
+    match value {
+        ExtensionValueV2Dto::Boolean(value) => Ok(ExtensionValue::Boolean(*value)),
+        ExtensionValueV2Dto::Integer(value) => Ok(ExtensionValue::Integer(value.get())),
+        ExtensionValueV2Dto::String(value) => ExtensionValue::string(value.as_str())
+            .map_err(|_| ComparisonContextError::InvalidExtension),
+        ExtensionValueV2Dto::Array(values) => values
+            .iter()
+            .map(domain_extension_value)
+            .collect::<Result<Vec<_>, _>>()
+            .map(ExtensionValue::Array),
+        ExtensionValueV2Dto::Object(values) => values
+            .iter()
+            .map(|(key, value)| {
+                Ok((
+                    ExtensionKey::new(key.as_str())
+                        .map_err(|_| ComparisonContextError::InvalidExtension)?,
+                    domain_extension_value(value)?,
+                ))
+            })
+            .collect::<Result<BTreeMap<_, _>, ComparisonContextError>>()
+            .map(ExtensionValue::Object),
     }
 }
 
@@ -1118,32 +1222,33 @@ impl ComparisonContextV2Dto {
         }
         let mut profiles: BTreeSet<String> = BTreeSet::new();
         for selected in self.profiles.iter() {
-            ProfileId::new(selected.definition.id.as_str())
-                .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
-            Revision::new(selected.definition.revision.get())
-                .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
             if !profiles.insert(selected.definition.id.clone()) {
                 return Err(ComparisonContextError::DuplicateProfile);
             }
-            let declared = selected.definition.declared_dimensions()?;
+            // Full owning-domain profile construction invariants are enforced
+            // by the shared validator, not a smaller parallel notion.
+            let profile = selected.definition.to_domain_profile()?;
             let mut seen: BTreeSet<String> = BTreeSet::new();
             for value in selected.values.iter() {
                 let dimension = value.dimension();
-                DimensionId::new(dimension)
+                let dimension_id = DimensionId::new(dimension)
                     .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
-                let finite = declared
-                    .get(dimension)
+                let declared = profile
+                    .dimensions()
+                    .get(&dimension_id)
                     .ok_or(ComparisonContextError::UndeclaredDimension)?;
                 if !seen.insert(dimension.to_owned()) {
                     return Err(ComparisonContextError::DuplicateDimension);
                 }
-                if let Some((_, known)) = value.known()
-                    && !finite.contains(known)
-                {
-                    return Err(ComparisonContextError::UndeclaredValue);
+                if let Some((_, known)) = value.known() {
+                    let known = SymbolicValueId::new(known)
+                        .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
+                    if !declared.values().contains(&known) {
+                        return Err(ComparisonContextError::UndeclaredValue);
+                    }
                 }
             }
-            if seen.len() != declared.len() {
+            if seen.len() != profile.dimensions().len() {
                 return Err(ComparisonContextError::MissingDimension);
             }
         }

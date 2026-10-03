@@ -5,6 +5,7 @@
   "description": "One strict v2 provider authority document.\n\n`configuration_digest` is an external content reference declared by the\nauthor. It is distinct from the `eqm:v2:provider-configuration` identity the\ncanonical projection derives over this whole validated definition, and it\nproves neither acquisition nor trust of the referenced material.",
   "properties": {
     "configuration_digest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
       "type": "string"
     },
     "extensions": {
@@ -17,11 +18,14 @@
     },
     "owners": {
       "items": {
+        "minLength": 1,
         "type": "string"
       },
+      "minItems": 1,
       "type": "array"
     },
     "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/provider.schema.json",
       "type": "string"
     }
   },

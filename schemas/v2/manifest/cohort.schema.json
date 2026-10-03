@@ -5,28 +5,18 @@
       "description": "One authored cohort assignment for an exact scenario occurrence.",
       "properties": {
         "artifact_digest": {
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
         },
         "build_id": {
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "occurrence": {
           "type": "string"
         },
         "provider_configuration_digest": {
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
         },
         "repository": {
           "type": "string"
@@ -35,18 +25,12 @@
           "type": "string"
         },
         "source_content_digest": {
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
         },
         "target_configuration_digest": {
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
         }
       },
       "required": [
@@ -66,6 +50,7 @@
       "items": {
         "$ref": "#/$defs/CohortAssignmentV2Dto"
       },
+      "minItems": 1,
       "type": "array"
     },
     "extensions": {
@@ -85,6 +70,7 @@
       "type": "string"
     },
     "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json",
       "type": "string"
     }
   },

@@ -267,3 +267,65 @@ fn checked_receiver_requires_equal_raw_bytes() -> Result<(), Box<dyn Error>> {
     );
     Ok(())
 }
+
+#[test]
+fn invalid_profile_definitions_reject_full_domain_invariants() -> Result<(), Box<dyn Error>> {
+    // Empty owners, empty title and empty dimensions are domain construction
+    // failures, not merely structural ones.
+    for (field, value) in [
+        ("owners", json!([])),
+        ("title", json!("")),
+        ("dimensions", json!([])),
+    ] {
+        let mut mutated = wire();
+        mutated["profiles"][0]["definition"][field] = value;
+        assert_eq!(
+            parse(&mutated),
+            Err(ComparisonContextError::InvalidDefinition),
+            "{field} accepted"
+        );
+    }
+
+    // Duplicate logical dimension key with distinct members is a domain
+    // duplicate, not an exact-set duplicate.
+    let mut duplicate_dimension = wire();
+    duplicate_dimension["profiles"][0]["definition"]["dimensions"] = json!([
+        {"id": "locale", "values": ["en", "fr"]},
+        {"id": "locale", "values": ["de"]}
+    ]);
+    assert_eq!(
+        parse(&duplicate_dimension),
+        Err(ComparisonContextError::InvalidDefinition)
+    );
+
+    // A default outside its declared finite values is invalid.
+    let mut bad_default = wire();
+    bad_default["profiles"][0]["definition"]["defaults"] = json!({"locale": "de"});
+    assert_eq!(
+        parse(&bad_default),
+        Err(ComparisonContextError::InvalidDefinition)
+    );
+
+    // An invalid recursive extension namespace is rejected by the owning domain
+    // validator, not accepted as opaque JSON.
+    let mut bad_extension = wire();
+    bad_extension["profiles"][0]["definition"]["extensions"] =
+        json!({"bad": {"type": "boolean", "value": true}});
+    assert_eq!(
+        parse(&bad_extension),
+        Err(ComparisonContextError::InvalidExtension)
+    );
+
+    // Recursive extension depth beyond the domain bound is rejected.
+    let mut deep = json!({"type": "boolean", "value": true});
+    for _ in 0..20 {
+        deep = json!({"type": "array", "value": [deep]});
+    }
+    let mut too_deep = wire();
+    too_deep["profiles"][0]["definition"]["extensions"] = json!({"dev.example.ext": deep});
+    assert_eq!(
+        parse(&too_deep),
+        Err(ComparisonContextError::InvalidExtension)
+    );
+    Ok(())
+}

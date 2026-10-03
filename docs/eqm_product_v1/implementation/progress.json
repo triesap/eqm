@@ -3413,7 +3413,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P03-R4",
+ "next_checkpoint": "S043-R1",
  "supervisor_review": {
   "source_commit": "d2c9c57d2e5d3c8f448426619a49c48af45b211a",
   "report": "implementation/reports/CODEX-d2c9c57.md",
@@ -3422,7 +3422,7 @@
   "standard_check": "passed_693_test_executions",
   "doctests": "domain_manifest_protocol_engine_application_passed_9",
   "release_candidate": false,
-  "next_checkpoint": "P03-R4"
+  "next_checkpoint": "S043-R1"
  },
  "execution_target": "S043 reached; independent integration review before S044; full MVP S211 remains",
  "supervisor_findings": [
@@ -4003,6 +4003,7 @@
    "owner": "S041",
    "checkpoint": "S041-R1",
    "status": "implemented_verified_pending_codex_acceptance",
+   "commit_sha": "255d3af36e0aead58df5d8a58e86fe989c36e935",
    "summary": "Cohort assignments omit frozen target/provider configuration fields",
    "report": "implementation/reports/CODEX-d2c9c57.md",
    "closure_report": "implementation/reports/S041-R1.md"
@@ -4013,6 +4014,7 @@
    "owner": "S041",
    "checkpoint": "S041-R1",
    "status": "implemented_verified_pending_codex_acceptance",
+   "commit_sha": "255d3af36e0aead58df5d8a58e86fe989c36e935",
    "summary": "Cohort preparation and exact graph membership are unchecked",
    "report": "implementation/reports/CODEX-d2c9c57.md",
    "closure_report": "implementation/reports/S041-R1.md"
@@ -4022,16 +4024,17 @@
    "priority": "P2",
    "owner": "S039",
    "checkpoint": "P03-R4",
-   "status": "changes_required",
+   "status": "implemented_verified_pending_codex_acceptance",
    "summary": "Checked comparison ingress accepts domain-invalid profiles",
-   "report": "implementation/reports/CODEX-d2c9c57.md"
+   "report": "implementation/reports/CODEX-d2c9c57.md",
+   "closure_report": "implementation/reports/P03-R4.md"
   },
   {
    "id": "RF59",
    "priority": "P2",
    "owner": "S043",
    "checkpoint": "P03-R4",
-   "status": "changes_required",
+   "status": "implemented_verified_pending_codex_acceptance",
    "summary": "Authored provider/cohort schema parity weakens value constraints",
    "report": "implementation/reports/CODEX-d2c9c57.md"
   }
@@ -4062,7 +4065,7 @@
    },
    {
     "id": "P03-R4",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    },
    {
@@ -4078,7 +4081,7 @@
   "implementation_delta": "none_observed",
   "returned_candidate": "not_available",
   "acceptance_changes": false,
-  "next_checkpoint": "P03-R4",
+  "next_checkpoint": "S043-R1",
   "batch_endpoint": "S043-R1",
   "governing_amendment": "DEV-015"
  },

@@ -1489,7 +1489,13 @@
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "revision": {
           "anyOf": [
@@ -1537,7 +1543,13 @@
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         }
       },
       "required": [

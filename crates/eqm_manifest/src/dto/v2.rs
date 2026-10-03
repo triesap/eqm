@@ -8,9 +8,45 @@
 #![allow(missing_docs)]
 
 use super::{ApplicabilityDto, ExtensionsDto};
-use schemars::JsonSchema;
+use eqm_domain::{SchemaKind, SchemaUri, SchemaVersion};
+use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
 use serde::Deserialize;
+use std::borrow::Cow;
 use std::collections::BTreeMap;
+
+/// Exact canonical `sha256:<64 lowercase hex>` authored digest text.
+pub struct Sha256Text;
+
+impl JsonSchema for Sha256Text {
+    fn schema_name() -> Cow<'static, str> {
+        "Sha256Text".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+        })
+    }
+}
+
+fn provider_schema_marker(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "const": SchemaUri::versioned(SchemaKind::Provider, SchemaVersion::V2).to_string(),
+        "type": "string",
+    })
+}
+
+fn cohort_schema_marker(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "const": SchemaUri::versioned(SchemaKind::Cohort, SchemaVersion::V2).to_string(),
+        "type": "string",
+    })
+}
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -128,9 +164,12 @@ pub struct ScenarioDependencyV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ProviderV2Dto {
+    #[schemars(schema_with = "provider_schema_marker")]
     pub schema: String,
     pub id: String,
+    #[schemars(with = "Sha256Text")]
     pub configuration_digest: String,
+    #[schemars(length(min = 1), inner(length(min = 1)))]
     pub owners: Vec<String>,
     #[serde(default)]
     pub extensions: ExtensionsDto,
@@ -145,10 +184,12 @@ pub struct ProviderV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct CohortV2Dto {
+    #[schemars(schema_with = "cohort_schema_marker")]
     pub schema: String,
     pub id: String,
     pub revision: u64,
     pub scenario: String,
+    #[schemars(length(min = 1))]
     pub assignments: Vec<CohortAssignmentV2Dto>,
     #[serde(default)]
     pub extensions: ExtensionsDto,
@@ -161,14 +202,19 @@ pub struct CohortAssignmentV2Dto {
     pub occurrence: String,
     pub repository: String,
     pub source_commit: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Sha256Text")]
     pub source_content_digest: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Sha256Text")]
     pub target_configuration_digest: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Sha256Text")]
     pub provider_configuration_digest: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "String")]
     pub build_id: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(with = "Sha256Text")]
     pub artifact_digest: Option<String>,
 }

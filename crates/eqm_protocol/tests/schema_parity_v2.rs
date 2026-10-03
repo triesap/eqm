@@ -101,6 +101,18 @@ fn provider_manifest_schema_accepts_and_rejects_one_axis() -> Result<(), Box<dyn
     bad_digest["configuration_digest"] = json!(5);
     assert!(!validator.is_valid(&bad_digest));
 
+    let mut garbage_digest = document.clone();
+    garbage_digest["configuration_digest"] = json!("not-a-digest");
+    assert!(!validator.is_valid(&garbage_digest));
+
+    let mut wrong_marker = document.clone();
+    wrong_marker["schema"] = json!("https://example.com/not-provider");
+    assert!(!validator.is_valid(&wrong_marker));
+
+    let mut empty_owners = document.clone();
+    empty_owners["owners"] = json!([]);
+    assert!(!validator.is_valid(&empty_owners));
+
     let mut missing = document.clone();
     missing.as_object_mut().ok_or("object")?.remove("owners");
     assert!(!validator.is_valid(&missing));
@@ -135,6 +147,25 @@ fn cohort_manifest_schema_accepts_and_rejects_one_axis() -> Result<(), Box<dyn E
     wrong_axis_type["assignments"][0]["source_content_digest"] = json!(5);
     assert!(!validator.is_valid(&wrong_axis_type));
 
+    let mut garbage_digest = cohort_document();
+    garbage_digest["assignments"][0]["source_content_digest"] = json!("garbage");
+    assert!(!validator.is_valid(&garbage_digest));
+
+    let mut null_optional = cohort_document();
+    null_optional["assignments"][0]["build_id"] = json!(null);
+    assert!(
+        !validator.is_valid(&null_optional),
+        "authored optionals are absent-or-present, never null"
+    );
+
+    let mut wrong_marker = cohort_document();
+    wrong_marker["schema"] = json!("https://example.com/not-cohort");
+    assert!(!validator.is_valid(&wrong_marker));
+
+    let mut empty_assignments = cohort_document();
+    empty_assignments["assignments"] = json!([]);
+    assert!(!validator.is_valid(&empty_assignments));
+
     let mut bad_configuration = cohort_document();
     bad_configuration["assignments"][0]["provider_configuration_digest"] = json!(5);
     assert!(!validator.is_valid(&bad_configuration));
@@ -157,6 +188,14 @@ fn graph_schema_validates_provider_and_cohort_members() -> Result<(), Box<dyn Er
     let mut bad_provider = graph.clone();
     bad_provider["providers"][0]["configuration_digest"] = json!("x");
     assert!(!validator.is_valid(&bad_provider));
+
+    let mut empty_provider_owners = graph.clone();
+    empty_provider_owners["providers"][0]["owners"] = json!([]);
+    assert!(!validator.is_valid(&empty_provider_owners));
+
+    let mut null_cohort_optional = graph.clone();
+    null_cohort_optional["cohorts"][0]["assignments"][0]["source_content_digest"] = json!(null);
+    assert!(!validator.is_valid(&null_cohort_optional));
 
     let mut bad_cohort = graph.clone();
     bad_cohort["cohorts"][0]["assignments"][0]["build_id"] = json!(5);
