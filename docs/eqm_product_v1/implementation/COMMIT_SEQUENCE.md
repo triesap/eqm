@@ -1,19 +1,72 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
-## Execution revalidation — 2026-10-03
+## DEV-020 — Complete bounded schema contracts and independent boundary corpus
 
-No subsequent implementation delta is present in this checkout and no matching
-returned run is available for the latest issued batch. No new acceptance is
-recorded. DEV-017 remains the governing technical amendment; all three pending
-checkpoints S039-R3 → P03-R5 → S043-R2 remain eligible under its settled decisions.
-Preserve 40 prior allocated numbered-step acceptances, RF56/RF58 allocated closure,
-all outstanding findings and the required independent P03 gate before S044.
-Full original MVP S211 and all original acceptance criteria remain unchanged.
+**Date/author:** 2026-10-03, Codex under owner delegation.
+**Reviewed candidate:** `aa5556336075aae2065862ed65166176717888f6`.
+[Independent review](reports/CODEX-aa55563.md) preserves all five returned commits,
+accepts S039/RF55/RF60 and allocated RF57 authority repair, and retains 40 prior
+numbered acceptances (41 total). S041/S043 and P03 remain changes-required;
+RF59/RF61 partial, new RF62/RF63/RF64 require completion of existing DEV-017 criteria.
+Original 64 R/AC, 21 RA, Q01–Q15 and S211 remain unchanged. Prior decisions remain
+except the current frontier is replaced below. This is the sole current amendment.
 
-Before implementation, retain an external startup receipt identifying the actual
-repository, revision, dirty state and configured/observed runtime identity.
-Unavailable native handles remain explicit; they do not block eligible software.
-This execution-evidence requirement does not alter DEV-017 technical scope.
+Execute **P03-R6 → P03-R7 → S043-R3**, **pfc through EQM-P03**; all three checkpoints,
+then independent P03 acceptance before S044. This boundary is the existing hard
+integration gate, not a one-commit repair limit. No owner-only decision is pending.
+
+### P03-R6 — Complete the full owning schema audit
+
+Commit `fix: complete bounded v2 identifier and extension schemas`.
+Audit every introduced P03 authored and graph/comparison member against its owning
+constructor, recording a compact field/rule/layer table in the implementation
+report. Fix all schema-expressible omissions, not merely four probe assertions.
+RF62: derive each identifier's exact segment count, <=63 ASCII segment bound,
+<=255 ID bound and distinct requirement bound from owning types; use valid boundary
+controls, not only malformed examples. RF63: enforce extension namespace grammar
+and nested object key grammar recursively in authored and protocol shapes; preserve
+valid recursive tagged unions and display-only projection exclusion. Inspect
+profile defaults keys/values and other map keys, optional fields, reference forms,
+positive canonical revisions, sets, roots and text against owning contracts.
+RF64: schema must preserve the actual `RepositoryIdentity` contract, including
+explicit-port values accepted by the domain. Do not tighten its parser or introduce
+new URI/product rules. Express existing ASCII/length/forbidden-character rules
+where faithful. Keep exact Unicode byte/NFC/depth/node/token/relationship validation
+at owning boundaries when not expressible. Required exactly-one remains enforced.
+Use generator source/local references and regenerate atomically; no hand-edited
+JSON, fallback loosening, new wire fields/digests or v1 changes. Accepted graph
+binding must remain intact. Any discovered mismatches within this audit are
+eligible work within this checkpoint, not a reason to return for the same decisions.
+
+### P03-R7 — Execute an independent cross-layer boundary corpus
+
+Commit `test: prove owning v2 schema boundary parity`.
+Build independently authored table-driven valid/invalid boundary inputs, covering
+all audit rows in P03-R6, against local real Draft 2020-12 validation with format
+assertions and actual loader/domain/checked-reader paths. Include 63/64 segment,
+255/256 total ID, exact per-type segment counts, namespace and recursive-key
+mutants, valid explicit-port repository plus actual parser-invalid variants,
+profile default map vocabulary and recursive union unknown members. Keep Unicode
+byte-vs-character and raw-token/semantic relationship exceptions explicit; never
+assert universal equivalence where distinct layers intentionally apply.
+Add valid maximum/range controls so constraints do not silently overreject.
+Exercise graph, comparison and authored inputs, with positive controls at the same
+ingress. Retain literal bytes/digests and v1 compatibility controls. Run owning
+regressions/doctests and declared standard/schema lanes per checkpoint.
+
+### S043-R3 — Finish actual integration and original cycle exit
+
+Commit `test: verify complete P03 boundary integration`.
+Integrate the new corpus into real asymmetric preparation and CLI diagnostics,
+including positive accepted boundary inputs and one-axis negatives at real ingress.
+Preserve transitive source closure, repeated actors/distinct builds, explicit N/N+1
+cohorts, typed graph-bound comparison and all original mutations/literal oracles.
+Run every original S039/S041/S043/P03 exit obligation and affected owning lane,
+not just helpers. Reconcile stale P03-R5 baseline and any intermediate failures
+against exact history/evidence; never rewrite historical failures into passes.
+Finalize report/status/progress before final gates, one green commit per checkpoint.
+Pi records implementation/verification only; Codex owns acceptance. Private coordination
+and tracing remain supervisor-owned. No activation or publication authority.
 
 ## DEV-017 — Bind consumed cohort authority and complete P03 value parity
 

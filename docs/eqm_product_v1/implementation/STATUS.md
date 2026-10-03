@@ -1,44 +1,29 @@
 # Verification and implementation status
 
-Execution revalidation, 2026-10-03: latest issued batch has no matching returned
-run available and no subsequent implementation delta in this checkout. No new
-candidate acceptance. DEV-017 checkpoints **S039-R3, P03-R5 and S043-R2 are
-implemented and locally verified** by the current implementation run; preserve
-the reviewed implementation, prior acceptances and original P03/S211 gates
-below. Startup identity is recorded externally before implementation.
+Codex independently reviewed clean `aa5556336075aae2065862ed65166176717888f6`.
+The matched implementation run reached all three DEV-017 checkpoints and stopped
+at the required review gate. Five returned commits are preserved. S039/RF55/RF60
+and allocated RF57 authority repair are accepted; 40 prior numbered acceptances
+remain, for **41 accepted numbered steps**. RF56/RF58 closures remain.
 
-DEV-017 independently reviewed clean `8e5f21867bdaa7ccf32c4c2d626b2f269184380e`.
-All four issued checkpoints plus one ledger backfill were committed; Pi stopped
-correctly at required independent review. Preserve all commits and **40 prior
-allocated numbered-step acceptances**. S039/S041/S043 remain changes-required;
-P03 gate is not passed, P04–P15 remain pending.
+S041/S043 and P03 gate remain changes-required. RF59/RF61 are partial; RF62 ID
+bounds, RF63 recursive extension keys and RF64 repository overrestriction require
+completion. RF45/RF53 and whole RA02/RA13 remain open. See
+[review](reports/CODEX-aa55563.md) and sole [plan](COMMIT_SEQUENCE.md).
 
-RF56 restored configuration forms and RF58 full profile validation close for
-allocated scope. RF55 coverage/matching, RF57 cohort preparation/resolution and
-RF59 schema constraints improve but remain partial. RF60 comparison consumes
-foreign/wrong-scenario resolved authority; RF61 generated schemas still admit
-invalid owning values. RF45/RF53 and whole RA02/RA13 remain open.
+Current DEV-020 frontier: **P03-R6 → P03-R7 → S043-R3**, **pfc through EQM-P03**,
+all three before independent acceptance and S044. Pi records implementation and
+verification, not supervisor acceptance. P04–P15 remain pending. Original 64 R/AC,
+21 RA, Q01–Q15 and full S211 remain unchanged. External startup receipts identify
+actual repository/revision/runtime; unavailable handles are explicit.
 
-Current frontier **S039-R3 → P03-R5 → S043-R2**, **pfc through EQM-P03**.
-All three checkpoints are implemented and locally verified pending independent
-Codex P03 acceptance, which must precede S044. Full original 64 R/AC, 21 RA,
-Q01–Q15 and S211 remain. See the sole [plan](COMMIT_SEQUENCE.md),
-[review](reports/CODEX-8e5f218.md), the [S039-R3 report](reports/S039-R3.md),
-[P03-R5 report](reports/P03-R5.md), [S043-R2 report](reports/S043-R2.md) and
-progress.json.
+Independent standard gate passed **720 successful test executions**, owning
+doctests **9**, structure/diff checks passed. Isolated probes confirm remaining
+schema mismatches, not correctness. v1 schemas and Cargo.lock unchanged. No Codex
+product source/test modifications. Historical missing-run receipts stay historical.
 
-Independent standard gate passed **704 successful test executions** and changed
-doctests passed **9**; structure and diff checks passed. Four isolated probes
-reproduce defective acceptance; they do not establish correctness. Initial probe
-compile failure was repaired only in the isolated review worktree. v1 schemas
-and Cargo.lock unchanged. No supervisor production code/test edits.
-
-Historical missing-run revalidations and earlier reports remain historical; the
-previous implementation run was located and reviewed. Prior P03-R2 report-marker
-failure repaired at P03-R3 remains recorded. No whole AC/RA closes from allocated helper evidence.
-
-No release or human release-testing gate reached. Full verify, Linux, coverage,
-mutation/fuzz/benchmark/package and live product/crypto/host/signing/operational
-acceptance remain unverified. Synthetic/simulator software remains eligible;
-real Q02/Q06 material is separate. No live/publication/deployment/signing or
-optional-native activation is authorized.
+No release or human release-testing gate is reached. Full verify, Linux,
+coverage/mutation/fuzz/benchmark/package and live product/crypto/host/signing/
+operational acceptance remain unverified. Synthetic/simulator-capable software
+and local automation remain eligible; real Q02/Q06 facts are separate. No live
+activation/publication/deployment/signing or optional-native activation authority.
