@@ -220,14 +220,22 @@ pub fn evaluate_participation(
     target: &TargetId,
     context: &ApplicabilityContext,
 ) -> Result<TruthValue, ApplicabilityError> {
-    for rule in rules.values() {
-        if rule.requirement() == requirement && rule.targets().contains(target) {
-            return evaluate_applicability(rule.applicability(), context);
+    // The public boundary must reject an ambiguous supplied registry rather than
+    // selecting whichever matching rule iterates first. A checked graph or an
+    // explicitly validated registry never reaches this error.
+    let matching: Vec<&ParticipationRule> = rules
+        .values()
+        .filter(|rule| rule.requirement() == requirement && rule.targets().contains(target))
+        .collect();
+    match matching.as_slice() {
+        [] => {
+            // No declared participation authority for this exact coordinate is
+            // unknown and non-authorizing, never an implicit global inclusion.
+            Ok(TruthValue::Unknown)
         }
+        [rule] => evaluate_applicability(rule.applicability(), context),
+        _ => Err(ApplicabilityError::AmbiguousParticipation),
     }
-    // No declared participation authority for this exact coordinate is unknown
-    // and non-authorizing, never an implicit global inclusion.
-    Ok(TruthValue::Unknown)
 }
 
 /// Applicability declaration or selection failure.
@@ -239,6 +247,8 @@ pub enum ApplicabilityError {
     UndeclaredValue,
     /// Two selected profiles declared the same dimension identity.
     DuplicateDimension,
+    /// More than one participation rule matched one `(requirement, target)` coordinate.
+    AmbiguousParticipation,
 }
 
 impl Display for ApplicabilityError {
@@ -247,6 +257,9 @@ impl Display for ApplicabilityError {
             Self::UndeclaredDimension => "applicability dimension is not declared",
             Self::UndeclaredValue => "applicability value is not declared",
             Self::DuplicateDimension => "applicability dimension is declared by multiple profiles",
+            Self::AmbiguousParticipation => {
+                "more than one participation rule matched one requirement/target coordinate"
+            }
         })
     }
 }

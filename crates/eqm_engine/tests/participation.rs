@@ -131,3 +131,51 @@ fn distinct_participants_evaluate_independently() -> Result<(), Box<dyn Error>> 
     );
     Ok(())
 }
+
+#[test]
+fn ambiguous_supplied_registry_is_rejected_before_matching() -> Result<(), Box<dyn Error>> {
+    let requirement = FullRequirementId::new("account.create#edge_only")?;
+    let edge = TargetId::new("edge")?;
+    let first = ParticipationRule::new(
+        ParticipationRuleId::new("participation.a")?,
+        requirement.clone(),
+        vec![edge.clone()],
+        Applicability::always(true),
+        Extensions::default(),
+    )?;
+    let second = ParticipationRule::new(
+        ParticipationRuleId::new("participation.b")?,
+        requirement.clone(),
+        vec![edge.clone()],
+        Applicability::always(false),
+        Extensions::default(),
+    )?;
+    // Distinct authority IDs that constrain the same (requirement, target)
+    // coordinate are ambiguous, so the public boundary rejects rather than
+    // selecting whichever rule iterates first.
+    let ambiguous = BTreeMap::from([(first.id().clone(), first), (second.id().clone(), second)]);
+    assert_eq!(
+        evaluate_participation(&ambiguous, &requirement, &edge, &context(None)?),
+        Err(eqm_engine::ApplicabilityError::AmbiguousParticipation)
+    );
+    Ok(())
+}
+
+#[test]
+fn disjoint_coordinates_and_profile_unknown_stay_exact() -> Result<(), Box<dyn Error>> {
+    let requirement = FullRequirementId::new("account.create#edge_only")?;
+    let other = FullRequirementId::new("account.create#tower_only")?;
+    let edge = TargetId::new("edge")?;
+    let tower = TargetId::new("tower")?;
+    let rules = rules()?;
+    // A disjoint requirement/target coordinate has no authority: unknown.
+    assert_eq!(
+        evaluate_participation(&rules, &other, &edge, &context(Some("eu"))?)?,
+        TruthValue::Unknown
+    );
+    assert_eq!(
+        evaluate_participation(&rules, &requirement, &tower, &context(Some("eu"))?)?,
+        TruthValue::Unknown
+    );
+    Ok(())
+}

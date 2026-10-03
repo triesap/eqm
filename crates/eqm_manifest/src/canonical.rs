@@ -4,6 +4,7 @@ mod binding_v2;
 mod contract_v2;
 mod evidence_spec_v2;
 mod graph_v2;
+mod participation_v2;
 mod policy_v2;
 mod support;
 mod target_v2;
@@ -15,6 +16,9 @@ pub use evidence_spec_v2::{
 };
 pub use graph_v2::{
     CanonicalGraphV2, canonicalize_graph_v2, graph_v2, semantic_graph_v2_schema_uri,
+};
+pub use participation_v2::{
+    CanonicalParticipationV2, canonicalize_participation_v2, participation_v2,
 };
 pub use policy_v2::{
     CanonicalPolicySelectionV2, canonicalize_policy_selection_v2, policy_selection_v2,

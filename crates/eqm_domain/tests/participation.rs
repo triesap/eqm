@@ -101,3 +101,83 @@ fn distinct_coordinates_index_by_rule_authority() -> Result<(), Box<dyn Error>> 
     assert!(indexed.contains_key(&ParticipationRuleId::new("participation.mobile")?));
     Ok(())
 }
+
+#[test]
+fn graph_construction_rejects_conflicting_participation_coordinates() -> Result<(), Box<dyn Error>>
+{
+    use eqm_domain::{WorkspaceGraph, WorkspaceGraphBuildError, WorkspaceGraphInput};
+    let requirement = FullRequirementId::new("capture.photo#shutter")?;
+    let target = TargetId::new("android")?;
+    let first = ParticipationRule::new(
+        ParticipationRuleId::new("participation.true")?,
+        requirement.clone(),
+        vec![target.clone()],
+        Applicability::always(true),
+        Extensions::default(),
+    )?;
+    let second = ParticipationRule::new(
+        ParticipationRuleId::new("participation.false")?,
+        requirement.clone(),
+        vec![target.clone()],
+        Applicability::always(false),
+        Extensions::default(),
+    )?;
+    // Distinct authority IDs must not silently constrain one coordinate with
+    // conflicting truth values.
+    assert_eq!(
+        WorkspaceGraph::new(WorkspaceGraphInput {
+            participation: vec![first.clone(), second.clone()],
+            ..WorkspaceGraphInput::default()
+        }),
+        Err(WorkspaceGraphBuildError::DuplicateParticipationCoordinate)
+    );
+    // Identical-value rules under different IDs are equally ambiguous.
+    let identical = ParticipationRule::new(
+        ParticipationRuleId::new("participation.true.two")?,
+        requirement.clone(),
+        vec![target.clone()],
+        Applicability::always(true),
+        Extensions::default(),
+    )?;
+    assert_eq!(
+        WorkspaceGraph::new(WorkspaceGraphInput {
+            participation: vec![first, identical],
+            ..WorkspaceGraphInput::default()
+        }),
+        Err(WorkspaceGraphBuildError::DuplicateParticipationCoordinate)
+    );
+    Ok(())
+}
+
+#[test]
+fn graph_construction_accepts_disjoint_coordinates_and_rejects_duplicate_authority()
+-> Result<(), Box<dyn Error>> {
+    use eqm_domain::{WorkspaceGraph, WorkspaceGraphBuildError, WorkspaceGraphInput};
+    let android = ParticipationRule::new(
+        ParticipationRuleId::new("participation.android")?,
+        FullRequirementId::new("capture.photo#shutter")?,
+        vec![TargetId::new("android")?],
+        Applicability::always(true),
+        Extensions::default(),
+    )?;
+    let ios = ParticipationRule::new(
+        ParticipationRuleId::new("participation.ios")?,
+        FullRequirementId::new("capture.photo#shutter")?,
+        vec![TargetId::new("ios")?],
+        Applicability::always(true),
+        Extensions::default(),
+    )?;
+    let graph = WorkspaceGraph::new(WorkspaceGraphInput {
+        participation: vec![android.clone(), ios],
+        ..WorkspaceGraphInput::default()
+    })?;
+    assert_eq!(graph.participation().len(), 2);
+    assert_eq!(
+        WorkspaceGraph::new(WorkspaceGraphInput {
+            participation: vec![android.clone(), android],
+            ..WorkspaceGraphInput::default()
+        }),
+        Err(WorkspaceGraphBuildError::DuplicateParticipation)
+    );
+    Ok(())
+}

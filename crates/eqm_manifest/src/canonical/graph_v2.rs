@@ -22,19 +22,18 @@
 //! selected policy/profile, source acquisition or build verification.
 
 use super::contract_v2::{capability_v2, fragment_v2, journey_v2, surface_v2};
+use super::participation_v2::participation_v2;
 use super::policy_v2::{policy_v2, profile_definition_v2};
-use super::support::{
-    applicability_v2, canonical_set, canonical_strings, extensions_v2, wire_uint,
-};
+use super::support::{canonical_set, canonical_strings, extensions_v2, wire_uint};
 use super::target_v2::target_configuration_v2;
 use super::{
     CanonicalizationError, MAX_PROJECTION_BYTES, binding_v2::binding_v2, insert_optional, object,
 };
 use eqm_domain::{
     AdapterLockIdentity, ArgumentTemplate, EnvironmentSource, EvidenceScopeSubject,
-    FinalizedWorkspaceGraph, ImportLockIdentity, ParticipationRule, RunnerDefinition,
-    RunnerProgram, SchemaKind, SchemaUri, SchemaVersion, SemanticGraphV2Digest, SourceComponent,
-    Waiver, WorkingDirectoryTemplate,
+    FinalizedWorkspaceGraph, ImportLockIdentity, RunnerDefinition, RunnerProgram, SchemaKind,
+    SchemaUri, SchemaVersion, SemanticGraphV2Digest, SourceComponent, Waiver,
+    WorkingDirectoryTemplate,
 };
 use serde_json::{Value, json};
 
@@ -85,24 +84,6 @@ fn source_component_v2(value: &SourceComponent) -> Result<Value, Canonicalizatio
                     .map(|dependency| dependency.as_str().to_owned()),
             )?,
         ),
-        ("extensions", extensions_v2(value.extensions())?),
-    ]))
-}
-
-fn participation_v2(value: &ParticipationRule) -> Result<Value, CanonicalizationError> {
-    Ok(object([
-        ("id", json!(value.id().as_str())),
-        ("requirement", json!(value.requirement().as_str())),
-        (
-            "targets",
-            canonical_strings(
-                value
-                    .targets()
-                    .iter()
-                    .map(|target| target.as_str().to_owned()),
-            )?,
-        ),
-        ("applicability", applicability_v2(value.applicability())?),
         ("extensions", extensions_v2(value.extensions())?),
     ]))
 }

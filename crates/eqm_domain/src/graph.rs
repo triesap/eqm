@@ -1,7 +1,7 @@
 //! Deterministic containers for validated graph authority.
 
 use crate::id::ParticipationRuleId;
-use crate::policy::ParticipationRule;
+use crate::policy::{ParticipationError, ParticipationRule, validate_participation_rules};
 use crate::{
     AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Extensions,
     Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId, RepoPath,
@@ -132,8 +132,15 @@ impl WorkspaceGraph {
             .map_err(|()| WorkspaceGraphBuildError::DuplicateTarget)?;
         let source_components = unique_index(input.source_components, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateSourceComponent)?;
-        let participation = unique_index(input.participation, |value| value.id().clone())
-            .map_err(|()| WorkspaceGraphBuildError::DuplicateParticipation)?;
+        let participation =
+            validate_participation_rules(input.participation).map_err(|error| match error {
+                ParticipationError::DuplicateRule => {
+                    WorkspaceGraphBuildError::DuplicateParticipation
+                }
+                ParticipationError::DuplicateCoordinate => {
+                    WorkspaceGraphBuildError::DuplicateParticipationCoordinate
+                }
+            })?;
         let bindings = unique_index(input.bindings, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateBinding)?;
         let mut binding_coordinates = BTreeMap::new();
@@ -394,6 +401,8 @@ pub enum WorkspaceGraphBuildError {
     DuplicateSourceComponent,
     /// Participation rule authority ID repeated.
     DuplicateParticipation,
+    /// Two participation rules constrained the same `(requirement, target)` coordinate.
+    DuplicateParticipationCoordinate,
     /// Binding authority ID repeated.
     DuplicateBinding,
     /// More than one binding claimed a target/unit pair.

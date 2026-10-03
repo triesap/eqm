@@ -213,3 +213,49 @@ fn v1_workspace_with_v2_participation_authority_is_rejected_not_projected()
     }
     Ok(())
 }
+
+#[test]
+fn v2_conflicting_participation_is_rejected_at_prepare() -> Result<(), Box<dyn Error>> {
+    let repository = fixture()?;
+    fs::write(
+        repository.path().join("eqm.toml"),
+        v2_config("control_tower"),
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/journey.toml"),
+        JOURNEY,
+    )?;
+    fs::write(
+        repository.path().join("eqm/contracts/surface.toml"),
+        SURFACE,
+    )?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/contracts/participation.mobile.toml"),
+        PARTICIPATION,
+    )?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/contracts/participation.mobile.alt.toml"),
+        PARTICIPATION
+            .replace("participation.mobile", "participation.mobile.alt")
+            .replace("always = true", "always = false"),
+    )?;
+    match prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    ) {
+        Err(SessionError::Resolve(eqm_engine::ResolutionError::Graph(
+            eqm_domain::WorkspaceGraphBuildError::DuplicateParticipationCoordinate,
+        ))) => {}
+        other => {
+            return Err(format!(
+                "expected conflicting participation to be rejected at prepare, got {other:?}"
+            )
+            .into());
+        }
+    }
+    Ok(())
+}

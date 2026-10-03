@@ -47,6 +47,8 @@ pub enum DigestDomain {
     Authority,
     /// Trust configuration projection (v2).
     TrustConfiguration,
+    /// Capability-participation rule projection (v2).
+    Participation,
     /// Exact multi-participant subject manifest (v2).
     SubjectManifest,
 }
@@ -74,6 +76,7 @@ impl DigestDomain {
             Self::PolicySelection => b"eqm:v2:policy-selection",
             Self::Authority => b"eqm:v2:authority",
             Self::TrustConfiguration => b"eqm:v2:trust-configuration",
+            Self::Participation => b"eqm:v2:participation",
             Self::SubjectManifest => b"eqm:v2:subject-manifest",
         }
     }
@@ -266,6 +269,12 @@ define_identity_digest!(
 );
 
 define_identity_digest!(
+    /// Capability-participation rule projection.
+    ParticipationDigest,
+    DigestDomain::Participation
+);
+
+define_identity_digest!(
     /// Exact multi-participant subject manifest projection.
     SubjectManifestDigest,
     DigestDomain::SubjectManifest
@@ -408,6 +417,7 @@ mod tests {
             DigestDomain::TrustConfiguration,
             DigestDomain::SubjectManifest,
             DigestDomain::SemanticGraphV2,
+            DigestDomain::Participation,
         ];
         let mut labels = BTreeSet::new();
         for domain in domains {
