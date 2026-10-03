@@ -286,6 +286,21 @@ fn invalid_profile_definitions_reject_full_domain_invariants() -> Result<(), Box
         );
     }
 
+    // A zero revision is not a positive owning revision, and an owner outside
+    // the owner vocabulary is not a valid owner reference.
+    let mut revision_zero = wire();
+    revision_zero["profiles"][0]["definition"]["revision"] = json!(0);
+    assert_eq!(
+        parse(&revision_zero),
+        Err(ComparisonContextError::InvalidVocabulary)
+    );
+    let mut invalid_owner = wire();
+    invalid_owner["profiles"][0]["definition"]["owners"] = json!(["https://team/product"]);
+    assert_eq!(
+        parse(&invalid_owner),
+        Err(ComparisonContextError::InvalidDefinition)
+    );
+
     // Duplicate logical dimension key with distinct members is a domain
     // duplicate, not an exact-set duplicate.
     let mut duplicate_dimension = wire();

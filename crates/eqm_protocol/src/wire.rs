@@ -186,6 +186,30 @@ fn unsigned_schema() -> Schema {
     Schema::from(object)
 }
 
+/// Returns the schema for a canonical unsigned v2 wire integer of at least one.
+///
+/// This mirrors [`unsigned_schema`] but excludes zero, matching owning positive
+/// authority revisions such as `Revision` (`NonZeroU64`).
+pub fn positive_unsigned_schema(_generator: &mut SchemaGenerator) -> Schema {
+    let mut object = Map::new();
+    object.insert(
+        "anyOf".to_owned(),
+        Value::Array(vec![
+            json!({
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 1,
+                "maximum": MAX_SAFE_INTEGER,
+            }),
+            json!({
+                "type": "string",
+                "pattern": canonical_unsigned_string_pattern(),
+            }),
+        ]),
+    );
+    Schema::from(object)
+}
+
 fn signed_schema() -> Schema {
     let mut object = Map::new();
     object.insert(

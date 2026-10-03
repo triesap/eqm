@@ -22,9 +22,11 @@
       "description": "One scenario participant occurrence.",
       "properties": {
         "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "role": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "subject": {
@@ -41,18 +43,38 @@
     "ScenarioSubjectV2Dto": {
       "additionalProperties": false,
       "description": "One tagged target/provider scenario subject. Exactly one tag must be present.",
-      "properties": {
-        "provider": {
-          "type": [
-            "string",
-            "null"
+      "oneOf": [
+        {
+          "not": {
+            "required": [
+              "provider"
+            ]
+          },
+          "required": [
+            "target"
           ]
         },
-        "target": {
-          "type": [
-            "string",
-            "null"
+        {
+          "not": {
+            "required": [
+              "target"
+            ]
+          },
+          "required": [
+            "provider"
           ]
+        }
+      ],
+      "properties": {
+        "provider": {
+          "default": null,
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+          "type": "string"
+        },
+        "target": {
+          "default": null,
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+          "type": "string"
         }
       },
       "type": "object"
@@ -75,20 +97,23 @@
       "type": "object"
     },
     "id": {
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
       "type": "string"
     },
     "participants": {
       "items": {
         "$ref": "#/$defs/ScenarioParticipantV2Dto"
       },
+      "minItems": 1,
       "type": "array"
     },
     "revision": {
       "format": "uint64",
-      "minimum": 0,
+      "minimum": 1,
       "type": "integer"
     },
     "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json",
       "type": "string"
     }
   },

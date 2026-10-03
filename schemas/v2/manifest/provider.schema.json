@@ -14,15 +14,17 @@
       "type": "object"
     },
     "id": {
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
       "type": "string"
     },
     "owners": {
       "items": {
-        "minLength": 1,
+        "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
         "type": "string"
       },
       "minItems": 1,
-      "type": "array"
+      "type": "array",
+      "uniqueItems": true
     },
     "schema": {
       "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/provider.schema.json",

@@ -2,10 +2,11 @@
 
 Execution revalidation, 2026-10-03: latest issued batch has no matching returned
 run available and no subsequent implementation delta in this checkout. No new
-candidate acceptance. DEV-017 checkpoint **S039-R3 is implemented and locally
-verified** by the current implementation run; P03-R5 and S043-R2 remain pending;
-preserve the reviewed implementation, prior acceptances and original P03/S211
-gates below. Startup identity is recorded externally before implementation.
+candidate acceptance. DEV-017 checkpoints **S039-R3 and P03-R5 are implemented
+and locally verified** by the current implementation run; S043-R2 remains
+pending; preserve the reviewed implementation, prior acceptances and original
+P03/S211 gates below. Startup identity is recorded externally before
+implementation.
 
 DEV-017 independently reviewed clean `8e5f21867bdaa7ccf32c4c2d626b2f269184380e`.
 All four issued checkpoints plus one ledger backfill were committed; Pi stopped
@@ -20,11 +21,12 @@ foreign/wrong-scenario resolved authority; RF61 generated schemas still admit
 invalid owning values. RF45/RF53 and whole RA02/RA13 remain open.
 
 Current frontier **S039-R3 → P03-R5 → S043-R2**, **pfc through EQM-P03**.
-S039-R3 is implemented and locally verified pending Codex acceptance; P03-R5 is
-active. All three integrated checkpoints precede another independent P03 review
-before S044. Full original 64 R/AC, 21 RA, Q01–Q15 and S211 remain. See the sole
-[plan](COMMIT_SEQUENCE.md), [review](reports/CODEX-8e5f218.md), the
-[S039-R3 report](reports/S039-R3.md) and progress.json.
+S039-R3 and P03-R5 are implemented and locally verified pending Codex
+acceptance; S043-R2 is active. All three integrated checkpoints precede another
+independent P03 review before S044. Full original 64 R/AC, 21 RA, Q01–Q15 and
+S211 remain. See the sole [plan](COMMIT_SEQUENCE.md),
+[review](reports/CODEX-8e5f218.md), the [S039-R3 report](reports/S039-R3.md),
+[P03-R5 report](reports/P03-R5.md) and progress.json.
 
 Independent standard gate passed **704 successful test executions** and changed
 doctests passed **9**; structure and diff checks passed. Four isolated probes

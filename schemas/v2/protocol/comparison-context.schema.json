@@ -1,44 +1,19 @@
 {
   "$defs": {
-    "CanonicalSet_DimensionDeclarationV2Dto": {
-      "items": {
-        "$ref": "#/$defs/DimensionDeclarationV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
-    "CanonicalSet_DimensionValueV2Dto": {
-      "items": {
-        "$ref": "#/$defs/DimensionValueV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
-    "CanonicalSet_SelectedProfileV2Dto": {
-      "items": {
-        "$ref": "#/$defs/SelectedProfileV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
-    "CanonicalSet_string": {
-      "items": {
-        "type": "string"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
     "DimensionDeclarationV2Dto": {
       "additionalProperties": false,
       "properties": {
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "values": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_SymbolicValueText"
         }
       },
       "required": [
@@ -51,12 +26,14 @@
       "additionalProperties": false,
       "properties": {
         "dimension": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "state": {
           "$ref": "#/$defs/KnownState"
         },
         "value": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         }
       },
@@ -71,6 +48,7 @@
       "additionalProperties": false,
       "properties": {
         "dimension": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "state": {
@@ -97,6 +75,7 @@
       "description": "One recursive type-tagged v2 extension value.",
       "oneOf": [
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "boolean",
@@ -113,6 +92,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "integer",
@@ -140,6 +120,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "string",
@@ -156,6 +137,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "array",
@@ -175,6 +157,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "object",
@@ -202,6 +185,39 @@
       ],
       "type": "string"
     },
+    "NonEmptySet_DimensionDeclarationV2Dto": {
+      "items": {
+        "$ref": "#/$defs/DimensionDeclarationV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_DimensionValueV2Dto": {
+      "items": {
+        "$ref": "#/$defs/DimensionValueV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_SelectedProfileV2Dto": {
+      "items": {
+        "$ref": "#/$defs/SelectedProfileV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_SymbolicValueText": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]{0,62}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
     "ProfileDefinitionV2Dto": {
       "additionalProperties": false,
       "properties": {
@@ -212,10 +228,12 @@
           "type": "object"
         },
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "dimensions": {
-          "$ref": "#/$defs/CanonicalSet_DimensionDeclarationV2Dto"
+          "$ref": "#/$defs/NonEmptySet_DimensionDeclarationV2Dto"
         },
         "extensions": {
           "additionalProperties": {
@@ -224,11 +242,12 @@
           "type": "object"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
           "type": "string"
         },
         "owners": {
           "items": {
-            "minLength": 1,
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
             "type": "string"
           },
           "minItems": 1,
@@ -240,7 +259,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -250,6 +269,8 @@
           ]
         },
         "title": {
+          "maxLength": 160,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -271,7 +292,7 @@
           "$ref": "#/$defs/ProfileDefinitionV2Dto"
         },
         "values": {
-          "$ref": "#/$defs/CanonicalSet_DimensionValueV2Dto"
+          "$ref": "#/$defs/NonEmptySet_DimensionValueV2Dto"
         }
       },
       "required": [
@@ -302,7 +323,7 @@
       "type": "string"
     },
     "profiles": {
-      "$ref": "#/$defs/CanonicalSet_SelectedProfileV2Dto"
+      "$ref": "#/$defs/NonEmptySet_SelectedProfileV2Dto"
     },
     "scenario_digest": {
       "pattern": "^sha256:[0-9a-f]{64}$",

@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S039",
  "implementation": "in_progress",
- "local_verification": "DEV017_checkpoint_S039-R3_implemented_verified_pending_codex_acceptance;foreign_wrong_scenario_altered_and_reconfigured_cohort_authority_rejected_at_consuming_boundary;RF60_corrected;RF61_RF55_RF57_RF59_open;P03_gate_not_passed;not_release_ready",
+ "local_verification": "DEV017_checkpoints_S039-R3_and_P03-R5_implemented_verified_pending_codex_acceptance;cohort_value_authority_bound_at_consuming_boundary;v2_manifest_and_graph_comparison_schemas_enforce_owning_value_contracts;RF59_RF60_RF61_corrected;RF55_RF57_open;P03_gate_not_passed;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -3413,7 +3413,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P03-R5",
+ "next_checkpoint": "S043-R2",
  "supervisor_review": {
   "source_commit": "8e5f21867bdaa7ccf32c4c2d626b2f269184380e",
   "report": "implementation/reports/CODEX-8e5f218.md",
@@ -4080,11 +4080,12 @@
    {
     "id": "S039-R3",
     "status": "implemented_verified_pending_codex_acceptance",
-    "supervisor_status": "not_accepted"
+    "supervisor_status": "not_accepted",
+    "commit_sha": "078d8b4aa4e56902453d211065639120814d2964"
    },
    {
     "id": "P03-R5",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    },
    {

@@ -28,7 +28,10 @@ pub use strict::{
     from_slice_limited as strict_from_slice_limited, parse_strict, parse_strict_limited,
 };
 pub use v2::*;
-pub use wire::{MAX_SAFE_INTEGER, WireFormError, WireInt, WireUint, exact_signed, exact_unsigned};
+pub use wire::{
+    MAX_SAFE_INTEGER, WireFormError, WireInt, WireUint, exact_signed, exact_unsigned,
+    positive_unsigned_schema,
+};
 
 pub use adapter::{
     AdapterDtoError, AdapterLimitsDto, AdapterOperationDto, AdapterRequestDto, AdapterResponseDto,

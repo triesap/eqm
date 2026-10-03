@@ -91,6 +91,34 @@ fn graph_document(provider: Value, cohort: Value) -> Value {
     })
 }
 
+fn profile_definition() -> Value {
+    json!({
+        "id": "audience.default",
+        "revision": 1,
+        "title": "Audience",
+        "owners": ["owner://team/product"],
+        "dimensions": [{
+            "id": "locale",
+            "values": ["en", "fr"]
+        }],
+        "defaults": {"locale": "en"},
+        "extensions": {}
+    })
+}
+
+fn comparison_document() -> Value {
+    json!({
+        "schema": eqm_protocol::COMPARISON_CONTEXT_SCHEMA_V2.to_string(),
+        "contract_digest": digest('1'),
+        "scenario_digest": digest('2'),
+        "profiles": [{
+            "definition": profile_definition(),
+            "values": [{"dimension": "locale", "state": "known", "value": "en"}]
+        }],
+        "comparison_rule_digest": digest('3')
+    })
+}
+
 #[test]
 fn provider_manifest_schema_accepts_and_rejects_one_axis() -> Result<(), Box<dyn Error>> {
     let validator = validator("schemas/v2/manifest/provider.schema.json")?;
@@ -243,5 +271,151 @@ fn schema_paths_exist_and_carry_exact_ids() -> Result<(), Box<dyn Error>> {
             format!("https://raw.githubusercontent.com/triesap/eqm/master{expected_suffix}")
         );
     }
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// RF61: generated manifests, graph and comparison schemas must reject the
+// owning value defects that the checked readers already reject.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn cohort_schema_enforces_every_owning_value_contract() -> Result<(), Box<dyn Error>> {
+    let validator = validator("schemas/v2/manifest/cohort.schema.json")?;
+    assert!(
+        validator.is_valid(&cohort_document()),
+        "valid cohort must be accepted"
+    );
+
+    let mut revision_zero = cohort_document();
+    revision_zero["revision"] = json!(0);
+    assert!(!validator.is_valid(&revision_zero), "revision 0");
+
+    let mut empty_id = cohort_document();
+    empty_id["id"] = json!("");
+    assert!(!validator.is_valid(&empty_id), "empty id");
+
+    let mut invalid_scenario = cohort_document();
+    invalid_scenario["scenario"] = json!("Not A Scenario");
+    assert!(!validator.is_valid(&invalid_scenario), "invalid scenario");
+
+    let mut malformed_commit = cohort_document();
+    malformed_commit["assignments"][0]["source_commit"] = json!("xyz");
+    assert!(!validator.is_valid(&malformed_commit), "malformed commit");
+
+    let mut neither = cohort_document();
+    neither["assignments"][0]
+        .as_object_mut()
+        .ok_or("object")?
+        .remove("provider_configuration_digest");
+    assert!(!validator.is_valid(&neither), "neither configuration kind");
+
+    let mut both = cohort_document();
+    both["assignments"][0]["target_configuration_digest"] = json!(digest('9'));
+    assert!(!validator.is_valid(&both), "both configuration kinds");
+
+    let mut duplicate = cohort_document();
+    let first = duplicate["assignments"][0].clone();
+    duplicate["assignments"]
+        .as_array_mut()
+        .ok_or("array")?
+        .push(first);
+    assert!(!validator.is_valid(&duplicate), "duplicate assignments");
+    Ok(())
+}
+
+#[test]
+fn provider_schema_rejects_duplicate_or_invalid_owners() -> Result<(), Box<dyn Error>> {
+    let validator = validator("schemas/v2/manifest/provider.schema.json")?;
+    assert!(validator.is_valid(&provider_document()));
+
+    let mut duplicate_owners = provider_document();
+    duplicate_owners["owners"] = json!(["owner://team/providers", "owner://team/providers"]);
+    assert!(!validator.is_valid(&duplicate_owners), "duplicate owners");
+
+    let mut invalid_owner = provider_document();
+    invalid_owner["owners"] = json!(["https://team/providers"]);
+    assert!(
+        !validator.is_valid(&invalid_owner),
+        "invalid owner vocabulary"
+    );
+
+    let mut invalid_id = provider_document();
+    invalid_id["id"] = json!("provider");
+    assert!(!validator.is_valid(&invalid_id), "provider id depth");
+    Ok(())
+}
+
+#[test]
+fn comparison_schema_enforces_owning_profile_contracts() -> Result<(), Box<dyn Error>> {
+    let validator = validator("schemas/v2/protocol/comparison-context.schema.json")?;
+    assert!(
+        validator.is_valid(&comparison_document()),
+        "valid comparison context must be accepted"
+    );
+
+    let mut empty_title = comparison_document();
+    empty_title["profiles"][0]["definition"]["title"] = json!("");
+    assert!(!validator.is_valid(&empty_title), "empty title");
+
+    let mut revision_zero = comparison_document();
+    revision_zero["profiles"][0]["definition"]["revision"] = json!(0);
+    assert!(!validator.is_valid(&revision_zero), "revision 0");
+
+    let mut empty_dimensions = comparison_document();
+    empty_dimensions["profiles"][0]["definition"]["dimensions"] = json!([]);
+    assert!(!validator.is_valid(&empty_dimensions), "empty dimensions");
+
+    let mut invalid_owner = comparison_document();
+    invalid_owner["profiles"][0]["definition"]["owners"] = json!(["https://team/product"]);
+    assert!(!validator.is_valid(&invalid_owner), "invalid owner");
+
+    let mut empty_profiles = comparison_document();
+    empty_profiles["profiles"] = json!([]);
+    assert!(!validator.is_valid(&empty_profiles), "empty profiles");
+    Ok(())
+}
+
+#[test]
+fn graph_schema_enforces_provider_and_cohort_value_contracts() -> Result<(), Box<dyn Error>> {
+    let validator = validator("schemas/v2/protocol/semantic-graph.schema.json")?;
+    assert!(validator.is_valid(&graph_document(provider_member(), cohort_member())));
+
+    let mut duplicate_owners = graph_document(provider_member(), cohort_member());
+    duplicate_owners["providers"][0]["owners"] = json!(["owner://team/a", "owner://team/a"]);
+    assert!(!validator.is_valid(&duplicate_owners));
+
+    let mut both_config = graph_document(provider_member(), cohort_member());
+    both_config["cohorts"][0]["assignments"][0]["target_configuration_digest"] = json!(digest('9'));
+    assert!(!validator.is_valid(&both_config));
+
+    let mut neither_config = graph_document(provider_member(), cohort_member());
+    neither_config["cohorts"][0]["assignments"][0]
+        .as_object_mut()
+        .ok_or("object")?
+        .remove("provider_configuration_digest");
+    assert!(!validator.is_valid(&neither_config));
+
+    let mut revision_zero = graph_document(provider_member(), cohort_member());
+    revision_zero["cohorts"][0]["revision"] = json!(0);
+    assert!(!validator.is_valid(&revision_zero));
+    Ok(())
+}
+
+#[test]
+fn extension_union_rejects_unknown_members_in_every_branch() -> Result<(), Box<dyn Error>> {
+    let validator = validator("schemas/v2/protocol/comparison-context.schema.json")?;
+
+    let mut unknown_member = comparison_document();
+    unknown_member["profiles"][0]["definition"]["extensions"] = json!({
+        "dev.example.ext": {"type": "boolean", "value": true, "extra": 1}
+    });
+    assert!(!validator.is_valid(&unknown_member));
+
+    let mut valid = comparison_document();
+    valid["profiles"][0]["definition"]["extensions"] = json!({
+        "dev.example.ext": {"type": "boolean", "value": true}
+    });
+    assert!(validator.is_valid(&valid));
     Ok(())
 }

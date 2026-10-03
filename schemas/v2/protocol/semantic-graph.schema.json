@@ -55,7 +55,7 @@
       "additionalProperties": false,
       "properties": {
         "all": {
-          "$ref": "#/$defs/CanonicalSet_ApplicabilityV2Dto"
+          "$ref": "#/$defs/NonEmptySet_ApplicabilityV2Dto"
         }
       },
       "required": [
@@ -67,7 +67,7 @@
       "additionalProperties": false,
       "properties": {
         "any": {
-          "$ref": "#/$defs/CanonicalSet_ApplicabilityV2Dto"
+          "$ref": "#/$defs/NonEmptySet_ApplicabilityV2Dto"
         }
       },
       "required": [
@@ -79,12 +79,15 @@
       "additionalProperties": false,
       "properties": {
         "dimension": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "operator": {
+          "pattern": "^(?:eq|ne)$",
           "type": "string"
         },
         "value": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         }
       },
@@ -111,13 +114,15 @@
       "additionalProperties": false,
       "properties": {
         "dimension": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "operator": {
+          "pattern": "^(?:in|not_in)$",
           "type": "string"
         },
         "values": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_SymbolicValueText"
         }
       },
       "required": [
@@ -415,13 +420,6 @@
       "type": "array",
       "uniqueItems": true
     },
-    "CanonicalSet_ApplicabilityV2Dto": {
-      "items": {
-        "$ref": "#/$defs/ApplicabilityV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
     "CanonicalSet_ArtifactV2Dto": {
       "items": {
         "$ref": "#/$defs/ArtifactV2Dto"
@@ -443,23 +441,9 @@
       "type": "array",
       "uniqueItems": true
     },
-    "CanonicalSet_CohortAssignmentV2Dto": {
-      "items": {
-        "$ref": "#/$defs/CohortAssignmentV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
     "CanonicalSet_CohortV2Dto": {
       "items": {
         "$ref": "#/$defs/CohortV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
-    "CanonicalSet_DimensionDeclarationV2Dto": {
-      "items": {
-        "$ref": "#/$defs/DimensionDeclarationV2Dto"
       },
       "type": "array",
       "uniqueItems": true
@@ -541,6 +525,14 @@
       "type": "array",
       "uniqueItems": true
     },
+    "CanonicalSet_ProviderIdText": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
     "CanonicalSet_ProviderV2Dto": {
       "items": {
         "$ref": "#/$defs/ProviderV2Dto"
@@ -569,13 +561,6 @@
       "type": "array",
       "uniqueItems": true
     },
-    "CanonicalSet_ScenarioParticipantV2Dto": {
-      "items": {
-        "$ref": "#/$defs/ScenarioParticipantV2Dto"
-      },
-      "type": "array",
-      "uniqueItems": true
-    },
     "CanonicalSet_ScenarioV2Dto": {
       "items": {
         "$ref": "#/$defs/ScenarioV2Dto"
@@ -586,6 +571,14 @@
     "CanonicalSet_SecretBindingV2Dto": {
       "items": {
         "$ref": "#/$defs/SecretBindingV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "CanonicalSet_SourceComponentIdText": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
+        "type": "string"
       },
       "type": "array",
       "uniqueItems": true
@@ -607,6 +600,14 @@
     "CanonicalSet_TargetConfigurationV2Dto": {
       "items": {
         "$ref": "#/$defs/TargetConfigurationV2Dto"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "CanonicalSet_TargetIdText": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+        "type": "string"
       },
       "type": "array",
       "uniqueItems": true
@@ -674,9 +675,12 @@
           "type": "string"
         },
         "build_id": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         },
         "occurrence": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "provider_configuration_digest": {
@@ -684,9 +688,11 @@
           "type": "string"
         },
         "repository": {
+          "pattern": "^https://[a-z0-9.-]+/[^?#@\\s]*[^/?#@\\s]$",
           "type": "string"
         },
         "source_commit": {
+          "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
           "type": "string"
         },
         "source_content_digest": {
@@ -709,7 +715,40 @@
       "additionalProperties": false,
       "properties": {
         "assignments": {
-          "$ref": "#/$defs/CanonicalSet_CohortAssignmentV2Dto"
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/CohortAssignmentV2Dto"
+              },
+              {
+                "oneOf": [
+                  {
+                    "not": {
+                      "required": [
+                        "provider_configuration_digest"
+                      ]
+                    },
+                    "required": [
+                      "target_configuration_digest"
+                    ]
+                  },
+                  {
+                    "not": {
+                      "required": [
+                        "target_configuration_digest"
+                      ]
+                    },
+                    "required": [
+                      "provider_configuration_digest"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "extensions": {
           "additionalProperties": {
@@ -718,6 +757,8 @@
           "type": "object"
         },
         "id": {
+          "maxLength": 512,
+          "minLength": 1,
           "type": "string"
         },
         "revision": {
@@ -725,7 +766,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -735,6 +776,7 @@
           ]
         },
         "scenario": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
           "type": "string"
         }
       },
@@ -751,13 +793,16 @@
       "additionalProperties": false,
       "properties": {
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "values": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_SymbolicValueText"
         }
       },
       "required": [
@@ -996,6 +1041,7 @@
       "description": "One recursive type-tagged v2 extension value.",
       "oneOf": [
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "boolean",
@@ -1012,6 +1058,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "integer",
@@ -1039,6 +1086,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "string",
@@ -1055,6 +1103,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "array",
@@ -1074,6 +1123,7 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
           "properties": {
             "type": {
               "const": "object",
@@ -1155,7 +1205,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1297,6 +1347,48 @@
       ],
       "type": "object"
     },
+    "NonEmptySet_ApplicabilityV2Dto": {
+      "items": {
+        "$ref": "#/$defs/ApplicabilityV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_DimensionDeclarationV2Dto": {
+      "items": {
+        "$ref": "#/$defs/DimensionDeclarationV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_ScenarioParticipantV2Dto": {
+      "items": {
+        "$ref": "#/$defs/ScenarioParticipantV2Dto"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_SymbolicValueText": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]{0,62}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "NonEmptySet_TargetIdText": {
+      "items": {
+        "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
     "ParticipationV2Dto": {
       "additionalProperties": false,
       "properties": {
@@ -1310,13 +1402,15 @@
           "type": "object"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
           "type": "string"
         },
         "requirement": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+#[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "targets": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/NonEmptySet_TargetIdText"
         }
       },
       "required": [
@@ -1474,10 +1568,12 @@
           "type": "object"
         },
         "description": {
+          "maxLength": 4096,
+          "minLength": 1,
           "type": "string"
         },
         "dimensions": {
-          "$ref": "#/$defs/CanonicalSet_DimensionDeclarationV2Dto"
+          "$ref": "#/$defs/NonEmptySet_DimensionDeclarationV2Dto"
         },
         "extensions": {
           "additionalProperties": {
@@ -1486,11 +1582,12 @@
           "type": "object"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
           "type": "string"
         },
         "owners": {
           "items": {
-            "minLength": 1,
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
             "type": "string"
           },
           "minItems": 1,
@@ -1502,7 +1599,7 @@
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1512,6 +1609,8 @@
           ]
         },
         "title": {
+          "maxLength": 160,
+          "minLength": 1,
           "type": "string"
         }
       },
@@ -1540,11 +1639,12 @@
           "type": "object"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
           "type": "string"
         },
         "owners": {
           "items": {
-            "minLength": 1,
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
             "type": "string"
           },
           "minItems": 1,
@@ -1782,9 +1882,11 @@
       "additionalProperties": false,
       "properties": {
         "id": {
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "role": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "subject": {
@@ -1849,17 +1951,18 @@
           "type": "object"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
           "type": "string"
         },
         "participants": {
-          "$ref": "#/$defs/CanonicalSet_ScenarioParticipantV2Dto"
+          "$ref": "#/$defs/NonEmptySet_ScenarioParticipantV2Dto"
         },
         "revision": {
           "anyOf": [
             {
               "format": "uint64",
               "maximum": 9007199254740991,
-              "minimum": 0,
+              "minimum": 1,
               "type": "integer"
             },
             {
@@ -1953,7 +2056,7 @@
       "additionalProperties": false,
       "properties": {
         "dependencies": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/CanonicalSet_SourceComponentIdText"
         },
         "extensions": {
           "additionalProperties": {
@@ -1962,10 +2065,17 @@
           "type": "object"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "roots": {
           "$ref": "#/$defs/CanonicalSet_string"
@@ -2045,7 +2155,7 @@
       "additionalProperties": false,
       "properties": {
         "depends_on": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/CanonicalSet_TargetIdText"
         },
         "extensions": {
           "additionalProperties": {
@@ -2054,28 +2164,38 @@
           "type": "object"
         },
         "framework": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "id": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "owners": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "platform": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "providers": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/CanonicalSet_ProviderIdText"
         },
         "role": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "root": {
           "type": "string"
         },
         "source_components": {
-          "$ref": "#/$defs/CanonicalSet_string"
+          "$ref": "#/$defs/CanonicalSet_SourceComponentIdText"
         }
       },
       "required": [

@@ -6,9 +6,11 @@
         "dependencies": {
           "default": [],
           "items": {
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "uniqueItems": true
         },
         "extensions": {
           "additionalProperties": true,
@@ -17,9 +19,12 @@
         },
         "owners": {
           "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
             "type": "string"
           },
-          "type": "array"
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "roots": {
           "items": {
@@ -40,9 +45,11 @@
         "depends_on": {
           "default": [],
           "items": {
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "uniqueItems": true
         },
         "extensions": {
           "additionalProperties": true,
@@ -50,29 +57,35 @@
           "type": "object"
         },
         "framework": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "owners": {
           "items": {
+            "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$",
             "type": "string"
           },
-          "type": "array"
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         },
         "platform": {
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
           "type": "string"
         },
         "providers": {
           "default": [],
           "items": {
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "uniqueItems": true
         },
         "role": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "default": null,
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
+          "type": "string"
         },
         "root": {
           "type": "string"
@@ -80,9 +93,11 @@
         "source_components": {
           "default": [],
           "items": {
+            "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
             "type": "string"
           },
-          "type": "array"
+          "type": "array",
+          "uniqueItems": true
         }
       },
       "required": [
@@ -146,6 +161,7 @@
       "type": "array"
     },
     "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json",
       "type": "string"
     },
     "source_components": {

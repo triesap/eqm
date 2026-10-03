@@ -134,19 +134,25 @@
       "type": "object"
     },
     "id": {
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$",
       "type": "string"
     },
     "requirement": {
+      "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+#[a-z][a-z0-9_]{0,62}$",
       "type": "string"
     },
     "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json",
       "type": "string"
     },
     "targets": {
       "items": {
+        "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$",
         "type": "string"
       },
-      "type": "array"
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
     }
   },
   "required": [

@@ -48,9 +48,222 @@ fn cohort_schema_marker(_: &mut SchemaGenerator) -> Schema {
     })
 }
 
+fn scenario_schema_marker(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "const": SchemaUri::versioned(SchemaKind::Scenario, SchemaVersion::V2).to_string(),
+        "type": "string",
+    })
+}
+
+fn participation_schema_marker(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "const": SchemaUri::versioned(SchemaKind::Participation, SchemaVersion::V2).to_string(),
+        "type": "string",
+    })
+}
+
+fn workspace_schema_marker(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "const": SchemaUri::versioned(SchemaKind::Workspace, SchemaVersion::V2).to_string(),
+        "type": "string",
+    })
+}
+
+/// Exact nonempty bounded selector text (512 UTF-8 bytes at the owning layer).
+fn selector_text_schema(_: &mut SchemaGenerator) -> Schema {
+    json_schema!({
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512,
+    })
+}
+
+/// A pattern-constrained string schema for one owning identifier grammar.
+macro_rules! pattern_text {
+    ($name:ident, $pattern:expr) => {
+        struct $name;
+
+        impl JsonSchema for $name {
+            fn schema_name() -> Cow<'static, str> {
+                stringify!($name).into()
+            }
+
+            fn inline_schema() -> bool {
+                true
+            }
+
+            fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+                json_schema!({
+                    "type": "string",
+                    "pattern": $pattern,
+                })
+            }
+        }
+    };
+}
+
+// One or more lowercase dotted segments separated by `.`.
+const DOTTED_ID_PATTERN: &str = "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+$";
+// A single lowercase segment.
+const SEGMENT_ID_PATTERN: &str = "^[a-z][a-z0-9_]{0,62}$";
+// One or more lowercase dotted segments (single segment allowed).
+const EXTENSIBLE_ID_PATTERN: &str = "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*$";
+
+pattern_text!(ProviderIdText, DOTTED_ID_PATTERN);
+pattern_text!(ScenarioIdText, DOTTED_ID_PATTERN);
+pattern_text!(TargetIdText, EXTENSIBLE_ID_PATTERN);
+pattern_text!(ParticipationRuleIdText, DOTTED_ID_PATTERN);
+pattern_text!(RoleText, EXTENSIBLE_ID_PATTERN);
+pattern_text!(PlatformText, EXTENSIBLE_ID_PATTERN);
+pattern_text!(FrameworkText, EXTENSIBLE_ID_PATTERN);
+pattern_text!(OccurrenceText, SEGMENT_ID_PATTERN);
+pattern_text!(SourceCommitText, "^(?:[0-9a-f]{40}|[0-9a-f]{64})$");
+pattern_text!(RepositoryText, "^https://[a-z0-9.-]+/[^?#@\\s]*[^/?#@\\s]$");
+pattern_text!(
+    RequirementText,
+    "^[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+#[a-z][a-z0-9_]{0,62}$"
+);
+
+/// A nonempty duplicate-free owner array matching the owner grammar.
+struct OwnerList;
+
+impl JsonSchema for OwnerList {
+    fn schema_name() -> Cow<'static, str> {
+        "OwnerList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^owner://(?:team|role)/[a-z][a-z0-9_]{0,62}$"},
+        })
+    }
+}
+
+/// A duplicate-free source-component reference array.
+struct SourceComponentIdList;
+
+impl JsonSchema for SourceComponentIdList {
+    fn schema_name() -> Cow<'static, str> {
+        "SourceComponentIdList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": DOTTED_ID_PATTERN},
+        })
+    }
+}
+
+/// A duplicate-free target reference array.
+struct TargetIdList;
+
+impl JsonSchema for TargetIdList {
+    fn schema_name() -> Cow<'static, str> {
+        "TargetIdList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": EXTENSIBLE_ID_PATTERN},
+        })
+    }
+}
+
+/// A duplicate-free provider reference array.
+struct ProviderIdList;
+
+impl JsonSchema for ProviderIdList {
+    fn schema_name() -> Cow<'static, str> {
+        "ProviderIdList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": DOTTED_ID_PATTERN},
+        })
+    }
+}
+
+/// A nonempty duplicate-free target reference array.
+struct NonEmptyTargetIdList;
+
+impl JsonSchema for NonEmptyTargetIdList {
+    fn schema_name() -> Cow<'static, str> {
+        "NonEmptyTargetIdList".into()
+    }
+
+    fn inline_schema() -> bool {
+        true
+    }
+
+    fn json_schema(_generator: &mut SchemaGenerator) -> Schema {
+        json_schema!({
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": EXTENSIBLE_ID_PATTERN},
+        })
+    }
+}
+
+/// Exactly one of the two cohort assignment configuration claims must be present.
+fn exactly_one_configuration() -> serde_json::Value {
+    serde_json::json!({
+        "oneOf": [
+            {
+                "required": ["target_configuration_digest"],
+                "not": {"required": ["provider_configuration_digest"]},
+            },
+            {
+                "required": ["provider_configuration_digest"],
+                "not": {"required": ["target_configuration_digest"]},
+            },
+        ]
+    })
+}
+
+/// Nonempty duplicate-free cohort assignments with exactly-one configuration.
+fn cohort_assignments_schema(generator: &mut SchemaGenerator) -> Schema {
+    let item = serde_json::to_value(generator.subschema_for::<CohortAssignmentV2Dto>())
+        .unwrap_or(serde_json::Value::Null);
+    let value = serde_json::json!({
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {"allOf": [item, exactly_one_configuration()]},
+    });
+    Schema::from(value.as_object().cloned().unwrap_or_default())
+}
+
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct WorkspaceV2Dto {
+    #[schemars(schema_with = "workspace_schema_marker")]
     pub schema: String,
     pub contract_sources: Vec<String>,
     pub binding_sources: Vec<String>,
@@ -72,15 +285,23 @@ pub struct WorkspaceV2Dto {
 #[serde(deny_unknown_fields)]
 pub struct TargetV2Dto {
     pub root: String,
+    #[schemars(with = "PlatformText")]
     pub platform: String,
+    #[schemars(with = "FrameworkText")]
     pub framework: String,
+    #[serde(default)]
+    #[schemars(with = "RoleText")]
     pub role: Option<String>,
     #[serde(default)]
+    #[schemars(with = "SourceComponentIdList")]
     pub source_components: Vec<String>,
     #[serde(default)]
+    #[schemars(with = "TargetIdList")]
     pub depends_on: Vec<String>,
     #[serde(default)]
+    #[schemars(with = "ProviderIdList")]
     pub providers: Vec<String>,
+    #[schemars(with = "OwnerList")]
     pub owners: Vec<String>,
     #[serde(default)]
     pub extensions: ExtensionsDto,
@@ -90,8 +311,10 @@ pub struct TargetV2Dto {
 #[serde(deny_unknown_fields)]
 pub struct SourceComponentV2Dto {
     pub roots: Vec<String>,
+    #[schemars(with = "OwnerList")]
     pub owners: Vec<String>,
     #[serde(default)]
+    #[schemars(with = "SourceComponentIdList")]
     pub dependencies: Vec<String>,
     #[serde(default)]
     pub extensions: ExtensionsDto,
@@ -101,9 +324,13 @@ pub struct SourceComponentV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ParticipationV2Dto {
+    #[schemars(schema_with = "participation_schema_marker")]
     pub schema: String,
+    #[schemars(with = "ParticipationRuleIdText")]
     pub id: String,
+    #[schemars(with = "RequirementText")]
     pub requirement: String,
+    #[schemars(with = "NonEmptyTargetIdList")]
     pub targets: Vec<String>,
     pub applicability: ApplicabilityDto,
     #[serde(default)]
@@ -120,9 +347,13 @@ pub struct ParticipationV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ScenarioV2Dto {
+    #[schemars(schema_with = "scenario_schema_marker")]
     pub schema: String,
+    #[schemars(with = "ScenarioIdText")]
     pub id: String,
+    #[schemars(range(min = 1))]
     pub revision: u64,
+    #[schemars(length(min = 1))]
     pub participants: Vec<ScenarioParticipantV2Dto>,
     #[serde(default)]
     pub dependencies: Vec<ScenarioDependencyV2Dto>,
@@ -134,7 +365,9 @@ pub struct ScenarioV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ScenarioParticipantV2Dto {
+    #[schemars(with = "OccurrenceText")]
     pub id: String,
+    #[schemars(with = "RoleText")]
     pub role: String,
     pub subject: ScenarioSubjectV2Dto,
 }
@@ -142,8 +375,16 @@ pub struct ScenarioParticipantV2Dto {
 /// One tagged target/provider scenario subject. Exactly one tag must be present.
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("oneOf" = [
+    {"required": ["target"], "not": {"required": ["provider"]}},
+    {"required": ["provider"], "not": {"required": ["target"]}},
+]))]
 pub struct ScenarioSubjectV2Dto {
+    #[serde(default)]
+    #[schemars(with = "TargetIdText")]
     pub target: Option<String>,
+    #[serde(default)]
+    #[schemars(with = "ProviderIdText")]
     pub provider: Option<String>,
 }
 
@@ -166,10 +407,11 @@ pub struct ScenarioDependencyV2Dto {
 pub struct ProviderV2Dto {
     #[schemars(schema_with = "provider_schema_marker")]
     pub schema: String,
+    #[schemars(with = "ProviderIdText")]
     pub id: String,
     #[schemars(with = "Sha256Text")]
     pub configuration_digest: String,
-    #[schemars(length(min = 1), inner(length(min = 1)))]
+    #[schemars(with = "OwnerList")]
     pub owners: Vec<String>,
     #[serde(default)]
     pub extensions: ExtensionsDto,
@@ -186,10 +428,13 @@ pub struct ProviderV2Dto {
 pub struct CohortV2Dto {
     #[schemars(schema_with = "cohort_schema_marker")]
     pub schema: String,
+    #[schemars(schema_with = "selector_text_schema")]
     pub id: String,
+    #[schemars(range(min = 1))]
     pub revision: u64,
+    #[schemars(with = "ScenarioIdText")]
     pub scenario: String,
-    #[schemars(length(min = 1))]
+    #[schemars(schema_with = "cohort_assignments_schema")]
     pub assignments: Vec<CohortAssignmentV2Dto>,
     #[serde(default)]
     pub extensions: ExtensionsDto,
@@ -199,8 +444,11 @@ pub struct CohortV2Dto {
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct CohortAssignmentV2Dto {
+    #[schemars(with = "OccurrenceText")]
     pub occurrence: String,
+    #[schemars(with = "RepositoryText")]
     pub repository: String,
+    #[schemars(with = "SourceCommitText")]
     pub source_commit: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(with = "Sha256Text")]
@@ -212,7 +460,7 @@ pub struct CohortAssignmentV2Dto {
     #[schemars(with = "Sha256Text")]
     pub provider_configuration_digest: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[schemars(with = "String")]
+    #[schemars(schema_with = "selector_text_schema")]
     pub build_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[schemars(with = "Sha256Text")]
