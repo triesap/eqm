@@ -1,5 +1,15 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## Execution revalidation — 2026-10-03
+
+The latest issued batch has no subsequent implementation delta available in
+this checkout and no matching returned run was located. No new candidate or
+acceptance is recorded. DEV-015 remains the governing technical amendment;
+all four checkpoints S039-R2 → S041-R1 → P03-R4 → S043-R1 remain pending.
+Continue the full range under those settled decisions, retaining 40 allocated
+step acceptances, RF55–RF59 corrections and required independent P03 acceptance
+before S044. Full original MVP S211 and all original gates remain unchanged.
+
 ## DEV-015 — Close checked comparison and cohort authority before P04
 
 **Date/author:** 2026-10-03, Codex under owner delegation.
