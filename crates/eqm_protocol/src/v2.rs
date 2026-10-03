@@ -15,13 +15,15 @@ use eqm_domain::{
     AdapterId, AttemptOutcome, DimensionId, EvidenceCounts, EvidenceKind, Facet, FullRequirementId,
     HttpMethod, InventoryCompleteness, OccurrenceId, OwnerRef, ProducerRef, ProfileId, ProviderId,
     RawObjectDigest, ReleaseChannel, RepoPath, RepositoryIdentity, Revision, SelectorText,
-    SemanticEvidenceDigest, Sha256Digest, SourceCommit, SurfaceId, SymbolicValueId, TargetId,
+    SemanticEvidenceDigest, Sha256Digest, SourceCommit, SubjectAssignment, SubjectManifest,
+    SubjectManifestDigest, SurfaceId, SymbolicValueId, TargetConfigurationDigest, TargetId,
     TrustLevel, UnitId, UtcInstantV2, V2_UTC_PATTERN,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, de};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
 /// Declared v2 runtime-facts byte envelope, honored at every parse.
@@ -1279,13 +1281,20 @@ impl SubjectManifestV2Dto {
         if self.schema != crate::SUBJECT_MANIFEST_SCHEMA_V2.to_string() {
             return Err(V2DtoError::InvalidSchema);
         }
-        validate_digest(&self.id)?;
+        // The authored id is an exact symbolic identity, not its own digest.
+        validate_selector_text(&self.id, V2DtoError::InvalidVocabulary)?;
         Revision::new(self.revision.get()).map_err(|_| V2DtoError::InvalidVocabulary)?;
         if self.entries.is_empty() {
             return Err(V2DtoError::InvalidOrdering);
         }
+        let mut occurrences = BTreeSet::new();
         for entry in self.entries.iter() {
             parse_typed::<OccurrenceId>(&entry.occurrence, V2DtoError::InvalidVocabulary)?;
+            // Reject both exact duplicates enforced by the canonical set and
+            // logical duplicates that share only the occurrence key.
+            if !occurrences.insert(entry.occurrence.as_str()) {
+                return Err(V2DtoError::InvalidOrdering);
+            }
             parse_typed::<RepositoryIdentity>(&entry.repository, V2DtoError::InvalidSubject)?;
             parse_typed::<SourceCommit>(&entry.source_commit, V2DtoError::InvalidSubject)?;
             for digest in [
@@ -1310,6 +1319,346 @@ impl SubjectManifestV2Dto {
         }
         Ok(())
     }
+}
+
+// ---------------------------------------------------------------------------
+// subject-manifest checked conversion, canonical identity and exact matching
+// ---------------------------------------------------------------------------
+
+impl SubjectManifestV2Dto {
+    /// Returns the exact canonical semantic bytes over `id`, `revision` and
+    /// `entries`, excluding only the transport `schema` marker. Absence is
+    /// omission, so an absent axis never collapses into a zero placeholder.
+    pub fn canonical_semantic_bytes(&self) -> Result<Vec<u8>, V2DtoError> {
+        let mut value = serde_json::to_value(self).map_err(|_| V2DtoError::Json)?;
+        value
+            .as_object_mut()
+            .ok_or(V2DtoError::Json)?
+            .remove("schema");
+        serde_json_canonicalizer::to_vec(&value).map_err(|_| V2DtoError::Json)
+    }
+
+    /// Returns the independently defined subject-manifest identity.
+    pub fn subject_manifest_digest(&self) -> Result<SubjectManifestDigest, V2DtoError> {
+        Ok(SubjectManifestDigest::hash_content(
+            &self.canonical_semantic_bytes()?,
+        ))
+    }
+
+    /// Revalidates this mutable DTO and binds it to the exact supplied bytes,
+    /// which must parse to an equal record.
+    pub fn checked(&self, raw_bytes: &[u8]) -> Result<CheckedSubjectManifestV2, V2DtoError> {
+        let reparsed = SubjectManifestV2Dto::from_json(raw_bytes)?;
+        if &reparsed != self {
+            return Err(V2DtoError::RecordMismatch);
+        }
+        CheckedSubjectManifestV2::from_validated(reparsed, raw_bytes.to_vec())
+    }
+}
+
+/// Immutable bytes-first checked v2 subject manifest.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CheckedSubjectManifestV2 {
+    record: SubjectManifestV2Dto,
+    raw_bytes: Vec<u8>,
+    semantic_bytes: Vec<u8>,
+    digest: SubjectManifestDigest,
+}
+
+impl CheckedSubjectManifestV2 {
+    /// Strictly decodes exact bytes once and retains them.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, V2DtoError> {
+        let record = SubjectManifestV2Dto::from_json(bytes)?;
+        Self::from_validated(record, bytes.to_vec())
+    }
+
+    fn from_validated(
+        record: SubjectManifestV2Dto,
+        raw_bytes: Vec<u8>,
+    ) -> Result<Self, V2DtoError> {
+        let semantic_bytes = record.canonical_semantic_bytes()?;
+        let digest = SubjectManifestDigest::hash_content(&semantic_bytes);
+        Ok(Self {
+            record,
+            raw_bytes,
+            semantic_bytes,
+            digest,
+        })
+    }
+
+    /// Returns the validated record.
+    #[must_use]
+    pub const fn record(&self) -> &SubjectManifestV2Dto {
+        &self.record
+    }
+
+    /// Returns the exact original bytes.
+    #[must_use]
+    pub fn raw_bytes(&self) -> &[u8] {
+        &self.raw_bytes
+    }
+
+    /// Returns the canonical semantic bytes (`id`, `revision`, `entries`).
+    #[must_use]
+    pub fn semantic_bytes(&self) -> &[u8] {
+        &self.semantic_bytes
+    }
+
+    /// Returns the typed subject-manifest identity.
+    #[must_use]
+    pub const fn digest(&self) -> SubjectManifestDigest {
+        self.digest
+    }
+}
+
+/// The independently supplied configuration-kind identity for one occurrence.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ExpectedSubjectConfiguration {
+    /// The occurrence is a shipped target with this exact typed configuration.
+    Target(TargetConfigurationDigest),
+    /// The occurrence is a provider with this exact external configuration digest.
+    Provider(Sha256Digest),
+}
+
+impl Display for ExpectedSubjectConfiguration {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Target(digest) => Display::fmt(digest, formatter),
+            Self::Provider(digest) => Display::fmt(digest, formatter),
+        }
+    }
+}
+
+/// One independently supplied immutable expected occurrence axis.
+///
+/// These axes come from the evaluated graph/authority, never from the untrusted
+/// DTO being matched. A `None` axis is an explicitly permitted development
+/// absence only when the match mode allows it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ExpectedSubjectAxis {
+    /// Expected source repository.
+    pub repository: RepositoryIdentity,
+    /// Expected source commit.
+    pub source_commit: SourceCommit,
+    /// Expected immutable source/component content identity.
+    pub source_content_digest: Option<Sha256Digest>,
+    /// Expected typed configuration identity and kind.
+    pub configuration: ExpectedSubjectConfiguration,
+    /// Expected build identifier.
+    pub build_id: Option<SelectorText>,
+    /// Expected build artifact digest.
+    pub artifact_digest: Option<Sha256Digest>,
+}
+
+/// Independently supplied expected subjects keyed by occurrence.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ExpectedSubjectContext {
+    occurrences: BTreeMap<OccurrenceId, ExpectedSubjectAxis>,
+}
+
+impl ExpectedSubjectContext {
+    /// Creates a context from explicit occurrence axes, rejecting duplicates.
+    pub fn new(
+        axes: impl IntoIterator<Item = (OccurrenceId, ExpectedSubjectAxis)>,
+    ) -> Result<Self, SubjectMatchError> {
+        let mut occurrences: BTreeMap<OccurrenceId, ExpectedSubjectAxis> = BTreeMap::new();
+        for (occurrence, axis) in axes {
+            if occurrences.insert(occurrence.clone(), axis).is_some() {
+                return Err(SubjectMatchError::DuplicateExpectedOccurrence(occurrence));
+            }
+        }
+        Ok(Self { occurrences })
+    }
+}
+
+/// How strictly a subject manifest must match the expected context.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SubjectMatchMode {
+    /// Explicitly declared development use: absent axes are permitted.
+    Development,
+    /// Trusted completeness: every relevant axis must be present and match.
+    Completeness,
+}
+
+/// Exact subject-match failure.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SubjectMatchError {
+    /// The record itself failed validation while matching.
+    InvalidRecord,
+    /// An expected occurrence had no assignment in the manifest.
+    MissingOccurrence(OccurrenceId),
+    /// The manifest declared an occurrence absent from the expected context.
+    ExtraOccurrence(OccurrenceId),
+    /// The expected context supplied the same occurrence twice.
+    DuplicateExpectedOccurrence(OccurrenceId),
+    /// The assignment kind disagreed with the expected target/provider kind.
+    KindMismatch(OccurrenceId),
+    /// The repository axis disagreed.
+    RepositoryMismatch(OccurrenceId),
+    /// The source commit disagreed.
+    CommitMismatch(OccurrenceId),
+    /// The source content identity disagreed.
+    SourceContentMismatch(OccurrenceId),
+    /// The configuration identity disagreed.
+    ConfigurationMismatch(OccurrenceId),
+    /// The build identifier disagreed.
+    BuildMismatch(OccurrenceId),
+    /// The artifact digest disagreed.
+    ArtifactMismatch(OccurrenceId),
+    /// A completeness-required axis was absent.
+    IncompleteOccurrence(OccurrenceId),
+}
+
+impl Display for SubjectMatchError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{self:?}")
+    }
+}
+
+impl std::error::Error for SubjectMatchError {}
+
+/// Matches all and only the expected scenario occurrences against a checked
+/// subject manifest and promotes the matched assignments into the domain model.
+///
+/// The typed target/provider configuration comes from the independently supplied
+/// expected axis, never from parsing the untrusted wire digest string; the wire
+/// string must merely equal that authority. No source, build or signature claim
+/// follows from a match.
+pub fn match_subjects(
+    checked: &CheckedSubjectManifestV2,
+    expected: &ExpectedSubjectContext,
+    mode: SubjectMatchMode,
+) -> Result<SubjectManifest, SubjectMatchError> {
+    let record = checked.record();
+    let actual: BTreeMap<&str, &SubjectManifestEntryV2Dto> = record
+        .entries
+        .iter()
+        .map(|entry| (entry.occurrence.as_str(), entry))
+        .collect();
+    for occurrence in expected.occurrences.keys() {
+        if !actual.contains_key(occurrence.as_str()) {
+            return Err(SubjectMatchError::MissingOccurrence(occurrence.clone()));
+        }
+    }
+    for occurrence in actual.keys() {
+        if !expected
+            .occurrences
+            .keys()
+            .any(|key| key.as_str() == *occurrence)
+        {
+            let occurrence =
+                OccurrenceId::new(*occurrence).map_err(|_| SubjectMatchError::InvalidRecord)?;
+            return Err(SubjectMatchError::ExtraOccurrence(occurrence));
+        }
+    }
+    let mut assignments = Vec::new();
+    for (occurrence, axis) in &expected.occurrences {
+        let owner = || occurrence.clone();
+        let entry = actual
+            .get(occurrence.as_str())
+            .ok_or_else(|| SubjectMatchError::MissingOccurrence(owner()))?;
+        // Kind must agree exactly; a target and a provider are never substituted.
+        let (is_target, config_string) = match &axis.configuration {
+            ExpectedSubjectConfiguration::Target(digest) => (true, digest.to_string()),
+            ExpectedSubjectConfiguration::Provider(digest) => (false, digest.to_string()),
+        };
+        if entry.target_configuration_digest.is_some() != is_target
+            || entry.provider_configuration_digest.is_some() == is_target
+        {
+            return Err(SubjectMatchError::KindMismatch(owner()));
+        }
+        let actual_config = entry
+            .target_configuration_digest
+            .as_ref()
+            .or(entry.provider_configuration_digest.as_ref())
+            .ok_or_else(|| SubjectMatchError::IncompleteOccurrence(owner()))?;
+        if actual_config != &config_string {
+            return Err(SubjectMatchError::ConfigurationMismatch(owner()));
+        }
+        if entry.repository != axis.repository.as_str() {
+            return Err(SubjectMatchError::RepositoryMismatch(owner()));
+        }
+        if entry.source_commit != axis.source_commit.as_str() {
+            return Err(SubjectMatchError::CommitMismatch(owner()));
+        }
+        let source_content = match (&entry.source_content_digest, axis.source_content_digest) {
+            (Some(claimed), Some(expected)) => {
+                if claimed != &expected.to_string() {
+                    return Err(SubjectMatchError::SourceContentMismatch(owner()));
+                }
+                Some(expected)
+            }
+            (None, Some(_)) => return Err(SubjectMatchError::SourceContentMismatch(owner())),
+            (Some(_), None) => return Err(SubjectMatchError::IncompleteOccurrence(owner())),
+            (None, None) => match mode {
+                SubjectMatchMode::Completeness => {
+                    return Err(SubjectMatchError::IncompleteOccurrence(owner()));
+                }
+                SubjectMatchMode::Development => None,
+            },
+        };
+        let build_id = match (&entry.build_id, &axis.build_id) {
+            (Some(claimed), Some(expected)) => {
+                if claimed != expected.as_str() {
+                    return Err(SubjectMatchError::BuildMismatch(owner()));
+                }
+                Some(expected.clone())
+            }
+            (None, Some(_)) => return Err(SubjectMatchError::BuildMismatch(owner())),
+            (Some(_), None) => return Err(SubjectMatchError::IncompleteOccurrence(owner())),
+            (None, None) => match mode {
+                SubjectMatchMode::Completeness => {
+                    return Err(SubjectMatchError::IncompleteOccurrence(owner()));
+                }
+                SubjectMatchMode::Development => None,
+            },
+        };
+        let artifact = match (&entry.artifact_digest, axis.artifact_digest) {
+            (Some(claimed), Some(expected)) => {
+                if claimed != &expected.to_string() {
+                    return Err(SubjectMatchError::ArtifactMismatch(owner()));
+                }
+                Some(expected)
+            }
+            (None, Some(_)) => return Err(SubjectMatchError::ArtifactMismatch(owner())),
+            (Some(_), None) => return Err(SubjectMatchError::IncompleteOccurrence(owner())),
+            (None, None) => match mode {
+                SubjectMatchMode::Completeness => {
+                    return Err(SubjectMatchError::IncompleteOccurrence(owner()));
+                }
+                SubjectMatchMode::Development => None,
+            },
+        };
+        let repository = entry
+            .repository
+            .parse::<RepositoryIdentity>()
+            .map_err(|_| SubjectMatchError::InvalidRecord)?;
+        let source_commit = entry
+            .source_commit
+            .parse::<SourceCommit>()
+            .map_err(|_| SubjectMatchError::InvalidRecord)?;
+        let (target_configuration, provider_configuration) = match axis.configuration {
+            ExpectedSubjectConfiguration::Target(digest) => (Some(digest), None),
+            ExpectedSubjectConfiguration::Provider(digest) => (None, Some(digest)),
+        };
+        assignments.push(
+            SubjectAssignment::new(
+                occurrence.clone(),
+                repository,
+                source_commit,
+                source_content,
+                target_configuration,
+                provider_configuration,
+                build_id,
+                artifact,
+            )
+            .map_err(|_| SubjectMatchError::InvalidRecord)?,
+        );
+    }
+    let id = SelectorText::new(record.id.as_str()).map_err(|_| SubjectMatchError::InvalidRecord)?;
+    let revision =
+        Revision::new(record.revision.get()).map_err(|_| SubjectMatchError::InvalidRecord)?;
+    SubjectManifest::new(id, revision, assignments).map_err(|_| SubjectMatchError::InvalidRecord)
 }
 
 #[cfg(test)]
