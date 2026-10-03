@@ -74,6 +74,10 @@ fn duplicate_findings(
             format!("source_component:{id}"),
         )
     }));
+    entries.extend(input.participation.iter().map(|value| {
+        let id = value.id().as_str();
+        (format!("participation:{id}"), format!("participation:{id}"))
+    }));
     entries.extend(input.bindings.iter().map(|value| {
         let id = value.id().as_str();
         (format!("binding:{id}"), format!("binding:{id}"))
@@ -471,6 +475,27 @@ fn dangling_findings(
                 &owner,
                 "source component",
                 dependency.as_str(),
+                sources,
+                &mut findings,
+            )?;
+        }
+    }
+    for rule in graph.participation().values() {
+        let owner = format!("participation:{}", rule.id());
+        require(
+            requirement_ids.contains(rule.requirement().as_str()),
+            &owner,
+            "requirement",
+            rule.requirement().as_str(),
+            sources,
+            &mut findings,
+        )?;
+        for target in rule.targets() {
+            require(
+                target_ids.contains(target.as_str()),
+                &owner,
+                "target",
+                target.as_str(),
                 sources,
                 &mut findings,
             )?;

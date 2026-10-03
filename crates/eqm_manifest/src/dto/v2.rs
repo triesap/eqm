@@ -7,7 +7,7 @@
 
 #![allow(missing_docs)]
 
-use super::ExtensionsDto;
+use super::{ApplicabilityDto, ExtensionsDto};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -55,6 +55,19 @@ pub struct SourceComponentV2Dto {
     pub owners: Vec<String>,
     #[serde(default)]
     pub dependencies: Vec<String>,
+    #[serde(default)]
+    pub extensions: ExtensionsDto,
+}
+
+/// One strict v2 capability-participation rule document.
+#[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ParticipationV2Dto {
+    pub schema: String,
+    pub id: String,
+    pub requirement: String,
+    pub targets: Vec<String>,
+    pub applicability: ApplicabilityDto,
     #[serde(default)]
     pub extensions: ExtensionsDto,
 }

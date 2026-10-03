@@ -53,6 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         SchemaVersion::V2 => {
             write::<WorkspaceV2Dto>(root, "workspace", SchemaKind::Workspace, version)?;
+            write::<ParticipationV2Dto>(root, "participation", SchemaKind::Participation, version)?;
         }
     }
     Ok(())

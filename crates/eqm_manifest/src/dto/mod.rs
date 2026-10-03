@@ -11,7 +11,7 @@ pub type ExtensionsDto = Map<String, Value>;
 
 pub mod v2;
 
-pub use v2::{SourceComponentV2Dto, TargetV2Dto, WorkspaceV2Dto};
+pub use v2::{ParticipationV2Dto, SourceComponentV2Dto, TargetV2Dto, WorkspaceV2Dto};
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]

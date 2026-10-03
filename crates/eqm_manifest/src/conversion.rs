@@ -10,12 +10,12 @@ use eqm_domain::{
     Capability, ComparisonOperator, Description, DurationMillis, EnvironmentBinding,
     EnvironmentName, EnvironmentSource, EvidenceScopeSubject, EvidenceSelector,
     EvidenceSpecification, ExtensionKey, ExtensionNamespace, ExtensionValue, Extensions, Facet,
-    Fragment, FragmentUse, HttpMethod, Journey, MembershipOperator, OwnerRef, Policy, PolicyRule,
-    PolicySelector, PositiveCount, PositiveDays, Profile, ProfileDimension, RepoPath, Requirement,
-    RequirementStatement, Revision, RouteSelector, RunnerDefinition, RunnerLimits, RunnerProgram,
-    SecretBinding, SecretProviderRef, SelectorText, Surface, SymbolicValueId, TargetId, Title,
-    Transition, TransitionTrigger, Waiver, WaiverPolicy, WaiverProfileScope, WaiverReason,
-    WaiverScope, WorkingDirectoryTemplate,
+    Fragment, FragmentUse, HttpMethod, Journey, MembershipOperator, OwnerRef, ParticipationRule,
+    ParticipationRuleId, Policy, PolicyRule, PolicySelector, PositiveCount, PositiveDays, Profile,
+    ProfileDimension, RepoPath, Requirement, RequirementStatement, Revision, RouteSelector,
+    RunnerDefinition, RunnerLimits, RunnerProgram, SecretBinding, SecretProviderRef, SelectorText,
+    Surface, SymbolicValueId, TargetId, Title, Transition, TransitionTrigger, Waiver, WaiverPolicy,
+    WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate,
 };
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -225,6 +225,28 @@ fn convert_binding_with(
         extensions(&dto.extensions, source)?,
     )
     .map_err(|_| ConversionError::at(source, "binding"))
+}
+
+/// Converts one strict v2 participation document into a validated rule.
+pub fn convert_participation(
+    document: &ValidatedDocument,
+) -> Result<ParticipationRule, ConversionError> {
+    let source = document.source().as_str();
+    let DocumentDto::Participation(dto) = document.document() else {
+        return Err(ConversionError::at(source, "schema"));
+    };
+    let id: ParticipationRuleId = parse(&dto.id, "id", source)?;
+    ParticipationRule::new(
+        id,
+        parse(&dto.requirement, "requirement", source)?,
+        dto.targets
+            .iter()
+            .map(|target| parse(target, "targets", source))
+            .collect::<Result<_, _>>()?,
+        applicability(&dto.applicability, source)?,
+        extensions(&dto.extensions, source)?,
+    )
+    .map_err(|_| ConversionError::at(source, "participation"))
 }
 
 /// Converts one strict profile DTO into a finite symbolic profile family.

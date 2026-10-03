@@ -1,5 +1,6 @@
 //! Exact-current schema dispatch and bounded strict DTO decoding.
 
+use crate::dto::v2::ParticipationV2Dto;
 use crate::dto::{
     BindingDto, CapabilityDto, FragmentDto, JourneyDto, PolicyDto, ProfileDto, RunnerDto,
     SurfaceDto, WaiverDto,
@@ -42,6 +43,8 @@ pub enum DocumentDto {
     Runner(RunnerDto),
     /// Waiver authority.
     Waiver(WaiverDto),
+    /// Capability-participation rule authority (v2).
+    Participation(ParticipationV2Dto),
 }
 
 impl DocumentDto {
@@ -56,6 +59,7 @@ impl DocumentDto {
             Self::Profile(dto) => format!("profile:{}", dto.id),
             Self::Runner(dto) => format!("runner:{}", dto.id),
             Self::Waiver(dto) => format!("waiver:{}", dto.id),
+            Self::Participation(dto) => format!("participation:{}", dto.id),
         }
         .into_boxed_str()
     }
@@ -146,27 +150,37 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
     let schema: SchemaUri = schema
         .parse()
         .map_err(|_| ValidationErrorKind::WrongSchema)?;
-    // Authored manifests remain on the current v1 contract; a v2 manifest URI is
-    // a different, not-yet-allocated version and must fail explicitly rather than
-    // decode under v1 field rules.
-    if schema.version() != SchemaVersion::CURRENT {
-        return Err(ValidationErrorKind::WrongSchema);
-    }
+    // The v1 authored contracts stay on v1 field rules. The additive v2
+    // participation manifest kind is decoded by its own reader; any other v2
+    // manifest URI is a different, not-yet-allocated version and must fail
+    // explicitly rather than decode under v1 field rules.
+    let v2 = match (schema.version(), schema.kind()) {
+        (SchemaVersion::V1, _) => false,
+        (SchemaVersion::V2, SchemaKind::Participation) => true,
+        _ => return Err(ValidationErrorKind::WrongSchema),
+    };
     let kind = schema.kind();
-    let allowed = matches!(
-        (class, kind),
-        (
-            SourceClass::Contract,
-            SchemaKind::Capability
-                | SchemaKind::Journey
-                | SchemaKind::Surface
-                | SchemaKind::Fragment
-        ) | (SourceClass::Binding, SchemaKind::Binding)
-            | (SourceClass::Policy, SchemaKind::Policy)
-            | (SourceClass::Profile, SchemaKind::Profile)
-            | (SourceClass::Runner, SchemaKind::Runner)
-            | (SourceClass::Waiver, SchemaKind::Waiver)
-    );
+    let allowed = if v2 {
+        matches!(
+            (class, kind),
+            (SourceClass::Contract, SchemaKind::Participation)
+        )
+    } else {
+        matches!(
+            (class, kind),
+            (
+                SourceClass::Contract,
+                SchemaKind::Capability
+                    | SchemaKind::Journey
+                    | SchemaKind::Surface
+                    | SchemaKind::Fragment
+            ) | (SourceClass::Binding, SchemaKind::Binding)
+                | (SourceClass::Policy, SchemaKind::Policy)
+                | (SourceClass::Profile, SchemaKind::Profile)
+                | (SourceClass::Runner, SchemaKind::Runner)
+                | (SourceClass::Waiver, SchemaKind::Waiver)
+        )
+    };
     if !allowed {
         return Err(ValidationErrorKind::WrongSourceClass);
     }
@@ -187,6 +201,7 @@ fn dispatch(text: &str, class: SourceClass) -> Result<DocumentDto, ValidationErr
         SchemaKind::Profile => decode!(ProfileDto, Profile),
         SchemaKind::Runner => decode!(RunnerDto, Runner),
         SchemaKind::Waiver => decode!(WaiverDto, Waiver),
+        SchemaKind::Participation => decode!(ParticipationV2Dto, Participation),
         _ => Err(ValidationErrorKind::WrongSchema),
     }
 }

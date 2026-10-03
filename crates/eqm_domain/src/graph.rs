@@ -1,5 +1,7 @@
 //! Deterministic containers for validated graph authority.
 
+use crate::id::ParticipationRuleId;
+use crate::policy::ParticipationRule;
 use crate::{
     AdapterDefinition, AdapterId, Binding, BindingId, Capability, CapabilityId, Extensions,
     Fragment, FragmentId, Journey, JourneyId, Policy, PolicyId, Profile, ProfileId,
@@ -66,6 +68,8 @@ pub struct WorkspaceGraphInput {
     pub targets: Vec<Target>,
     /// Shared source-component authorities.
     pub source_components: Vec<SourceComponent>,
+    /// Capability-participation rule authorities (v2).
+    pub participation: Vec<ParticipationRule>,
     /// Target-to-unit bindings.
     pub bindings: Vec<Binding>,
     /// Exact policy revisions.
@@ -98,6 +102,7 @@ pub struct WorkspaceGraph {
     fragments: BTreeMap<(FragmentId, Revision), Fragment>,
     targets: BTreeMap<TargetId, Target>,
     source_components: BTreeMap<SourceComponentId, SourceComponent>,
+    participation: BTreeMap<ParticipationRuleId, ParticipationRule>,
     bindings: BTreeMap<BindingId, Binding>,
     binding_coordinates: BTreeMap<(TargetId, crate::UnitId), BindingId>,
     policies: BTreeMap<(PolicyId, Revision), Policy>,
@@ -127,6 +132,8 @@ impl WorkspaceGraph {
             .map_err(|()| WorkspaceGraphBuildError::DuplicateTarget)?;
         let source_components = unique_index(input.source_components, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateSourceComponent)?;
+        let participation = unique_index(input.participation, |value| value.id().clone())
+            .map_err(|()| WorkspaceGraphBuildError::DuplicateParticipation)?;
         let bindings = unique_index(input.bindings, |value| value.id().clone())
             .map_err(|()| WorkspaceGraphBuildError::DuplicateBinding)?;
         let mut binding_coordinates = BTreeMap::new();
@@ -176,6 +183,7 @@ impl WorkspaceGraph {
             fragments,
             targets,
             source_components,
+            participation,
             bindings,
             binding_coordinates,
             policies,
@@ -218,6 +226,11 @@ impl WorkspaceGraph {
     #[must_use]
     pub const fn source_components(&self) -> &BTreeMap<SourceComponentId, SourceComponent> {
         &self.source_components
+    }
+    /// Returns capability-participation rules in authority-ID order.
+    #[must_use]
+    pub const fn participation(&self) -> &BTreeMap<ParticipationRuleId, ParticipationRule> {
+        &self.participation
     }
     /// Returns bindings in authority-ID order.
     #[must_use]
@@ -288,6 +301,7 @@ impl WorkspaceGraph {
             fragments: self.fragments.into_values().collect(),
             targets: self.targets.into_values().collect(),
             source_components: self.source_components.into_values().collect(),
+            participation: self.participation.into_values().collect(),
             bindings: self.bindings.into_values().collect(),
             policies: self.policies.into_values().collect(),
             profiles: self.profiles.into_values().collect(),
@@ -350,6 +364,8 @@ pub enum WorkspaceGraphBuildError {
     DuplicateTarget,
     /// Source-component authority ID repeated.
     DuplicateSourceComponent,
+    /// Participation rule authority ID repeated.
+    DuplicateParticipation,
     /// Binding authority ID repeated.
     DuplicateBinding,
     /// More than one binding claimed a target/unit pair.

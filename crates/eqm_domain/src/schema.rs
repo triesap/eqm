@@ -98,6 +98,8 @@ pub enum SchemaKind {
     Waiver,
     /// Import and adapter lock.
     Lock,
+    /// Capability-participation rule authority (v2).
+    Participation,
     /// Finalized semantic graph projection.
     SemanticGraph,
     /// Common result envelope.
@@ -124,7 +126,7 @@ pub enum SchemaKind {
 
 impl SchemaKind {
     /// Every accepted kind in stable lexical-identity order.
-    pub const ALL: [Self; 22] = [
+    pub const ALL: [Self; 23] = [
         Self::AdapterRequest,
         Self::AdapterResponse,
         Self::Attestation,
@@ -136,6 +138,7 @@ impl SchemaKind {
         Self::Inventory,
         Self::Journey,
         Self::Lock,
+        Self::Participation,
         Self::Policy,
         Self::Profile,
         Self::ReleaseRecord,
@@ -164,6 +167,7 @@ impl SchemaKind {
             Self::Runner => "runner",
             Self::Waiver => "waiver",
             Self::Lock => "lock",
+            Self::Participation => "participation",
             Self::SemanticGraph => "semantic-graph",
             Self::Result => "result",
             Self::Diagnostic => "diagnostic",
@@ -192,7 +196,8 @@ impl SchemaKind {
             | Self::Profile
             | Self::Runner
             | Self::Waiver
-            | Self::Lock => SchemaGroup::Manifest,
+            | Self::Lock
+            | Self::Participation => SchemaGroup::Manifest,
             Self::SemanticGraph
             | Self::Result
             | Self::Diagnostic

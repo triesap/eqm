@@ -59,8 +59,9 @@ fn resolution_diagnostic_registry_is_complete_and_sorted() -> Result<(), Box<dyn
 }
 
 use eqm_domain::{
-    Extensions, FrameworkId, OwnerRef, PlatformId, RepoPath, SourceComponent, SourceComponentId,
-    Target, TargetId, WorkspaceGraphInput,
+    Applicability, Extensions, FrameworkId, FullRequirementId, OwnerRef, ParticipationRule,
+    ParticipationRuleId, PlatformId, RepoPath, SourceComponent, SourceComponentId, Target,
+    TargetId, WorkspaceGraphInput,
 };
 use std::collections::BTreeMap;
 use std::str::FromStr;
@@ -252,5 +253,47 @@ fn duplicate_source_component_authority_rejects() -> Result<(), Box<dyn Error>> 
     .err()
     .ok_or("duplicate component accepted")?;
     assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0300");
+    Ok(())
+}
+
+#[test]
+fn participation_references_resolve_and_missing_references_reject() -> Result<(), Box<dyn Error>> {
+    let (_repository, loaded) = support::loaded_example()?;
+    let mut input = loaded.graph_input().clone();
+    let target = input.targets.first().ok_or("target missing")?.id().clone();
+    let requirement = input
+        .surfaces
+        .iter()
+        .flat_map(|surface| {
+            surface
+                .requirements()
+                .keys()
+                .map(move |local| format!("{}#{local}", surface.id()))
+        })
+        .next()
+        .ok_or("requirement missing")?;
+    let rule = ParticipationRule::new(
+        ParticipationRuleId::new("participation.mobile")?,
+        FullRequirementId::new(requirement)?,
+        vec![target.clone()],
+        Applicability::always(true),
+        Extensions::default(),
+    )?;
+    input.participation.push(rule);
+    let graph = resolve_graph(input.clone(), loaded.source_map())?;
+    assert_eq!(graph.participation().len(), 1);
+
+    // A participation rule that names an absent requirement rejects as dangling.
+    input.participation[0] = ParticipationRule::new(
+        ParticipationRuleId::new("participation.mobile")?,
+        FullRequirementId::new("absent.unit#rule")?,
+        vec![target],
+        Applicability::always(true),
+        Extensions::default(),
+    )?;
+    let error = resolve_graph(input, loaded.source_map())
+        .err()
+        .ok_or("missing requirement accepted")?;
+    assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0301");
     Ok(())
 }

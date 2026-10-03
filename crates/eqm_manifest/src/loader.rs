@@ -3,9 +3,9 @@
 use crate::conversion::extensions;
 use crate::{
     ConfigError, ContractEntity, ConversionError, DiscoveryError, DocumentDto, LockError,
-    ValidationError, WorkspaceLock, convert_binding_with_roots, convert_contract, convert_policy,
-    convert_profile, convert_runner, convert_waiver, decode_sources, discover_sources,
-    load_lockfile, select_workspace_config,
+    ValidationError, WorkspaceLock, convert_binding_with_roots, convert_contract,
+    convert_participation, convert_policy, convert_profile, convert_runner, convert_waiver,
+    decode_sources, discover_sources, load_lockfile, select_workspace_config,
 };
 use eqm_domain::{
     AdapterLockIdentity, ImportLockIdentity, OwnerRef, RepoPath, RoleId, SourceComponent,
@@ -335,6 +335,14 @@ pub fn load_workspace(
                     document.source().clone(),
                 );
                 input.waivers.push(value);
+            }
+            DocumentDto::Participation(_) => {
+                let value = convert_participation(document).map_err(conversion_error)?;
+                source_map.insert(
+                    format!("participation:{}", value.id()).into(),
+                    document.source().clone(),
+                );
+                input.participation.push(value);
             }
         }
     }

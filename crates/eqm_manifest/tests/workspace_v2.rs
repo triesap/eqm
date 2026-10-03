@@ -232,3 +232,53 @@ fn escaped_component_root_rejects() -> Result<(), Box<dyn Error>> {
     );
     Ok(())
 }
+
+const PARTICIPATION: &str = r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json"
+id = "participation.mobile"
+requirement = "account.create#create"
+targets = ["web"]
+
+[applicability]
+always = true
+"#;
+
+#[test]
+fn v2_participation_rule_loads_through_the_real_loader() -> Result<(), Box<dyn Error>> {
+    let repository = repository(&v2_workspace())?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/contracts/participation.mobile.toml"),
+        PARTICIPATION,
+    )?;
+    let loaded = load_workspace(repository.path(), None)?;
+    assert_eq!(loaded.graph_input().participation.len(), 1);
+    let rule = &loaded.graph_input().participation[0];
+    assert_eq!(rule.id().as_str(), "participation.mobile");
+    assert_eq!(rule.requirement().as_str(), "account.create#create");
+    assert!(rule.targets().contains(&TargetId::new("web")?));
+    Ok(())
+}
+
+#[test]
+fn v2_participation_unknown_field_and_wrong_version_fail_closed() -> Result<(), Box<dyn Error>> {
+    let unknown = repository(&v2_workspace())?;
+    fs::write(
+        unknown
+            .path()
+            .join("eqm/contracts/participation.mobile.toml"),
+        PARTICIPATION.replace("targets = [\"web\"]", "targets = [\"web\"]\nbogus = true"),
+    )?;
+    assert!(load_workspace(unknown.path(), None).is_err());
+
+    let v1 = repository(&v2_workspace())?;
+    fs::write(
+        v1.path().join("eqm/contracts/participation.mobile.toml"),
+        PARTICIPATION.replace(
+            "schemas/v2/manifest/participation",
+            "schemas/v1/manifest/participation",
+        ),
+    )?;
+    assert!(load_workspace(v1.path(), None).is_err());
+    Ok(())
+}
