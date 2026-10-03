@@ -143,6 +143,39 @@ fn write_semantic_graph_v2(root: &Path) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn write_comparison_context_v2(root: &Path) -> Result<(), Box<dyn Error>> {
+    let value = serde_json::json!({
+        "$id": SchemaUri::versioned(SchemaKind::ComparisonContext, SchemaVersion::V2).to_string(),
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "description": "Shared EQM v2 comparison-context projection.",
+        "properties": {
+            "comparison_rule_digest": {"type": "string"},
+            "contract_digest": {"type": "string"},
+            "profiles": {"type": "array"},
+            "scenario_digest": {"type": "string"},
+            "schema": {
+                "const": SchemaUri::versioned(SchemaKind::ComparisonContext, SchemaVersion::V2)
+                    .to_string()
+            }
+        },
+        "required": [
+            "comparison_rule_digest",
+            "contract_digest",
+            "profiles",
+            "scenario_digest",
+            "schema"
+        ],
+        "title": "ComparisonContextV2",
+        "type": "object"
+    });
+    let mut bytes = serde_json::to_vec_pretty(&value)?;
+    bytes.push(b'\n');
+    fs::create_dir_all(root)?;
+    fs::write(root.join("comparison-context.schema.json"), bytes)?;
+    Ok(())
+}
+
 fn write_v1(root: &Path) -> Result<(), Box<dyn Error>> {
     write::<ReportEnvelope<ValidateResultDto, EvidenceSubjectDto, EvidenceSubjectDto>>(
         root,
@@ -190,6 +223,7 @@ fn write_v2(root: &Path) -> Result<(), Box<dyn Error>> {
         &SUBJECT_MANIFEST_SCHEMA_V2.to_string(),
     )?;
     write_semantic_graph_v2(root)?;
+    write_comparison_context_v2(root)?;
     Ok(())
 }
 

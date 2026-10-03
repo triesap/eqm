@@ -1,15 +1,20 @@
 //! RFC 8785 canonical projection of finalized semantic graphs.
 
 mod binding_v2;
+mod comparison_context_v2;
 mod contract_v2;
 mod evidence_spec_v2;
 mod graph_v2;
 mod participation_v2;
 mod policy_v2;
+mod scenario_v2;
 mod support;
 mod target_v2;
 
 pub use binding_v2::{CanonicalBindingV2, binding_v2, canonicalize_binding_v2};
+pub use comparison_context_v2::{
+    CanonicalComparisonContextV2, canonicalize_comparison_context_v2, comparison_context_v2,
+};
 pub use contract_v2::{CanonicalContractV2, canonicalize_contract_v2, contract_v2};
 pub use evidence_spec_v2::{
     CanonicalEvidenceSpecV2, canonicalize_evidence_spec_v2, evidence_spec_v2,
@@ -23,6 +28,7 @@ pub use participation_v2::{
 pub use policy_v2::{
     CanonicalPolicySelectionV2, canonicalize_policy_selection_v2, policy_selection_v2,
 };
+pub use scenario_v2::{CanonicalScenarioV2, canonicalize_scenario_v2, scenario_v2};
 pub use target_v2::{
     CanonicalTargetConfigurationV2, canonicalize_target_configuration_v2, target_configuration_v2,
 };

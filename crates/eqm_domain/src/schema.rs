@@ -100,6 +100,8 @@ pub enum SchemaKind {
     Lock,
     /// Capability-participation rule authority (v2).
     Participation,
+    /// Shared comparison-context wire document (v2).
+    ComparisonContext,
     /// Role-bearing scenario occurrence authority (v2).
     Scenario,
     /// Finalized semantic graph projection.
@@ -130,12 +132,13 @@ pub enum SchemaKind {
 
 impl SchemaKind {
     /// Every accepted kind in stable lexical-identity order.
-    pub const ALL: [Self; 25] = [
+    pub const ALL: [Self; 26] = [
         Self::AdapterRequest,
         Self::AdapterResponse,
         Self::Attestation,
         Self::Binding,
         Self::Capability,
+        Self::ComparisonContext,
         Self::Diagnostic,
         Self::EvidenceResult,
         Self::Fragment,
@@ -174,6 +177,7 @@ impl SchemaKind {
             Self::Waiver => "waiver",
             Self::Lock => "lock",
             Self::Participation => "participation",
+            Self::ComparisonContext => "comparison-context",
             Self::Scenario => "scenario",
             Self::SemanticGraph => "semantic-graph",
             Self::SubjectManifest => "subject-manifest",
@@ -209,6 +213,7 @@ impl SchemaKind {
             | Self::Scenario => SchemaGroup::Manifest,
             Self::SemanticGraph
             | Self::SubjectManifest
+            | Self::ComparisonContext
             | Self::Result
             | Self::Diagnostic
             | Self::TestResult

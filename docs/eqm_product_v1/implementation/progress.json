@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S039",
+ "next_step": "S040",
  "implementation": "in_progress",
- "local_verification": "P03-R1_S032-R1_S033-R1_S035-R1_S037-R1_S038-R1_implemented_verified_pending_acceptance;candidate_38c1254_baseline_32_allocated_steps_accepted;S039_then_S040_S041_S042_S043",
+ "local_verification": "P03-R1_S032-R1_S033-R1_S035-R1_S037-R1_S038-R1_S039_implemented_verified_pending_acceptance;candidate_38c1254_baseline_32_allocated_steps_accepted;S040_then_S041_S042_S043",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1347,10 +1347,18 @@
   },
   {
    "id": "S039",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
+   "report": "implementation/reports/S039.md",
+   "verification": [
+    "cargo xtask schemas generate",
+    "cargo xtask check",
+    "cargo xtask schemas check",
+    "cargo test --locked -p eqm_manifest --test comparison_context_v2",
+    "cargo test --locked -p eqm_domain -p eqm_manifest -p eqm_protocol -p eqm_application --doc",
+    "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+    "git diff --check"
+   ],
    "baseline_exceptions": []
   },
   {
@@ -3062,7 +3070,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P03",
- "active_step": "S039",
+ "active_step": "S040",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3389,7 +3397,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S039",
+ "next_checkpoint": "S040",
  "supervisor_review": {
   "source_commit": "38c125467084f41bb0414484d62f7efc59eb28d0",
   "report": "implementation/reports/CODEX-38c1254.md",
@@ -3974,12 +3982,14 @@
     "status": "complete",
     "supervisor_status": "not_accepted",
     "report": "implementation/reports/S038-R1.md",
-    "commit_sha": null
+    "commit_sha": "8b08f9d6ec44caceb31c14022734f4cce387cde2"
    },
    {
     "id": "S039",
-    "status": "pending",
-    "supervisor_status": "not_accepted"
+    "status": "complete",
+    "supervisor_status": "not_accepted",
+    "report": "implementation/reports/S039.md",
+    "commit_sha": null
    },
    {
     "id": "S040",
@@ -4009,7 +4019,7 @@
   "implementation_delta": "none_observed",
   "returned_candidate": "not_available",
   "acceptance_changes": false,
-  "next_checkpoint": "S039",
+  "next_checkpoint": "S040",
   "batch_endpoint": "S043",
   "governing_amendment": "DEV-012"
  }

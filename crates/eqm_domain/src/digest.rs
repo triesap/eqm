@@ -17,6 +17,10 @@ pub enum DigestDomain {
     SemanticGraph,
     /// Complete finalized EQM v2 semantic graph identity.
     SemanticGraphV2,
+    /// Exact authored scenario occurrence projection (v2).
+    Scenario,
+    /// Shared comparison-context identity (v2).
+    ComparisonContext,
     /// Exact stored raw object bytes (v2).
     RawObject,
     /// Normalized semantic evidence assertion (v2).
@@ -61,6 +65,8 @@ impl DigestDomain {
             Self::Fragment => b"eqm:v1:fragment",
             Self::SemanticGraph => b"eqm:v1:semantic-graph",
             Self::SemanticGraphV2 => b"eqm:v2:semantic-graph",
+            Self::Scenario => b"eqm:v2:scenario",
+            Self::ComparisonContext => b"eqm:v2:comparison-context",
             Self::RawObject => b"eqm:v2:raw-object",
             Self::SemanticEvidence => b"eqm:v2:semantic-evidence",
             Self::Plan => b"eqm:v2:plan",
@@ -286,6 +292,18 @@ define_identity_digest!(
     DigestDomain::SemanticGraphV2
 );
 
+define_identity_digest!(
+    /// Authored v2 scenario occurrence projection.
+    ScenarioDigest,
+    DigestDomain::Scenario
+);
+
+define_identity_digest!(
+    /// Shared comparison-context projection.
+    ComparisonContextDigest,
+    DigestDomain::ComparisonContext
+);
+
 fn decode_hex(byte: u8) -> Option<u8> {
     match byte {
         b'0'..=b'9' => Some(byte - b'0'),
@@ -418,6 +436,8 @@ mod tests {
             DigestDomain::SubjectManifest,
             DigestDomain::SemanticGraphV2,
             DigestDomain::Participation,
+            DigestDomain::Scenario,
+            DigestDomain::ComparisonContext,
         ];
         let mut labels = BTreeSet::new();
         for domain in domains {

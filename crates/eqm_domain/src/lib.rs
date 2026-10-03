@@ -67,11 +67,12 @@ pub use diagnostic::{
     validate_diagnostic_registry,
 };
 pub use digest::{
-    AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest, ContractDigest,
-    DigestDomain, DigestParseError, EvaluationContextDigest, EvidenceSpecificationDigest,
-    ParticipationDigest, PlanDigest, PolicySelectionDigest, RawObjectDigest, RunnerDigest,
-    SemanticEvidenceDigest, SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest,
-    TargetConfigurationDigest, TrustConfigurationDigest,
+    AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest,
+    ComparisonContextDigest, ContractDigest, DigestDomain, DigestParseError,
+    EvaluationContextDigest, EvidenceSpecificationDigest, ParticipationDigest, PlanDigest,
+    PolicySelectionDigest, RawObjectDigest, RunnerDigest, ScenarioDigest, SemanticEvidenceDigest,
+    SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest, TargetConfigurationDigest,
+    TrustConfigurationDigest,
 };
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
@@ -128,8 +129,8 @@ pub use schema::{
     SchemaGroup, SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion,
 };
 pub use selection::{
-    PolicySelectionInputError, PolicySelectionInputV2, SelectedDimensionStateV2,
-    SelectedProfileInputV2,
+    ComparisonContextInputV2, PolicySelectionInputError, PolicySelectionInputV2,
+    SelectedDimensionStateV2, SelectedProfileInputV2,
 };
 pub use subject_manifest::{SubjectAssignment, SubjectManifest, SubjectManifestError};
 pub use time::{

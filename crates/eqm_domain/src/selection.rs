@@ -11,7 +11,9 @@
 //! default and never turns an omitted dimension into `Unknown`: every declared
 //! dimension must appear exactly once.
 
-use crate::{DimensionId, Policy, Profile, SymbolicValueId};
+use crate::{
+    ContractDigest, DimensionId, Policy, Profile, Scenario, Sha256Digest, SymbolicValueId,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -118,6 +120,64 @@ impl<'a> PolicySelectionInputV2<'a> {
     #[must_use]
     pub fn profiles(&self) -> &[SelectedProfileInputV2<'a>] {
         &self.profiles
+    }
+}
+
+/// Shared comparison-context input.
+///
+/// Retains the exact shared comparison axes: an already-computed contract
+/// identity, the exact authored scenario, the validated selected-profile
+/// definitions/values and an explicitly supplied structural rule authority
+/// reference. Exact participant build/source/artifact assignments are absent by
+/// construction, so distinct subjects can share one comparison context. Holding
+/// one confers no subject validity or trust.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ComparisonContextInputV2<'a> {
+    contract_digest: ContractDigest,
+    scenario: &'a Scenario,
+    selection: &'a PolicySelectionInputV2<'a>,
+    comparison_rule_digest: Sha256Digest,
+}
+
+impl<'a> ComparisonContextInputV2<'a> {
+    /// Creates one comparison-context input from explicit shared axes.
+    #[must_use]
+    pub const fn new(
+        contract_digest: ContractDigest,
+        scenario: &'a Scenario,
+        selection: &'a PolicySelectionInputV2<'a>,
+        comparison_rule_digest: Sha256Digest,
+    ) -> Self {
+        Self {
+            contract_digest,
+            scenario,
+            selection,
+            comparison_rule_digest,
+        }
+    }
+
+    /// Returns the shared contract identity.
+    #[must_use]
+    pub const fn contract_digest(&self) -> ContractDigest {
+        self.contract_digest
+    }
+
+    /// Returns the exact scenario.
+    #[must_use]
+    pub const fn scenario(&self) -> &'a Scenario {
+        self.scenario
+    }
+
+    /// Returns the validated selected-profile definitions/values.
+    #[must_use]
+    pub const fn selection(&self) -> &'a PolicySelectionInputV2<'a> {
+        self.selection
+    }
+
+    /// Returns the explicitly supplied structural rule authority reference.
+    #[must_use]
+    pub const fn comparison_rule_digest(&self) -> Sha256Digest {
+        self.comparison_rule_digest
     }
 }
 

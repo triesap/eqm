@@ -1,0 +1,32 @@
+{
+  "$id": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/comparison-context.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Shared EQM v2 comparison-context projection.",
+  "properties": {
+    "comparison_rule_digest": {
+      "type": "string"
+    },
+    "contract_digest": {
+      "type": "string"
+    },
+    "profiles": {
+      "type": "array"
+    },
+    "scenario_digest": {
+      "type": "string"
+    },
+    "schema": {
+      "const": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/protocol/comparison-context.schema.json"
+    }
+  },
+  "required": [
+    "comparison_rule_digest",
+    "contract_digest",
+    "profiles",
+    "scenario_digest",
+    "schema"
+  ],
+  "title": "ComparisonContextV2",
+  "type": "object"
+}

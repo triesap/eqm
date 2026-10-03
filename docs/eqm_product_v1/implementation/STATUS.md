@@ -16,19 +16,18 @@ frozen v1 domain, while an authored v2 workspace projects under the complete v2
 identity (role/source_components/depends_on, source_components, participation).
 The v1 projection rejects v2-only metadata instead of omitting it.
 
-Next **S039 → S040 → S041 → S042 → S043**,
+Next **S040 → S041 → S042 → S043**,
 **pfc through EQM-P03**. Required independent model/schema/identity review before
 S044; full MVP remains S211. Actual user/runtime limits, original review gates and
 genuine dependent external blockers remain legitimate stops.
 
-P03-R1 through S038-R1 verification: `cargo xtask check` passed, `cargo xtask
-schemas check` passed, changed domain/protocol/manifest/engine/application
-doctests passed, the structure validator passed and `git diff --check` is clean.
-S038-R1 aligns the subject-manifest symbolic id, rejects logical occurrence
-duplicates, adds the bytes-first checked carrier and `SubjectManifestDigest`, and
-matches all and only expected axes with explicit development/completeness modes.
-See the per-checkpoint reports under `reports/` and the sole
-[plan](COMMIT_SEQUENCE.md).
+P03-R1 through S039 verification: `cargo xtask check` passed, `cargo xtask schemas
+check` passed, changed domain/manifest/protocol/engine/application doctests
+passed, the structure validator passed and `git diff --check` is clean. S039 adds
+the independent `eqm:v2:scenario` `ScenarioDigest` and the four-member
+`eqm:v2:comparison-context` `ComparisonContextDigest`, with exact subject axes
+kept outside the shared identity. See the per-checkpoint reports under `reports/`
+and the sole [plan](COMMIT_SEQUENCE.md).
 No supervisor product code/tests changed. Previously accepted work is preserved.
 Whole RA02/RA13 remain open at later integration; Q01–Q15 retain their original gates.
 
