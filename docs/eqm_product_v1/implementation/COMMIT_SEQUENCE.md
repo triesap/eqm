@@ -1,5 +1,82 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-026 — Finish numeric and normalized-text owning contracts
+
+**Date/author:** 2026-10-04, Codex under owner delegation.
+**Reviewed candidate:** `1198cc4c3dfe6fea6443e0f4b1998a539d564d20`.
+[Independent review](reports/CODEX-1198cc4.md) retains all four returned commits
+and accepts RF66/RF67 allocated repairs, including additional existing local
+combinations. Preserve42 numbered acceptances. RF68 PositiveDays range and RF69
+forbidden control characters are independently reproduced. RF45 whole parity is
+partial; S043/P03 remain changes-required, whole RA02/RA13 open. Original64R/AC,
+21RA,Q01–Q15,S211 unchanged. This is the current amendment; retain DEV-025 and
+earlier decisions except the superseded frontier. Ordinary engineering decisions
+below are settled; no owner-only blocker or release/human-testing milestone.
+
+Execute **P03-R14 → P03-R15 → P03-R16 → S043-R6**, **pfc through EQM-P03**.
+All four broad owning-contract checkpoints, not only the two reproduced literals.
+The mandatory independent P03 acceptance before S044 still justifies this boundary;
+no later sequence dependency is waived. Continue after every green checkpoint.
+
+### P03-R14 — Exact numeric ownership and range audit
+
+Commit `fix: align graph numeric bounds with owning values`.
+Repair RF68: maximum_days is PositiveDays/NonZeroU32, range1..4294967295;
+4294967296 must reject. These values are representation limits, not production
+waiver thresholds. For EVERY numeric member of introduced authored/graph/comparison
+forms, map actual owning carrier, constructor, width, zero policy, canonical wire
+forms and any local bound. Repair every faithful expressible omission found.
+Do not apply the day bound to u64 revisions/counts/durations. Preserve ADR-0013's
+number versus decimal-string transition, signed extension integers and strict
+raw-token layer. Add literal minimum/maximum/over-boundary same-input owning/schema
+controls and relevant real-loader/projection controls. Regenerate source-driven
+schemas atomically, v1 unchanged; no generic fallback or domain parser loosening.
+
+### P03-R15 — Existing normalized-text control policy
+
+Commit `fix: enforce owning normalized text character constraints`.
+Repair RF69 at all affected exact fields/helpers. Read actual Title/Description/
+SelectorText/RouteSelector/RequirementStatement/TransitionTrigger/WaiverReason and
+other relevant owning predicates. Faithfully express their forbidden-control
+subset; preserve LF/TAB and valid NFC non-ASCII/length endpoints. Test C0 and C1
+controls, including NUL/CR/DEL, with exact owning/schema decisions. Different
+owning types may have different policies: never normalize raw input or apply the
+rule globally to observed payloads, opaque bytes, diagnostics or extension values.
+NFC and Unicode byte lengths stay explicit semantic layers where schema cannot
+faithfully express them. Inspect canonical consumers and retain original semantics.
+
+### P03-R16 — Complete differential scalar and combination evidence
+
+Commit `test: complete owning scalar boundary parity`.
+Replace broad no-other-mismatch assertions with an executed field/variant mapping
+for the remaining numeric/text rows and their actual owners. Exact input and exact
+nested pointer are required; type-class proxies/schema-only helpers do not prove
+owning decisions. Include integer limits and canonical forms, forbidden versus
+allowed characters and every selector variant (including release channels), with
+positive/negative boundary controls. Retain meaningful same-input combination
+coverage: all7 evidence kinds × runner present/absent × absent/all6 selector kinds
+× count present/absent (196 cases), plus prior local collection/axis controls.
+Explicitly separate token/Unicode/referential/lossless-projection layers and give
+evidence for exceptions. Preserve original independent literal bytes/digests and
+all previously accepted regressions. Repair any further approved-scope discrepancy
+discovered within this audit; do not implement later evaluator/trust work early.
+
+### S043-R6 — Actual consumer parity and original P03 exit
+
+Commit `test: verify complete P03 scalar consumer parity`.
+Run representation/text positives and one-axis negatives through actual owning
+construction, canonical projection and real loader/preparation/public CLI wherever
+those fields are authored/consumed. Graph-only values use their true owners;
+never invent authored fields for test routing. Retain original asymmetric source/
+subject/actor/cohort/context/revision/component and comparison obligations.
+Execute ALL original S039/S041/S043/P03 exit lanes, owning regressions/doctests,
+standard/schema/structure/diff gates. Reconcile reports/status/progress before
+final gates. Retain each failed/green attempt separately with exact command/exit;
+correct earlier overclaims without deleting history. Missing local automation is
+not inherently hardware-blocked. Pi records implementation/evidence only; Codex
+owns independent P03 acceptance before S044. No private coordination metadata or
+publication/signing/deployment/activation authority belongs in public records.
+
 ## DEV-025 — Complete actual owning-rule parity before P03 acceptance
 
 **Date/author:** 2026-10-04, Codex under owner delegation.
