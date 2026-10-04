@@ -52,6 +52,111 @@ fn fixture() -> Result<tempfile::TempDir, Box<dyn Error>> {
     Ok(directory)
 }
 
+fn example_fixture() -> Result<tempfile::TempDir, Box<dyn Error>> {
+    let source = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../examples/android-ios");
+    let directory = tempfile::tempdir()?;
+    copy_tree(&source, directory.path())?;
+    fs::create_dir(directory.path().join(".git"))?;
+    Ok(directory)
+}
+
+/// S043-R5: the P03-R11 scalar and P03-R12 local collection/combination owning
+/// repairs survive the genuine authored loader, checked preparation and v2
+/// projection, and the repaired members are retained on the finalized graph.
+#[test]
+fn example_workspace_owning_forms_survive_real_preparation_and_projection()
+-> Result<(), Box<dyn Error>> {
+    let repository = example_fixture()?;
+    let otp = repository.path().join("eqm/contracts/auth.signup.otp.toml");
+    let text = fs::read_to_string(&otp)?;
+    fs::write(
+        &otp,
+        text.replace(
+            "\"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"",
+            "\"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"\nprefix = \"card\"",
+        ),
+    )?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let graph = session.finalized().graph();
+
+    // RF66: the owning single-segment prefix is retained on the genuine pin.
+    let otp_surface = graph
+        .surfaces()
+        .get(&eqm_domain::SurfaceId::new("account.create.signup.otp")?)
+        .ok_or("otp surface")?;
+    let fragment_use = otp_surface
+        .fragments()
+        .iter()
+        .next()
+        .ok_or("fragment use")?;
+    assert_eq!(
+        fragment_use
+            .prefix()
+            .map(eqm_domain::LocalRequirementId::as_str),
+        Some("card")
+    );
+
+    // RF67: the genuine ordered journey collection is retained.
+    let journey = graph
+        .journeys()
+        .get(&eqm_domain::JourneyId::new("account.create.signup")?)
+        .ok_or("journey")?;
+    assert_eq!(journey.surfaces().len(), 2);
+
+    // RF67: a local runner retains no guarantees and the fixed PATH binding
+    // retains no literal value.
+    let runner = graph
+        .runners()
+        .values()
+        .find(|runner| runner.id().as_str() == "runner.ios")
+        .ok_or("runner.ios")?;
+    assert_eq!(runner.backend(), eqm_domain::RunnerBackend::Local);
+    assert!(runner.guarantees().is_empty());
+    let environment = runner.environment().values().next().ok_or("environment")?;
+    assert_eq!(environment.name().as_str(), "PATH");
+    assert_eq!(
+        environment.source(),
+        &eqm_domain::EnvironmentSource::TrustedPath
+    );
+
+    // RF67: the policy selector axis and coherent waiver duration are retained.
+    let policy = graph
+        .policies()
+        .values()
+        .find(|policy| policy.id().as_str() == "consumer.critical_flow")
+        .ok_or("policy")?;
+    assert!(
+        policy
+            .rules()
+            .iter()
+            .all(|rule| rule.selector().risk_classes().is_some()),
+        "policy selector axis must be retained"
+    );
+    assert!(policy.waivers().maximum_days().is_some());
+
+    // RF67: the user-visible view artifact retains its surface locator.
+    let artifact = graph
+        .bindings()
+        .values()
+        .find(|binding| binding.id().as_str() == "binding.ios.auth_signup")
+        .and_then(|binding| binding.artifacts().values().values().next())
+        .ok_or("artifact")?;
+    assert!(artifact.surface().is_some());
+
+    // The genuine v2 projection remains complete and order-preserving.
+    let projected = eqm_manifest::project_graph_v2(session.finalized())?;
+    assert_eq!(
+        projected["journeys"][0]["surfaces"]
+            .as_array()
+            .map(Vec::len),
+        Some(2)
+    );
+    Ok(())
+}
+
 fn evaluation_time() -> Result<eqm_domain::UtcInstant, Box<dyn Error>> {
     Ok("2026-01-02T03:04:05Z".parse()?)
 }

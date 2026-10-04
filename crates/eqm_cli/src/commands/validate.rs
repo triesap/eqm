@@ -500,4 +500,148 @@ mod tests {
         );
         Ok(())
     }
+
+    /// S043-R5: the P03-R11 scalar and P03-R12 local collection/combination
+    /// owning repairs are exercised through the public CLI over the genuine
+    /// authored Android/iOS example workspace, with the unmutated workspace as
+    /// a positive control. Every negative mutates exactly one axis.
+    #[test]
+    fn example_workspace_owning_parity_boundaries_are_admitted_and_diagnosed()
+    -> Result<(), Box<dyn Error>> {
+        fn mutate(relative: &str, mutate: impl Fn(&str) -> String) -> Result<u8, Box<dyn Error>> {
+            let repository = crate::test_support::example_repository()?;
+            let path = repository.path().join(relative);
+            let text = fs::read_to_string(&path)?;
+            fs::write(&path, mutate(&text))?;
+            run_validate(repository.path())
+        }
+
+        fn before(text: &str, marker: &str) -> String {
+            text.split_once(marker)
+                .map_or_else(|| text.to_owned(), |(head, _)| head.to_owned())
+        }
+
+        assert_eq!(
+            run_validate(crate::test_support::example_repository()?.path())?,
+            0,
+            "genuine example workspace denied"
+        );
+
+        // RF66: the optional fragment prefix is the owning single segment.
+        assert_eq!(
+            mutate("eqm/contracts/auth.signup.otp.toml", |text| {
+                text
+                .replace(
+                    "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"",
+                    "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"\nprefix = \"card\""
+                )
+            })?,
+            0,
+            "valid fragment prefix denied"
+        );
+        assert_eq!(
+            mutate("eqm/contracts/auth.signup.otp.toml", |text| {
+                text
+                .replace(
+                    "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"",
+                    "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"\nprefix = \"Bad Prefix\""
+                )
+            })?,
+            3,
+            "invalid fragment prefix admitted"
+        );
+
+        // RF67: journey surfaces nonempty.
+        assert_eq!(
+            mutate("eqm/contracts/auth.signup.toml", |text| text.replace(
+                "surfaces = [\"account.create.signup.identifier\", \"account.create.signup.otp\"]",
+                "surfaces = []"
+            ))?,
+            3,
+            "empty journey surfaces admitted"
+        );
+
+        // RF67: surface composition requires at least one requirement or pin.
+        assert_eq!(
+            mutate("eqm/contracts/auth.signup.identifier.toml", |text| before(
+                text,
+                "[[requirements]]"
+            ))?,
+            3,
+            "empty surface composition admitted"
+        );
+
+        // Requirement provider presence follows its scope.
+        assert_eq!(
+            mutate("eqm/contracts/auth.signup.identifier.toml", |text| text
+                .replace(
+                    "scope = \"each_target\"",
+                    "scope = \"shared_provider\""
+                ))?,
+            3,
+            "shared_provider scope without provider admitted"
+        );
+
+        // Policy selector requires at least one axis.
+        assert_eq!(
+            mutate("eqm/policies/consumer.critical_flow.toml", |text| text
+                .replace(
+                    "[rules.selector]\nrisk_classes = [\"high\", \"critical\"]\n",
+                    ""
+                ))?,
+            3,
+            "empty policy selector admitted"
+        );
+
+        // Waiver `allowed` requires `maximum_days`.
+        assert_eq!(
+            mutate("eqm/policies/consumer.critical_flow.toml", |text| text
+                .replace("maximum_days = 30\n", ""))?,
+            3,
+            "allowed waiver without maximum_days admitted"
+        );
+
+        // A local runner claims no guarantees.
+        assert_eq!(
+            mutate("eqm/runners/runner.ios.toml", |text| text.replace(
+                "[[environment]]",
+                "guarantees = [\"isolated_process\"]\n\n[[environment]]"
+            ))?,
+            3,
+            "local runner guarantee admitted"
+        );
+
+        // A fixed-name source forbids a literal value.
+        assert_eq!(
+            mutate("eqm/runners/runner.ios.toml", |text| text.replace(
+                "name = \"PATH\"\nsource = \"trusted_path\"",
+                "name = \"PATH\"\nsource = \"trusted_path\"\nvalue = \"/usr/bin\""
+            ))?,
+            3,
+            "fixed source with literal value admitted"
+        );
+
+        // A user-visible artifact requires a locator.
+        assert_eq!(
+            mutate("eqm/bindings/ios.auth_signup.toml", |text| {
+                text.replace(
+                "path = \"apps/ios/Signup/Sources/SignupView.swift\"\nsurface = \"account.create.signup.identifier\"",
+                "path = \"apps/ios/Signup/Sources/SignupView.swift\""
+            )
+            })?,
+            3,
+            "user-visible artifact without locator admitted"
+        );
+
+        // An evidence kind is compatible with its runner and selector.
+        assert_eq!(
+            mutate("eqm/bindings/ios.auth_signup.toml", |text| text.replace(
+                "kind = \"test\"\nrequirements",
+                "kind = \"manual_review\"\nrequirements"
+            ))?,
+            3,
+            "manual_review with runner admitted"
+        );
+        Ok(())
+    }
 }
