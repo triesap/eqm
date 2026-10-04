@@ -1,31 +1,26 @@
 # Verification and implementation status
 
-Latest-batch status: P03-R8, P03-R9, P03-R10 and S043-R4 are implemented and
-locally verified; no acceptance change. Independent Codex P03 acceptance before
-S044 remains pending under the DEV-022 decisions.
+Codex independently reviewed clean `00bec96b0e97c09898975700bbd1790c0c27de79`.
+Two returned attempts completed P03-R8/R9/R10/S043-R4; all four commits retained.
+RF65 accepted for allocated scope; **42 previously accepted numbered steps**
+preserved. S043/P03 remain changes-required: RF66 wrong owning fragment prefix
+type; RF67 missing local journey/surface collection conditions. RF45 partial;
+whole RA02/RA13 remain open. No new numbered acceptance or release readiness.
 
-Codex independently reviewed clean `1836b3512272a78b28f7548debd2a61f4ebbfd84`.
-The returned run completed all three DEV-020 checkpoints plus ledger backfill and
-correctly stopped for review. Four commits retained; S041 and allocated RF53/
-RF59/RF61/RF62/RF63/RF64 corrections accepted; **42 numbered steps accepted**,
-including all 41 previous acceptances. Whole RA02/RA13 remain open.
+Current sole amendment DEV-025: **P03-R11 → P03-R12 → P03-R13 → S043-R5**.
+Actual owning-type audit/repairs, local collection audit/repairs, differential
+corpus and full consumer/original cycle exit precede independent P03 acceptance
+and S044. See [review](reports/CODEX-00bec96.md) and [plan](COMMIT_SEQUENCE.md).
+Pi records implementation/verification; acceptance is Codex-owned.
+Original 64 R/AC,21 RA,Q01–Q15,S211 unchanged; P04–P15 remain unfinished.
 
-S043/P03 remain changes-required. RF65: graph scenario subject references still
-admit invalid IDs; source-root collections admit empty roots. RF45 graph parity
-remains partial. All four DEV-022 checkpoints **P03-R8 → S043-R4** are
-implemented and locally verified; the remaining gate is independent P03
-acceptance and S044.
-See [review](reports/CODEX-1836b35.md) and [plan](COMMIT_SEQUENCE.md). Pi records
-implementation/verification; acceptance is Codex-owned. P04–P15 pending.
-Original 64 R/AC,21 RA,Q01–Q15 and S211 unchanged.
-
-Independent standard passed **738 successful test executions**, owning doctests
-**9**, structure/diff checks passed. Isolated probe establishes three remaining
-mismatches, not feature correctness. v1 schemas and Cargo.lock unchanged. No Codex
-production source/test edits. Startup/runtime evidence remains external.
+Independent standard passed766 successful test executions, owning doctests9;
+structure/diff checks passed. Two isolated tests reproduce four mismatches;
+helper tests alone do not establish full parity. v1 schemas/Cargo.lock unchanged.
+No Codex production code/test edits. Native run details retained externally.
 
 No release or human release-testing gate reached. Full verify/Linux/coverage/
-mutation/fuzz/benchmark/package and live product/crypto/host/signing/operational
+mutation/fuzz/benchmark/package/live product/crypto/host/signing/operational
 acceptance unverified. Unrun local automation is not inherently hardware-blocked;
-real Q02/Q06 facts and activation authority remain separate. No publication,
+Q02/Q06 facts and activation authority remain separate. No publication,
 deployment, signing or optional-native activation authorization.

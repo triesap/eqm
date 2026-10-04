@@ -1,14 +1,77 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
-## Execution revalidation — 2026-10-03
+## DEV-025 — Complete actual owning-rule parity before P03 acceptance
 
-The latest issued batch has no matching returned run or subsequent product delta
-available for review. No new acceptance is granted. DEV-022 remains the sole
-technical amendment: all four P03-R8/P03-R9/P03-R10/S043-R4 checkpoints remain
-pending under its settled decisions. Preserve 42 accepted numbered steps and
-all original criteria; independent P03 acceptance must precede S044. Previously
-reviewed implementation remains retained. Reconcile any implementation located
-elsewhere before duplicating it; preserve rather than overwrite that work.
+**Date/author:** 2026-10-04, Codex under owner delegation.
+**Reviewed candidate:** `00bec96b0e97c09898975700bbd1790c0c27de79`.
+[Independent review](reports/CODEX-00bec96.md) retains all four returned commits
+and accepts RF65 for its allocated scope. Preserve all 42 numbered acceptances.
+RF66 wrong fragment prefix type and RF67 omitted local collection conditions are
+independently reproduced. RF45 remains partial; S043/P03 changes-required.
+All original 64 R/AC,21 RA,Q01–Q15,S211 and prior accepted authority/identity
+behavior remain unchanged. This is the current binding amendment, retaining
+DEV-022 and earlier technical decisions except the frontier replaced here.
+The previously missing returned run has now been matched across two attempts.
+
+Execute **P03-R11 → P03-R12 → P03-R13 → S043-R5**, **pfc through EQM-P03**.
+Endpoint S043-R5 inclusive; continue every eligible checkpoint after each green
+commit. Independent P03 acceptance must precede S044: this hard integration gate
+justifies the endpoint. No ordinary engineering decision remains owner-blocked.
+
+### P03-R11 — Actual owning types and scalar parity
+
+Commit `fix: align graph scalar schemas with owning types`.
+Repair RF66: FragmentUse prefix is Option<LocalRequirementId>, not SelectorText.
+Preserve owning vocabulary, optionality and accepted maxima. Read actual field
+carriers/constructors/projections and correct analogous type/constraint mappings
+throughout the existing introduced authored/graph/comparison audit. Repair every
+approved-scope schema-expressible discrepancy discovered, not just this probe.
+Add exact-field literal positives/negatives run through real schema validation
+and the corresponding owning API. No domain loosening or new wire/policy fields.
+
+### P03-R12 — Local collection and combination parity
+
+Commit `fix: enforce owning graph collection invariants`.
+Repair RF67. Journey surfaces remain ordered but must be nonempty and unique;
+minItems and uniqueItems do not require sorting. Surface composition requires
+at least one requirement or fragment origin; preserve owning direct-only,
+fragment-only and combined valid forms. Use faithful local alternatives, not
+requirements that both collections be populated. Audit and repair analogous
+locally expressible cardinality, uniqueness and conditional-presence rules.
+Local multi-field rules must not be mislabeled unexpressible relationships.
+Genuine referential integrity, NFC, Unicode-byte counts, token distinctions and
+normalized collisions remain separate owning layers where appropriate. Test
+same-input positive and one-axis negative owning/schema counterparts.
+
+### P03-R13 — Differential corpus grounded in actual owners
+
+Commit `test: prove schema parity against owning consumers`.
+Complete the field/variant matrix required by DEV-022 using actual typed APIs or
+checked loaders for each applicable owning rule. Schema-only helper assertions
+and copying the schema expectation into a test do not prove parity. Establish
+a genuinely finalized positive graph counterpart and document precise layers
+for intentionally different wire/projection values. Map every audit row to its
+actual owner/source anchor and executed case, including optional prefix, ordered
+journey collection and surface alternatives. Preserve independent literal bytes/
+digests, v1 controls and all prior adversarial regressions. Repair additional
+approved-scope omissions found during the differential audit within this batch.
+Do not implement later trust/evaluator semantics early.
+
+### S043-R5 — Real consumers and full original cycle exit
+
+Commit `test: verify owning P03 consumer parity end to end`.
+Exercise repairs through actual owning projection, checked loader/preparation and
+public CLI boundaries wherever those inputs are authored/consumed. Graph-only
+projections require genuine owning construction/canonical consumer controls;
+do not invent an authored field merely to route a test. Retain original
+asymmetric ownership, actor/build, N/N+1 cohort, exact revision/configuration/
+context, component mutation and literal-oracle obligations. Execute every
+original S039/S041/S043 and P03 exit lane, affected tests/doctests, standard gate,
+schema parity and package structure validation. Regenerate from source atomically;
+retain v1 bytes and original criteria. Update reports/progress before final gates,
+retain failures and explicit skipped checks. Independent acceptance stays Codex's.
+No private tracker/session/handoff metadata belongs in this public repository.
+No publication, signing, deployment or optional-native activation is authorized.
 
 ## DEV-022 — Complete every owning field before P03 acceptance
 

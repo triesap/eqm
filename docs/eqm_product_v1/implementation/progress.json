@@ -3415,18 +3415,18 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "independent_P03_review_before_S044",
+ "next_checkpoint": "P03-R11",
  "supervisor_review": {
-  "source_commit": "1836b3512272a78b28f7548debd2a61f4ebbfd84",
-  "report": "implementation/reports/CODEX-1836b35.md",
-  "status": "42_numbered_steps_accepted;S043_changes_required;P03_gate_not_passed",
-  "amendment": "DEV-022",
-  "standard_check": "passed_738_test_executions",
+  "source_commit": "00bec96b0e97c09898975700bbd1790c0c27de79",
+  "report": "implementation/reports/CODEX-00bec96.md",
+  "status": "42_previous_numbered_acceptances_preserved;RF65_allocated_accepted;S043_changes_required;P03_gate_not_passed",
+  "amendment": "DEV-025",
+  "standard_check": "passed_766_test_executions",
   "doctests": "passed_9",
   "release_candidate": false,
-  "next_checkpoint": "independent_P03_review_before_S044"
+  "next_checkpoint": "P03-R11"
  },
- "execution_target": "P03-R8 through S043-R4 implemented and locally verified; independent Codex P03 acceptance before S044; full MVP S211 remains",
+ "execution_target": "P03-R11 through S043-R5 inclusive, independent P03 acceptance before S044; full MVP S211 remains",
  "supervisor_findings": [
   {
    "id": "RF01",
@@ -4106,50 +4106,66 @@
   {
    "id": "RF65",
    "priority": "P2",
-   "status": "implemented_verified_pending_codex_acceptance",
+   "status": "accepted_for_allocated_scope",
    "owner": "S043",
    "checkpoint": "P03-R8",
    "summary": "Nested scenario subject vocabulary and source-root cardinality absent; field-complete parity unfinished",
    "report": "implementation/reports/CODEX-1836b35.md",
    "closure_report": "implementation/reports/P03-R8.md",
-   "completion_report": "implementation/reports/P03-R9.md"
+   "completion_report": "implementation/reports/P03-R9.md",
+   "supervisor_report": "implementation/reports/CODEX-00bec96.md"
+  },
+  {
+   "id": "RF66",
+   "priority": "P2",
+   "status": "open",
+   "owner": "S043",
+   "checkpoint": "P03-R11",
+   "summary": "FragmentUse prefix uses selector text instead of owning LocalRequirementId",
+   "report": "implementation/reports/CODEX-00bec96.md"
+  },
+  {
+   "id": "RF67",
+   "priority": "P2",
+   "status": "open",
+   "owner": "S043",
+   "checkpoint": "P03-R12",
+   "summary": "Graph schemas omit ordered journey cardinality/uniqueness and local surface composition alternatives",
+   "report": "implementation/reports/CODEX-00bec96.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
- "supervisor_amendment": "DEV-022",
+ "supervisor_amendment": "DEV-025",
  "batch_checkpoint_order": [
-  "P03-R8",
-  "P03-R9",
-  "P03-R10",
-  "S043-R4"
+  "P03-R11",
+  "P03-R12",
+  "P03-R13",
+  "S043-R5"
  ],
  "first_unfinished_original_step": "S043",
  "supervisor_batch": {
-  "amendment": "DEV-022",
-  "endpoint": "S043-R4",
+  "amendment": "DEV-025",
+  "endpoint": "S043-R5",
   "command": "pfc through EQM-P03",
   "checkpoints": [
    {
-    "id": "P03-R8",
-    "status": "implemented_verified_pending_codex_acceptance",
-    "commit_sha": "4b6e86e022ceaf377f065a19a18986ef6bc51975",
+    "id": "P03-R11",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    },
    {
-    "id": "P03-R9",
-    "status": "implemented_verified_pending_codex_acceptance",
-    "commit_sha": "7889bc6cf53de22086c1d4a7ec70ec293b15c1ec",
+    "id": "P03-R12",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    },
    {
-    "id": "P03-R10",
-    "status": "implemented_verified_pending_codex_acceptance",
-    "commit_sha": "f1419e43d4662339f6a52cd0bd73101cb9e5665d",
+    "id": "P03-R13",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    },
    {
-    "id": "S043-R4",
-    "status": "implemented_verified_pending_codex_acceptance",
+    "id": "S043-R5",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    }
   ]
@@ -4312,6 +4328,51 @@
   ]
  },
  "execution_revalidation": {
+  "date": "2026-10-04",
+  "source_commit": "00bec96b0e97c09898975700bbd1790c0c27de79",
+  "status": "two_returned_attempts_matched_and_independently_reviewed",
+  "technical_amendment": "DEV-025",
+  "next_checkpoint": "P03-R11",
+  "remaining_checkpoints": [
+   "P03-R11",
+   "P03-R12",
+   "P03-R13",
+   "S043-R5"
+  ],
+  "preserve_accepted_numbered_steps": 42
+ },
+ "prior_returned_batch_DEV022": {
+  "amendment": "DEV-022",
+  "endpoint": "S043-R4",
+  "command": "pfc through EQM-P03",
+  "checkpoints": [
+   {
+    "id": "P03-R8",
+    "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "4b6e86e022ceaf377f065a19a18986ef6bc51975",
+    "supervisor_status": "retained_partial_P03_changes_required"
+   },
+   {
+    "id": "P03-R9",
+    "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "7889bc6cf53de22086c1d4a7ec70ec293b15c1ec",
+    "supervisor_status": "retained_partial_P03_changes_required"
+   },
+   {
+    "id": "P03-R10",
+    "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "f1419e43d4662339f6a52cd0bd73101cb9e5665d",
+    "supervisor_status": "retained_partial_P03_changes_required"
+   },
+   {
+    "id": "S043-R4",
+    "status": "implemented_verified_pending_codex_acceptance",
+    "supervisor_status": "retained_partial_P03_changes_required",
+    "commit_sha": "00bec96b0e97c09898975700bbd1790c0c27de79"
+   }
+  ]
+ },
+ "prior_execution_revalidation_DEV023": {
   "date": "2026-10-03",
   "source_commit": "0c23e6941300bf89137f5fd0b62dd53fdb8a9ff9",
   "status": "latest_returned_run_not_located_no_product_delta_no_acceptance_change",
