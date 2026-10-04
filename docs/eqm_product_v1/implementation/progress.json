@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S043",
  "implementation": "in_progress",
- "local_verification": "independent_738_standard_9_doctests;42_numbered_accepted;P03-R8_verified;P03-R9_field_complete_audit_verified;P03-R10_verified;P03-R11_scalar_parity_verified;P03-R12_collection_combination_parity_verified;P03_not_accepted;not_release_ready",
+ "local_verification": "independent_738_standard_9_doctests;42_numbered_accepted;P03-R8_verified;P03-R9_field_complete_audit_verified;P03-R10_verified;P03-R11_scalar_parity_verified;P03-R12_collection_combination_parity_verified;P03-R13_differential_owning_corpus_verified;P03_not_accepted;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -3415,7 +3415,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P03-R13",
+ "next_checkpoint": "S043-R5",
  "supervisor_review": {
   "source_commit": "00bec96b0e97c09898975700bbd1790c0c27de79",
   "report": "implementation/reports/CODEX-00bec96.md",
@@ -3424,7 +3424,7 @@
   "standard_check": "passed_766_test_executions",
   "doctests": "passed_9",
   "release_candidate": false,
-  "next_checkpoint": "P03-R13"
+  "next_checkpoint": "S043-R5"
  },
  "execution_target": "P03-R11 through S043-R5 inclusive, independent P03 acceptance before S044; full MVP S211 remains",
  "supervisor_findings": [
@@ -4157,11 +4157,12 @@
    {
     "id": "P03-R12",
     "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "3aa5ab23ef7064a74f8f3cf3da214d37fe8d224e",
     "supervisor_status": "not_accepted"
    },
    {
     "id": "P03-R13",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    },
    {
@@ -4333,7 +4334,7 @@
   "source_commit": "00bec96b0e97c09898975700bbd1790c0c27de79",
   "status": "two_returned_attempts_matched_and_independently_reviewed",
   "technical_amendment": "DEV-025",
-  "next_checkpoint": "P03-R13",
+  "next_checkpoint": "S043-R5",
   "remaining_checkpoints": [
    "P03-R11",
    "P03-R12",

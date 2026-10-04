@@ -141,6 +141,86 @@ fn semantic_graph_validator() -> Result<Validator, Box<dyn Error>> {
         .build(&schema)?)
 }
 
+fn copy_directory(
+    source: &std::path::Path,
+    destination: &std::path::Path,
+) -> Result<(), Box<dyn Error>> {
+    std::fs::create_dir_all(destination)?;
+    for entry in std::fs::read_dir(source)? {
+        let entry = entry?;
+        let target = destination.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_directory(&entry.path(), &target)?;
+        } else {
+            std::fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
+}
+
+/// A genuine finalized graph produced by the real authored loader from the
+/// repository's complete example workspace, not a hand-authored JSON fixture.
+fn example_workspace_finalized() -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(std::path::Path::parent)
+        .ok_or("workspace root unavailable")?
+        .join("examples/android-ios");
+    let repository = tempfile::tempdir()?;
+    copy_directory(&source, repository.path())?;
+    std::fs::create_dir(repository.path().join(".git"))?;
+    let loaded = eqm_manifest::load_workspace(repository.path(), None)?;
+    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
+        loaded.into_graph_input(),
+    )?))
+}
+
+/// The real loader output projects a genuinely finalized positive graph that the
+/// committed schema accepts, with the owning collections actually present.
+#[test]
+fn example_workspace_projection_is_a_genuine_finalized_positive_graph() -> Result<(), Box<dyn Error>>
+{
+    let validator = semantic_graph_validator()?;
+    let finalized = example_workspace_finalized()?;
+    let projected = project_graph_v2(&finalized)?;
+    assert!(
+        validator.is_valid(&projected),
+        "genuine loader projection failed the committed schema: {projected}"
+    );
+    for (name, expected) in [
+        ("capabilities", 1),
+        ("journeys", 1),
+        ("surfaces", 2),
+        ("fragments", 1),
+        ("bindings", 2),
+        ("policies", 1),
+        ("profiles", 1),
+        ("runners", 2),
+        ("waivers", 1),
+    ] {
+        assert_eq!(
+            projected[name].as_array().map(Vec::len),
+            Some(expected),
+            "genuine projection {name}"
+        );
+    }
+    // The projection's canonical bytes and domain-separated identity are the
+    // exact one-line JCS bytes and `SemanticGraphV2Digest` over them, pinned to
+    // an independent literal oracle captured from the real loader output.
+    let canonical = canonicalize_graph_v2(&finalized)?;
+    assert_eq!(
+        canonical.digest().to_string(),
+        "sha256:77b92a2ee835a37d9a7ad243d3f7914ecf0578cab54249b8f8d87e50f877c5dd"
+    );
+    assert_eq!(
+        canonical.digest(),
+        SemanticGraphV2Digest::hash_content(canonical.bytes())
+    );
+    let value: serde_json::Value = serde_json::from_slice(canonical.bytes())?;
+    assert_eq!(serde_json_canonicalizer::to_vec(&value)?, canonical.bytes());
+    Ok(())
+}
+
 #[test]
 fn v2_graph_projection_conforms_to_real_draft_2020_12_schema() -> Result<(), Box<dyn Error>> {
     let validator = semantic_graph_validator()?;

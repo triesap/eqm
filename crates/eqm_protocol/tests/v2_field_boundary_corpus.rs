@@ -10,14 +10,16 @@
 //! Schema.
 
 use eqm_domain::{
-    AdapterId, Applicability, ArtifactId, BindingId, CapabilityId, DimensionId, EnvironmentBinding,
-    EnvironmentName, EnvironmentSource, EvidenceSpecId, Extensions, Facet, FragmentId, FragmentUse,
-    FullRequirementId, Journey, JourneyId, LifecycleStatus, LocalRequirementId, OccurrenceId,
-    OwnerRef, ParticipationRuleId, PlatformId, PolicyId, PolicySelector, PositiveCount,
-    PositiveDays, ProfileId, ProviderId, RepoPath, RepositoryIdentity, Requirement,
-    RequirementLevel, RequirementScope, RequirementStatement, Revision, RiskClass, RoleId,
-    RunnerId, ScenarioId, SelectorText, SourceComponentId, Surface, SurfaceId, SymbolicValueId,
-    TargetId, Title, UnitId, WaiverId, WaiverPolicy,
+    AdapterId, Applicability, Artifact, ArtifactId, ArtifactRole, BindingId, CapabilityId,
+    DimensionId, DurationMillis, EnvironmentBinding, EnvironmentName, EnvironmentSource,
+    EvidenceKind, EvidenceSelector, EvidenceSpecId, EvidenceSpecification, Extensions, Facet,
+    FragmentId, FragmentUse, FullRequirementId, Journey, JourneyId, LifecycleStatus,
+    LocalRequirementId, OccurrenceId, OwnerRef, ParticipationRuleId, PlatformId, PolicyId,
+    PolicySelector, PositiveCount, PositiveDays, ProfileId, ProviderId, ReleaseChannel, RepoPath,
+    RepositoryIdentity, Requirement, RequirementLevel, RequirementScope, RequirementStatement,
+    Revision, RiskClass, RoleId, RunnerBackend, RunnerDefinition, RunnerGuarantee, RunnerId,
+    RunnerLimits, RunnerProgram, ScenarioId, SelectorText, SourceComponentId, Surface, SurfaceId,
+    SymbolicValueId, TargetId, Title, UnitId, WaiverId, WaiverPolicy, WorkingDirectoryTemplate,
 };
 use eqm_protocol::schema_graph_v2::ComparisonContextV2Dto;
 use jsonschema::{Draft, Validator};
@@ -1077,6 +1079,326 @@ fn owning_surface_composition_ok(
         Extensions::default(),
     )
     .is_ok())
+}
+
+fn owning_requirement_scope_provider_ok(scope: &str, provider: Option<&str>) -> bool {
+    let build = || -> Option<()> {
+        let scope = match scope {
+            "each_target" => RequirementScope::EachTarget,
+            "shared_provider" => RequirementScope::SharedProvider,
+            "end_to_end" => RequirementScope::EndToEnd,
+            _ => return None,
+        };
+        let provider = match provider {
+            None => None,
+            Some(value) => Some(ProviderId::new(value).ok()?),
+        };
+        Requirement::new(
+            LocalRequirementId::new("create").ok()?,
+            RequirementLevel::Required,
+            scope,
+            RequirementStatement::new("statement").ok()?,
+            vec![Facet::Behavior],
+            Applicability::always(true),
+            None,
+            provider,
+            Extensions::default(),
+        )
+        .ok()?;
+        Some(())
+    };
+    build().is_some()
+}
+
+fn owning_runner_backend_guarantees_ok(backend: &str, guarantees: &[&str]) -> bool {
+    let build = || -> Option<()> {
+        let backend = match backend {
+            "local" => RunnerBackend::Local,
+            "container" => RunnerBackend::Container,
+            _ => return None,
+        };
+        let mut parsed = Vec::new();
+        for guarantee in guarantees {
+            parsed.push(match *guarantee {
+                "network_denied" => RunnerGuarantee::NetworkDenied,
+                "read_only_source" => RunnerGuarantee::ReadOnlySource,
+                "isolated_process" => RunnerGuarantee::IsolatedProcess,
+                "resource_limited" => RunnerGuarantee::ResourceLimited,
+                _ => return None,
+            });
+        }
+        RunnerDefinition::new(
+            RunnerId::new("runner.local").ok()?,
+            Revision::new(1).ok()?,
+            vec!["owner://team/quality".parse::<OwnerRef>().ok()?],
+            backend,
+            RunnerProgram::Repository(RepoPath::new("tools/runner").ok()?),
+            Vec::new(),
+            Some(WorkingDirectoryTemplate::TargetRoot),
+            Vec::new(),
+            Vec::new(),
+            RunnerLimits::new(
+                DurationMillis::new(1_000).ok()?,
+                PositiveCount::new(1).ok()?,
+                None,
+            )
+            .ok()?,
+            parsed,
+            Extensions::default(),
+        )
+        .ok()?;
+        Some(())
+    };
+    build().is_some()
+}
+
+fn owning_artifact_role_locator_ok(role: &str, has_locator: bool) -> bool {
+    let build = || -> Option<()> {
+        let role = match role {
+            "entrypoint" => ArtifactRole::Entrypoint,
+            "view" => ArtifactRole::View,
+            "route" => ArtifactRole::Route,
+            "component" => ArtifactRole::Component,
+            "service" => ArtifactRole::Service,
+            "test" => ArtifactRole::Test,
+            "configuration" => ArtifactRole::Configuration,
+            "asset" => ArtifactRole::Asset,
+            _ => return None,
+        };
+        let surface = if has_locator {
+            Some(SurfaceId::new("account.create.flow.home").ok()?)
+        } else {
+            None
+        };
+        Artifact::new(
+            ArtifactId::new("entry").ok()?,
+            role,
+            RepoPath::new("apps/web/main.rs").ok()?,
+            surface,
+            None,
+            None,
+            Extensions::default(),
+        )
+        .ok()?;
+        Some(())
+    };
+    build().is_some()
+}
+
+fn owning_evidence_selector(kind: &str) -> Option<EvidenceSelector> {
+    Some(match kind {
+        "symbol" => EvidenceSelector::Symbol {
+            name: SelectorText::new("main").ok()?,
+            language: None,
+        },
+        "route" => EvidenceSelector::Route {
+            path: SelectorText::new("/home").ok()?,
+            method: None,
+        },
+        "inventory" => EvidenceSelector::Inventory {
+            record_type: SelectorText::new("asset").ok()?,
+            key: SelectorText::new("logo").ok()?,
+            value: None,
+        },
+        "test" => EvidenceSelector::Test {
+            framework: SelectorText::new("cargo").ok()?,
+            test_id: SelectorText::new("probe").ok()?,
+            suite: None,
+        },
+        "snapshot" => EvidenceSelector::Snapshot {
+            snapshot_id: SelectorText::new("snap-1").ok()?,
+            variant: None,
+        },
+        "release" => EvidenceSelector::Release {
+            channel: ReleaseChannel::Beta,
+        },
+        _ => return None,
+    })
+}
+
+fn owning_evidence_spec_ok(
+    kind: &str,
+    runner: bool,
+    selector: Option<&str>,
+    minimum_count: bool,
+) -> bool {
+    let build = || -> Option<()> {
+        let kind = match kind {
+            "structural_check" => EvidenceKind::StructuralCheck,
+            "static_inventory" => EvidenceKind::StaticInventory,
+            "test" => EvidenceKind::Test,
+            "snapshot" => EvidenceKind::Snapshot,
+            "manual_review" => EvidenceKind::ManualReview,
+            "runtime_snapshot" => EvidenceKind::RuntimeSnapshot,
+            "release_record" => EvidenceKind::ReleaseRecord,
+            _ => return None,
+        };
+        let runner = if runner {
+            Some(RunnerId::new("runner.local").ok()?)
+        } else {
+            None
+        };
+        let selector = match selector {
+            None => None,
+            Some(kind) => owning_evidence_selector(kind),
+        };
+        let minimum_count = if minimum_count {
+            Some(PositiveCount::new(1).ok()?)
+        } else {
+            None
+        };
+        EvidenceSpecification::new(
+            EvidenceSpecId::new("probe").ok()?,
+            kind,
+            vec![FullRequirementId::new("account.create#create").ok()?],
+            vec![Facet::Behavior],
+            runner,
+            selector,
+            minimum_count,
+            None,
+            Extensions::default(),
+        )
+        .ok()?;
+        Some(())
+    };
+    build().is_some()
+}
+
+fn selector_document(kind: &str) -> Value {
+    match kind {
+        "symbol" => json!({"kind": "symbol", "name": "main"}),
+        "route" => json!({"kind": "route", "path": "/home"}),
+        "inventory" => json!({"kind": "inventory", "record_type": "asset", "key": "logo"}),
+        "test" => json!({"kind": "test", "framework": "cargo", "test_id": "probe"}),
+        "snapshot" => json!({"kind": "snapshot", "snapshot_id": "snap-1"}),
+        "release" => json!({"kind": "release", "channel": "beta"}),
+        other => json!({"kind": other}),
+    }
+}
+
+fn evidence_document(
+    kind: &str,
+    runner: bool,
+    selector: Option<&str>,
+    minimum_count: bool,
+) -> Value {
+    let mut object = serde_json::Map::new();
+    object.insert("id".to_owned(), json!("probe"));
+    object.insert("kind".to_owned(), json!(kind));
+    object.insert("requirements".to_owned(), json!(["account.create#create"]));
+    object.insert("facets".to_owned(), json!(["behavior"]));
+    if runner {
+        object.insert("runner".to_owned(), json!("runner.local"));
+    }
+    if let Some(kind) = selector {
+        object.insert("selector".to_owned(), selector_document(kind));
+    }
+    if minimum_count {
+        object.insert("minimum_count".to_owned(), json!(1));
+    }
+    object.insert("extensions".to_owned(), json!({}));
+    Value::Object(object)
+}
+
+/// Differential parity for the remaining P03-R12 owning rules: the committed
+/// schema decision for one document equals the decision of the actual
+/// `eqm_domain` constructor for the same fields.
+#[test]
+fn owning_consumer_parity_for_requirement_runner_artifact_and_evidence()
+-> Result<(), Box<dyn Error>> {
+    let v = graph_validator()?;
+    let base = graph_document();
+
+    for (scope, provider) in [
+        ("shared_provider", Some("provider.mailgun")),
+        ("shared_provider", None),
+        ("each_target", Some("provider.mailgun")),
+        ("each_target", None),
+        ("end_to_end", Some("provider.mailgun")),
+        ("end_to_end", None),
+    ] {
+        let mut requirement = requirement();
+        requirement["scope"] = json!(scope);
+        match provider {
+            Some(provider) => requirement["provider"] = json!(provider),
+            None => {
+                requirement
+                    .as_object_mut()
+                    .ok_or("requirement")?
+                    .remove("provider");
+            }
+        }
+        let document = mutated(&base, "/surfaces/0/requirements/0", requirement.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_requirement_scope_provider_ok(scope, provider),
+            "requirement scope/provider {scope}/{provider:?}"
+        );
+    }
+
+    for (backend, guarantees) in [
+        ("local", &[][..]),
+        ("local", &["isolated_process"][..]),
+        ("container", &[][..]),
+        ("container", &["isolated_process"][..]),
+    ] {
+        let mut runner = base["runners"][0].clone();
+        runner["backend"] = json!(backend);
+        runner["guarantees"] = json!(guarantees);
+        let document = mutated(&base, "/runners/0", runner.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_runner_backend_guarantees_ok(backend, guarantees),
+            "runner backend/guarantees {backend}/{guarantees:?}"
+        );
+    }
+
+    for (role, has_locator) in [
+        ("entrypoint", true),
+        ("entrypoint", false),
+        ("view", false),
+        ("service", false),
+        ("asset", false),
+    ] {
+        let mut artifact = artifact();
+        artifact["role"] = json!(role);
+        if !has_locator {
+            for key in ["surface", "symbol", "selector"] {
+                artifact.as_object_mut().ok_or("artifact")?.remove(key);
+            }
+        }
+        let document = mutated(&base, "/bindings/0/artifacts/0", artifact.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_artifact_role_locator_ok(role, has_locator),
+            "artifact role/locator {role}/{has_locator}"
+        );
+    }
+
+    for (kind, runner, selector, minimum_count) in [
+        ("structural_check", true, Some("symbol"), true),
+        ("static_inventory", false, Some("inventory"), true),
+        ("test", true, Some("test"), true),
+        ("snapshot", true, Some("snapshot"), false),
+        ("runtime_snapshot", false, Some("inventory"), true),
+        ("release_record", false, Some("release"), false),
+        ("manual_review", false, None, false),
+        ("structural_check", true, Some("test"), true),
+        ("test", false, Some("test"), true),
+        ("snapshot", true, Some("snapshot"), true),
+        ("manual_review", true, None, false),
+        ("manual_review", false, Some("symbol"), false),
+    ] {
+        let evidence = evidence_document(kind, runner, selector, minimum_count);
+        let document = mutated(&base, "/bindings/0/evidence/0", evidence.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_evidence_spec_ok(kind, runner, selector, minimum_count),
+            "evidence {kind} runner={runner} selector={selector:?} count={minimum_count}"
+        );
+    }
+
+    Ok(())
 }
 
 /// Every locally expressible collection/combination rule added in P03-R12 is

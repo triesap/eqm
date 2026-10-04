@@ -7,15 +7,16 @@ preserved. S043/P03 remain changes-required: RF66 wrong owning fragment prefix
 type; RF67 missing local journey/surface collection conditions. RF45 partial;
 whole RA02/RA13 remain open. No new numbered acceptance or release readiness.
 
-Current sole amendment DEV-025: **P03-R13 → S043-R5** remaining.
-P03-R11 (RF66 fragment-prefix owning scalar) and P03-R12 (RF67 local
-collection/combination parity) are implemented and locally verified pending
-independent Codex acceptance. The differential corpus and full consumer/original
-cycle exit precede independent P03 acceptance and S044. See
+Current sole amendment DEV-025: **S043-R5** remaining.
+P03-R11 (RF66 fragment-prefix owning scalar), P03-R12 (RF67 local
+collection/combination parity) and P03-R13 (differential owning corpus and a
+genuine finalized positive graph) are implemented and locally verified pending
+independent Codex acceptance. The full consumer/original cycle exit precedes
+independent P03 acceptance and S044. See
 [review](reports/CODEX-00bec96.md), [P03-R11](reports/P03-R11.md),
-[P03-R12](reports/P03-R12.md) and [plan](COMMIT_SEQUENCE.md). Pi records
-implementation/verification; acceptance is Codex-owned. Original 64 R/AC,21 RA,
-Q01–Q15,S211 unchanged; P04–P15 remain unfinished.
+[P03-R12](reports/P03-R12.md), [P03-R13](reports/P03-R13.md) and
+[plan](COMMIT_SEQUENCE.md). Pi records implementation/verification; acceptance is
+Codex-owned. Original 64 R/AC,21 RA,Q01–Q15,S211 unchanged; P04–P15 remain unfinished.
 
 Independent standard passed766 successful test executions, owning doctests9;
 structure/diff checks passed. Two isolated tests reproduce four mismatches;
