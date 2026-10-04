@@ -279,6 +279,10 @@ closed_vocabulary_text!(
         "utc_timezone"
     ]
 );
+closed_vocabulary_text!(
+    ReleaseChannelText,
+    ["development", "internal", "beta", "production"]
+);
 
 /// One normalized bounded text of at most 256 UTF-8 bytes.
 fn transition_trigger_schema(_: &mut SchemaGenerator) -> Schema {
@@ -545,6 +549,29 @@ impl<T: JsonSchema> JsonSchema for NonEmptySet<T> {
     }
 }
 
+/// A nonempty, duplicate-free *ordered* list of a constrained member form.
+///
+/// JSON Schema `uniqueItems` constrains membership only; it never sorts, so a
+/// journey's declared surface order is preserved while emptiness and exact
+/// duplicates are rejected exactly as the owning `Journey::new` does.
+struct NonEmptyOrderedList<T>(std::marker::PhantomData<T>);
+
+impl<T: JsonSchema> JsonSchema for NonEmptyOrderedList<T> {
+    fn schema_name() -> Cow<'static, str> {
+        format!("NonEmptyOrderedList_{}", T::schema_name()).into()
+    }
+
+    fn json_schema(generator: &mut SchemaGenerator) -> Schema {
+        let items = generator.subschema_for::<T>();
+        json_schema!({
+            "type": "array",
+            "items": items,
+            "uniqueItems": true,
+            "minItems": 1,
+        })
+    }
+}
+
 /// Exactly one of the two cohort assignment configuration claims must be present.
 fn exactly_one_configuration() -> serde_json::Value {
     serde_json::json!({
@@ -791,6 +818,10 @@ pub enum EvidenceSelectorV2Dto {
         #[schemars(schema_with = "selector_text_schema")]
         variant: Option<String>,
     },
+    Release {
+        #[schemars(with = "ReleaseChannelText")]
+        channel: String,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -847,7 +878,7 @@ pub struct JourneyV2Dto {
     pub risk_class: String,
     #[schemars(schema_with = "owners_schema")]
     pub owners: CanonicalSet<String>,
-    #[schemars(with = "Vec<SurfaceIdText>")]
+    #[schemars(with = "NonEmptyOrderedList<SurfaceIdText>")]
     pub surfaces: Vec<String>,
     pub transitions: CanonicalSet<TransitionV2Dto>,
     #[serde(
@@ -863,6 +894,16 @@ pub struct JourneyV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("allOf" = [
+    {
+        "if": {"properties": {"scope": {"const": "shared_provider"}}, "required": ["scope"]},
+        "then": {"required": ["provider"]}
+    },
+    {
+        "if": {"not": {"properties": {"scope": {"const": "shared_provider"}}, "required": ["scope"]}},
+        "then": {"not": {"required": ["provider"]}}
+    },
+]))]
 pub struct RequirementV2Dto {
     #[schemars(with = "LocalRequirementIdText")]
     pub id: String,
@@ -913,6 +954,10 @@ pub struct FragmentUseV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("anyOf" = [
+    {"properties": {"requirements": {"minItems": 1}}},
+    {"properties": {"fragment_origins": {"minItems": 1}}},
+]))]
 pub struct SurfaceV2Dto {
     #[schemars(with = "SurfaceIdText")]
     pub id: String,
@@ -1123,6 +1168,23 @@ pub struct ParticipationV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("allOf" = [
+    {
+        "if": {
+            "properties": {
+                "role": {"enum": ["entrypoint", "view", "route", "component"]}
+            },
+            "required": ["role"]
+        },
+        "then": {
+            "anyOf": [
+                {"required": ["surface"]},
+                {"required": ["symbol"]},
+                {"required": ["selector"]}
+            ]
+        }
+    },
+]))]
 pub struct ArtifactV2Dto {
     #[schemars(with = "ArtifactIdText")]
     pub id: String,
@@ -1176,6 +1238,48 @@ pub struct ExposureV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("allOf" = [
+    {
+        "if": {"properties": {"kind": {"enum": ["structural_check", "test", "snapshot"]}}, "required": ["kind"]},
+        "then": {"required": ["runner"]}
+    },
+    {
+        "if": {"properties": {"kind": {"enum": ["static_inventory", "manual_review", "runtime_snapshot", "release_record"]}}, "required": ["kind"]},
+        "then": {"not": {"required": ["runner"]}}
+    },
+    {
+        "if": {"properties": {"kind": {"enum": ["snapshot", "manual_review", "release_record"]}}, "required": ["kind"]},
+        "then": {"not": {"required": ["minimum_count"]}}
+    },
+    {
+        "if": {"properties": {"kind": {"const": "structural_check"}}, "required": ["kind"]},
+        "then": {"required": ["selector"], "properties": {"selector": {"properties": {"kind": {"enum": ["symbol", "route", "inventory"]}}, "required": ["kind"]}}}
+    },
+    {
+        "if": {"properties": {"kind": {"const": "static_inventory"}}, "required": ["kind"]},
+        "then": {"required": ["selector"], "properties": {"selector": {"properties": {"kind": {"const": "inventory"}}, "required": ["kind"]}}}
+    },
+    {
+        "if": {"properties": {"kind": {"const": "test"}}, "required": ["kind"]},
+        "then": {"required": ["selector"], "properties": {"selector": {"properties": {"kind": {"const": "test"}}, "required": ["kind"]}}}
+    },
+    {
+        "if": {"properties": {"kind": {"const": "snapshot"}}, "required": ["kind"]},
+        "then": {"required": ["selector"], "properties": {"selector": {"properties": {"kind": {"const": "snapshot"}}, "required": ["kind"]}}}
+    },
+    {
+        "if": {"properties": {"kind": {"const": "runtime_snapshot"}}, "required": ["kind"]},
+        "then": {"required": ["selector"], "properties": {"selector": {"properties": {"kind": {"const": "inventory"}}, "required": ["kind"]}}}
+    },
+    {
+        "if": {"properties": {"kind": {"const": "release_record"}}, "required": ["kind"]},
+        "then": {"required": ["selector"], "properties": {"selector": {"properties": {"kind": {"const": "release"}}, "required": ["kind"]}}}
+    },
+    {
+        "if": {"properties": {"kind": {"const": "manual_review"}}, "required": ["kind"]},
+        "then": {"not": {"required": ["selector"]}}
+    },
+]))]
 pub struct EvidenceSpecV2Dto {
     #[schemars(with = "EvidenceSpecIdText")]
     pub id: String,
@@ -1294,6 +1398,13 @@ pub struct ScenarioV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("anyOf" = [
+    {"required": ["units"]},
+    {"required": ["requirements"]},
+    {"required": ["risk_classes"]},
+    {"required": ["facets"]},
+    {"required": ["scopes"]},
+]))]
 pub struct PolicySelectorV2Dto {
     #[serde(
         default,
@@ -1349,6 +1460,16 @@ pub struct PolicyRuleV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("allOf" = [
+    {
+        "if": {"properties": {"allowed": {"const": true}}, "required": ["allowed"]},
+        "then": {"required": ["maximum_days"]}
+    },
+    {
+        "if": {"properties": {"allowed": {"const": false}}, "required": ["allowed"]},
+        "then": {"not": {"required": ["maximum_days"]}}
+    },
+]))]
 pub struct WaiverPolicyV2Dto {
     pub allowed: bool,
     #[schemars(schema_with = "crate::positive_unsigned_schema")]
@@ -1526,6 +1647,28 @@ pub enum WorkingDirectoryV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("allOf" = [
+    {
+        "if": {"properties": {"source": {"const": "literal"}}, "required": ["source"]},
+        "then": {"required": ["value"]}
+    },
+    {
+        "if": {"not": {"properties": {"source": {"const": "literal"}}, "required": ["source"]}},
+        "then": {"not": {"required": ["value"]}}
+    },
+    {
+        "if": {"properties": {"source": {"const": "trusted_path"}}, "required": ["source"]},
+        "then": {"properties": {"name": {"const": "PATH"}}}
+    },
+    {
+        "if": {"properties": {"source": {"const": "canonical_locale"}}, "required": ["source"]},
+        "then": {"properties": {"name": {"enum": ["LANG", "LC_ALL"]}}}
+    },
+    {
+        "if": {"properties": {"source": {"const": "utc_timezone"}}, "required": ["source"]},
+        "then": {"properties": {"name": {"const": "TZ"}}}
+    },
+]))]
 pub struct EnvironmentBindingV2Dto {
     #[schemars(schema_with = "environment_name_schema")]
     pub name: String,
@@ -1551,6 +1694,12 @@ pub struct SecretBindingV2Dto {
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
+#[schemars(extend("allOf" = [
+    {
+        "if": {"properties": {"backend": {"const": "local"}}, "required": ["backend"]},
+        "then": {"properties": {"guarantees": {"maxItems": 0}}}
+    },
+]))]
 pub struct RunnerV2Dto {
     #[schemars(with = "RunnerIdText")]
     pub id: String,

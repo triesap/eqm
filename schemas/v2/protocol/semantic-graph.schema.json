@@ -363,6 +363,44 @@
     },
     "ArtifactV2Dto": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "role": {
+                "enum": [
+                  "entrypoint",
+                  "view",
+                  "route",
+                  "component"
+                ]
+              }
+            },
+            "required": [
+              "role"
+            ]
+          },
+          "then": {
+            "anyOf": [
+              {
+                "required": [
+                  "surface"
+                ]
+              },
+              {
+                "required": [
+                  "symbol"
+                ]
+              },
+              {
+                "required": [
+                  "selector"
+                ]
+              }
+            ]
+          }
+        }
+      ],
       "properties": {
         "extensions": {
           "additionalProperties": {
@@ -928,6 +966,106 @@
     },
     "EnvironmentBindingV2Dto": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "literal"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ]
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "source": {
+                  "const": "literal"
+                }
+              },
+              "required": [
+                "source"
+              ]
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "value"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "trusted_path"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "properties": {
+              "name": {
+                "const": "PATH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "canonical_locale"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "properties": {
+              "name": {
+                "enum": [
+                  "LANG",
+                  "LC_ALL"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "utc_timezone"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "properties": {
+              "name": {
+                "const": "TZ"
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "name": {
           "maxLength": 128,
@@ -1094,11 +1232,301 @@
             "snapshot_id"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "channel": {
+              "enum": [
+                "development",
+                "internal",
+                "beta",
+                "production"
+              ],
+              "type": "string"
+            },
+            "kind": {
+              "const": "release",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "channel"
+          ],
+          "type": "object"
         }
       ]
     },
     "EvidenceSpecV2Dto": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "structural_check",
+                  "test",
+                  "snapshot"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "runner"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "static_inventory",
+                  "manual_review",
+                  "runtime_snapshot",
+                  "release_record"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "runner"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "snapshot",
+                  "manual_review",
+                  "release_record"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "minimum_count"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "structural_check"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selector": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "symbol",
+                      "route",
+                      "inventory"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "selector"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "static_inventory"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selector": {
+                "properties": {
+                  "kind": {
+                    "const": "inventory"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "selector"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "test"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selector": {
+                "properties": {
+                  "kind": {
+                    "const": "test"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "selector"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "snapshot"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selector": {
+                "properties": {
+                  "kind": {
+                    "const": "snapshot"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "selector"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "runtime_snapshot"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selector": {
+                "properties": {
+                  "kind": {
+                    "const": "inventory"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "selector"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "release_record"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selector": {
+                "properties": {
+                  "kind": {
+                    "const": "release"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "selector"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "manual_review"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "selector"
+              ]
+            }
+          }
+        }
+      ],
       "properties": {
         "extensions": {
           "additionalProperties": {
@@ -1568,12 +1996,7 @@
           "type": "string"
         },
         "surfaces": {
-          "items": {
-            "maxLength": 255,
-            "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/$defs/NonEmptyOrderedList_SurfaceIdText"
         },
         "title": {
           "maxLength": 160,
@@ -1597,6 +2020,16 @@
         "extensions"
       ],
       "type": "object"
+    },
+    "NonEmptyOrderedList_SurfaceIdText": {
+      "items": {
+        "maxLength": 255,
+        "pattern": "^[a-z][a-z0-9_]{0,62}(?:\\.[a-z][a-z0-9_]{0,62}){3,}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
     },
     "NonEmptySet_ApplicabilityV2Dto": {
       "items": {
@@ -1854,6 +2287,33 @@
     },
     "PolicySelectorV2Dto": {
       "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "units"
+          ]
+        },
+        {
+          "required": [
+            "requirements"
+          ]
+        },
+        {
+          "required": [
+            "risk_classes"
+          ]
+        },
+        {
+          "required": [
+            "facets"
+          ]
+        },
+        {
+          "required": [
+            "scopes"
+          ]
+        }
+      ],
       "properties": {
         "facets": {
           "$ref": "#/$defs/NonEmptySet_FacetText"
@@ -2065,6 +2525,46 @@
     },
     "RequirementV2Dto": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scope": {
+                "const": "shared_provider"
+              }
+            },
+            "required": [
+              "scope"
+            ]
+          },
+          "then": {
+            "required": [
+              "provider"
+            ]
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "scope": {
+                  "const": "shared_provider"
+                }
+              },
+              "required": [
+                "scope"
+              ]
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "provider"
+              ]
+            }
+          }
+        }
+      ],
       "properties": {
         "applicability": {
           "$ref": "#/$defs/ApplicabilityV2Dto"
@@ -2181,6 +2681,27 @@
     },
     "RunnerV2Dto": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "backend": {
+                "const": "local"
+              }
+            },
+            "required": [
+              "backend"
+            ]
+          },
+          "then": {
+            "properties": {
+              "guarantees": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ],
       "properties": {
         "args": {
           "items": {
@@ -2502,6 +3023,22 @@
     },
     "SurfaceV2Dto": {
       "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "requirements": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "fragment_origins": {
+              "minItems": 1
+            }
+          }
+        }
+      ],
       "properties": {
         "description": {
           "maxLength": 4096,
@@ -2678,6 +3215,44 @@
     },
     "WaiverPolicyV2Dto": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "allowed": {
+                "const": true
+              }
+            },
+            "required": [
+              "allowed"
+            ]
+          },
+          "then": {
+            "required": [
+              "maximum_days"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "allowed": {
+                "const": false
+              }
+            },
+            "required": [
+              "allowed"
+            ]
+          },
+          "then": {
+            "not": {
+              "required": [
+                "maximum_days"
+              ]
+            }
+          }
+        }
+      ],
       "properties": {
         "allowed": {
           "type": "boolean"

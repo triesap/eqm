@@ -10,10 +10,14 @@
 //! Schema.
 
 use eqm_domain::{
-    AdapterId, ArtifactId, BindingId, CapabilityId, DimensionId, EvidenceSpecId, FragmentId,
-    FullRequirementId, JourneyId, LocalRequirementId, OccurrenceId, ParticipationRuleId,
-    PlatformId, PolicyId, ProfileId, ProviderId, RepoPath, RepositoryIdentity, RoleId, RunnerId,
-    ScenarioId, SourceComponentId, SurfaceId, SymbolicValueId, TargetId, UnitId, WaiverId,
+    AdapterId, Applicability, ArtifactId, BindingId, CapabilityId, DimensionId, EnvironmentBinding,
+    EnvironmentName, EnvironmentSource, EvidenceSpecId, Extensions, Facet, FragmentId, FragmentUse,
+    FullRequirementId, Journey, JourneyId, LifecycleStatus, LocalRequirementId, OccurrenceId,
+    OwnerRef, ParticipationRuleId, PlatformId, PolicyId, PolicySelector, PositiveCount,
+    PositiveDays, ProfileId, ProviderId, RepoPath, RepositoryIdentity, Requirement,
+    RequirementLevel, RequirementScope, RequirementStatement, Revision, RiskClass, RoleId,
+    RunnerId, ScenarioId, SelectorText, SourceComponentId, Surface, SurfaceId, SymbolicValueId,
+    TargetId, Title, UnitId, WaiverId, WaiverPolicy,
 };
 use eqm_protocol::schema_graph_v2::ComparisonContextV2Dto;
 use jsonschema::{Draft, Validator};
@@ -141,13 +145,22 @@ fn requirement() -> Value {
     json!({
         "id": "create",
         "level": "required",
-        "scope": "each_target",
+        "scope": "shared_provider",
         "statement": "Create an account",
         "facets": ["behavior"],
         "applicability": {"always": true},
         "risk_class": "high",
         "provider": "provider.mailgun",
         "extensions": {}
+    })
+}
+
+fn fragment_origin() -> Value {
+    json!({
+        "fragment": "account.card",
+        "revision": 1,
+        "digest": sha('4'),
+        "prefix": "card"
     })
 }
 
@@ -371,7 +384,7 @@ fn graph_document() -> Value {
             "id": "runner.local",
             "revision": 1,
             "owners": ["owner://team/quality"],
-            "backend": "local",
+            "backend": "container",
             "program": {"kind": "repository", "path": "tools/runner"},
             "args": [{"kind": "literal", "value": "--json"}],
             "cwd": {"kind": "target_root"},
@@ -843,27 +856,320 @@ fn selectors_cover_all_variants() -> Result<(), Box<dyn Error>> {
         ],
     );
 
+    // The evidence spec's base kind is `test`; its selector must be the owning
+    // `test` variant. Every other evidence selector variant is exercised against
+    // its compatible kind in `local_collection_and_combination_rules_match_owners`.
     let evidence_selector = "/bindings/0/evidence/0/selector";
     check(
         &v,
         &base,
         evidence_selector,
         &[
-            json!({"kind": "symbol", "name": "main", "language": "rust"}),
-            json!({"kind": "route", "path": "/home", "method": "post"}),
             json!({"kind": "test", "framework": "cargo", "test_id": "probe", "suite": "unit"}),
-            json!({"kind": "inventory", "record_type": "asset", "key": "logo", "value": "logo.svg"}),
-            json!({"kind": "snapshot", "snapshot_id": "snap-1"}),
-            json!({"kind": "snapshot", "snapshot_id": "snap-1", "variant": "mobile"}),
+            json!({"kind": "test", "framework": "cargo", "test_id": "probe"}),
         ],
         &[
-            json!({"kind": "snapshot"}),
-            json!({"kind": "snapshot", "snapshot_id": "snap-1", "extra": 1}),
-            json!({"kind": "snapshot", "snapshot_id": ""}),
-            json!({"kind": "symbol"}),
-            json!({"kind": "route", "path": "/home", "method": "trace"}),
+            json!({"kind": "snapshot", "snapshot_id": "snap-1"}),
+            json!({"kind": "release", "channel": "beta"}),
+            json!({"kind": "symbol", "name": "main"}),
+            json!({"kind": "test", "framework": "cargo"}),
+            json!({"kind": "test", "framework": "cargo", "test_id": "probe", "extra": 1}),
         ],
     );
+    Ok(())
+}
+
+/// Parses one optional selector axis into the owning value list. A missing key
+/// yields `None`; a present but malformed list yields an empty list so the owning
+/// constructor rejects it exactly as the schema does.
+fn selector_axis<T>(
+    object: &serde_json::Map<String, Value>,
+    key: &str,
+    parse: impl Fn(&str) -> Option<T>,
+) -> Option<Vec<T>> {
+    object.get(key).map(|value| {
+        let mut parsed = Vec::new();
+        let Some(items) = value.as_array() else {
+            return parsed;
+        };
+        for item in items {
+            match item.as_str().and_then(&parse) {
+                Some(value) => parsed.push(value),
+                None => return Vec::new(),
+            }
+        }
+        parsed
+    })
+}
+
+fn owning_policy_selector_ok(value: &Value) -> bool {
+    let Some(object) = value.as_object() else {
+        return false;
+    };
+    let units = selector_axis(object, "units", |s| s.parse::<UnitId>().ok());
+    let requirements = selector_axis(object, "requirements", |s| {
+        s.parse::<FullRequirementId>().ok()
+    });
+    let risk_classes = selector_axis(object, "risk_classes", |s| s.parse::<RiskClass>().ok());
+    let facets = selector_axis(object, "facets", |s| s.parse::<Facet>().ok());
+    let scopes = selector_axis(object, "scopes", |s| s.parse::<RequirementScope>().ok());
+    PolicySelector::new(units, requirements, risk_classes, facets, scopes).is_ok()
+}
+
+fn owning_waiver_policy_ok(value: &Value) -> bool {
+    let Some(object) = value.as_object() else {
+        return false;
+    };
+    let Some(allowed) = object.get("allowed").and_then(Value::as_bool) else {
+        return false;
+    };
+    let maximum_days = match object.get("maximum_days") {
+        None => None,
+        Some(days) => {
+            let Some(days) = days
+                .as_u64()
+                .and_then(|days| u32::try_from(days).ok())
+                .and_then(|days| PositiveDays::new(days).ok())
+            else {
+                return false;
+            };
+            Some(days)
+        }
+    };
+    let minimum_approvers = match object.get("minimum_approvers") {
+        None => None,
+        Some(count) => {
+            let Some(count) = count
+                .as_u64()
+                .and_then(|count| PositiveCount::new(count).ok())
+            else {
+                return false;
+            };
+            Some(count)
+        }
+    };
+    let Some(controls) = object.get("required_controls").and_then(Value::as_array) else {
+        return false;
+    };
+    let mut parsed_controls = Vec::with_capacity(controls.len());
+    for control in controls {
+        match control.as_str().and_then(|s| s.parse::<Facet>().ok()) {
+            Some(facet) => parsed_controls.push(facet),
+            None => return false,
+        }
+    }
+    WaiverPolicy::new(allowed, maximum_days, minimum_approvers, parsed_controls).is_ok()
+}
+
+fn owning_environment_binding_ok(value: &Value) -> bool {
+    let Some(object) = value.as_object() else {
+        return false;
+    };
+    let Some(name) = object
+        .get("name")
+        .and_then(Value::as_str)
+        .and_then(|name| EnvironmentName::new(name).ok())
+    else {
+        return false;
+    };
+    let Some(source) = object.get("source").and_then(Value::as_str) else {
+        return false;
+    };
+    let source = match source {
+        "literal" => match object
+            .get("value")
+            .and_then(Value::as_str)
+            .and_then(|text| SelectorText::new(text).ok())
+        {
+            Some(text) => EnvironmentSource::Literal(text),
+            None => return false,
+        },
+        "trusted_path" => EnvironmentSource::TrustedPath,
+        "canonical_locale" => EnvironmentSource::CanonicalLocale,
+        "utc_timezone" => EnvironmentSource::UtcTimezone,
+        _ => return false,
+    };
+    EnvironmentBinding::new(name, source).is_ok()
+}
+
+fn owning_journey_surfaces_ok(value: &Value) -> bool {
+    let Some(items) = value.as_array() else {
+        return false;
+    };
+    let mut surfaces = Vec::with_capacity(items.len());
+    for item in items {
+        let Some(id) = item.as_str().and_then(|s| SurfaceId::new(s).ok()) else {
+            return false;
+        };
+        surfaces.push(id);
+    }
+    let build = move || -> Option<()> {
+        Journey::new(
+            JourneyId::new("account.create.flow").ok()?,
+            Revision::new(1).ok()?,
+            Title::new("Account flow").ok()?,
+            CapabilityId::new("account.create").ok()?,
+            LifecycleStatus::Active,
+            RiskClass::Low,
+            vec!["owner://team/accounts".parse::<OwnerRef>().ok()?],
+            surfaces,
+            Vec::new(),
+            None,
+            Extensions::default(),
+        )
+        .ok()?;
+        Some(())
+    };
+    build().is_some()
+}
+
+fn sample_requirement() -> Result<Requirement, Box<dyn Error>> {
+    Ok(Requirement::new(
+        LocalRequirementId::new("create")?,
+        RequirementLevel::Required,
+        RequirementScope::EachTarget,
+        RequirementStatement::new("Create an account")?,
+        vec![Facet::Behavior],
+        Applicability::always(true),
+        Some(RiskClass::High),
+        None,
+        Extensions::default(),
+    )?)
+}
+
+fn sample_fragment_use() -> Result<FragmentUse, Box<dyn Error>> {
+    Ok(FragmentUse::new(
+        FragmentId::new("account.card")?,
+        Revision::new(1)?,
+        "sha256:4444444444444444444444444444444444444444444444444444444444444444".parse()?,
+        Some(LocalRequirementId::new("card")?),
+    ))
+}
+
+fn owning_surface_composition_ok(
+    requirements: &Value,
+    fragments: &Value,
+) -> Result<bool, Box<dyn Error>> {
+    let requirements_present = requirements
+        .as_array()
+        .is_some_and(|items| !items.is_empty());
+    let fragments_present = fragments.as_array().is_some_and(|items| !items.is_empty());
+    let requirements = if requirements_present {
+        vec![sample_requirement()?]
+    } else {
+        Vec::new()
+    };
+    let fragments = if fragments_present {
+        vec![sample_fragment_use()?]
+    } else {
+        Vec::new()
+    };
+    Ok(Surface::new(
+        SurfaceId::new("account.create.flow.home")?,
+        Revision::new(1)?,
+        Title::new("Home")?,
+        JourneyId::new("account.create.flow")?,
+        LifecycleStatus::Active,
+        vec!["owner://team/accounts".parse::<OwnerRef>()?],
+        requirements,
+        fragments,
+        None,
+        Extensions::default(),
+    )
+    .is_ok())
+}
+
+/// Every locally expressible collection/combination rule added in P03-R12 is
+/// asserted on the exact same input through the committed schema and the actual
+/// owning `eqm_domain` constructor.
+#[test]
+fn local_collection_and_combination_rules_match_owners() -> Result<(), Box<dyn Error>> {
+    let v = graph_validator()?;
+    let base = graph_document();
+
+    // Journey surfaces: nonempty, exact-unique, ordered (not sorted).
+    for value in [
+        json!(["account.create.flow.home"]),
+        json!(["account.create.flow.home", "account.create.flow.done"]),
+        json!([]),
+        json!(["account.create.flow.home", "account.create.flow.home"]),
+        json!(["account.create.flow"]),
+    ] {
+        let document = mutated(&base, "/journeys/0/surfaces", value.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_journey_surfaces_ok(&value),
+            "journey surfaces {value}"
+        );
+    }
+
+    // Surface composition: at least one direct requirement or fragment origin.
+    for (requirements, fragments) in [
+        (json!([requirement()]), json!([fragment_origin()])),
+        (json!([requirement()]), json!([])),
+        (json!([]), json!([fragment_origin()])),
+        (json!([]), json!([])),
+    ] {
+        let mut document = mutated(&base, "/surfaces/0/requirements", requirements.clone());
+        document["surfaces"][0]["fragment_origins"] = fragments.clone();
+        assert_eq!(
+            v.is_valid(&document),
+            owning_surface_composition_ok(&requirements, &fragments)?,
+            "surface composition {requirements} {fragments}"
+        );
+    }
+
+    // Policy selector: at least one populated axis, each axis nonempty/unique.
+    for value in [
+        json!({"units": ["account.card"]}),
+        json!({"facets": ["behavior"]}),
+        json!({}),
+        json!({"units": []}),
+        json!({"units": ["account.card", "account.card"]}),
+        json!({"scopes": ["each_target"]}),
+    ] {
+        let document = mutated(&base, "/policies/0/rules/0/selector", value.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_policy_selector_ok(&value),
+            "policy selector {value}"
+        );
+    }
+
+    // Waiver policy: `allowed` exactly when `maximum_days` is present.
+    for value in [
+        json!({"allowed": true, "minimum_approvers": 1, "required_controls": ["behavior"], "maximum_days": 30}),
+        json!({"allowed": false, "minimum_approvers": 1, "required_controls": ["behavior"]}),
+        json!({"allowed": true, "minimum_approvers": 1, "required_controls": []}),
+        json!({"allowed": false, "minimum_approvers": 1, "required_controls": [], "maximum_days": 7}),
+    ] {
+        let document = mutated(&base, "/policies/0/waivers", value.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_waiver_policy_ok(&value),
+            "waiver policy {value}"
+        );
+    }
+
+    // Environment binding: fixed-name sources and literal value presence.
+    for value in [
+        json!({"name": "PATH", "source": "trusted_path"}),
+        json!({"name": "LANG", "source": "canonical_locale"}),
+        json!({"name": "TZ", "source": "utc_timezone"}),
+        json!({"name": "CUSTOM", "source": "literal", "value": "/x"}),
+        json!({"name": "PATH", "source": "canonical_locale"}),
+        json!({"name": "LANG", "source": "trusted_path"}),
+        json!({"name": "CUSTOM", "source": "trusted_path"}),
+        json!({"name": "PATH", "source": "literal"}),
+    ] {
+        let document = mutated(&base, "/runners/0/environment/0", value.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_environment_binding_ok(&value),
+            "environment binding {value}"
+        );
+    }
+
     Ok(())
 }
 
@@ -960,8 +1266,15 @@ fn capability_journey_surface_fragment_fields_are_bounded() -> Result<(), Box<dy
         &v,
         &base,
         "/journeys/0/surfaces",
-        &[json!([]), json!(["account.create.flow.home"])],
-        &[json!(["account.create.flow"])],
+        &[
+            json!(["account.create.flow.home"]),
+            json!(["account.create.flow.home", "account.create.flow.done"]),
+        ],
+        &[
+            json!([]),
+            json!(["account.create.flow"]),
+            json!(["account.create.flow.home", "account.create.flow.home"]),
+        ],
     );
     check(
         &v,
@@ -988,13 +1301,26 @@ fn capability_journey_surface_fragment_fields_are_bounded() -> Result<(), Box<dy
         &v,
         &base,
         "/surfaces/0/requirements/0/scope",
-        &[
-            json!("each_target"),
-            json!("shared_provider"),
-            json!("end_to_end"),
-        ],
-        &[json!("target")],
+        &[json!("shared_provider")],
+        &[json!("each_target"), json!("end_to_end"), json!("target")],
     );
+    // The owning Requirement couples `scope` with `provider` presence: a
+    // non-shared-provider scope must not carry a provider.
+    for scope in ["each_target", "end_to_end"] {
+        let mut document = mutated(&base, "/surfaces/0/requirements/0/scope", json!(scope));
+        assert!(
+            !v.is_valid(&document),
+            "scope {scope} with a provider must reject"
+        );
+        document["surfaces"][0]["requirements"][0]
+            .as_object_mut()
+            .ok_or("requirement")?
+            .remove("provider");
+        assert!(
+            v.is_valid(&document),
+            "scope {scope} without a provider must accept"
+        );
+    }
     check(
         &v,
         &base,
@@ -1022,6 +1348,10 @@ fn capability_journey_surface_fragment_fields_are_bounded() -> Result<(), Box<dy
         "/surfaces/0/requirements/0/provider",
         &[json!("provider.mailgun")],
         &[json!("provider"), json!("Provider.Mailgun")],
+    );
+    assert!(
+        !v.is_valid(&removed(&base, "/surfaces/0/requirements/0/provider")),
+        "shared_provider scope requires a provider"
     );
     check_required_absent(&v, &base, "/surfaces/0/requirements/0/statement");
     check_null_rejected(&v, &base, "/surfaces/0/requirements/0/risk_class");
@@ -1370,19 +1700,14 @@ fn participation_binding_artifact_exposure_evidence_fields_are_bounded()
         &[json!("")],
     );
 
+    // The owning evidence kind couples with runner, minimum count and selector
+    // variant; the full per-kind matrix is exercised in
+    // `local_collection_and_combination_rules_match_owners`.
     check(
         &v,
         &base,
         "/bindings/0/evidence/0/kind",
-        &[
-            json!("structural_check"),
-            json!("static_inventory"),
-            json!("test"),
-            json!("snapshot"),
-            json!("manual_review"),
-            json!("runtime_snapshot"),
-            json!("release_record"),
-        ],
+        &[json!("test")],
         &[json!("test_result")],
     );
     check(
@@ -1579,8 +1904,15 @@ fn policy_and_profile_fields_are_bounded() -> Result<(), Box<dyn Error>> {
         &v,
         &base,
         "/policies/0/rules/0/selector",
-        &[json!({})],
-        &[json!({"units": []})],
+        &[
+            json!({"units": ["account.card"]}),
+            json!({"requirements": ["account.create#create"]}),
+            json!({"risk_classes": ["high"]}),
+            json!({"facets": ["behavior"]}),
+            json!({"scopes": ["each_target"]}),
+            json!({"units": ["account.card"], "facets": ["behavior"]}),
+        ],
+        &[json!({}), json!({"units": []})],
     );
 
     check(
@@ -1608,9 +1940,31 @@ fn policy_and_profile_fields_are_bounded() -> Result<(), Box<dyn Error>> {
         &v,
         &base,
         "/policies/0/waivers/allowed",
-        &[json!(true), json!(false)],
+        &[json!(true)],
         &[json!("true")],
     );
+    // The owning WaiverPolicy couples `allowed` with `maximum_days` presence.
+    let mut allowed_without_days = base.clone();
+    allowed_without_days["policies"][0]["waivers"]
+        .as_object_mut()
+        .ok_or("waivers")?
+        .remove("maximum_days");
+    assert!(
+        !v.is_valid(&allowed_without_days),
+        "allowed waiver without maximum_days"
+    );
+    let mut denied_with_days = base.clone();
+    denied_with_days["policies"][0]["waivers"]["allowed"] = json!(false);
+    assert!(
+        !v.is_valid(&denied_with_days),
+        "denied waiver with maximum_days"
+    );
+    let mut denied = denied_with_days.clone();
+    denied["policies"][0]["waivers"]
+        .as_object_mut()
+        .ok_or("waivers")?
+        .remove("maximum_days");
+    assert!(v.is_valid(&denied), "denied waiver without maximum_days");
     check_required_absent(&v, &base, "/policies/0/waivers");
 
     check(
@@ -1651,8 +2005,20 @@ fn runner_fields_and_variants_are_bounded() -> Result<(), Box<dyn Error>> {
         &v,
         &base,
         "/runners/0/backend",
-        &[json!("local"), json!("container")],
+        &[json!("container")],
         &[json!("remote")],
+    );
+    // The owning RunnerDefinition forbids claimed guarantees for a local backend.
+    let mut local_runner = base.clone();
+    local_runner["runners"][0]["backend"] = json!("local");
+    assert!(
+        !v.is_valid(&local_runner),
+        "local backend with claimed guarantees"
+    );
+    local_runner["runners"][0]["guarantees"] = json!([]);
+    assert!(
+        v.is_valid(&local_runner),
+        "local backend without guarantees"
     );
     check(
         &v,
@@ -1702,24 +2068,63 @@ fn runner_fields_and_variants_are_bounded() -> Result<(), Box<dyn Error>> {
         &[json!("PATH"), json!("A_B")],
         &[json!("path"), json!("1BAD"), json!("")],
     );
-    check(
-        &v,
-        &base,
-        "/runners/0/environment/0/source",
-        &[
-            json!("literal"),
-            json!("trusted_path"),
-            json!("canonical_locale"),
-            json!("utc_timezone"),
-        ],
-        &[json!("env")],
+    // The owning EnvironmentBinding couples `source` with `value` presence and
+    // with the fixed-name sources; the literal source accepts any name.
+    assert!(
+        v.is_valid(&mutated(
+            &base,
+            "/runners/0/environment/0",
+            json!({"name": "PATH", "source": "trusted_path"}),
+        )),
+        "PATH/trusted_path"
     );
+    assert!(
+        v.is_valid(&mutated(
+            &base,
+            "/runners/0/environment/0",
+            json!({"name": "LANG", "source": "canonical_locale"}),
+        )),
+        "LANG/canonical_locale"
+    );
+    assert!(
+        v.is_valid(&mutated(
+            &base,
+            "/runners/0/environment/0",
+            json!({"name": "TZ", "source": "utc_timezone"}),
+        )),
+        "TZ/utc_timezone"
+    );
+    assert!(
+        v.is_valid(&mutated(
+            &base,
+            "/runners/0/environment/0",
+            json!({"name": "CUSTOM", "source": "literal", "value": "/x"}),
+        )),
+        "literal accepts any name"
+    );
+    for bad in [
+        json!({"name": "PATH", "source": "canonical_locale"}),
+        json!({"name": "LANG", "source": "trusted_path"}),
+        json!({"name": "TZ", "source": "trusted_path"}),
+        json!({"name": "CUSTOM", "source": "utc_timezone"}),
+        json!({"name": "PATH", "source": "trusted_path", "value": "/x"}),
+        json!({"name": "PATH", "source": "literal"}),
+    ] {
+        assert!(
+            !v.is_valid(&mutated(&base, "/runners/0/environment/0", bad.clone())),
+            "environment binding accepted {bad}"
+        );
+    }
     check(
         &v,
         &base,
         "/runners/0/environment/0/value",
         &[json!("/usr/bin")],
-        &[json!("")],
+        &[json!(""), json!(null)],
+    );
+    assert!(
+        !v.is_valid(&removed(&base, "/runners/0/environment/0/value")),
+        "literal source without value"
     );
     check(
         &v,
