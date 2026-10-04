@@ -1341,8 +1341,7 @@
           "type": "string"
         },
         "prefix": {
-          "maxLength": 512,
-          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]{0,62}$",
           "type": "string"
         },
         "revision": {

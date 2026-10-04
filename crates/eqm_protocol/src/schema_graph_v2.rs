@@ -907,7 +907,7 @@ pub struct FragmentUseV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(schema_with = "selector_text_schema")]
+    #[schemars(with = "LocalRequirementIdText")]
     pub prefix: Option<String>,
 }
 

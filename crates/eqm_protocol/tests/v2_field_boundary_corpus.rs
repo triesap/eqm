@@ -1040,12 +1040,32 @@ fn capability_journey_surface_fragment_fields_are_bounded() -> Result<(), Box<dy
         &[json!(sha('4'))],
         &[json!("sha256:abc"), json!(sha('4').to_uppercase())],
     );
-    check(
+    // RF66: the optional fragment prefix is the owning single-segment
+    // `LocalRequirementId`, not general selector text. The exact-field literals
+    // are asserted equal to the owning constructor for the same input.
+    let prefix_values: Vec<String> = vec![
+        "card".to_owned(),
+        "shared".to_owned(),
+        repeated(b'a', 63),
+        String::new(),
+        "card.item".to_owned(),
+        "Card".to_owned(),
+        "card-item".to_owned(),
+        repeated(b'a', 64),
+        "1card".to_owned(),
+        "card card".to_owned(),
+    ];
+    parity(
         &v,
         &base,
         "/surfaces/0/fragment_origins/0/prefix",
-        &[json!("card")],
-        &[json!("")],
+        &prefix_values,
+        |value| LocalRequirementId::new(value).is_ok(),
+    );
+    check_null_rejected(&v, &base, "/surfaces/0/fragment_origins/0/prefix");
+    assert!(
+        v.is_valid(&removed(&base, "/surfaces/0/fragment_origins/0/prefix")),
+        "absent optional fragment prefix must be accepted"
     );
 
     check(
