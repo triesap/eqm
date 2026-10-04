@@ -418,4 +418,86 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn asymmetric_fixture_field_boundaries_are_admitted_and_diagnosed() -> Result<(), Box<dyn Error>>
+    {
+        // Positive: an additional valid portable source root is admitted by the
+        // public CLI boundary and the workspace stays valid.
+        let repository = crate::test_support::asymmetric_repository()?;
+        let workspace = repository.path().join("eqm.toml");
+        let text = fs::read_to_string(&workspace)?;
+        fs::write(
+            &workspace,
+            text.replace(
+                "roots = [\"shared/kmp\"]",
+                "roots = [\"shared/kmp\", \"shared/common\"]",
+            ),
+        )?;
+        assert_eq!(
+            run_validate(repository.path())?,
+            0,
+            "multi-root positive denied"
+        );
+
+        // Negative: an empty source-root collection is diagnosed at the CLI.
+        let repository = crate::test_support::asymmetric_repository()?;
+        let workspace = repository.path().join("eqm.toml");
+        let text = fs::read_to_string(&workspace)?;
+        fs::write(
+            &workspace,
+            text.replace("roots = [\"shared/kmp\"]", "roots = []"),
+        )?;
+        assert_eq!(
+            run_validate(repository.path())?,
+            3,
+            "empty roots were admitted"
+        );
+
+        // Negative: an exact duplicate source root is diagnosed at the CLI.
+        let repository = crate::test_support::asymmetric_repository()?;
+        let workspace = repository.path().join("eqm.toml");
+        let text = fs::read_to_string(&workspace)?;
+        fs::write(
+            &workspace,
+            text.replace(
+                "roots = [\"shared/kmp\"]",
+                "roots = [\"shared/kmp\", \"shared/kmp\"]",
+            ),
+        )?;
+        assert_eq!(
+            run_validate(repository.path())?,
+            3,
+            "duplicate roots were admitted"
+        );
+
+        // Negative: an invalid nested target subject is diagnosed at the CLI.
+        let repository = crate::test_support::asymmetric_repository()?;
+        let scenario = repository.path().join("eqm/contracts/scenario.signup.toml");
+        let text = fs::read_to_string(&scenario)?;
+        fs::write(
+            &scenario,
+            text.replace("target = \"mobile\"", "target = \"Web\""),
+        )?;
+        assert_eq!(
+            run_validate(repository.path())?,
+            3,
+            "uppercase target subject was admitted"
+        );
+
+        // Negative: an invalid nested provider subject is diagnosed at the CLI.
+        let repository = crate::test_support::asymmetric_repository()?;
+        let scenario = repository.path().join("eqm/contracts/scenario.signup.toml");
+        let text = fs::read_to_string(&scenario)?;
+        fs::write(
+            &scenario,
+            text.replace("provider = \"provider.mailgun\"", "provider = \"provider\""),
+        )?;
+        assert_eq!(
+            run_validate(repository.path())?,
+            3,
+            "single-segment provider subject was admitted"
+        );
+        Ok(())
+    }
 }

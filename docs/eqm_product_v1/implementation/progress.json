@@ -3415,7 +3415,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S043-R4",
+ "next_checkpoint": "independent_P03_review_before_S044",
  "supervisor_review": {
   "source_commit": "1836b3512272a78b28f7548debd2a61f4ebbfd84",
   "report": "implementation/reports/CODEX-1836b35.md",
@@ -3424,9 +3424,9 @@
   "standard_check": "passed_738_test_executions",
   "doctests": "passed_9",
   "release_candidate": false,
-  "next_checkpoint": "S043-R4"
+  "next_checkpoint": "independent_P03_review_before_S044"
  },
- "execution_target": "P03-R8, P03-R9 and P03-R10 implemented and locally verified; S043-R4 pending; independent P03 acceptance before S044; full MVP S211 remains",
+ "execution_target": "P03-R8 through S043-R4 implemented and locally verified; independent Codex P03 acceptance before S044; full MVP S211 remains",
  "supervisor_findings": [
   {
    "id": "RF01",
@@ -4144,11 +4144,12 @@
    {
     "id": "P03-R10",
     "status": "implemented_verified_pending_codex_acceptance",
+    "commit_sha": "f1419e43d4662339f6a52cd0bd73101cb9e5665d",
     "supervisor_status": "not_accepted"
    },
    {
     "id": "S043-R4",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    }
   ]
@@ -4315,9 +4316,9 @@
   "source_commit": "0c23e6941300bf89137f5fd0b62dd53fdb8a9ff9",
   "status": "latest_returned_run_not_located_no_product_delta_no_acceptance_change",
   "technical_amendment": "DEV-022",
-  "next_checkpoint": "S043-R4",
+  "next_checkpoint": "independent_P03_review_before_S044",
   "remaining_checkpoints": [
-   "S043-R4"
+   "independent_P03_review_before_S044"
   ],
   "preserve_accepted_numbered_steps": 42
  }

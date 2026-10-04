@@ -594,3 +594,140 @@ fn prepared_fixture_admits_repository_and_extension_boundaries() -> Result<(), B
     );
     Ok(())
 }
+
+/// S043-R4: the repaired nested scenario-reference and source-root collection
+/// contracts are exercised through the real authored loader and preparation
+/// boundary, not the schema alone. Every negative mutates exactly one axis.
+#[test]
+fn prepared_fixture_admits_nested_subject_and_source_root_boundaries() -> Result<(), Box<dyn Error>>
+{
+    fn prepare_repository(repository: &tempfile::TempDir) -> Result<bool, Box<dyn Error>> {
+        Ok(prepare(
+            &SessionRequest::new(None, evaluation_time()?),
+            repository.path(),
+        )
+        .is_ok())
+    }
+
+    fn mutate(
+        repository: &tempfile::TempDir,
+        relative: &str,
+        from: &str,
+        to: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        let path = repository.path().join(relative);
+        let text = fs::read_to_string(&path)?;
+        fs::write(&path, text.replace(from, to))?;
+        Ok(())
+    }
+
+    // Positive: an additional valid portable source root is retained and both
+    // tagged subject alternatives are admitted by real preparation.
+    let repository = fixture()?;
+    mutate(
+        &repository,
+        "eqm.toml",
+        "roots = [\"shared/kmp\"]",
+        "roots = [\"shared/kmp\", \"shared/common\"]",
+    )?;
+    assert!(
+        prepare_repository(&repository)?,
+        "multi-root positive denied"
+    );
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let graph = session.finalized().graph();
+    let kmp = graph
+        .source_components()
+        .values()
+        .find(|component| component.id().as_str() == "shared.kmp")
+        .ok_or("shared.kmp")?;
+    assert_eq!(kmp.roots().len(), 2, "both portable roots must be retained");
+    let signup = graph
+        .scenarios()
+        .values()
+        .find(|scenario| scenario.id().as_str() == "signup.flow")
+        .ok_or("signup.flow")?;
+    assert!(
+        signup
+            .participants()
+            .iter()
+            .any(|participant| matches!(participant.subject(), ScenarioSubject::Target(_))),
+        "target subject alternative must be admitted"
+    );
+    assert!(
+        signup
+            .participants()
+            .iter()
+            .any(|participant| matches!(participant.subject(), ScenarioSubject::Provider(_))),
+        "provider subject alternative must be admitted"
+    );
+
+    // Negative: an empty source-root collection rejects.
+    let repository = fixture()?;
+    mutate(
+        &repository,
+        "eqm.toml",
+        "roots = [\"shared/kmp\"]",
+        "roots = []",
+    )?;
+    assert!(
+        !prepare_repository(&repository)?,
+        "empty roots were admitted"
+    );
+
+    // Negative: an exact duplicate source root rejects.
+    let repository = fixture()?;
+    mutate(
+        &repository,
+        "eqm.toml",
+        "roots = [\"shared/kmp\"]",
+        "roots = [\"shared/kmp\", \"shared/kmp\"]",
+    )?;
+    assert!(
+        !prepare_repository(&repository)?,
+        "duplicate roots were admitted"
+    );
+
+    // Negative: a non-portable source root rejects.
+    let repository = fixture()?;
+    mutate(
+        &repository,
+        "eqm.toml",
+        "roots = [\"shared/kmp\"]",
+        "roots = [\"../escape\"]",
+    )?;
+    assert!(
+        !prepare_repository(&repository)?,
+        "escaping root was admitted"
+    );
+
+    // Negative: an invalid target subject reference rejects.
+    let repository = fixture()?;
+    mutate(
+        &repository,
+        "eqm/contracts/scenario.signup.toml",
+        "target = \"mobile\"",
+        "target = \"Web\"",
+    )?;
+    assert!(
+        !prepare_repository(&repository)?,
+        "uppercase target subject was admitted"
+    );
+
+    // Negative: an invalid provider subject reference rejects.
+    let repository = fixture()?;
+    mutate(
+        &repository,
+        "eqm/contracts/scenario.signup.toml",
+        "provider = \"provider.mailgun\"",
+        "provider = \"provider\"",
+    )?;
+    assert!(
+        !prepare_repository(&repository)?,
+        "single-segment provider subject was admitted"
+    );
+    Ok(())
+}
