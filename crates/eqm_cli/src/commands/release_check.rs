@@ -158,6 +158,7 @@ fn execute_with_authority(
         release_facets,
         effective_trust,
         waivers: waivers.clone(),
+        empty_scope_authorized: false,
     };
     let status = evaluate_release_gate(&input);
     let result = ReleaseCheckResultDto {

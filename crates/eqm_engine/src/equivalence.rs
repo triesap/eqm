@@ -24,6 +24,9 @@ pub enum EquivalenceStatus {
     ConditionallyEquivalent,
     /// At least one required target is nonconformant.
     NotEquivalent,
+    /// Fewer than two required members: a one-member cohort cannot support a
+    /// meaningful cross-target equivalence claim and stays non-authorizing.
+    NoMeaningfulComparison,
     /// Required results or exact context are absent, mismatched, or invalid.
     Unknown,
 }
@@ -51,6 +54,15 @@ pub fn evaluate_target_set_equivalence(
         .filter(|target| !required_targets.contains(*target))
         .cloned()
         .collect();
+    // A one-member cohort cannot establish cross-target equivalence: it is
+    // labeled no meaningful comparison rather than a vacuous equivalent pass.
+    if required_targets.len() < 2 {
+        return EquivalenceReport {
+            status: EquivalenceStatus::NoMeaningfulComparison,
+            waivers: BTreeSet::new(),
+            extra_targets,
+        };
+    }
     let mut required = Vec::new();
     for target in required_targets {
         let Some(evaluation) = evaluations.get(target) else {
@@ -184,10 +196,14 @@ mod tests {
     #[test]
     fn extra_targets_are_reported_without_changing_required_result() -> Result<(), Box<dyn Error>> {
         let context = Sha256Digest::from_bytes([1; 32]);
-        let required = BTreeSet::from([TargetId::new("web")?]);
+        let required = BTreeSet::from([TargetId::new("ios")?, TargetId::new("web")?]);
         let results = BTreeMap::from([
             (
                 TargetId::new("web")?,
+                evaluation(context, TargetConformance::Conformant, None)?,
+            ),
+            (
+                TargetId::new("ios")?,
                 evaluation(context, TargetConformance::Conformant, None)?,
             ),
             (
@@ -200,6 +216,21 @@ mod tests {
         assert_eq!(
             report.extra_targets,
             BTreeSet::from([TargetId::new("preview")?])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn a_single_required_member_has_no_meaningful_comparison() -> Result<(), Box<dyn Error>> {
+        let context = Sha256Digest::from_bytes([1; 32]);
+        let required = BTreeSet::from([TargetId::new("web")?]);
+        let results = BTreeMap::from([(
+            TargetId::new("web")?,
+            evaluation(context, TargetConformance::Conformant, None)?,
+        )]);
+        assert_eq!(
+            evaluate_target_set_equivalence(&required, context, &results).status,
+            EquivalenceStatus::NoMeaningfulComparison
         );
         Ok(())
     }

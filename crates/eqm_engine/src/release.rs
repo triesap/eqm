@@ -94,6 +94,11 @@ pub struct ReleaseGateInput {
     pub effective_trust: Option<TrustLevel>,
     /// Visible waivers contributing to conditional state.
     pub waivers: BTreeSet<WaiverId>,
+    /// Protected explicit permission for an otherwise empty required release
+    /// scope. It is never derived from defaults: local inspection and any path
+    /// without explicit protected authority must set it `false`, which leaves an
+    /// empty scope non-authorizing.
+    pub empty_scope_authorized: bool,
 }
 
 /// Closed exact release gate result.
@@ -112,6 +117,13 @@ pub enum ReleaseGateStatus {
 /// Evaluates one exact release gate with a default `signed_ci` trust floor.
 #[must_use]
 pub fn evaluate_release_gate(input: &ReleaseGateInput) -> ReleaseGateStatus {
+    // An empty required release scope is not a vacuous pass: without explicit
+    // protected permission it is non-authorizing rather than authorized by
+    // absence of obligations.
+    if input.release_facets.is_empty() && input.exposure.is_empty() && !input.empty_scope_authorized
+    {
+        return ReleaseGateStatus::Unknown;
+    }
     if !input.release_record_verified
         || input.observed_subject.as_ref() != Some(&input.expected_subject)
         || input.observed_context != Some(input.expected_context)
@@ -189,6 +201,7 @@ mod tests {
             release_facets: vec![FacetStatus::Satisfied],
             effective_trust: Some(TrustLevel::SignedCi),
             waivers: BTreeSet::new(),
+            empty_scope_authorized: false,
         })
     }
 

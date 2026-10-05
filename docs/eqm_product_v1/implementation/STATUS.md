@@ -21,8 +21,10 @@ cannot disappear from completeness. S049 applies DEV-001: expanded fragment
 requirements inherit the stronger fragment/journey risk, explicit lower risk
 rejects, the expanded graph is revalidated before finalization, and the release
 path uses the checked `CompletePolicyResolution` universe boundary. The two
-reviewed CLI goldens changed only their graph digest. S050–S076 remain pending
-(27 checkpoints).
+reviewed CLI goldens changed only their graph digest. S050 makes an empty
+required release scope non-authorizing without explicit protected permission and
+labels a one-member cohort as no meaningful comparison. S051–S076 remain pending
+(26 checkpoints).
 
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
 matching the actual issued native instruction and completed branch. All four
