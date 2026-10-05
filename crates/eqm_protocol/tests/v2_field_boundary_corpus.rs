@@ -1309,6 +1309,32 @@ fn owning_evidence_spec_ok(
     build().is_some()
 }
 
+fn owning_release_record_ok(channel: &str) -> bool {
+    let build = || -> Option<()> {
+        let channel = match channel {
+            "development" => ReleaseChannel::Development,
+            "internal" => ReleaseChannel::Internal,
+            "beta" => ReleaseChannel::Beta,
+            "production" => ReleaseChannel::Production,
+            _ => return None,
+        };
+        EvidenceSpecification::new(
+            EvidenceSpecId::new("probe").ok()?,
+            EvidenceKind::ReleaseRecord,
+            vec![FullRequirementId::new("account.create#create").ok()?],
+            vec![Facet::Behavior],
+            None,
+            Some(EvidenceSelector::Release { channel }),
+            None,
+            None,
+            Extensions::default(),
+        )
+        .ok()?;
+        Some(())
+    };
+    build().is_some()
+}
+
 fn selector_document(kind: &str) -> Value {
     match kind {
         "symbol" => json!({"kind": "symbol", "name": "main"}),
@@ -1443,6 +1469,72 @@ fn owning_consumer_parity_for_requirement_runner_artifact_and_evidence()
         );
     }
 
+    Ok(())
+}
+
+/// The complete DEV-026 evidence combination matrix: every evidence kind ×
+/// runner absent/present × selector absent/all six kinds × count absent/present,
+/// compared on the same literal input with the actual `EvidenceSpecification`
+/// constructor.
+#[test]
+fn complete_evidence_kind_runner_selector_count_matrix() -> Result<(), Box<dyn Error>> {
+    let v = graph_validator()?;
+    let base = graph_document();
+    let kinds = [
+        "structural_check",
+        "static_inventory",
+        "test",
+        "snapshot",
+        "runtime_snapshot",
+        "release_record",
+        "manual_review",
+    ];
+    let selectors: [Option<&str>; 7] = [
+        None,
+        Some("symbol"),
+        Some("route"),
+        Some("inventory"),
+        Some("test"),
+        Some("snapshot"),
+        Some("release"),
+    ];
+    let mut cases = 0usize;
+    for kind in kinds {
+        for runner in [false, true] {
+            for selector in selectors {
+                for count in [false, true] {
+                    let record = evidence_document(kind, runner, selector, count);
+                    let document = mutated(&base, "/bindings/0/evidence/0", record.clone());
+                    assert_eq!(
+                        v.is_valid(&document),
+                        owning_evidence_spec_ok(kind, runner, selector, count),
+                        "evidence {kind} runner={runner} selector={selector:?} count={count}"
+                    );
+                    cases += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(cases, 196, "complete evidence combination matrix");
+    Ok(())
+}
+
+/// Every owning release channel is accepted, and the schema rejects exactly the
+/// channels the owning `ReleaseChannel` vocabulary rejects.
+#[test]
+fn release_channel_variants_match_owning() -> Result<(), Box<dyn Error>> {
+    let v = graph_validator()?;
+    let base = graph_document();
+    for channel in ["development", "internal", "beta", "production", "preview"] {
+        let mut record = evidence_document("release_record", false, Some("release"), false);
+        record["selector"]["channel"] = json!(channel);
+        let document = mutated(&base, "/bindings/0/evidence/0", record.clone());
+        assert_eq!(
+            v.is_valid(&document),
+            owning_release_record_ok(channel),
+            "release channel {channel}"
+        );
+    }
     Ok(())
 }
 
