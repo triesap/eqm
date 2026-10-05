@@ -2,7 +2,7 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S044",
+ "next_step": "S052",
  "implementation": "in_progress",
  "local_verification": "P01-P03_local_accepted;43_numbered_steps;actual_owning_probe_27_passed;P04-R1_durable_owning_constructor_and_control_corpus_verified;RF70_implemented_verified_pending_acceptance;S044_application_selection_orchestration_verified;S045_duplicate_profile_rejection_verified;S046_exact_policy_profile_revisions_verified;S047_required_universe_verified;S048_unresolved_applicability_retained;S049_expanded_risk_and_checked_completeness_verified;S050_empty_scope_and_singleton_rejected;S051_facet_scoped_strength_verified;not_release_ready",
  "platform_verification": "not_run",
@@ -4297,7 +4297,7 @@
   "S075",
   "S076"
  ],
- "first_unfinished_original_step": "S044",
+ "first_unfinished_original_step": "S052",
  "supervisor_batch": {
   "amendment": "DEV-028",
   "endpoint": "S076",
