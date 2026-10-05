@@ -1,11 +1,11 @@
-//! Shared exact development policy/profile preparation.
+//! Thin CLI adapter over application-owned policy selection preparation.
 
 use crate::session::PreparedSession;
+use eqm_application::prepare_obligations;
 use eqm_domain::{DimensionId, ProfileId, SymbolicValueId};
 use eqm_engine::{
-    ApplicabilityContext, AuthorityOrigin, EvaluationMode, Obligation, ObligationDerivation,
-    PolicyProfileRequest, PolicyRef, ProfileRequest, ScopeSubject, SelectedPolicyProfiles,
-    derive_obligations, select_policy_profiles,
+    AuthorityOrigin, EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest,
+    PolicyRef, ProfileRequest, ScopeSubject, SelectedPolicyProfiles,
 };
 use eqm_protocol::{FacetStatusDto, ObligationDto, ProfileValueDto};
 use std::collections::BTreeMap;
@@ -14,11 +14,15 @@ use std::error::Error;
 
 type ProfileValues = Vec<(DimensionId, Option<SymbolicValueId>)>;
 
-/// Selects complete development authority and derives obligations.
-pub fn derive<'a>(
-    session: &'a PreparedSession,
+/// Builds the explicit development request from CLI profile arguments.
+///
+/// Reusing the application selection operation keeps authority preparation out
+/// of the calling command; this adapter only parses transport arguments and
+/// resolves the one development policy revision.
+pub fn development_request(
+    session: &PreparedSession,
     requested: &[String],
-) -> Result<(SelectedPolicyProfiles<'a>, ObligationDerivation), Box<dyn Error>> {
+) -> Result<PolicyProfileRequest, Box<dyn Error>> {
     let graph = session.finalized().graph();
     let policies = graph.policies().values().collect::<Vec<_>>();
     if policies.len() != 1 {
@@ -52,37 +56,29 @@ pub fn derive<'a>(
             )?)
         })
         .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
-    let request = PolicyProfileRequest::new(
+    Ok(PolicyProfileRequest::new(
         AuthorityOrigin::CandidateLocal,
         PolicyRef::new(policy.id().clone(), policy.revision()),
         profiles,
-    )?;
-    let selection =
-        select_policy_profiles(graph, EvaluationMode::Development, Some(&request), None)?;
-    let applicability = applicability_context(session, &selection)?;
-    let obligations = derive_obligations(session.finalized(), &selection, &applicability, None)?;
-    Ok((selection, obligations))
+    )?)
 }
 
-/// Builds the complete applicability context for one exact selection.
-pub fn applicability_context(
-    session: &PreparedSession,
-    selection: &SelectedPolicyProfiles<'_>,
-) -> Result<ApplicabilityContext, Box<dyn Error>> {
-    let graph = session.finalized().graph();
-    Ok(ApplicabilityContext::from_profiles(
-        selection
-            .profiles()
-            .values()
-            .map(|selected| {
-                graph
-                    .profiles()
-                    .get(&(selected.id().clone(), selected.revision()))
-                    .map(|profile| (profile, selected.values()))
-                    .ok_or("selected profile authority")
-            })
-            .collect::<Result<Vec<_>, _>>()?,
-    )?)
+/// Selects complete development authority and derives obligations through the
+/// application operation with an explicit development mode and authority.
+pub fn derive<'a>(
+    session: &'a PreparedSession,
+    requested: &[String],
+) -> Result<(SelectedPolicyProfiles<'a>, ObligationDerivation), Box<dyn Error>> {
+    let request = development_request(session, requested)?;
+    let prepared = prepare_obligations(
+        session.finalized(),
+        EvaluationMode::Development,
+        Some(&request),
+        None,
+        None,
+    )?;
+    let (selection, _applicability, derivation) = prepared.into_parts();
+    Ok((selection, derivation))
 }
 
 fn parse_profile(value: &str) -> Result<(ProfileId, ProfileValues), Box<dyn Error>> {

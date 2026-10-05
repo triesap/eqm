@@ -37,6 +37,7 @@ pub mod cohort;
 pub mod comparison;
 pub mod evaluation;
 pub mod provenance;
+pub mod selection;
 pub mod session;
 pub mod source;
 
@@ -57,6 +58,9 @@ pub use evaluation::{
 pub use provenance::{
     PolicyProvenanceError, PolicyProvenanceV2, TargetConfigurationError, prepare_policy_provenance,
     prepare_target_configuration,
+};
+pub use selection::{
+    ObligationPreparationError, PreparedObligations, applicability_context, prepare_obligations,
 };
 pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
 pub use source::{

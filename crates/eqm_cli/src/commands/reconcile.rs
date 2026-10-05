@@ -47,7 +47,8 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         return Err(format!("target `{target}` was not found").into());
     }
     let (selection, _) = evaluation::derive(&session, &profiles)?;
-    let applicability = evaluation::applicability_context(&session, &selection)?;
+    let applicability =
+        eqm_application::applicability_context(session.finalized().graph(), &selection)?;
     let observation = inventory_path
         .as_deref()
         .map(|path| load_inventory(&session, path, &target_id))
