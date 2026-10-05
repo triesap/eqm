@@ -9,8 +9,9 @@ forbidden C0/C1 point (embedded and trailing), allowed LF/TAB, empty and each
 carrier's exact ASCII maximum/over-maximum; RF70 durable coverage is now in the
 product test corpus. S044 moves exact selection orchestration into the new
 application `prepare_obligations` operation with explicit mode and authority, so
-protected modes cannot take an implicit development branch. S045–S076 remain
-pending (32 checkpoints).
+protected modes cannot take an implicit development branch. S045 rejects a
+repeated `--profile` selection instead of silently overwriting it. S046–S076
+remain pending (31 checkpoints).
 
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
 matching the actual issued native instruction and completed branch. All four

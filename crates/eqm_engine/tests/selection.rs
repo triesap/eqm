@@ -3,13 +3,23 @@
 mod support;
 
 use eqm_domain::{
-    Facet, FullRequirementId, PolicyId, ProfileId, RequirementScope, Revision, RiskClass, UnitId,
+    DimensionId, Facet, FullRequirementId, PolicyId, ProfileId, RequirementScope, Revision,
+    RiskClass, SymbolicValueId, UnitId,
 };
 use eqm_engine::{
     AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,
     SelectionError, matching_policy_rules, resolve_graph, select_policy_profiles,
 };
 use std::error::Error;
+
+type ProfileValues = Vec<(DimensionId, Option<SymbolicValueId>)>;
+
+fn profile_values(region: &str) -> Result<ProfileValues, Box<dyn Error>> {
+    Ok(vec![(
+        DimensionId::new("region")?,
+        Some(SymbolicValueId::new(region)?),
+    )])
+}
 
 fn request(
     origin: AuthorityOrigin,
@@ -128,5 +138,46 @@ fn invalid_authority_and_closed_selector_axes_fail_or_filter_exactly() -> Result
         )
         .is_empty()
     );
+    Ok(())
+}
+
+#[test]
+fn duplicate_profile_requests_reject_with_exact_diagnostics() -> Result<(), Box<dyn Error>> {
+    let id = ProfileId::new("audience.default")?;
+    let revision = Revision::new(1)?;
+    let first = ProfileRequest::new(id.clone(), revision, profile_values("eu")?)?;
+    let second = ProfileRequest::new(id.clone(), revision, profile_values("us")?)?;
+    let policy = PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?);
+    // Duplicate exact profile authority rejects even when the values conflict.
+    assert_eq!(
+        PolicyProfileRequest::new(
+            AuthorityOrigin::CandidateLocal,
+            policy.clone(),
+            vec![first.clone(), second]
+        )
+        .err(),
+        Some(SelectionError::DuplicateProfile)
+    );
+    // Duplicate dimensions reject inside one profile request.
+    assert_eq!(
+        ProfileRequest::new(
+            id,
+            revision,
+            vec![
+                (
+                    DimensionId::new("region")?,
+                    Some(SymbolicValueId::new("eu")?)
+                ),
+                (
+                    DimensionId::new("region")?,
+                    Some(SymbolicValueId::new("us")?)
+                ),
+            ],
+        )
+        .err(),
+        Some(SelectionError::DuplicateDimension)
+    );
+    // A single distinct complete selection still constructs.
+    let _ = PolicyProfileRequest::new(AuthorityOrigin::CandidateLocal, policy, vec![first])?;
     Ok(())
 }

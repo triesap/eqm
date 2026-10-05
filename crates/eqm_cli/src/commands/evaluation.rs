@@ -29,11 +29,14 @@ pub fn development_request(
         return Err("exactly one development policy revision is required".into());
     }
     let policy = policies[0];
-    let requested = requested
-        .iter()
-        .map(|value| parse_profile(value))
-        .collect::<Result<BTreeMap<_, _>, _>>()?;
-    if requested.keys().any(|id| !policy.profiles().contains(id)) {
+    let mut selected: BTreeMap<ProfileId, ProfileValues> = BTreeMap::new();
+    for value in requested {
+        let (id, values) = parse_profile(value)?;
+        if selected.insert(id.clone(), values).is_some() {
+            return Err(format!("profile `{id}` was selected more than once").into());
+        }
+    }
+    if selected.keys().any(|id| !policy.profiles().contains(id)) {
         return Err("selected profile is outside the policy profile set".into());
     }
     let profiles = policy
@@ -52,7 +55,7 @@ pub fn development_request(
             Ok(ProfileRequest::new(
                 id.clone(),
                 *revision,
-                requested.get(id).cloned().unwrap_or_default(),
+                selected.get(id).cloned().unwrap_or_default(),
             )?)
         })
         .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
@@ -173,4 +176,77 @@ pub fn obligation_id(obligation: &Obligation) -> String {
         subject,
         obligation.key.facet
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cli::{ColorWhen, CommandName, GlobalOptions, OutputFormat};
+    use crate::session::{SessionRequest, prepare};
+    use eqm_domain::UtcInstant;
+    use std::error::Error;
+
+    fn global() -> GlobalOptions {
+        GlobalOptions {
+            config: None,
+            profiles: Vec::new(),
+            format: OutputFormat::Json,
+            offline: true,
+            no_progress: true,
+            color: ColorWhen::Never,
+            baseline: None,
+            output: None,
+        }
+    }
+
+    #[test]
+    fn duplicate_profile_selection_rejects_at_the_transport_adapter() -> Result<(), Box<dyn Error>>
+    {
+        let repository = crate::test_support::example_repository()?;
+        let instant: UtcInstant = "2026-01-02T03:04:05Z".parse()?;
+        let session = prepare(
+            &SessionRequest::at(global(), CommandName::Context, instant),
+            repository.path(),
+        )?;
+        let error = development_request(
+            &session,
+            &[
+                "audience.default=region:eu".to_owned(),
+                "audience.default=region:us".to_owned(),
+            ],
+        )
+        .err()
+        .ok_or("duplicate profile selection was admitted")?;
+        assert!(error.to_string().contains("more than once"), "{error}");
+
+        // A distinct complete selection still resolves and derives obligations.
+        let single = development_request(&session, &["audience.default=region:eu".to_owned()])?;
+        let prepared = prepare_obligations(
+            session.finalized(),
+            EvaluationMode::Development,
+            Some(&single),
+            None,
+            None,
+        )?;
+        assert!(!prepared.derivation().obligations.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn duplicate_profile_dimensions_reject_before_selection() -> Result<(), Box<dyn Error>> {
+        let repository = crate::test_support::example_repository()?;
+        let instant: UtcInstant = "2026-01-02T03:04:05Z".parse()?;
+        let session = prepare(
+            &SessionRequest::at(global(), CommandName::Context, instant),
+            repository.path(),
+        )?;
+        let error = development_request(
+            &session,
+            &["audience.default=region:eu,region:us".to_owned()],
+        )
+        .err()
+        .ok_or("duplicate profile dimension was admitted")?;
+        assert!(error.to_string().contains("DuplicateDimension"), "{error}");
+        Ok(())
+    }
 }
