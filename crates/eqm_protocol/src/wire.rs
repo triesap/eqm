@@ -210,6 +210,52 @@ pub fn positive_unsigned_schema(_generator: &mut SchemaGenerator) -> Schema {
     Schema::from(object)
 }
 
+/// Returns the schema for a canonical unsigned v2 wire integer in `min..=max`.
+///
+/// The exact integer form covers `min..=min(max, MAX_SAFE_INTEGER)` and, when
+/// `max` exceeds the safe interval, the canonical decimal-string form covers the
+/// remaining `MAX_SAFE_INTEGER+1..=max` values. This mirrors the [`WireUint`]
+/// canonical pair for the exact owning bound of a narrower carrier, such as
+/// `NonZeroU32` or the `i64::MAX` duration ceiling. When both bounds lie inside
+/// the safe interval only the integer form is canonical, because [`WireUint`]
+/// rejects a small-value string.
+pub fn bounded_unsigned_schema(min: u64, max: u64) -> Schema {
+    debug_assert!(min <= max);
+    let mut variants = Vec::new();
+    if min <= MAX_SAFE_INTEGER {
+        variants.push(json!({
+            "type": "integer",
+            "format": "uint64",
+            "minimum": min,
+            "maximum": max.min(MAX_SAFE_INTEGER),
+        }));
+    }
+    if max > MAX_SAFE_INTEGER {
+        let string_min = min.max(MAX_SAFE_INTEGER + 1);
+        variants.push(json!({
+            "type": "string",
+            "pattern": format!(
+                "^{}$",
+                decimal_range_alternation(string_min as u128, max as u128)
+            ),
+        }));
+    }
+    match variants.as_slice() {
+        [Value::Object(single)] => {
+            let mut object = Map::new();
+            for (key, value) in single {
+                object.insert(key.clone(), value.clone());
+            }
+            Schema::from(object)
+        }
+        _ => {
+            let mut object = Map::new();
+            object.insert("anyOf".to_owned(), Value::Array(variants));
+            Schema::from(object)
+        }
+    }
+}
+
 fn signed_schema() -> Schema {
     let mut object = Map::new();
     object.insert(

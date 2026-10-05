@@ -221,6 +221,44 @@ fn example_workspace_projection_is_a_genuine_finalized_positive_graph() -> Resul
     Ok(())
 }
 
+/// The real authored loader projects the owning `PositiveDays` maximum at its
+/// exact `u32::MAX` boundary, and the committed schema still accepts it.
+#[test]
+fn loader_projected_positive_days_boundary_is_schema_valid() -> Result<(), Box<dyn Error>> {
+    let validator = semantic_graph_validator()?;
+    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(std::path::Path::parent)
+        .ok_or("workspace root unavailable")?
+        .join("examples/android-ios");
+    let repository = tempfile::tempdir()?;
+    copy_directory(&source, repository.path())?;
+    std::fs::create_dir(repository.path().join(".git"))?;
+    let policy = repository
+        .path()
+        .join("eqm/policies/consumer.critical_flow.toml");
+    let text = std::fs::read_to_string(&policy)?;
+    let updated = text.replace("maximum_days = 30", "maximum_days = 4294967295");
+    assert_ne!(
+        text, updated,
+        "policy fixture no longer contains maximum_days"
+    );
+    std::fs::write(&policy, updated)?;
+    let loaded = eqm_manifest::load_workspace(repository.path(), None)?;
+    let finalized =
+        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(loaded.into_graph_input())?);
+    let projected = project_graph_v2(&finalized)?;
+    assert!(
+        validator.is_valid(&projected),
+        "boundary projection failed the committed schema: {projected}"
+    );
+    assert_eq!(
+        projected["policies"][0]["waivers"]["maximum_days"],
+        serde_json::json!(4_294_967_295u64)
+    );
+    Ok(())
+}
+
 #[test]
 fn v2_graph_projection_conforms_to_real_draft_2020_12_schema() -> Result<(), Box<dyn Error>> {
     let validator = semantic_graph_validator()?;

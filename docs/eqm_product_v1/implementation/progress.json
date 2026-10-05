@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S043",
  "implementation": "in_progress",
- "local_verification": "independent_771_standard_9_doctests;42_numbered_accepted;RF66_RF67_allocated_accepted;P03_not_accepted;not_release_ready",
+ "local_verification": "independent_771_standard_9_doctests;42_numbered_accepted;RF66_RF67_allocated_accepted;P03-R14_numeric_owning_bounds_verified;P03_not_accepted;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -3415,7 +3415,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P03-R14",
+ "next_checkpoint": "P03-R15",
  "supervisor_review": {
   "source_commit": "1198cc4c3dfe6fea6443e0f4b1998a539d564d20",
   "report": "implementation/reports/CODEX-1198cc4.md",
@@ -3424,7 +3424,7 @@
   "standard_check": "passed_771_test_executions",
   "doctests": "passed_9",
   "release_candidate": false,
-  "next_checkpoint": "P03-R14"
+  "next_checkpoint": "P03-R15"
  },
  "execution_target": "All P03-R14 through S043-R6, mandatory independent P03 acceptance before S044; full MVP S211 remains",
  "supervisor_findings": [
@@ -4138,11 +4138,12 @@
   {
    "id": "RF68",
    "priority": "P2",
-   "status": "open",
+   "status": "implemented_verified_pending_codex_acceptance",
    "owner": "S043",
    "checkpoint": "P03-R14",
    "summary": "maximum_days schema admits values beyond owning NonZeroU32",
-   "report": "implementation/reports/CODEX-1198cc4.md"
+   "report": "implementation/reports/CODEX-1198cc4.md",
+   "completion_report": "implementation/reports/P03-R14.md"
   },
   {
    "id": "RF69",
@@ -4170,7 +4171,7 @@
   "checkpoints": [
    {
     "id": "P03-R14",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    },
    {

@@ -47,6 +47,21 @@ fn owners_schema(_: &mut SchemaGenerator) -> Schema {
     })
 }
 
+/// The owning `PositiveDays` carrier is `NonZeroU32`, so `1..=4,294,967,295`.
+fn positive_days_schema(_: &mut SchemaGenerator) -> Schema {
+    crate::bounded_unsigned_schema(1, u64::from(u32::MAX))
+}
+
+/// The owning `DurationMillis` carrier is a `u64` bounded by `i64::MAX`.
+fn duration_millis_schema(_: &mut SchemaGenerator) -> Schema {
+    crate::bounded_unsigned_schema(0, i64::MAX as u64)
+}
+
+/// The owning runner timeout is a `DurationMillis` in `1..=i64::MAX`.
+fn positive_duration_millis_schema(_: &mut SchemaGenerator) -> Schema {
+    crate::bounded_unsigned_schema(1, i64::MAX as u64)
+}
+
 fn title_schema(_: &mut SchemaGenerator) -> Schema {
     json_schema!({
         "type": "string",
@@ -1315,7 +1330,7 @@ pub struct EvidenceSpecV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(with = "WireUint")]
+    #[schemars(schema_with = "duration_millis_schema")]
     pub freshness: Option<WireUint>,
     #[schemars(with = "NamespacedExtensions")]
     pub extensions: BTreeMap<String, ExtensionValueV2Dto>,
@@ -1453,6 +1468,7 @@ pub struct PolicyRuleV2Dto {
     pub facets: CanonicalSet<String>,
     #[schemars(with = "TrustLevelText")]
     pub minimum_trust: String,
+    #[schemars(schema_with = "duration_millis_schema")]
     pub maximum_age: WireUint,
     #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub minimum_count: WireUint,
@@ -1481,7 +1497,7 @@ pub struct WaiverPolicyV2Dto {
         deserialize_with = "crate::v2::deserialize_present",
         skip_serializing_if = "Option::is_none"
     )]
-    #[schemars(schema_with = "crate::positive_unsigned_schema")]
+    #[schemars(schema_with = "positive_days_schema")]
     pub maximum_days: Option<WireUint>,
 }
 
@@ -1714,7 +1730,7 @@ pub struct RunnerV2Dto {
     pub cwd: WorkingDirectoryV2Dto,
     pub environment: CanonicalSet<EnvironmentBindingV2Dto>,
     pub secrets: CanonicalSet<SecretBindingV2Dto>,
-    #[schemars(schema_with = "crate::positive_unsigned_schema")]
+    #[schemars(schema_with = "positive_duration_millis_schema")]
     pub timeout_ms: WireUint,
     #[schemars(schema_with = "crate::positive_unsigned_schema")]
     pub max_output_bytes: WireUint,

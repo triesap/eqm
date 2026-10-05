@@ -29,8 +29,8 @@ pub use strict::{
 };
 pub use v2::*;
 pub use wire::{
-    MAX_SAFE_INTEGER, WireFormError, WireInt, WireUint, exact_signed, exact_unsigned,
-    positive_unsigned_schema,
+    MAX_SAFE_INTEGER, WireFormError, WireInt, WireUint, bounded_unsigned_schema, exact_signed,
+    exact_unsigned, positive_unsigned_schema,
 };
 
 pub use adapter::{

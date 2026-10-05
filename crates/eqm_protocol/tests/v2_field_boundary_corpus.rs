@@ -21,6 +21,7 @@ use eqm_domain::{
     RunnerLimits, RunnerProgram, ScenarioId, SelectorText, SourceComponentId, Surface, SurfaceId,
     SymbolicValueId, TargetId, Title, UnitId, WaiverId, WaiverPolicy, WorkingDirectoryTemplate,
 };
+use eqm_protocol::WireUint;
 use eqm_protocol::schema_graph_v2::ComparisonContextV2Dto;
 use jsonschema::{Draft, Validator};
 use serde_json::{Value, json};
@@ -137,6 +138,49 @@ fn parity(
             "{pointer}: value={value:?} schema={schema_ok} owner={owner_ok}"
         );
     }
+}
+
+/// Asserts schema acceptance equals an owning numeric decision for the same
+/// exact JSON value, including its canonical number/string wire form.
+fn parity_value(
+    v: &Validator,
+    base: &Value,
+    pointer: &str,
+    values: &[Value],
+    owner: impl Fn(&Value) -> bool,
+) {
+    for value in values {
+        let document = mutated(base, pointer, value.clone());
+        let schema_ok = v.is_valid(&document);
+        let owner_ok = owner(value);
+        assert_eq!(
+            schema_ok, owner_ok,
+            "{pointer}: value={value:?} schema={schema_ok} owner={owner_ok}"
+        );
+    }
+}
+
+/// Decodes one value through the real `WireUint` canonical number/string form.
+fn wire_uint(value: &Value) -> Option<u64> {
+    serde_json::from_value::<WireUint>(value.clone())
+        .ok()
+        .map(WireUint::get)
+}
+
+fn owning_positive_u64(value: &Value) -> bool {
+    wire_uint(value).is_some_and(|n| n >= 1)
+}
+
+fn owning_duration_millis(value: &Value) -> bool {
+    wire_uint(value).is_some_and(|ms| ms <= i64::MAX as u64)
+}
+
+fn owning_positive_duration_millis(value: &Value) -> bool {
+    wire_uint(value).is_some_and(|ms| (1..=i64::MAX as u64).contains(&ms))
+}
+
+fn owning_positive_days(value: &Value) -> bool {
+    wire_uint(value).is_some_and(|days| (1..=u64::from(u32::MAX)).contains(&days))
 }
 
 fn ext_boolean(value: bool) -> Value {
@@ -1492,6 +1536,74 @@ fn local_collection_and_combination_rules_match_owners() -> Result<(), Box<dyn E
         );
     }
 
+    Ok(())
+}
+
+#[test]
+fn numeric_members_match_owning_width_and_range() -> Result<(), Box<dyn Error>> {
+    let v = graph_validator()?;
+    let base = graph_document();
+
+    // Small magnitudes use the JSON integer form; values above the exact
+    // integer interval use the canonical decimal-string form. Noncanonical
+    // small-value strings stay rejected by the real `WireUint` carrier too.
+    let values = [
+        json!(0),
+        json!(1),
+        json!(30),
+        json!(4_294_967_295u64),
+        json!(4_294_967_296u64),
+        json!(9_007_199_254_740_991u64),
+        json!("9007199254740992"),
+        json!("9223372036854775807"),
+        json!("9223372036854775808"),
+        json!("18446744073709551615"),
+        json!("007"),
+        json!("9007199254740991"),
+    ];
+
+    // Owning `PositiveDays` is `NonZeroU32`: 1..=4,294,967,295.
+    parity_value(
+        &v,
+        &base,
+        "/policies/0/waivers/maximum_days",
+        &values,
+        owning_positive_days,
+    );
+    // Owning `DurationMillis` is a `u64` bounded by `i64::MAX`.
+    parity_value(
+        &v,
+        &base,
+        "/policies/0/rules/0/maximum_age",
+        &values,
+        owning_duration_millis,
+    );
+    parity_value(
+        &v,
+        &base,
+        "/bindings/0/evidence/0/freshness",
+        &values,
+        owning_duration_millis,
+    );
+    // Owning runner timeout is a positive `DurationMillis`.
+    parity_value(
+        &v,
+        &base,
+        "/runners/0/timeout_ms",
+        &values,
+        owning_positive_duration_millis,
+    );
+    // Owning `PositiveCount`/`Revision` keep the full positive `u64` range.
+    for pointer in [
+        "/policies/0/waivers/minimum_approvers",
+        "/policies/0/rules/0/minimum_count",
+        "/bindings/0/evidence/0/minimum_count",
+        "/policies/0/revision",
+        "/runners/0/max_output_bytes",
+        "/runners/0/max_concurrency",
+    ] {
+        parity_value(&v, &base, pointer, &values, owning_positive_u64);
+    }
     Ok(())
 }
 
