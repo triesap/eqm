@@ -26,6 +26,7 @@ type ContextResult = ContextResultDto<Value, Value, Value, Value>;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let unit = parsed.command.operands[0].clone();
     let target = option_value(&parsed, "--target").map(ToOwned::to_owned);
     let maximum = number_option(&parsed, "--max-bytes", 65_536)?;
@@ -46,7 +47,8 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     if bindings.is_empty() {
         return Err("context unit did not resolve to a binding".into());
     }
-    let (selection, derived) = evaluation::derive(&session, &profiles)?;
+    let (selection, derived) =
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
 
     let mut authority_candidates = Vec::new();
     if let Some(surface) = graph

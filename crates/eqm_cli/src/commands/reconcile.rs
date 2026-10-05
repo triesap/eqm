@@ -30,6 +30,7 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let target = option(&parsed, "--target")
         .ok_or("target required")?
         .to_owned();
@@ -46,7 +47,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     {
         return Err(format!("target `{target}` was not found").into());
     }
-    let (selection, _) = evaluation::derive(&session, &profiles)?;
+    let (selection, _) = evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
     let applicability =
         eqm_application::applicability_context(session.finalized().graph(), &selection)?;
     let observation = inventory_path

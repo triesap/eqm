@@ -25,6 +25,7 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let units = option_values(&parsed, "--unit");
     let targets = option_values(&parsed, "--target");
     let request = SessionRequest::new(parsed.global, parsed.command.name);
@@ -66,7 +67,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         }
     }
 
-    let (_, obligations) = evaluation::derive(&session, &profiles)?;
+    let (_, obligations) = evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
     for obligation in obligations.obligations.values().filter(|obligation| {
         (units.is_empty() || units.contains(obligation.key.unit.as_str()))
             && (targets.is_empty() || subject_matches(&obligation.key.subject, &targets))

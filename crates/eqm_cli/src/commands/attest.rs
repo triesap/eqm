@@ -26,10 +26,11 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     }
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let requested = option_values(&parsed, "--evidence");
     let request = SessionRequest::new(parsed.global, parsed.command.name);
     let session = prepare(&request, start)?;
-    let (selection, _) = evaluation::derive(&session, &profiles)?;
+    let (selection, _) = evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
     let paths = evidence_paths(&session, &requested)?;
     if paths.is_empty() {
         return Err("attestation requires at least one validated evidence result".into());
@@ -406,7 +407,7 @@ mod tests {
         )?;
         let request = SessionRequest::new(Default::default(), crate::cli::CommandName::Attest);
         let session = prepare(&request, root)?;
-        let (selection, _) = evaluation::derive(&session, &[])?;
+        let (selection, _) = evaluation::derive_with_policy(&session, None, &[])?;
         let profiles = serde_json::to_value(selected_profile_values(&selection)?)?;
         let repository = repository_identity(root)?;
         let commit = git_output(root, &["rev-parse", "HEAD"])?;

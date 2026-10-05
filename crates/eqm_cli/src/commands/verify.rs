@@ -30,6 +30,7 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let unit = option(&parsed, "--unit").map(str::to_owned);
     let target = option(&parsed, "--target").map(str::to_owned);
     let dry_run = parsed.command.options.contains_key("--dry-run");
@@ -43,7 +44,8 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         let baseline = parsed_baseline(&session, start, &baseline_identity(&request)?)?;
         let _ = baseline.workspace_digest();
     }
-    let (selection, obligations) = evaluation::derive(&session, &profiles)?;
+    let (selection, obligations) =
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
     let selected_profiles = profile_values(&selection)?;
     let mut plan = Vec::new();
     for binding in session

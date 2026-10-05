@@ -20,12 +20,13 @@ use std::path::Path;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let kind_name = parsed.command.operands[0].clone();
     let unit_filter = option_value(&parsed, "--unit").map(ToOwned::to_owned);
     let target_filter = option_value(&parsed, "--target").map(ToOwned::to_owned);
     let request = SessionRequest::new(parsed.global, parsed.command.name);
     let session = prepare(&request, start)?;
-    let (_, derived) = evaluation::derive(&session, &profiles)?;
+    let (_, derived) = evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
     let kind = parse_kind(&kind_name)?;
 
     let units = derived

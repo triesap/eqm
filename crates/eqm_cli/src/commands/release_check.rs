@@ -45,12 +45,14 @@ fn execute_with_authority(
     }
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let record_path = option(&parsed, "--release-record")
         .ok_or("release record required")?
         .to_owned();
     let request = SessionRequest::at(parsed.global, parsed.command.name, now);
     let session = prepare(&request, start)?;
-    let (selection, obligations) = evaluation::derive(&session, &profiles)?;
+    let (selection, obligations) =
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
     let (record_dto, record) = read_release_record(&session, &record_path)?;
     if !session
         .finalized()
@@ -993,7 +995,7 @@ pub(crate) mod tests {
         let request = SessionRequest::new(parsed.global, parsed.command.name);
         let session = prepare(&request, repository.path())?;
         let (selection, obligations) =
-            evaluation::derive(&session, &["audience.default".to_owned()])?;
+            evaluation::derive_with_policy(&session, None, &["audience.default".to_owned()])?;
         let profile_values = attest::selected_profile_values(&selection)?;
         let profiles = serde_json::to_value(&profile_values)?;
         let commit = git_output(repository.path(), &["rev-parse", "HEAD"])?;

@@ -2,7 +2,7 @@
 
 use crate::session::PreparedSession;
 use eqm_application::prepare_obligations;
-use eqm_domain::{DimensionId, ProfileId, SymbolicValueId};
+use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId, WorkspaceGraph};
 use eqm_engine::{
     AuthorityOrigin, EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest,
     PolicyRef, ProfileRequest, ScopeSubject, SelectedPolicyProfiles,
@@ -14,25 +14,27 @@ use std::error::Error;
 
 type ProfileValues = Vec<(DimensionId, Option<SymbolicValueId>)>;
 
-/// Builds the explicit development request from CLI profile arguments.
+/// Builds the explicit development request from CLI policy/profile arguments.
 ///
 /// Reusing the application selection operation keeps authority preparation out
 /// of the calling command; this adapter only parses transport arguments and
-/// resolves the one development policy revision.
+/// resolves exact policy/profile revisions. It never selects a latest revision:
+/// an ambiguous or missing stored authority requires an explicit selection.
 pub fn development_request(
     session: &PreparedSession,
+    policy: Option<&str>,
     requested: &[String],
 ) -> Result<PolicyProfileRequest, Box<dyn Error>> {
     let graph = session.finalized().graph();
-    let policies = graph.policies().values().collect::<Vec<_>>();
-    if policies.len() != 1 {
-        return Err("exactly one development policy revision is required".into());
-    }
-    let policy = policies[0];
-    let mut selected: BTreeMap<ProfileId, ProfileValues> = BTreeMap::new();
+    let (policy_id, policy_revision) = resolve_policy(graph, policy)?;
+    let policy = graph
+        .policies()
+        .get(&(policy_id, policy_revision))
+        .ok_or("selected policy revision was not found")?;
+    let mut selected: BTreeMap<ProfileId, (Option<Revision>, ProfileValues)> = BTreeMap::new();
     for value in requested {
-        let (id, values) = parse_profile(value)?;
-        if selected.insert(id.clone(), values).is_some() {
+        let (id, revision, values) = parse_profile(value)?;
+        if selected.insert(id.clone(), (revision, values)).is_some() {
             return Err(format!("profile `{id}` was selected more than once").into());
         }
     }
@@ -43,20 +45,9 @@ pub fn development_request(
         .profiles()
         .iter()
         .map(|id| {
-            let matches = graph
-                .profiles()
-                .iter()
-                .filter(|((candidate, _), _)| candidate == id)
-                .collect::<Vec<_>>();
-            if matches.len() != 1 {
-                return Err("profile authority did not resolve uniquely".into());
-            }
-            let ((_, revision), _) = matches[0];
-            Ok(ProfileRequest::new(
-                id.clone(),
-                *revision,
-                selected.get(id).cloned().unwrap_or_default(),
-            )?)
+            let (explicit_revision, values) = selected.get(id).cloned().unwrap_or_default();
+            let revision = resolve_profile_revision(graph, id, explicit_revision)?;
+            Ok(ProfileRequest::new(id.clone(), revision, values)?)
         })
         .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
     Ok(PolicyProfileRequest::new(
@@ -66,13 +57,98 @@ pub fn development_request(
     )?)
 }
 
-/// Selects complete development authority and derives obligations through the
-/// application operation with an explicit development mode and authority.
-pub fn derive<'a>(
+/// Resolves the exact policy authority for development selection.
+///
+/// An explicit `ID` or `ID@REVISION` is authoritative; without one, exactly one
+/// stored policy ID and revision must exist. Multiple IDs or revisions are an
+/// explicit ambiguity, never an arbitrary or latest choice.
+fn resolve_policy(
+    graph: &WorkspaceGraph,
+    policy: Option<&str>,
+) -> Result<(PolicyId, Revision), Box<dyn Error>> {
+    match policy {
+        Some(value) => {
+            let (id, revision) = parse_policy(value)?;
+            let revision = match revision {
+                Some(revision) => revision,
+                None => unique_revision(policy_revisions(graph, &id), "policy", &id)?,
+            };
+            if !graph.policies().contains_key(&(id.clone(), revision)) {
+                return Err(format!("policy `{id}@{revision}` was not found").into());
+            }
+            Ok((id, revision))
+        }
+        None => {
+            let ids: BTreeSet<&PolicyId> = graph.policies().keys().map(|(id, _)| id).collect();
+            if ids.len() != 1 {
+                return Err(
+                    "exactly one development policy ID is required; select --policy explicitly"
+                        .into(),
+                );
+            }
+            let id = ids.into_iter().next().ok_or("policy ID")?.clone();
+            let revision = unique_revision(policy_revisions(graph, &id), "policy", &id)?;
+            Ok((id, revision))
+        }
+    }
+}
+
+/// Resolves one exact profile revision, rejecting an ambiguous or missing
+/// stored authority rather than selecting a latest revision.
+fn resolve_profile_revision(
+    graph: &WorkspaceGraph,
+    id: &ProfileId,
+    explicit: Option<Revision>,
+) -> Result<Revision, Box<dyn Error>> {
+    match explicit {
+        Some(revision) => {
+            if graph.profiles().contains_key(&(id.clone(), revision)) {
+                Ok(revision)
+            } else {
+                Err(format!("profile `{id}@{revision}` was not found").into())
+            }
+        }
+        None => unique_revision(profile_revisions(graph, id), "profile", id),
+    }
+}
+
+fn policy_revisions(graph: &WorkspaceGraph, id: &PolicyId) -> Vec<Revision> {
+    graph
+        .policies()
+        .keys()
+        .filter(|(candidate, _)| candidate == id)
+        .map(|(_, revision)| *revision)
+        .collect()
+}
+
+fn profile_revisions(graph: &WorkspaceGraph, id: &ProfileId) -> Vec<Revision> {
+    graph
+        .profiles()
+        .keys()
+        .filter(|(candidate, _)| candidate == id)
+        .map(|(_, revision)| *revision)
+        .collect()
+}
+
+fn unique_revision(
+    revisions: Vec<Revision>,
+    kind: &str,
+    id: &impl std::fmt::Display,
+) -> Result<Revision, Box<dyn Error>> {
+    match revisions.as_slice() {
+        [revision] => Ok(*revision),
+        [] => Err(format!("{kind} `{id}` was not found").into()),
+        _ => Err(format!("{kind} `{id}` has multiple revisions; select one explicitly").into()),
+    }
+}
+
+/// Selects development authority for an optional explicit policy reference.
+pub fn derive_with_policy<'a>(
     session: &'a PreparedSession,
+    policy: Option<&str>,
     requested: &[String],
 ) -> Result<(SelectedPolicyProfiles<'a>, ObligationDerivation), Box<dyn Error>> {
-    let request = development_request(session, requested)?;
+    let request = development_request(session, policy, requested)?;
     let prepared = prepare_obligations(
         session.finalized(),
         EvaluationMode::Development,
@@ -84,8 +160,22 @@ pub fn derive<'a>(
     Ok((selection, derivation))
 }
 
-fn parse_profile(value: &str) -> Result<(ProfileId, ProfileValues), Box<dyn Error>> {
-    let (id, assignments) = value.split_once('=').unwrap_or((value, ""));
+fn parse_policy(value: &str) -> Result<(PolicyId, Option<Revision>), Box<dyn Error>> {
+    let (id, revision) = match value.split_once('@') {
+        Some((id, revision)) => (id, Some(parse_revision(revision)?)),
+        None => (value, None),
+    };
+    Ok((PolicyId::new(id)?, revision))
+}
+
+fn parse_profile(
+    value: &str,
+) -> Result<(ProfileId, Option<Revision>, ProfileValues), Box<dyn Error>> {
+    let (head, assignments) = value.split_once('=').unwrap_or((value, ""));
+    let (id, revision) = match head.split_once('@') {
+        Some((id, revision)) => (id, Some(parse_revision(revision)?)),
+        None => (head, None),
+    };
     let values = if assignments.is_empty() {
         Vec::new()
     } else {
@@ -100,7 +190,14 @@ fn parse_profile(value: &str) -> Result<(ProfileId, ProfileValues), Box<dyn Erro
             })
             .collect::<Result<Vec<_>, Box<dyn Error>>>()?
     };
-    Ok((ProfileId::new(id)?, values))
+    Ok((ProfileId::new(id)?, revision, values))
+}
+
+fn parse_revision(value: &str) -> Result<Revision, Box<dyn Error>> {
+    let revision = value
+        .parse::<u64>()
+        .map_err(|_| "revision must be a positive integer")?;
+    Ok(Revision::new(revision)?)
 }
 
 /// Converts one current obligation to its stable missing-evidence query shape.
@@ -190,6 +287,7 @@ mod tests {
         GlobalOptions {
             config: None,
             profiles: Vec::new(),
+            policy: None,
             format: OutputFormat::Json,
             offline: true,
             no_progress: true,
@@ -210,6 +308,7 @@ mod tests {
         )?;
         let error = development_request(
             &session,
+            None,
             &[
                 "audience.default=region:eu".to_owned(),
                 "audience.default=region:us".to_owned(),
@@ -220,7 +319,8 @@ mod tests {
         assert!(error.to_string().contains("more than once"), "{error}");
 
         // A distinct complete selection still resolves and derives obligations.
-        let single = development_request(&session, &["audience.default=region:eu".to_owned()])?;
+        let single =
+            development_request(&session, None, &["audience.default=region:eu".to_owned()])?;
         let prepared = prepare_obligations(
             session.finalized(),
             EvaluationMode::Development,
@@ -242,11 +342,54 @@ mod tests {
         )?;
         let error = development_request(
             &session,
+            None,
             &["audience.default=region:eu,region:us".to_owned()],
         )
         .err()
         .ok_or("duplicate profile dimension was admitted")?;
         assert!(error.to_string().contains("DuplicateDimension"), "{error}");
+        Ok(())
+    }
+
+    #[test]
+    fn explicit_policy_and_profile_revisions_resolve_exactly() -> Result<(), Box<dyn Error>> {
+        let repository = crate::test_support::example_repository()?;
+        let instant: UtcInstant = "2026-01-02T03:04:05Z".parse()?;
+        let session = prepare(
+            &SessionRequest::at(global(), CommandName::Context, instant),
+            repository.path(),
+        )?;
+        // The exact revision resolves through the explicit reference.
+        let request = development_request(
+            &session,
+            Some("consumer.critical_flow@1"),
+            &["audience.default@1=region:eu".to_owned()],
+        )?;
+        let prepared = prepare_obligations(
+            session.finalized(),
+            EvaluationMode::Development,
+            Some(&request),
+            None,
+            None,
+        )?;
+        assert!(!prepared.derivation().obligations.is_empty());
+
+        // A missing exact revision is not silently replaced by a latest one.
+        let policy_error = development_request(&session, Some("consumer.critical_flow@2"), &[])
+            .err()
+            .ok_or("missing policy revision was admitted")?;
+        assert!(
+            policy_error.to_string().contains("not found"),
+            "{policy_error}"
+        );
+        let profile_error =
+            development_request(&session, None, &["audience.default@9=region:eu".to_owned()])
+                .err()
+                .ok_or("missing profile revision was admitted")?;
+        assert!(
+            profile_error.to_string().contains("not found"),
+            "{profile_error}"
+        );
         Ok(())
     }
 }

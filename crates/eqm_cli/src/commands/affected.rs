@@ -20,6 +20,7 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let policy = parsed.global.policy.clone();
     let baseline_identity = parsed.global.baseline.clone().ok_or("baseline required")?;
     let explicit = option_values(&parsed, "--path");
     let request = SessionRequest::new(parsed.global, parsed.command.name);
@@ -33,7 +34,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     } else {
         explicit
     };
-    let (_, obligations) = evaluation::derive(&current, &profiles)?;
+    let (_, obligations) = evaluation::derive_with_policy(&current, policy.as_deref(), &profiles)?;
     let indexes = indexes(&current, &obligations);
     let changed_files = paths
         .iter()
