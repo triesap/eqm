@@ -4348,9 +4348,9 @@
   ]
  },
  "execution_revalidation": {
-  "date": "2026-10-04",
-  "source_commit": "1198cc4c3dfe6fea6443e0f4b1998a539d564d20",
-  "status": "actual_native_instruction_and_returned_branch_independently_reviewed",
+  "date": "2026-10-05",
+  "source_commit": "897c2cea00b8d1271e7508c95f8ba33cc943b2df",
+  "status": "latest_returned_run_not_located_no_product_delta_no_acceptance_change",
   "technical_amendment": "DEV-026",
   "next_checkpoint": "P03-R14",
   "remaining_checkpoints": [
@@ -4445,6 +4445,20 @@
    "P03-R12",
    "P03-R13",
    "S043-R5"
+  ],
+  "preserve_accepted_numbered_steps": 42
+ },
+ "prior_execution_revalidation_DEV026": {
+  "date": "2026-10-04",
+  "source_commit": "1198cc4c3dfe6fea6443e0f4b1998a539d564d20",
+  "status": "actual_native_instruction_and_returned_branch_independently_reviewed",
+  "technical_amendment": "DEV-026",
+  "next_checkpoint": "P03-R14",
+  "remaining_checkpoints": [
+   "P03-R14",
+   "P03-R15",
+   "P03-R16",
+   "S043-R6"
   ],
   "preserve_accepted_numbered_steps": 42
  }

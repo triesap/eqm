@@ -1,5 +1,11 @@
 # Verification and implementation status
 
+Latest execution revalidation (2026-10-05): no matching latest returned run or
+new product delta located. Clean checkout remains at the exact issued planning
+revision `897c2cea00b8d1271e7508c95f8ba33cc943b2df`; no new acceptance. All four
+DEV-026 checkpoints remain pending. Prior review/evidence below is retained,
+not represented as a new returned batch. Preserve any work located elsewhere.
+
 Codex independently reviewed clean `1198cc4c3dfe6fea6443e0f4b1998a539d564d20`.
 Exact native instruction/branch matched; P03-R11/R12/R13/S043-R5 completed and all
 four commits retained. RF66/RF67 accepted for allocated scope; **42 previously
