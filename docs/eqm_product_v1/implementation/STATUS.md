@@ -23,8 +23,10 @@ rejects, the expanded graph is revalidated before finalization, and the release
 path uses the checked `CompletePolicyResolution` universe boundary. The two
 reviewed CLI goldens changed only their graph digest. S050 makes an empty
 required release scope non-authorizing without explicit protected permission and
-labels a one-member cohort as no meaningful comparison. S051–S076 remain pending
-(26 checkpoints).
+labels a one-member cohort as no meaningful comparison. S051 composes
+obligation strength per facet from only the rules declaring that facet, so
+unrelated facet constraints no longer leak. S052–S076 remain pending (25
+checkpoints).
 
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
 matching the actual issued native instruction and completed branch. All four

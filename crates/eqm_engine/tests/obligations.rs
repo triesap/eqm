@@ -3,7 +3,8 @@
 mod support;
 
 use eqm_domain::{
-    DimensionId, FullRequirementId, PolicyId, ProfileId, Revision, SymbolicValueId, TargetId,
+    DimensionId, Facet, FullRequirementId, PolicyId, ProfileId, Revision, SymbolicValueId,
+    TargetId, TrustLevel,
 };
 use eqm_engine::{
     ApplicabilityContext, AuthorityOrigin, CompletePolicyResolution, ConformanceError,
@@ -291,5 +292,71 @@ fn unknown_and_not_applicable_coordinates_remain_visible() -> Result<(), Box<dyn
             .iter()
             .any(|coordinate| coordinate.requirement == requirement)
     );
+    Ok(())
+}
+
+#[test]
+fn facet_strength_does_not_leak_across_facets() -> Result<(), Box<dyn Error>> {
+    let (_repository, loaded) = support::loaded_example_with(|root| {
+        let path = root.join("eqm/policies/consumer.critical_flow.toml");
+        let text = std::fs::read_to_string(&path)?;
+        let text = text.replace(
+            "minimum_trust = \"trusted_ci\"",
+            "minimum_trust = \"signed_ci\"",
+        );
+        let extra = "\n[[rules]]\nminimum_level = \"required\"\nfacets = [\"accessibility\"]\nminimum_trust = \"trusted_ci\"\nmaximum_age = 86400000\nminimum_count = 1\n\n[rules.selector]\nrisk_classes = [\"high\", \"critical\"]\n";
+        std::fs::write(&path, format!("{text}{extra}"))?;
+        Ok(())
+    })?;
+    let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
+    let selection_graph = graph.clone();
+    let digests: FragmentDigestMap = graph
+        .fragments()
+        .iter()
+        .map(|(key, fragment)| Ok((key.clone(), canonicalize_fragment(fragment)?.digest())))
+        .collect::<Result<_, Box<dyn Error>>>()?;
+    let finalized = expand_fragments(graph, &digests, loaded.source_map())?;
+    let request = PolicyProfileRequest::new(
+        AuthorityOrigin::TrustedInvocation,
+        PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?),
+        vec![ProfileRequest::new(
+            ProfileId::new("audience.default")?,
+            Revision::new(1)?,
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new("us")?),
+            )],
+        )?],
+    )?;
+    let selection = select_policy_profiles(
+        &selection_graph,
+        EvaluationMode::PullRequest,
+        Some(&request),
+        None,
+    )?;
+    let profile = selection_graph
+        .profiles()
+        .values()
+        .next()
+        .ok_or("profile missing")?;
+    let applicability = ApplicabilityContext::new(
+        profile,
+        BTreeMap::from([(
+            DimensionId::new("region")?,
+            Some(SymbolicValueId::new("us")?),
+        )]),
+    )?;
+    let derivation = derive_obligations(&finalized, &selection, &applicability, None)?;
+    let requirement = FullRequirementId::new("account.create.signup.otp#six_decimal_digits")?;
+    let strength = |facet: Facet| -> Result<TrustLevel, Box<dyn Error>> {
+        derivation
+            .obligations
+            .iter()
+            .find(|(key, _)| key.requirement == requirement && key.facet == facet)
+            .map(|(_, obligation)| obligation.strength.minimum_trust)
+            .ok_or_else(|| format!("{facet} obligation missing").into())
+    };
+    assert_eq!(strength(Facet::Behavior)?, TrustLevel::SignedCi);
+    assert_eq!(strength(Facet::Accessibility)?, TrustLevel::TrustedCi);
     Ok(())
 }

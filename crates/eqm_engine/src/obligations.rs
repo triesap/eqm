@@ -238,9 +238,16 @@ fn derive_derivation(
                 .iter()
                 .flat_map(|rule| rule.facets().iter().copied())
                 .collect();
-            let strength = compose_strength(&rules);
             for subject in subjects(requirement, policy.required_targets())? {
                 for facet in &facets {
+                    // Each facet composes only the rules that declare it, so an
+                    // unrelated facet's trust/count/age strength cannot leak in.
+                    let facet_rules: Vec<_> = rules
+                        .iter()
+                        .copied()
+                        .filter(|rule| rule.facets().contains(facet))
+                        .collect();
+                    let strength = compose_strength(&facet_rules);
                     let key = ObligationKey {
                         policy: policy.id().clone(),
                         policy_revision: policy.revision(),
