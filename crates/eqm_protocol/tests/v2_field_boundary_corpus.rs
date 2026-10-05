@@ -168,20 +168,77 @@ fn wire_uint(value: &Value) -> Option<u64> {
         .map(WireUint::get)
 }
 
-fn owning_positive_u64(value: &Value) -> bool {
-    wire_uint(value).is_some_and(|n| n >= 1)
+/// Decodes the exact owning `PositiveCount` decision. Counts keep the full
+/// positive `u64` range and are a distinct owner from revisions.
+fn owning_positive_count(value: &Value) -> bool {
+    wire_uint(value).is_some_and(|n| PositiveCount::new(n).is_ok())
 }
 
+/// Decodes the exact owning `Revision` decision. Revisions are their own
+/// owner even though the admitted numeric range currently matches counts.
+fn owning_revision(value: &Value) -> bool {
+    wire_uint(value).is_some_and(|n| Revision::new(n).is_ok())
+}
+
+/// Decodes the exact owning `DurationMillis` decision.
 fn owning_duration_millis(value: &Value) -> bool {
-    wire_uint(value).is_some_and(|ms| ms <= i64::MAX as u64)
+    wire_uint(value).is_some_and(|ms| DurationMillis::new(ms).is_ok())
 }
 
-fn owning_positive_duration_millis(value: &Value) -> bool {
-    wire_uint(value).is_some_and(|ms| (1..=i64::MAX as u64).contains(&ms))
+/// Decodes the exact owning positive runner-timeout decision through the real
+/// `RunnerLimits::new` constructor with valid other limits.
+fn owning_positive_runner_timeout(value: &Value) -> bool {
+    wire_uint(value).is_some_and(|ms| {
+        DurationMillis::new(ms)
+            .is_ok_and(|timeout| RunnerLimits::new(timeout, PositiveCount::ONE, None).is_ok())
+    })
 }
 
+/// Decodes the exact owning `PositiveDays` decision through the required
+/// checked `u32` conversion before construction, matching the owning width.
 fn owning_positive_days(value: &Value) -> bool {
-    wire_uint(value).is_some_and(|days| (1..=u64::from(u32::MAX)).contains(&days))
+    wire_uint(value)
+        .is_some_and(|days| u32::try_from(days).is_ok_and(|days| PositiveDays::new(days).is_ok()))
+}
+
+/// Builds the complete forbidden C0/C1 corpus plus the allowed LF/TAB controls.
+///
+/// Every forbidden scalar appears both embedded between other characters and
+/// trailing, so the schema cannot silently accept a control by position.
+fn control_character_corpus() -> Vec<String> {
+    let mut values = vec![
+        "line\nbreak".to_owned(),
+        "trailing\n".to_owned(),
+        "tab\tstop".to_owned(),
+        "trailing\t".to_owned(),
+    ];
+    for code in 0u8..=0x1F {
+        let character = char::from(code);
+        if matches!(character, '\n' | '\t') {
+            continue;
+        }
+        values.push(format!("before{character}after"));
+        values.push(format!("trailing{character}"));
+    }
+    for code in 0x7Fu8..=0x9F {
+        let character = char::from(code);
+        values.push(format!("before{character}after"));
+        values.push(format!("trailing{character}"));
+    }
+    values
+}
+
+/// Builds one carrier's corpus: every control case plus empty, just-under,
+/// exact and over the owning ASCII byte maximum.
+fn text_carrier_corpus(maximum: usize) -> Vec<String> {
+    let mut values = control_character_corpus();
+    values.push(String::new());
+    if maximum > 0 {
+        values.push(repeated(b'a', maximum - 1));
+    }
+    values.push(repeated(b'a', maximum));
+    values.push(repeated(b'a', maximum + 1));
+    values
 }
 
 fn ext_boolean(value: bool) -> Value {
@@ -1678,25 +1735,27 @@ fn numeric_members_match_owning_width_and_range() -> Result<(), Box<dyn Error>> 
         &values,
         owning_duration_millis,
     );
-    // Owning runner timeout is a positive `DurationMillis`.
+    // Owning runner timeout is a positive `DurationMillis` enforced through
+    // the real `RunnerLimits::new` constructor with valid other limits.
     parity_value(
         &v,
         &base,
         "/runners/0/timeout_ms",
         &values,
-        owning_positive_duration_millis,
+        owning_positive_runner_timeout,
     );
-    // Owning `PositiveCount`/`Revision` keep the full positive `u64` range.
+    // Owning `PositiveCount` keeps the full positive `u64` range.
     for pointer in [
         "/policies/0/waivers/minimum_approvers",
         "/policies/0/rules/0/minimum_count",
         "/bindings/0/evidence/0/minimum_count",
-        "/policies/0/revision",
         "/runners/0/max_output_bytes",
         "/runners/0/max_concurrency",
     ] {
-        parity_value(&v, &base, pointer, &values, owning_positive_u64);
+        parity_value(&v, &base, pointer, &values, owning_positive_count);
     }
+    // Owning `Revision` is a separate exact-owner decision.
+    parity_value(&v, &base, "/policies/0/revision", &values, owning_revision);
     Ok(())
 }
 
@@ -1705,40 +1764,32 @@ fn normalized_text_fields_match_owning_control_policy() -> Result<(), Box<dyn Er
     let v = graph_validator()?;
     let base = graph_document();
 
-    // C0 and C1 controls, including NUL/CR/DEL, against the valid LF/TAB and
-    // NFC non-ASCII positives and ASCII length endpoints.
-    let controls: Vec<String> = vec![
-        "Plain text".to_owned(),
-        "Résumé".to_owned(),
-        "line\nbreak".to_owned(),
-        "tab\tstop".to_owned(),
-        format!("nul{}nul", '\u{0}'),
-        format!("soh{}soh", '\u{1}'),
-        format!("vt{}vt", '\u{b}'),
-        format!("ff{}ff", '\u{c}'),
-        format!("cr{}cr", '\r'),
-        format!("us{}us", '\u{1f}'),
-        format!("del{}del", '\u{7f}'),
-        format!("nel{}nel", '\u{85}'),
-        format!("c1{}c1", '\u{9f}'),
-        repeated(b'a', 160),
-        repeated(b'a', 161),
-        repeated(b'a', 4097),
-    ];
-
-    // Title (160) and Description/RequirementStatement (4,096) share the owning
-    // `normalized_text` control policy but not their length endpoints.
-    parity(&v, &base, "/capabilities/0/title", &controls, |s| {
-        Title::new(s).is_ok()
-    });
-    parity(&v, &base, "/capabilities/0/description", &controls, |s| {
-        Description::new(s).is_ok()
-    });
+    // Each carrier is checked against its own owning constructor, the complete
+    // forbidden C0/C1 set (embedded and trailing), the allowed LF/TAB controls,
+    // empty text and its exact ASCII byte maximum plus one over. Title (160),
+    // Description/RequirementStatement (4,096), SelectorText/RouteSelector
+    // (512), TransitionTrigger (256) and WaiverReason (2,048) share the owning
+    // `normalized_text` control policy but not their length endpoints. NFC,
+    // exact UTF-8 byte length and referential layers remain explicit owners.
+    parity(
+        &v,
+        &base,
+        "/capabilities/0/title",
+        &text_carrier_corpus(160),
+        |s| Title::new(s).is_ok(),
+    );
+    parity(
+        &v,
+        &base,
+        "/capabilities/0/description",
+        &text_carrier_corpus(4_096),
+        |s| Description::new(s).is_ok(),
+    );
     parity(
         &v,
         &base,
         "/surfaces/0/requirements/0/statement",
-        &controls,
+        &text_carrier_corpus(4_096),
         |s| RequirementStatement::new(s).is_ok(),
     );
     // SelectorText (512) covers symbol, argument-literal and authored ids.
@@ -1746,26 +1797,38 @@ fn normalized_text_fields_match_owning_control_policy() -> Result<(), Box<dyn Er
         &v,
         &base,
         "/bindings/0/artifacts/0/symbol",
-        &controls,
+        &text_carrier_corpus(512),
         |s| SelectorText::new(s).is_ok(),
     );
-    parity(&v, &base, "/runners/0/args/0/value", &controls, |s| {
-        SelectorText::new(s).is_ok()
-    });
+    parity(
+        &v,
+        &base,
+        "/runners/0/args/0/value",
+        &text_carrier_corpus(512),
+        |s| SelectorText::new(s).is_ok(),
+    );
     // RouteSelector (512), TransitionTrigger (256) and WaiverReason (2,048).
-    parity(&v, &base, "/bindings/0/exposures/0/route", &controls, |s| {
-        RouteSelector::new(s).is_ok()
-    });
+    parity(
+        &v,
+        &base,
+        "/bindings/0/exposures/0/route",
+        &text_carrier_corpus(512),
+        |s| RouteSelector::new(s).is_ok(),
+    );
     parity(
         &v,
         &base,
         "/journeys/0/transitions/0/trigger",
-        &controls,
+        &text_carrier_corpus(256),
         |s| TransitionTrigger::new(s).is_ok(),
     );
-    parity(&v, &base, "/waivers/0/reason", &controls, |s| {
-        WaiverReason::new(s).is_ok()
-    });
+    parity(
+        &v,
+        &base,
+        "/waivers/0/reason",
+        &text_carrier_corpus(2_048),
+        |s| WaiverReason::new(s).is_ok(),
+    );
     Ok(())
 }
 
@@ -1774,17 +1837,7 @@ fn authored_selector_text_matches_owning_control_policy() -> Result<(), Box<dyn 
     let v = validator("schemas/v2/manifest/cohort.schema.json")?;
     let base = cohort_document();
     assert!(v.is_valid(&base), "authored cohort base");
-    let controls: Vec<String> = vec![
-        "build.n.mailer".to_owned(),
-        "Résumé".to_owned(),
-        format!("nul{}nul", '\u{0}'),
-        format!("cr{}cr", '\r'),
-        format!("del{}del", '\u{7f}'),
-        format!("nel{}nel", '\u{85}'),
-        format!("c1{}c1", '\u{9f}'),
-        repeated(b'a', 512),
-        repeated(b'a', 513),
-    ];
+    let controls = text_carrier_corpus(512);
     parity(&v, &base, "/id", &controls, |s| {
         SelectorText::new(s).is_ok()
     });

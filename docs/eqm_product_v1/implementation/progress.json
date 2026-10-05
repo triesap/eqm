@@ -4,7 +4,7 @@
  "preflight": "baseline_review_recorded_revalidate_before_S001",
  "next_step": "S044",
  "implementation": "in_progress",
- "local_verification": "P01-P03_local_accepted;43_numbered_steps;actual_owning_probe_27_passed;RF70_durable_tests_required;not_release_ready",
+ "local_verification": "P01-P03_local_accepted;43_numbered_steps;actual_owning_probe_27_passed;P04-R1_durable_owning_constructor_and_control_corpus_verified;RF70_implemented_verified_pending_acceptance;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -3097,7 +3097,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P04",
- "active_step": "P04-R1",
+ "active_step": "S044",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3424,20 +3424,20 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P04-R1",
+ "next_checkpoint": "S044",
  "supervisor_review": {
   "source_commit": "1496c28616a769b9c958965c0377cb3b83ded32e",
   "report": "implementation/reports/CODEX-1496c28.md",
   "status": "43_numbered_local_accepted_P03_gate_passed;RF70_durable_test_followup;global_RA02_RA13_open",
   "amendment": "DEV-028",
   "release_candidate": false,
-  "next_checkpoint": "P04-R1",
+  "next_checkpoint": "S044",
   "standard_check": "passed_778_successful_test_executions_and_end_to_end",
   "owning_probe": "passed_26_then_27_actual_owner_and_all_control_tests",
   "planning_admission": "passed_repository_owned_check_in_isolated_snapshot",
   "doctests": "passed_9"
  },
- "execution_target": "P04-R1 then S044-S076 inclusive; independent reference-evaluator review before S077; full MVP S211 remains",
+ "execution_target": "S044-S076 inclusive; independent reference-evaluator review before S077; full MVP S211 remains",
  "supervisor_findings": [
   {
    "id": "RF01",
@@ -4227,7 +4227,7 @@
   "checkpoints": [
    {
     "id": "P04-R1",
-    "status": "pending",
+    "status": "implemented_verified_pending_codex_acceptance",
     "supervisor_status": "not_accepted"
    },
    {

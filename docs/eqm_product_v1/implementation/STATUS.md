@@ -1,9 +1,13 @@
 # Verification and implementation status
 
-Latest execution revalidation: no matching latest returned run or new product
-delta available. Clean checkout remains at exact issued `3124cc5`; no new
-acceptance. All34 DEV-028 checkpoints remain pending. Preserve prior independent
-review below and reconcile any implementation located elsewhere before repeating.
+Latest checkpoint: P04-R1 implemented and locally verified at this run's own
+commit; Codex acceptance pending. It replaces the copied numeric range
+predicates in the protocol boundary corpus with the actual owning
+`PositiveCount`/`Revision`/`DurationMillis`/`RunnerLimits` and checked-`u32`
+`PositiveDays` constructors, and expands the normalized-text corpus to every
+forbidden C0/C1 point (embedded and trailing), allowed LF/TAB, empty and each
+carrier's exact ASCII maximum/over-maximum. RF70 durable coverage is now in the
+product test corpus. S044–S076 remain pending (33 checkpoints).
 
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
 matching the actual issued native instruction and completed branch. All four
@@ -13,10 +17,12 @@ P01–P03 local implementation complete; real Q02/Q06/platform acceptance separa
 RF45 P03 parity contribution accepted, evidence-boundary contribution S059/S061
 pending; whole RA02/RA13 and original 64 R/AC, 21 RA, Q01–Q15S211 remain open.
 
-RF70: committed numeric corpus copies range predicates. Independent isolated
-actual-constructor checks passed 26 tests; expanded all-C0/C1 and exact text
-endpoints passed 27. Retain this evidence durably at P04-R1, then implement complete
-S044–S076 under current DEV-028, `pfc through EQM-P05`. P04 alone is not a stop.
+RF70: the committed numeric corpus copied range predicates. P04-R1 now retains
+the durable actual-constructor checks (`PositiveCount`, separate `Revision`,
+`DurationMillis`, `RunnerLimits` with valid other limits, checked-`u32`
+`PositiveDays`) plus every forbidden C0/C1 point, embedded and trailing, and each
+carrier's exact ASCII length endpoints. Complete S044–S076 under current DEV-028,
+`pfc through EQM-P05`. P04 alone is not a stop.
 Independent complete reference-evaluator review precedes S077 storage integration.
 RF71 stale report arithmetic corrected: returned standard counts773/775/777/778,
 not distinct tests. Failed attempts retained; workload contention is not a pass.
