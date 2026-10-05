@@ -15,8 +15,9 @@ and selects exact policy/profile revisions through the real manifest loader
 (revision-aware authority keys) and adds explicit `--policy <ID[@REVISION]>`
 selection that never guesses a latest revision. S047 introduces the pure
 `RequiredUniverse` denominator derived before any evidence, with a subset check
-for later policy-strengthening comparisons. S048–S076 remain pending (29
-checkpoints).
+for later policy-strengthening comparisons. S048 retains unknown and justified
+not-applicable coordinates in the visible universe so skipped requirements
+cannot disappear from completeness. S049–S076 remain pending (28 checkpoints).
 
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
 matching the actual issued native instruction and completed branch. All four

@@ -2,11 +2,12 @@
 
 mod support;
 
-use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId};
+use eqm_domain::{DimensionId, FullRequirementId, PolicyId, ProfileId, Revision, SymbolicValueId};
 use eqm_engine::{
     ApplicabilityContext, AuthorityOrigin, EvaluationMode, FragmentDigestMap, PolicyProfileRequest,
-    PolicyRef, ProfileRequest, RequiredUniverse, ScopeSubject, derive_obligations,
-    derive_required_universe, expand_fragments, resolve_graph, select_policy_profiles,
+    PolicyRef, ProfileRequest, RequiredUniverse, ScopeSubject, UnresolvedReason,
+    derive_obligations, derive_required_universe, expand_fragments, resolve_graph,
+    select_policy_profiles,
 };
 use eqm_manifest::canonicalize_fragment;
 use std::collections::BTreeMap;
@@ -155,6 +156,96 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
                 .next()
                 .ok_or("coordinate missing")?
         )
+    );
+    Ok(())
+}
+
+#[test]
+fn unknown_and_not_applicable_coordinates_remain_visible() -> Result<(), Box<dyn Error>> {
+    let (_repository, loaded) = support::loaded_example_with(|root| {
+        let path = root.join("eqm/contracts/auth.signup.identifier.toml");
+        let mut text = std::fs::read_to_string(&path)?;
+        text.push_str(
+            "\n[requirements.applicability]\ndimension = \"region\"\noperator = \"eq\"\nvalue = \"eu\"\n",
+        );
+        std::fs::write(&path, text)?;
+        Ok(())
+    })?;
+    let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
+    let selection_graph = graph.clone();
+    let digests: FragmentDigestMap = graph
+        .fragments()
+        .iter()
+        .map(|(key, fragment)| Ok((key.clone(), canonicalize_fragment(fragment)?.digest())))
+        .collect::<Result<_, Box<dyn Error>>>()?;
+    let finalized = expand_fragments(graph, &digests, loaded.source_map())?;
+    let request = PolicyProfileRequest::new(
+        AuthorityOrigin::TrustedInvocation,
+        PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?),
+        vec![ProfileRequest::new(
+            ProfileId::new("audience.default")?,
+            Revision::new(1)?,
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new("us")?),
+            )],
+        )?],
+    )?;
+    let selection = select_policy_profiles(
+        &selection_graph,
+        EvaluationMode::PullRequest,
+        Some(&request),
+        None,
+    )?;
+    let profile = selection_graph
+        .profiles()
+        .values()
+        .next()
+        .ok_or("profile missing")?;
+    let requirement = FullRequirementId::new("account.create.signup.identifier#email_default")?;
+
+    let unknown = ApplicabilityContext::new(
+        profile,
+        BTreeMap::from([(DimensionId::new("region")?, None)]),
+    )?;
+    let universe = derive_required_universe(&finalized, &selection, &unknown, None)?;
+    assert!(universe.unresolved().iter().any(|coordinate| {
+        coordinate.requirement == requirement
+            && coordinate.reason == UnresolvedReason::UnknownApplicability
+    }));
+
+    let not_applicable = ApplicabilityContext::new(
+        profile,
+        BTreeMap::from([(
+            DimensionId::new("region")?,
+            Some(SymbolicValueId::new("us")?),
+        )]),
+    )?;
+    let universe = derive_required_universe(&finalized, &selection, &not_applicable, None)?;
+    assert!(universe.unresolved().iter().any(|coordinate| {
+        coordinate.requirement == requirement
+            && coordinate.reason == UnresolvedReason::NotApplicable
+    }));
+
+    let applicable = ApplicabilityContext::new(
+        profile,
+        BTreeMap::from([(
+            DimensionId::new("region")?,
+            Some(SymbolicValueId::new("eu")?),
+        )]),
+    )?;
+    let universe = derive_required_universe(&finalized, &selection, &applicable, None)?;
+    assert!(
+        universe
+            .unresolved()
+            .iter()
+            .all(|coordinate| coordinate.requirement != requirement)
+    );
+    assert!(
+        universe
+            .coordinates()
+            .iter()
+            .any(|coordinate| coordinate.requirement == requirement)
     );
     Ok(())
 }

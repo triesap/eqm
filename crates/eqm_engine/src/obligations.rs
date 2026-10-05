@@ -67,6 +67,28 @@ pub struct Obligation {
     pub strength: ObligationStrength,
 }
 
+/// Why one active requirement is visible but not a derived obligation.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum UnresolvedReason {
+    /// Applicability is explicitly false under approved authority.
+    NotApplicable,
+    /// Applicability could not be resolved from the selected profile context.
+    UnknownApplicability,
+    /// A non-required active requirement matched no policy rule.
+    UnmatchedPolicy,
+}
+
+/// One visible requirement coordinate that yielded no derived obligation.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct UnresolvedCoordinate {
+    /// Owning surface-derived unit.
+    pub unit: UnitId,
+    /// Fully qualified requirement identity.
+    pub requirement: FullRequirementId,
+    /// Why the requirement is not an obligation.
+    pub reason: UnresolvedReason,
+}
+
 /// Complete derivation, including non-obligation outcomes that remain visible.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ObligationDerivation {
@@ -76,6 +98,9 @@ pub struct ObligationDerivation {
     pub unmatched_warnings: BTreeSet<FullRequirementId>,
     /// Requirements whose applicability was unknown.
     pub unknown_applicability: BTreeSet<FullRequirementId>,
+    /// Every visible requirement coordinate that yielded no obligation, with
+    /// its exact reason, so completeness cannot silently drop it.
+    pub unresolved: BTreeSet<UnresolvedCoordinate>,
 }
 
 /// The complete pre-evidence required denominator for one exact selection.
@@ -87,6 +112,7 @@ pub struct ObligationDerivation {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct RequiredUniverse {
     coordinates: BTreeSet<ObligationKey>,
+    unresolved: BTreeSet<UnresolvedCoordinate>,
 }
 
 impl RequiredUniverse {
@@ -94,6 +120,13 @@ impl RequiredUniverse {
     #[must_use]
     pub const fn coordinates(&self) -> &BTreeSet<ObligationKey> {
         &self.coordinates
+    }
+
+    /// Returns every visible requirement coordinate that yielded no obligation,
+    /// preserving explicit unknown and justified not-applicable reasons.
+    #[must_use]
+    pub const fn unresolved(&self) -> &BTreeSet<UnresolvedCoordinate> {
+        &self.unresolved
     }
 
     /// Returns whether one exact coordinate is in the required denominator.
@@ -132,6 +165,7 @@ pub fn derive_required_universe(
     let derived = derive_derivation(finalized, selection, applicability, release_context)?;
     Ok(RequiredUniverse {
         coordinates: derived.obligations.keys().cloned().collect(),
+        unresolved: derived.unresolved,
     })
 }
 
@@ -158,9 +192,21 @@ fn derive_derivation(
             let full = FullRequirementId::new(format!("{unit}#{}", requirement.id()))
                 .map_err(|_| ObligationError::InvalidFinalizedGraph)?;
             match evaluate_applicability(requirement.applicability(), applicability)? {
-                TruthValue::False => continue,
+                TruthValue::False => {
+                    result.unresolved.insert(UnresolvedCoordinate {
+                        unit: unit.clone(),
+                        requirement: full.clone(),
+                        reason: UnresolvedReason::NotApplicable,
+                    });
+                    continue;
+                }
                 TruthValue::Unknown => {
-                    result.unknown_applicability.insert(full);
+                    result.unknown_applicability.insert(full.clone());
+                    result.unresolved.insert(UnresolvedCoordinate {
+                        unit: unit.clone(),
+                        requirement: full.clone(),
+                        reason: UnresolvedReason::UnknownApplicability,
+                    });
                     continue;
                 }
                 TruthValue::True => {}
@@ -180,7 +226,12 @@ fn derive_derivation(
                 if requirement.level() == RequirementLevel::Required {
                     return Err(ObligationError::UnmatchedRequiredRequirement);
                 }
-                result.unmatched_warnings.insert(full);
+                result.unmatched_warnings.insert(full.clone());
+                result.unresolved.insert(UnresolvedCoordinate {
+                    unit: unit.clone(),
+                    requirement: full,
+                    reason: UnresolvedReason::UnmatchedPolicy,
+                });
                 continue;
             }
             let facets: BTreeSet<_> = rules
