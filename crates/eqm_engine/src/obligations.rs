@@ -78,8 +78,64 @@ pub struct ObligationDerivation {
     pub unknown_applicability: BTreeSet<FullRequirementId>,
 }
 
+/// The complete pre-evidence required denominator for one exact selection.
+///
+/// It is derived from the finalized graph, the selected policy/profiles and the
+/// applicability context, before any evidence is read. Evidence filtering,
+/// pagination or resource limits must not shrink this set, so later steps
+/// compare candidate universes against it rather than regenerating scope.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct RequiredUniverse {
+    coordinates: BTreeSet<ObligationKey>,
+}
+
+impl RequiredUniverse {
+    /// Returns every exact required coordinate in canonical order.
+    #[must_use]
+    pub const fn coordinates(&self) -> &BTreeSet<ObligationKey> {
+        &self.coordinates
+    }
+
+    /// Returns whether one exact coordinate is in the required denominator.
+    #[must_use]
+    pub fn contains(&self, coordinate: &ObligationKey) -> bool {
+        self.coordinates.contains(coordinate)
+    }
+
+    /// Returns whether `self` is a subset of `other`.
+    ///
+    /// A candidate universe that omits a coordinate in this protected set has
+    /// removed required work and cannot be treated as stronger.
+    #[must_use]
+    pub fn is_subset_of(&self, other: &Self) -> bool {
+        self.coordinates.is_subset(&other.coordinates)
+    }
+}
+
 /// Derives obligations from a finalized graph and exact selected policy context.
 pub fn derive_obligations(
+    finalized: &FinalizedWorkspaceGraph,
+    selection: &SelectedPolicyProfiles<'_>,
+    applicability: &ApplicabilityContext,
+    release_context: Option<Sha256Digest>,
+) -> Result<ObligationDerivation, ObligationError> {
+    derive_derivation(finalized, selection, applicability, release_context)
+}
+
+/// Derives the complete pre-evidence required universe for one exact selection.
+pub fn derive_required_universe(
+    finalized: &FinalizedWorkspaceGraph,
+    selection: &SelectedPolicyProfiles<'_>,
+    applicability: &ApplicabilityContext,
+    release_context: Option<Sha256Digest>,
+) -> Result<RequiredUniverse, ObligationError> {
+    let derived = derive_derivation(finalized, selection, applicability, release_context)?;
+    Ok(RequiredUniverse {
+        coordinates: derived.obligations.keys().cloned().collect(),
+    })
+}
+
+fn derive_derivation(
     finalized: &FinalizedWorkspaceGraph,
     selection: &SelectedPolicyProfiles<'_>,
     applicability: &ApplicabilityContext,

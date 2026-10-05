@@ -13,7 +13,9 @@ protected modes cannot take an implicit development branch. S045 rejects a
 repeated `--profile` selection instead of silently overwriting it. S046 loads
 and selects exact policy/profile revisions through the real manifest loader
 (revision-aware authority keys) and adds explicit `--policy <ID[@REVISION]>`
-selection that never guesses a latest revision. S047–S076 remain pending (30
+selection that never guesses a latest revision. S047 introduces the pure
+`RequiredUniverse` denominator derived before any evidence, with a subset check
+for later policy-strengthening comparisons. S048–S076 remain pending (29
 checkpoints).
 
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,

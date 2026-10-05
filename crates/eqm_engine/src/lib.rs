@@ -67,7 +67,7 @@ pub use monotonicity::{
 };
 pub use obligations::{
     Obligation, ObligationDerivation, ObligationError, ObligationKey, ObligationStrength,
-    ScopeSubject, derive_obligations,
+    RequiredUniverse, ScopeSubject, derive_obligations, derive_required_universe,
 };
 pub use outcomes::{EvidenceOutcome, aggregate_evidence_outcomes};
 pub use release::{
