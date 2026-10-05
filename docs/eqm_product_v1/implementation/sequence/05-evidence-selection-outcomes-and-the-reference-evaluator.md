@@ -2,6 +2,10 @@
 
 Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P05, containing 18 separate ordered commits, S059–S076; it is not one combined commit. All implementation steps are pending.
 
+DEV-028 in the sole governing sequence now authorizes P04-R1 then complete
+S044–S076, continuing across the P04/P05 boundary. Preserve every original
+step criterion below; Codex reviews the full evaluator before S077.
+
 **Definition of green:** Reference evaluator implements every evidence kind, count, retry, campaign, freshness and waiver rule; meaningful properties pass.
 
 **Verification lane:** Each step: listed owning regressions, cargo xtask check and git diff --check; cycle exit additionally requires its declared platform/product/security lanes.

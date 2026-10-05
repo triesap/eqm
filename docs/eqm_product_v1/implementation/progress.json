@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S043",
+ "next_step": "S044",
  "implementation": "in_progress",
- "local_verification": "independent_771_standard_9_doctests;42_numbered_accepted;RF66_RF67_allocated_accepted;P03-R14_numeric_owning_bounds_verified;P03-R15_text_owning_control_verified;P03-R16_scalar_combination_corpus_verified;S043-R6_scalar_consumer_parity_verified;P03_not_accepted;not_release_ready",
+ "local_verification": "P01-P03_local_accepted;43_numbered_steps;actual_owning_probe_27_passed;RF70_durable_tests_required;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1401,16 +1401,24 @@
   },
   {
    "id": "S043",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": "df16b99a6e8a8935308ed8e0a6043c7b93e7f750",
    "report": "implementation/reports/S043.md",
-   "verification": [],
+   "verification": [
+    "cargo xtask check",
+    "cargo test --doc --locked -p eqm_domain -p eqm_manifest -p eqm_protocol -p eqm_engine -p eqm_application",
+    "cargo xtask schemas check",
+    "python3 docs/eqm_product_v1/tools/validate_package.py --structure-only",
+    "isolated actual-owning scalar and control boundary corpus",
+    "git diff --check"
+   ],
    "baseline_exceptions": [],
-   "implementation_status": "implemented_verified_pending_codex_acceptance",
-   "supervisor_status": "changes_required_DEV026",
-   "review_report": "implementation/reports/CODEX-1198cc4.md",
+   "implementation_status": "implemented_verified_accepted",
+   "supervisor_status": "accepted_for_local_original_scope_DEV028",
+   "review_report": "implementation/reports/CODEX-1496c28.md",
    "repair_report": "implementation/reports/S043-R5.md",
-   "final_repair_report": "implementation/reports/S043-R6.md"
+   "final_repair_report": "implementation/reports/S043-R6.md",
+   "final_repair_commit_sha": "1496c28616a769b9c958965c0377cb3b83ded32e"
   },
   {
    "id": "S044",
@@ -3088,8 +3096,8 @@
   "scope": "All 64 requirements and acceptance cases, F01-F20, RA01-RA21, the ordered 15-cycle sequence and DEV-001.",
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
- "next_cycle": "EQM-P03",
- "active_step": "S043",
+ "next_cycle": "EQM-P04",
+ "active_step": "P04-R1",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3112,10 +3120,10 @@
    "id": "EQM-P03",
    "first_step": "S028",
    "last_step": "S043",
-   "status": "in_progress",
-   "completed_steps": 15,
+   "status": "complete",
+   "completed_steps": 16,
    "total_steps": 16,
-   "accepted_steps": 15,
+   "accepted_steps": 16,
    "retained_implemented_steps": 16
   },
   {
@@ -3416,18 +3424,20 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "independent_P03_review_before_S044",
+ "next_checkpoint": "P04-R1",
  "supervisor_review": {
-  "source_commit": "1198cc4c3dfe6fea6443e0f4b1998a539d564d20",
-  "report": "implementation/reports/CODEX-1198cc4.md",
-  "status": "42_previous_numbered_acceptances_preserved;RF66_RF67_allocated_accepted;S043_changes_required;P03_gate_not_passed",
-  "amendment": "DEV-026",
-  "standard_check": "passed_771_test_executions",
-  "doctests": "passed_9",
+  "source_commit": "1496c28616a769b9c958965c0377cb3b83ded32e",
+  "report": "implementation/reports/CODEX-1496c28.md",
+  "status": "43_numbered_local_accepted_P03_gate_passed;RF70_durable_test_followup;global_RA02_RA13_open",
+  "amendment": "DEV-028",
   "release_candidate": false,
-  "next_checkpoint": "independent_P03_review_before_S044"
+  "next_checkpoint": "P04-R1",
+  "standard_check": "passed_778_successful_test_executions_and_end_to_end",
+  "owning_probe": "passed_26_then_27_actual_owner_and_all_control_tests",
+  "planning_admission": "passed_repository_owned_check_in_isolated_snapshot",
+  "doctests": "passed_9"
  },
- "execution_target": "All P03-R14 through S043-R6, mandatory independent P03 acceptance before S044; full MVP S211 remains",
+ "execution_target": "P04-R1 then S044-S076 inclusive; independent reference-evaluator review before S077; full MVP S211 remains",
  "supervisor_findings": [
   {
    "id": "RF01",
@@ -3884,10 +3894,10 @@
    "priority": "P1",
    "owner": "S043",
    "checkpoint": "P03-R1",
-   "status": "partially_implemented_changes_required",
+   "status": "P03_parity_contribution_accepted_evidence_boundary_pending_S059_S061",
    "summary": "V1 graph identity silently omits new normative graph metadata",
    "report": "implementation/reports/CODEX-38c1254.md",
-   "closure_report": "implementation/reports/P03-R2.md",
+   "closure_report": "implementation/reports/CODEX-1496c28.md",
    "supervisor_report": "implementation/reports/CODEX-d2c9c57.md"
   },
   {
@@ -4139,59 +4149,250 @@
   {
    "id": "RF68",
    "priority": "P2",
-   "status": "implemented_verified_pending_codex_acceptance",
+   "status": "accepted_for_allocated_scope",
    "owner": "S043",
    "checkpoint": "P03-R14",
    "summary": "maximum_days schema admits values beyond owning NonZeroU32",
    "report": "implementation/reports/CODEX-1198cc4.md",
-   "completion_report": "implementation/reports/P03-R14.md"
+   "completion_report": "implementation/reports/P03-R14.md",
+   "closure_report": "implementation/reports/CODEX-1496c28.md"
   },
   {
    "id": "RF69",
    "priority": "P2",
-   "status": "implemented_verified_pending_codex_acceptance",
+   "status": "accepted_for_allocated_scope",
    "owner": "S043",
    "checkpoint": "P03-R15",
    "summary": "Normalized text schemas omit owning forbidden control-character rules",
    "report": "implementation/reports/CODEX-1198cc4.md",
-   "completion_report": "implementation/reports/P03-R15.md"
+   "completion_report": "implementation/reports/P03-R15.md",
+   "closure_report": "implementation/reports/CODEX-1496c28.md"
+  },
+  {
+   "id": "RF70",
+   "status": "durable_actual_owner_regressions_pending",
+   "owner": "P04-R1",
+   "report": "implementation/reports/CODEX-1496c28.md"
+  },
+  {
+   "id": "RF71",
+   "status": "corrected_report_arithmetic",
+   "owner": "supervisor",
+   "report": "implementation/reports/CODEX-1496c28.md"
   }
  ],
  "s015_corrective_status": "accepted_R1_R9",
- "supervisor_amendment": "DEV-026",
+ "supervisor_amendment": "DEV-028",
  "batch_checkpoint_order": [
-  "P03-R14",
-  "P03-R15",
-  "P03-R16",
-  "S043-R6"
+  "P04-R1",
+  "S044",
+  "S045",
+  "S046",
+  "S047",
+  "S048",
+  "S049",
+  "S050",
+  "S051",
+  "S052",
+  "S053",
+  "S054",
+  "S055",
+  "S056",
+  "S057",
+  "S058",
+  "S059",
+  "S060",
+  "S061",
+  "S062",
+  "S063",
+  "S064",
+  "S065",
+  "S066",
+  "S067",
+  "S068",
+  "S069",
+  "S070",
+  "S071",
+  "S072",
+  "S073",
+  "S074",
+  "S075",
+  "S076"
  ],
- "first_unfinished_original_step": "S043",
+ "first_unfinished_original_step": "S044",
  "supervisor_batch": {
-  "amendment": "DEV-026",
-  "endpoint": "S043-R6",
-  "command": "pfc through EQM-P03",
+  "amendment": "DEV-028",
+  "endpoint": "S076",
+  "command": "pfc through EQM-P05",
   "checkpoints": [
    {
-    "id": "P03-R14",
-    "status": "implemented_verified_pending_codex_acceptance",
-    "commit_sha": "9367f156ecd39d3a996cd683a021cd6e746d612b",
+    "id": "P04-R1",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    },
    {
-    "id": "P03-R15",
-    "status": "implemented_verified_pending_codex_acceptance",
-    "commit_sha": "523f458c0c01ebcdcab2c078c0b110b58596d0cd",
+    "id": "S044",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    },
    {
-    "id": "P03-R16",
-    "status": "implemented_verified_pending_codex_acceptance",
-    "commit_sha": "389753dbb64df8702aa910f338e26f587b4dc077",
+    "id": "S045",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    },
    {
-    "id": "S043-R6",
-    "status": "implemented_verified_pending_codex_acceptance",
+    "id": "S046",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S047",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S048",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S049",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S050",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S051",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S052",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S053",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S054",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S055",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S056",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S057",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S058",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S059",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S060",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S061",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S062",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S063",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S064",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S065",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S066",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S067",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S068",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S069",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S070",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S071",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S072",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S073",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S074",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S075",
+    "status": "pending",
+    "supervisor_status": "not_accepted"
+   },
+   {
+    "id": "S076",
+    "status": "pending",
     "supervisor_status": "not_accepted"
    }
   ]
@@ -4353,20 +4554,6 @@
    }
   ]
  },
- "execution_revalidation": {
-  "date": "2026-10-05",
-  "source_commit": "897c2cea00b8d1271e7508c95f8ba33cc943b2df",
-  "status": "latest_returned_run_not_located_no_product_delta_no_acceptance_change",
-  "technical_amendment": "DEV-026",
-  "next_checkpoint": "P03-R14",
-  "remaining_checkpoints": [
-   "P03-R14",
-   "P03-R15",
-   "P03-R16",
-   "S043-R6"
-  ],
-  "preserve_accepted_numbered_steps": 42
- },
  "prior_returned_batch_DEV022": {
   "amendment": "DEV-022",
   "endpoint": "S043-R4",
@@ -4458,6 +4645,51 @@
   "date": "2026-10-04",
   "source_commit": "1198cc4c3dfe6fea6443e0f4b1998a539d564d20",
   "status": "actual_native_instruction_and_returned_branch_independently_reviewed",
+  "technical_amendment": "DEV-026",
+  "next_checkpoint": "P03-R14",
+  "remaining_checkpoints": [
+   "P03-R14",
+   "P03-R15",
+   "P03-R16",
+   "S043-R6"
+  ],
+  "preserve_accepted_numbered_steps": 42
+ },
+ "prior_returned_batch_DEV027": {
+  "amendment": "DEV-026",
+  "endpoint": "S043-R6",
+  "command": "pfc through EQM-P03",
+  "checkpoints": [
+   {
+    "id": "P03-R14",
+    "status": "complete",
+    "commit_sha": "9367f156ecd39d3a996cd683a021cd6e746d612b",
+    "supervisor_status": "accepted_for_allocated_scope"
+   },
+   {
+    "id": "P03-R15",
+    "status": "complete",
+    "commit_sha": "523f458c0c01ebcdcab2c078c0b110b58596d0cd",
+    "supervisor_status": "accepted_for_allocated_scope"
+   },
+   {
+    "id": "P03-R16",
+    "status": "complete",
+    "commit_sha": "389753dbb64df8702aa910f338e26f587b4dc077",
+    "supervisor_status": "accepted_for_allocated_scope"
+   },
+   {
+    "id": "S043-R6",
+    "status": "complete",
+    "supervisor_status": "accepted_for_allocated_scope",
+    "commit_sha": "1496c28616a769b9c958965c0377cb3b83ded32e"
+   }
+  ]
+ },
+ "prior_execution_revalidation_DEV027": {
+  "date": "2026-10-05",
+  "source_commit": "897c2cea00b8d1271e7508c95f8ba33cc943b2df",
+  "status": "latest_returned_run_not_located_no_product_delta_no_acceptance_change",
   "technical_amendment": "DEV-026",
   "next_checkpoint": "P03-R14",
   "remaining_checkpoints": [

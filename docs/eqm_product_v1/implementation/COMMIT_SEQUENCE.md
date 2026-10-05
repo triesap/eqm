@@ -1,6 +1,112 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
-## Execution revalidation — 2026-10-05
+## DEV-028 — Accept local P03 and implement complete selection/evaluation
+
+**Date/author:** 2026-10-05, Codex under owner delegation.
+**Reviewed candidate:** `1496c28616a769b9c958965c0377cb3b83ded32e`.
+[Independent review](reports/CODEX-1496c28.md) accepts allocated RF68/RF69 and
+S043/P03 local scope, preserving 42 earlier numbered acceptances (43 total).
+Direct actual-owner isolated probes supplement the committed numeric predicate
+proxies. RF70 requires durable constructor-based coverage; RF71 stale counts are
+corrected. RF45 P03 parity contribution accepted, remaining evidence-boundary
+contribution stays S059/S061; whole RA02/RA13 remain open. Original 64 R/AC, 21 RA,
+Q01–Q15,S211 unchanged. This is the current binding amendment; prior decisions
+remain except superseded frontiers. Historical missing-run observations below
+are superseded by the now matched completed candidate.
+
+**Batch:** `pfc through EQM-P05`, P04-R1 then S044–S076 inclusive, 34 separate
+checkpoints. Complete both P04 and P05; P04 completion alone is not a stop.
+S043's required independent gate is now satisfied. Stop after S076 for independent
+review of complete required-universe and reference-evaluator semantics before
+S077 persistent storage integration. This is a coherent foundational integration
+boundary, not permission to skip or merge steps. Pi records local verification;
+Codex accepts candidate implementations. No intermediate supervisor gate is added
+between S058 and S059; original step dependencies and cycle verification remain.
+
+### P04-R1 — Preserve actual-owner scalar regression evidence
+
+Commit `test: retain actual owning scalar boundary checks`.
+Repair RF70 using actual PositiveCount::new, Revision::new, DurationMillis::new,
+checked u32 conversion plus PositiveDays::new, and RunnerLimits::new with valid
+other limits. Use separate exact-owner decisions for counts and revisions.
+No copied predicates as owning proof. Retain existing literals and 196 evidence
+combinations. Add all forbidden C0/C1 points (embedded and trailing), allowed
+LF/TAB, empty, exact ASCII maximum and over-maximum for each text carrier; Unicode
+NFC/UTF-8 byte limits remain separate explicit layers. Correct P03-R16/S043-R6
+claims without deleting history. Run protocol corpus plus original standard,
+schema, structure and diff gates; leave production scalar contracts unchanged.
+
+### Decisions for S044–S058 (complete P04)
+
+Application owns explicit mode and authority preparation; domain/engine stay pure
+and unsafe-free. Reuse existing PolicyRef/ProfileRequest and checked graph/
+canonical provenance carriers; expose exact IDs plus revisions as typed request
+fields, keeping transport parsing thin. Development candidate authority is
+explicit; protected modes reject missing/inappropriate authority and never take
+a development default. Production trust is not inferred from parsed origin tags.
+Duplicate profiles/dimensions/revision requests reject even when identical;
+ambiguous/missing stored authority requires explicit selection, never latest.
+Preserve explicit unknown values and graph-bound subjects/cohorts/configurations.
+
+Enumerate complete required coordinates before selecting evidence. Unknown
+applicability stays visible/non-authorizing; false may justify N/A. Fragment risk
+is stronger(fragment default, journey risk), explicit lowering rejects; close
+unchecked finalized/prepared construction per DEV-001. Empty release scope needs
+protected explicit permission; one participant cannot establish equivalence.
+Facet constraints compose independently: max count/trust, min age, required-
+universe inclusion; stronger required-level floors can weaken by deleting cases.
+Exact provider/scenario dependencies retain repeated actors. Required expected
+logical selections use AND; only an explicit protected frozen alternative allows
+choice, never pass-driven selection. Obligation identity includes exact profiles,
+revisions, subjects and context. Authored roles are not observed structural facts;
+only complete/current/verified inventory can prove absence. Property tests and
+versioned query DTOs preserve original RA01/03/04/05/07/14/16/21 contributions.
+
+### Decisions for S059–S076 (complete P05)
+
+Use one checked DTO-to-domain admission and lineage boundary for every supported
+kind, including all RA02/RA13 relationship checks. Parsing grants no trust. Bind
+exact coordinates, subjects, component/specification identity, expected logical
+selection and campaign before contributing evidence. Distinct logical observations
+count; copies/files/retries do not. Release record contributes at most one unit.
+Different-case fail/pass is Failed; same-case retry fail/pass is Unstable;
+same immutable attempt contradiction is Unknown. Timeout/cancel is Unknown;
+skipped/filtered/quarantined/missing are non-success. Campaign selection follows
+explicit authorized manifests/supersession, never latest passing timestamps.
+Manual review needs explicit complete review data. Executable payloads match
+expected selection; inventory/runtime facts compare actual observed data.
+
+Use explicit captured evaluation time and exact nanoseconds; policy supplies age
+and skew, no hidden grace/default. Independent verification facts remain
+non-authorizing until protected trust integration. Waivers contribute precisely
+to allowed facets/cases, never make Unknown/Unstable successful. Preserve exact
+facet reasons, complete participant conformance and contract-relative comparisons.
+Build simple independent reference evaluation plus adversarial fixtures/property
+checks; helper-only tests do not prove application consumer integration.
+
+### Scope, gates and evidence
+
+Read each original S044–S076 entry and referenced contracts/regression cases;
+all listed criteria/tests remain binding. Q05 direction is approved; real product
+thresholds remain unavailable. Implement explicit configuration and synthetic
+positive/negative tests without inventing production values; their absence does
+not block pure local semantics. Missing protected provider fails closed. No
+production signer, host assertion or real product authority is fabricated.
+Exact public additions must follow API/identity contracts and source-driven v2
+schemas atomically; preserve v1 bytes/explicit readers. No alias/fallback, domain
+loosening, trust promotion, implicit effects or later storage implementation.
+
+One coherent green commit per checkpoint with original owning tests and full
+standard gate; ledger/report updated before final gates. Retain distinct attempt
+logs, exact commands/upstream exits and repaired failures. At S058 run all P04
+cycle lanes then continue S059 when green. At S076 run P04/P05 owning integration,
+doctests, standard/schema/structure/diff and declared reference/adversarial lanes.
+A newly introduced failure blocks advancement; real external gates/user stops/
+actual runtime limit may stop. No stop merely for a commit/report or long context.
+Local automation is not inherently hardware-blocked. No publication, deployment,
+signing, optional-native activation or changes to unrelated repositories.
+
+## Historical execution revalidation — 2026-10-05
 
 No matching latest returned instruction/run or subsequent product delta is
 available for review. The checkout remains clean at the exact issued planning

@@ -1,37 +1,25 @@
 # Verification and implementation status
 
-Latest execution revalidation (2026-10-05): no matching latest returned run or
-new product delta located. Clean checkout remains at the exact issued planning
-revision `897c2cea00b8d1271e7508c95f8ba33cc943b2df`; no new acceptance. All four
-DEV-026 checkpoints were pending at that revalidation; P03-R14, P03-R15,
-P03-R16 and S043-R6 are now implemented and locally verified, pending the
-mandatory independent Codex P03 acceptance before S044. Prior
-review/evidence below is retained,
-not represented as a new returned batch. Preserve any work located elsewhere.
+Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
+matching the actual issued native instruction and completed branch. All four
+P03-R14/R15/R16/S043-R6 commits retained; RF68/RF69 allocated fixes and S043/P03
+local implementation accepted. Preserve 42 earlier numbered acceptances:43 total.
+P01–P03 local implementation complete; real Q02/Q06/platform acceptance separate.
+RF45 P03 parity contribution accepted, evidence-boundary contribution S059/S061
+pending; whole RA02/RA13 and original 64 R/AC, 21 RA, Q01–Q15S211 remain open.
 
-Codex independently reviewed clean `1198cc4c3dfe6fea6443e0f4b1998a539d564d20`.
-Exact native instruction/branch matched; P03-R11/R12/R13/S043-R5 completed and all
-four commits retained. RF66/RF67 accepted for allocated scope; **42 previously
-accepted numbered steps** preserved. S043/P03 remain changes-required: RF68
-PositiveDays range exceeds owning u32 and RF69 normalized text permits forbidden
-controls. RF45 partial, whole RA02/RA13 open. No new numbered acceptance.
+RF70: committed numeric corpus copies range predicates. Independent isolated
+actual-constructor checks passed 26 tests; expanded all-C0/C1 and exact text
+endpoints passed 27. Retain this evidence durably at P04-R1, then implement complete
+S044–S076 under current DEV-028, `pfc through EQM-P05`. P04 alone is not a stop.
+Independent complete reference-evaluator review precedes S077 storage integration.
+RF71 stale report arithmetic corrected: returned standard counts773/775/777/778,
+not distinct tests. Failed attempts retained; workload contention is not a pass.
 
-Sole current DEV-026: all four checkpoints **P03-R14 → P03-R15 → P03-R16 →
-S043-R6** are now implemented and locally verified, pending the mandatory
-independent Codex P03 acceptance before S044. See
-[review](reports/CODEX-1198cc4.md), [P03-R14](reports/P03-R14.md),
-[P03-R15](reports/P03-R15.md), [P03-R16](reports/P03-R16.md),
-[S043-R6](reports/S043-R6.md) and [plan](COMMIT_SEQUENCE.md).
-Original64R/AC,21RA,Q01–Q15,S211 unchanged; P04–P15 remain unfinished.
-
-Independent standard771 successful test executions, owning doctests9, structure/
-diff pass. Three isolated tests reproduce two scalar gaps and verify196 evidence
-combinations plus retained valid controls. v1 schemas/Cargo.lock unchanged. No
-Codex production source/test edits. Intermediate test/Clippy/format failures were
-recovered from native evidence and retained with historical report annotations.
-
+See [review](reports/CODEX-1496c28.md) and sole [plan](COMMIT_SEQUENCE.md).
+No Codex production source/test edits. Generated v1 schemas/Cargo.lock unchanged.
 No release/human release-testing gate reached. Full verify/Linux/coverage/mutation/
 fuzz/benchmark/package/live product/crypto/host/signing/operational acceptance
-unverified. Local automation is not inherently hardware-blocked. Q02/Q06 facts
-and activation authority remain separate; no publication/deployment/signing or
-optional-native activation is authorized.
+unverified. Missing local automation is not inherently hardware-blocked. Real
+policy values/authority remain explicit; no signing/publication/deployment/native
+activation is authorized. P04–P15 remain unfinished.
