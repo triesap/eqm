@@ -644,4 +644,70 @@ mod tests {
         );
         Ok(())
     }
+
+    /// S043-R6: the DEV-026 numeric and normalized-text owning repairs are
+    /// exercised through the real authored loader and public CLI over the
+    /// genuine example workspace, accepting the owning maximum and LF/TAB and
+    /// diagnosing zero-range and forbidden-control negatives.
+    #[test]
+    fn complete_p03_scalar_consumer_parity() -> Result<(), Box<dyn Error>> {
+        fn mutate(relative: &str, mutate: impl Fn(&str) -> String) -> Result<u8, Box<dyn Error>> {
+            let repository = crate::test_support::example_repository()?;
+            let path = repository.path().join(relative);
+            let text = fs::read_to_string(&path)?;
+            fs::write(&path, mutate(&text))?;
+            run_validate(repository.path())
+        }
+
+        assert_eq!(
+            run_validate(crate::test_support::example_repository()?.path())?,
+            0,
+            "genuine example workspace denied"
+        );
+
+        // Positive: the owning PositiveDays maximum is admitted through the CLI.
+        assert_eq!(
+            mutate("eqm/policies/consumer.critical_flow.toml", |text| text
+                .replace("maximum_days = 30", "maximum_days = 4294967295"))?,
+            0,
+            "owning PositiveDays maximum denied"
+        );
+
+        // Negative: zero is outside the owning PositiveDays range.
+        assert_eq!(
+            mutate("eqm/policies/consumer.critical_flow.toml", |text| text
+                .replace("maximum_days = 30", "maximum_days = 0"))?,
+            3,
+            "zero maximum_days admitted"
+        );
+
+        // Negative: zero approvers is outside the owning PositiveCount range.
+        assert_eq!(
+            mutate("eqm/policies/consumer.critical_flow.toml", |text| text
+                .replace("minimum_approvers = 1", "minimum_approvers = 0"))?,
+            3,
+            "zero minimum_approvers admitted"
+        );
+
+        // Positive: LF and TAB are permitted by the owning normalized_text.
+        assert_eq!(
+            mutate("eqm/contracts/account.create.toml", |text| text.replace(
+                "title = \"Create account\"",
+                "title = \"Create\\taccount\\nnext\""
+            ))?,
+            0,
+            "LF/TAB title denied"
+        );
+
+        // Negative: CR is a forbidden control for the owning Title.
+        assert_eq!(
+            mutate("eqm/contracts/account.create.toml", |text| text.replace(
+                "title = \"Create account\"",
+                "title = \"Create\\raccount\""
+            ))?,
+            3,
+            "CR title admitted"
+        );
+        Ok(())
+    }
 }
