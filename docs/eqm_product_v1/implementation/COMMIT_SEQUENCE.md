@@ -1,6 +1,165 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
-## Execution revalidation — 2026-10-05 (after DEV-028 issuance)
+## DEV-030 — Close checked scope boundaries and complete P04/P05
+
+**Date/author:** 2026-10-05, Codex under owner delegation.
+**Reviewed candidate:** `7a5b2465d293f482c22f2e8e4271a6b1507915c2`.
+[Independent review](reports/CODEX-7a5b246.md) retains all ten commits and all
+43 earlier numbered acceptances; accepts P04-R1/RF70 and allocated S045, S046,
+S050, S051 (47 numbered steps total). S044/S047/S048/S049 are partial and
+changes-required; inherited risk/post-expansion validation from S049 is retained.
+No whole acceptance criterion or regression is closed by these subsets.
+RF72–RF75 below are software repairs. RF76 ledger reconciliation is documentary.
+The prior missing-run observation is historical; this candidate is matched.
+All original 64 R/AC, 21 RA, Q01–Q15 and S211 requirements remain binding.
+DEV-030 supersedes the execution frontier, retaining DEV-028's P05 decisions.
+
+**Batch:** `pfc through EQM-P05`: P04-R2 → P04-R3 → S052–S076 inclusive,
+27 green checkpoints. Repairs precede the remaining 25 implementation steps.
+No stop at S058/S059, a commit, a progress report or a long conversation.
+S076 is the independent complete-universe/reference-evaluator review boundary
+before S077 storage integration. Original dependencies, cycle admission and
+verification remain. External inputs block only their genuinely dependent work;
+synthetic pure semantics, local integration and available automation remain
+eligible. Pi reports implementation/evidence; Codex owns independent acceptance.
+
+### P04-R2 — Close graph, denominator and participation admission
+
+Commit `fix: enforce checked graph and complete scope admission`.
+**Owns:** RF72/RF73/RF75; remaining S047/S048/S049 and RA01/RA05/RA06 contributions.
+
+1. Move the opaque `FinalizedWorkspaceGraph` authority token to `eqm_engine`;
+   private construction is reachable only after engine resolution/expansion and
+   complete invariant validation. Remove the domain's public `from_engine`
+   bypass; `doc(hidden)` is not privacy. No compatibility alias or unchecked
+   promotion. Pure manifest projections consume `&WorkspaceGraph` as data,
+   never authority; authorizing application/engine operations consume the engine
+   checked token. Callers project its immutable graph. Do not introduce a
+   production manifest→engine/protocol dependency or engine serialization.
+2. Remove public `Default`/unchecked construction of authorizing
+   `RequiredUniverse`. Derive it from the same checked graph, exact selection,
+   applicability and immutable scope context. Bind those inputs so status maps,
+   selections and universes from distinct sessions/contexts cannot be mixed.
+   Inspect and close other public promotion paths with the same authority flaw.
+3. Resolve completeness over the complete relevant universe: target, exact
+   provider dependency, current target-set and later scenario coordinates.
+   Missing coordinates reject or remain explicit Missing/Unknown; unknown
+   applicability/participation cannot yield Conformant, even when every reported
+   status passes. Preserve coordinate identity for unresolved outcomes, including
+   exact subject/profile/context, rather than one requirement-only marker.
+   Explicit false alone supports N/A; a caller cannot assert it to delete work.
+   Empty authorizing scope still requires protected explicit permission.
+   Keep the full denominator visible before evidence filtering or pagination.
+   Preserve original required/advisory policy classification; an unmatched optional
+   warning does not become a newly invented mandatory obligation.
+4. Consume existing `evaluate_participation` for each exact requirement/target/
+   selected-profile coordinate and combine its truth value with requirement
+   applicability. Preserve its established no-rule→Unknown and ambiguity→error
+   contracts in every mode; no global inclusion fallback. Explicit false is
+   visible N/A; unknown stays non-authorizing. Evaluate all declared axes, never
+   just the first profile. Existing synthetic examples may gain explicit fixture
+   participation declarations where intended; do not fabricate live authority.
+5. Migrate actual authorizing callers away from freely asserted completeness.
+   Durable tests must include omitted provider/target-set, unknown applicability,
+   unknown/asymmetric participation, forged empty universe, invalid raw graph,
+   cross-session selection/context and unrelated coordinate controls. Include
+   compile-fail/public-boundary proof that invalid finalized tokens cannot be
+   constructed externally and real application/CLI admission regressions.
+
+**Green/verification:** exact existing semantics and accepted risk fixes retained;
+no incomplete coordinate can authorize. Run original S044/S047/S048/S049 lanes,
+all-target domain/engine/manifest/application/CLI tests, owning doctests, standard
+check, schema parity, structure validator and diff check. Repair goldens only
+for reviewed semantic changes; retain all negative assertions and disclose them.
+
+### P04-R3 — Complete shared exact request preparation
+
+Commit `refactor: centralize exact selection request preparation`.
+**Owns:** RF74 and remaining S044; RF76 evidence/progress hygiene; RF77 rustdoc links.
+Move semantic policy/profile authority lookup, exact revision/ambiguity and
+membership resolution from CLI `development_request`/resolver helpers into the
+shared application operation. CLI parses syntax into typed inputs; MCP and other
+adapters use the same immutable-session preparation. Modes/authority are explicit,
+protected requests cannot use development defaults, and no reload/latest lookup/
+clock/runner effects occur. Preserve duplicate rejection and exact revisions
+accepted in S045/S046. Test identical CLI/application results, ambiguous/missing
+revisions, duplicate identical/conflicting requests and protected-mode negatives.
+Update actual usage docs/help for `--policy <ID[@REVISION]>` and profile revisions;
+examples must distinguish unverified inputs from trusted authority. Backfill
+actual commits, preserve failed attempt evidence and separate implemented,
+locally verified and independently accepted states. Use distinct per-attempt log
+filenames; overwritten logs cannot retroactively prove their failed attempts.
+Repair the existing rustdoc links in application source observations (`clean`)
+and protocol positive numeric schema (`unsigned_schema`) without changing semantics.
+Run original S044–S046 lanes, owning doctests, standard/schema/structure/diff gates.
+
+### S052 representation decision — exact scope bindings
+
+This resolves the implementation agent's scenario-composition blocker.
+Use existing domain scenario/provider/target records, not a new product service
+or a change to v1 requirement bytes. Add typed domain `ScenarioRef` (ID plus exact
+revision) and `RequirementScenarioBindings` mapping fully qualified requirement
+IDs to exact scenario refs. An application preparation request carries the map;
+protected modes obtain it from their explicit protected authority input, never
+candidate claims. Development supplies explicit input. Add thin repeatable CLI
+syntax `--scenario <FULL_REQUIREMENT=SCENARIO_ID@REVISION>` where evaluation is
+prepared and document it. Duplicate entries (even identical), unknown/missing/
+ambiguous refs, incompatible non-EndToEnd requirements and revision mismatch
+reject. No active EndToEnd mapping means explicit incomplete/unknown admission,
+never an implicit TargetSet or guessed/all-scenarios selection. An unrelated
+extra binding must not enlarge or authorize the selected scope.
+
+Add an exact scenario scope retaining ID/revision, occurrence identities, roles,
+tagged target/provider subjects and dependency edges from the same checked graph.
+Repeated actors of the same target stay distinct. Reuse checked cohort/subject
+manifest inputs for concrete build/artifact/configuration assignments as the
+owning later steps integrate them; no fabricated configurations. Provider
+participation derives from existing `Target.providers` and checked `depends_on`
+closure, never all targets indiscriminately. Missing provider assignment or
+required scope authority remains explicit incomplete/non-authorizing.
+
+Freeze a pure canonical scope-binding projection rooted exactly at `bindings`,
+a canonical set of `{requirement, scenario: {id, revision}}`; use existing v2
+NFC/numeric/JCS and duplicate rules and digest domain
+`eqm:v2:requirement-scenario-bindings`. Give it a distinct private digest carrier.
+Bind the map and scenario authority in S054 obligation/evaluation identity and
+later evidence context. Do not silently expand the frozen contract, policy-
+selection or graph projection roots, relabel v1 digests or add a legacy reader.
+If a public DTO is introduced, its v2 schema/readers/validators must land atomically
+with literal independent digest and cross-layer tests. Application owns effects;
+domain/engine remain pure, manifest owns canonical representations.
+
+**S052 green:** all approved scope kinds and exact dependers are in the frozen
+required universe; omitted provider/end-to-end evidence cannot pass via per-target
+success; repeated actor and wrong-scenario/revision controls execute through real
+preparation. Expand S052's file allocation to domain/application/manifest/CLI and
+usage docs, and run their all-target tests plus original engine/standard/schema/
+structure gates. This is an allocation clarification, not a new backend feature.
+
+### S053 and remaining P04/P05 decisions
+
+Use typed `ExpectedSelectionManifest` input frozen independently of results,
+keyed to exact binding/specification/obligation scope, logical case IDs and the
+kind's count unit. Reuse existing LogicalCaseId/CampaignId/PlanId carriers.
+Required selections compose with AND; only explicit protected alternatives
+frozen before evidence may choose. A selector determines a singleton only if
+its declared semantics uniquely identify that logical case. Globs/filters and
+multiple selections require an explicit approved expected manifest; observed
+passing results cannot define it. Missing/ambiguous expectation is Unknown/
+incomplete, not success. Synthetic injected manifests prove pure semantics,
+not product values. Include exact manifest digest in S054 and later lineage.
+
+For S057 strengthening, compare full visible denominator, including unresolved
+coordinates. Validate any authority transition before comparing semantic
+requirement/subject/profile/facet coverage; policy revision embedded in keys is
+not by itself proof of strengthening, and deleting cases via a raised level
+floor weakens scope. Preserve independent facet constraints.
+All other S054–S076 decisions from DEV-028 and original step/spec/RA contracts
+remain. No new supervisor stop between P04 and P05. Q05's unavailable real
+policy values do not block configurable semantics and local negative automation;
+never invent their values or equate synthetic trust with protected acceptance.
+
+## Historical DEV-029 execution observation
 
 No matching latest returned instruction/run was located in the available native
 session stores. The checkout is clean at exact issued planning revision
@@ -17,7 +176,8 @@ change scope or block already-approved pure software work. Original64R/AC21RA,
 Q01–Q15,S211 unchanged; whole RA02/RA13 and platform/live gates remain open.
 This is execution evidence revalidation, not a new technical requirements plan.
 
-## DEV-028 — Accept local P03 and implement complete selection/evaluation
+
+## Historical DEV-028 — Accept local P03 and implement complete selection/evaluation
 
 **Date/author:** 2026-10-05, Codex under owner delegation.
 **Reviewed candidate:** `1496c28616a769b9c958965c0377cb3b83ded32e`.
@@ -27,7 +187,7 @@ Direct actual-owner isolated probes supplement the committed numeric predicate
 proxies. RF70 requires durable constructor-based coverage; RF71 stale counts are
 corrected. RF45 P03 parity contribution accepted, remaining evidence-boundary
 contribution stays S059/S061; whole RA02/RA13 remain open. Original 64 R/AC, 21 RA,
-Q01–Q15,S211 unchanged. This is the current binding amendment; prior decisions
+Q01–Q15,S211 unchanged. This amendment is retained under DEV-030; prior decisions
 remain except superseded frontiers. Historical missing-run observations below
 are superseded by the now matched completed candidate.
 
@@ -5084,6 +5244,9 @@ Build complete non-target scopes for later aggregation.
 
 ### 3. Exact scope of code changes
 Emit exact provider/scenario obligations with participant/dependency linkage; do not flatten cross-target coverage into separate target passes.
+DEV-030 freezes explicit requirement-to-scenario preparation inputs, exact provider
+dependencies and the separate scope-binding projection. Include domain, application,
+manifest, CLI, usage docs and their owning test lanes in this allocation.
 
 ### 4. Files/modules likely involved
 - `crates/eqm_engine/src/obligations.rs`

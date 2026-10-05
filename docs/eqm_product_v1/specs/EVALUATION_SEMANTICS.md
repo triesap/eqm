@@ -88,3 +88,21 @@ regressions land in the owning steps S013–S076.
   expansion before finalized/prepared construction (DEV-001).
 - Freshness uses explicit evaluation time and policy over exact nanoseconds;
   fixture thresholds and instants are synthetic and never production policy.
+
+## DEV-030 complete coordinate admission
+
+Checked conformance includes every relevant target/provider/scenario coordinate
+and every unresolved applicability/participation outcome. Omitting end-to-end or
+provider work cannot turn reported per-target passes into Conformant. Public empty
+universe construction is not proof of complete policy resolution. Combine existing
+three-valued requirement and coordinate participation semantics; missing declared
+participation is Unknown, not implicit global inclusion. Preserve exact subjects,
+profiles, contexts and repeated role-bearing scenario actors before filtering
+evidence. Provider dependers use the declared checked dependency closure.
+
+Expected selection manifests precede results: all required logical cases compose
+with AND unless an explicit protected frozen alternative applies. A broad selector
+does not discover expected cases from observed passes. Strengthening retains the
+full visible denominator, including unresolved coordinates, and independently
+checks any authority transition. Implementation order and frozen representation
+are governed by [DEV-030](../implementation/COMMIT_SEQUENCE.md).

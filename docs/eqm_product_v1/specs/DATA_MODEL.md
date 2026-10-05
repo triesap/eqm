@@ -111,3 +111,20 @@ matching occurrence names alone cannot bind authority to the current graph.
 Equivalent independently prepared authority is permitted by value, without new
 wire identities. Owning v2 generated value contracts and reader/domain validation
 layers must agree, preserving development absence, completeness modes and v1.
+
+## DEV-030 scope admission clarification
+
+Finalized graph authority is an engine-owned opaque validated token. Raw domain
+graphs are projection data, never proof of complete resolution. Required-universe
+authority has no public empty/default construction and binds exact graph, selected
+policy/profiles, applicability and immutable scope context. Unknown participation
+remains exact and non-authorizing; explicit false can justify N/A.
+
+RequirementScenarioBindings maps exact fully qualified EndToEnd requirements to
+ScenarioRef ID/revision. It is an explicit preparation authority input, not a new
+v1 requirement member. Scenario obligations retain role-bearing occurrences and
+dependency edges; provider participation follows declared target provider and
+target-dependency closure. Missing mappings do not mean implicit all-target scope.
+ExpectedSelectionManifest is frozen independently of reported outcomes and binds
+logical selections and count units. Exact allocation and canonical map shape are
+in [DEV-030](../implementation/COMMIT_SEQUENCE.md).

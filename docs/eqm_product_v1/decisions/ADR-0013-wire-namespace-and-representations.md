@@ -199,3 +199,16 @@ enum order. No flattening/simplification/deduplication is implied. Membership va
 are sets; not has one child; journey surfaces and extension arrays stay ordered.
 This supersedes contrary DEV-005/DEV-006 wording while preserving v1 and domain
 semantics. S019-R1 owns the correction and literal heterogeneous-order tests.
+
+## DEV-030 scope-binding digest allocation
+
+An explicit requirement-to-scenario preparation map projects as exactly
+`{"bindings": [{"requirement": "<full ID>", "scenario": {"id": "<ID>", "revision": "<v2 number>"}}]}`.
+Bindings are a canonical set in full requirement order; duplicate keys reject even
+when identical. Existing v2 numeric/NFC/JCS rules apply (the revision example is
+notation, not an instruction to stringify in-range revisions). The distinct
+SHA-256 domain is `eqm:v2:requirement-scenario-bindings`, using the existing
+zero-byte delimiter. This new map identity does not expand or replace frozen
+contract/policy-selection/graph roots. S052 owns the pure representation and
+independent literal oracle; S054 binds it to complete obligation identity. Any
+new public wire record requires atomic source DTO/reader/schema validation.

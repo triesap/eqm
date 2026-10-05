@@ -174,3 +174,17 @@ criteria, v1 contracts and signed bytes. Parsed identifiers/digests are not trus
 synthetic combinations are not real cohort certification, and new target fields
 extend their canonical projection atomically. S043 is the next independent
 integration review boundary before routing; full MVP remains S211.
+
+## DEV-030 checked preparation contract
+
+Shared application preparation resolves typed exact policy/profile requests from
+one immutable checked session; adapters parse syntax but do not choose authority,
+latest revisions or membership. Scenario bindings are explicit preparation input;
+development syntax is `--scenario <FULL_REQUIREMENT=SCENARIO_ID@REVISION>`. Protected
+modes require the corresponding protected authority input. Duplicate identical or
+conflicting entries and missing/ambiguous/extraneous/incompatible refs reject.
+A missing active EndToEnd binding yields incomplete/unknown admission, not a
+TargetSet fallback. Public finalized-graph/universe promotion bypasses are closed.
+Source-generated v2 DTO/schema/reader changes are atomic where a new wire record
+is needed; v1 bytes and frozen projection roots remain unchanged.
+See [DEV-030](../implementation/COMMIT_SEQUENCE.md) for exact scope/verification.
