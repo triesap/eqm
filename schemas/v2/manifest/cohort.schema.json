@@ -42,6 +42,7 @@
         "build_id": {
           "maxLength": 512,
           "minLength": 1,
+          "pattern": "^[^\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f]*$",
           "type": "string"
         },
         "occurrence": {
@@ -132,6 +133,7 @@
     "id": {
       "maxLength": 512,
       "minLength": 1,
+      "pattern": "^[^\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f]*$",
       "type": "string"
     },
     "revision": {

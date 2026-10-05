@@ -3,7 +3,9 @@
 Latest execution revalidation (2026-10-05): no matching latest returned run or
 new product delta located. Clean checkout remains at the exact issued planning
 revision `897c2cea00b8d1271e7508c95f8ba33cc943b2df`; no new acceptance. All four
-DEV-026 checkpoints remain pending. Prior review/evidence below is retained,
+DEV-026 checkpoints were pending at that revalidation; P03-R14 and P03-R15 are
+now implemented and locally verified, and P03-R16 plus S043-R6 remain. Prior
+review/evidence below is retained,
 not represented as a new returned batch. Preserve any work located elsewhere.
 
 Codex independently reviewed clean `1198cc4c3dfe6fea6443e0f4b1998a539d564d20`.
@@ -13,11 +15,12 @@ accepted numbered steps** preserved. S043/P03 remain changes-required: RF68
 PositiveDays range exceeds owning u32 and RF69 normalized text permits forbidden
 controls. RF45 partial, whole RA02/RA13 open. No new numbered acceptance.
 
-Sole current DEV-026: **P03-R15 → P03-R16 → S043-R6**, text audit/
-repairs, complete differential corpus and actual consumer/original cycle exit
-before independent P03 acceptance and S044. P03-R14 (numeric owning bounds) is
-implemented and locally verified pending independent Codex acceptance. See
-[review](reports/CODEX-1198cc4.md), [P03-R14](reports/P03-R14.md) and
+Sole current DEV-026: **P03-R16 → S043-R6**, the complete differential corpus
+and actual consumer/original cycle exit before independent P03 acceptance and
+S044. P03-R14 (numeric owning bounds) and P03-R15 (normalized-text control
+policy) are implemented and locally verified pending independent Codex
+acceptance. See [review](reports/CODEX-1198cc4.md),
+[P03-R14](reports/P03-R14.md), [P03-R15](reports/P03-R15.md) and
 [plan](COMMIT_SEQUENCE.md).
 Original64R/AC,21RA,Q01–Q15,S211 unchanged; P04–P15 remain unfinished.
 

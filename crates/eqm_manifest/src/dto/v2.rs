@@ -70,11 +70,16 @@ fn workspace_schema_marker(_: &mut SchemaGenerator) -> Schema {
 }
 
 /// Exact nonempty bounded selector text (512 UTF-8 bytes at the owning layer).
+///
+/// The owning `SelectorText` uses `normalized_text`, so every Unicode control
+/// code point is forbidden except LF and TAB; NFC and the exact UTF-8 byte bound
+/// remain explicit owning layers that JSON Schema cannot faithfully prove.
 fn selector_text_schema(_: &mut SchemaGenerator) -> Schema {
     json_schema!({
         "type": "string",
         "minLength": 1,
         "maxLength": 512,
+        "pattern": "^[^\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f]*$",
     })
 }
 

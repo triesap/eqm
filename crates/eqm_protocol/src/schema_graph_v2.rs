@@ -62,11 +62,20 @@ fn positive_duration_millis_schema(_: &mut SchemaGenerator) -> Schema {
     crate::bounded_unsigned_schema(1, i64::MAX as u64)
 }
 
+/// The owning normalized-text control policy shared by every `normalized_text`
+/// carrier: no Unicode control code point is allowed except LF and TAB.
+///
+/// NFC and the exact UTF-8 byte bound stay explicit owning layers that JSON
+/// Schema cannot faithfully prove, so the code-point `minLength`/`maxLength`
+/// bounds remain approximations.
+const NORMALIZED_TEXT_PATTERN: &str = "^[^\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f]*$";
+
 fn title_schema(_: &mut SchemaGenerator) -> Schema {
     json_schema!({
         "type": "string",
         "minLength": 1,
         "maxLength": 160,
+        "pattern": NORMALIZED_TEXT_PATTERN,
     })
 }
 
@@ -75,6 +84,7 @@ fn selector_text_schema(_: &mut SchemaGenerator) -> Schema {
         "type": "string",
         "minLength": 1,
         "maxLength": 512,
+        "pattern": NORMALIZED_TEXT_PATTERN,
     })
 }
 
@@ -83,6 +93,7 @@ fn description_schema(_: &mut SchemaGenerator) -> Schema {
         "type": "string",
         "minLength": 1,
         "maxLength": 4096,
+        "pattern": NORMALIZED_TEXT_PATTERN,
     })
 }
 
@@ -301,12 +312,12 @@ closed_vocabulary_text!(
 
 /// One normalized bounded text of at most 256 UTF-8 bytes.
 fn transition_trigger_schema(_: &mut SchemaGenerator) -> Schema {
-    json_schema!({"type": "string", "minLength": 1, "maxLength": 256})
+    json_schema!({"type": "string", "minLength": 1, "maxLength": 256, "pattern": NORMALIZED_TEXT_PATTERN})
 }
 
 /// One normalized bounded waiver reason of at most 2,048 UTF-8 bytes.
 fn waiver_reason_schema(_: &mut SchemaGenerator) -> Schema {
-    json_schema!({"type": "string", "minLength": 1, "maxLength": 2048})
+    json_schema!({"type": "string", "minLength": 1, "maxLength": 2048, "pattern": NORMALIZED_TEXT_PATTERN})
 }
 
 /// One exact `YYYY-MM-DD` calendar date (the owning parser validates the day).

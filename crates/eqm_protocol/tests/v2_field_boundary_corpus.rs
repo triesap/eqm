@@ -11,15 +11,16 @@
 
 use eqm_domain::{
     AdapterId, Applicability, Artifact, ArtifactId, ArtifactRole, BindingId, CapabilityId,
-    DimensionId, DurationMillis, EnvironmentBinding, EnvironmentName, EnvironmentSource,
-    EvidenceKind, EvidenceSelector, EvidenceSpecId, EvidenceSpecification, Extensions, Facet,
-    FragmentId, FragmentUse, FullRequirementId, Journey, JourneyId, LifecycleStatus,
-    LocalRequirementId, OccurrenceId, OwnerRef, ParticipationRuleId, PlatformId, PolicyId,
-    PolicySelector, PositiveCount, PositiveDays, ProfileId, ProviderId, ReleaseChannel, RepoPath,
-    RepositoryIdentity, Requirement, RequirementLevel, RequirementScope, RequirementStatement,
-    Revision, RiskClass, RoleId, RunnerBackend, RunnerDefinition, RunnerGuarantee, RunnerId,
-    RunnerLimits, RunnerProgram, ScenarioId, SelectorText, SourceComponentId, Surface, SurfaceId,
-    SymbolicValueId, TargetId, Title, UnitId, WaiverId, WaiverPolicy, WorkingDirectoryTemplate,
+    Description, DimensionId, DurationMillis, EnvironmentBinding, EnvironmentName,
+    EnvironmentSource, EvidenceKind, EvidenceSelector, EvidenceSpecId, EvidenceSpecification,
+    Extensions, Facet, FragmentId, FragmentUse, FullRequirementId, Journey, JourneyId,
+    LifecycleStatus, LocalRequirementId, OccurrenceId, OwnerRef, ParticipationRuleId, PlatformId,
+    PolicyId, PolicySelector, PositiveCount, PositiveDays, ProfileId, ProviderId, ReleaseChannel,
+    RepoPath, RepositoryIdentity, Requirement, RequirementLevel, RequirementScope,
+    RequirementStatement, Revision, RiskClass, RoleId, RouteSelector, RunnerBackend,
+    RunnerDefinition, RunnerGuarantee, RunnerId, RunnerLimits, RunnerProgram, ScenarioId,
+    SelectorText, SourceComponentId, Surface, SurfaceId, SymbolicValueId, TargetId, Title,
+    TransitionTrigger, UnitId, WaiverId, WaiverPolicy, WaiverReason, WorkingDirectoryTemplate,
 };
 use eqm_protocol::WireUint;
 use eqm_protocol::schema_graph_v2::ComparisonContextV2Dto;
@@ -1608,6 +1609,100 @@ fn numeric_members_match_owning_width_and_range() -> Result<(), Box<dyn Error>> 
 }
 
 #[test]
+fn normalized_text_fields_match_owning_control_policy() -> Result<(), Box<dyn Error>> {
+    let v = graph_validator()?;
+    let base = graph_document();
+
+    // C0 and C1 controls, including NUL/CR/DEL, against the valid LF/TAB and
+    // NFC non-ASCII positives and ASCII length endpoints.
+    let controls: Vec<String> = vec![
+        "Plain text".to_owned(),
+        "Résumé".to_owned(),
+        "line\nbreak".to_owned(),
+        "tab\tstop".to_owned(),
+        format!("nul{}nul", '\u{0}'),
+        format!("soh{}soh", '\u{1}'),
+        format!("vt{}vt", '\u{b}'),
+        format!("ff{}ff", '\u{c}'),
+        format!("cr{}cr", '\r'),
+        format!("us{}us", '\u{1f}'),
+        format!("del{}del", '\u{7f}'),
+        format!("nel{}nel", '\u{85}'),
+        format!("c1{}c1", '\u{9f}'),
+        repeated(b'a', 160),
+        repeated(b'a', 161),
+        repeated(b'a', 4097),
+    ];
+
+    // Title (160) and Description/RequirementStatement (4,096) share the owning
+    // `normalized_text` control policy but not their length endpoints.
+    parity(&v, &base, "/capabilities/0/title", &controls, |s| {
+        Title::new(s).is_ok()
+    });
+    parity(&v, &base, "/capabilities/0/description", &controls, |s| {
+        Description::new(s).is_ok()
+    });
+    parity(
+        &v,
+        &base,
+        "/surfaces/0/requirements/0/statement",
+        &controls,
+        |s| RequirementStatement::new(s).is_ok(),
+    );
+    // SelectorText (512) covers symbol, argument-literal and authored ids.
+    parity(
+        &v,
+        &base,
+        "/bindings/0/artifacts/0/symbol",
+        &controls,
+        |s| SelectorText::new(s).is_ok(),
+    );
+    parity(&v, &base, "/runners/0/args/0/value", &controls, |s| {
+        SelectorText::new(s).is_ok()
+    });
+    // RouteSelector (512), TransitionTrigger (256) and WaiverReason (2,048).
+    parity(&v, &base, "/bindings/0/exposures/0/route", &controls, |s| {
+        RouteSelector::new(s).is_ok()
+    });
+    parity(
+        &v,
+        &base,
+        "/journeys/0/transitions/0/trigger",
+        &controls,
+        |s| TransitionTrigger::new(s).is_ok(),
+    );
+    parity(&v, &base, "/waivers/0/reason", &controls, |s| {
+        WaiverReason::new(s).is_ok()
+    });
+    Ok(())
+}
+
+#[test]
+fn authored_selector_text_matches_owning_control_policy() -> Result<(), Box<dyn Error>> {
+    let v = validator("schemas/v2/manifest/cohort.schema.json")?;
+    let base = cohort_document();
+    assert!(v.is_valid(&base), "authored cohort base");
+    let controls: Vec<String> = vec![
+        "build.n.mailer".to_owned(),
+        "Résumé".to_owned(),
+        format!("nul{}nul", '\u{0}'),
+        format!("cr{}cr", '\r'),
+        format!("del{}del", '\u{7f}'),
+        format!("nel{}nel", '\u{85}'),
+        format!("c1{}c1", '\u{9f}'),
+        repeated(b'a', 512),
+        repeated(b'a', 513),
+    ];
+    parity(&v, &base, "/id", &controls, |s| {
+        SelectorText::new(s).is_ok()
+    });
+    parity(&v, &base, "/assignments/0/build_id", &controls, |s| {
+        SelectorText::new(s).is_ok()
+    });
+    Ok(())
+}
+
+#[test]
 fn capability_journey_surface_fragment_fields_are_bounded() -> Result<(), Box<dyn Error>> {
     let v = graph_validator()?;
     let base = graph_document();
@@ -2922,6 +3017,23 @@ fn scenario_document() -> Value {
             "subject": {"provider": "provider.mailgun"}
         }],
         "dependencies": [],
+        "extensions": {}
+    })
+}
+
+fn cohort_document() -> Value {
+    json!({
+        "schema": "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/cohort.schema.json",
+        "id": "cohort.n",
+        "revision": 1,
+        "scenario": "signup.flow",
+        "assignments": [{
+            "occurrence": "mailer",
+            "repository": "https://example.com/team/project",
+            "source_commit": "a".repeat(40),
+            "provider_configuration_digest": sha('2'),
+            "build_id": "build.n.mailer"
+        }],
         "extensions": {}
     })
 }

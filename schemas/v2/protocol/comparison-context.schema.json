@@ -6,6 +6,7 @@
         "description": {
           "maxLength": 4096,
           "minLength": 1,
+          "pattern": "^[^\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f]*$",
           "type": "string"
         },
         "id": {
@@ -237,6 +238,7 @@
         "description": {
           "maxLength": 4096,
           "minLength": 1,
+          "pattern": "^[^\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f]*$",
           "type": "string"
         },
         "dimensions": {
@@ -282,6 +284,7 @@
         "title": {
           "maxLength": 160,
           "minLength": 1,
+          "pattern": "^[^\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f]*$",
           "type": "string"
         }
       },
