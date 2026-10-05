@@ -1,5 +1,22 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## Execution revalidation — 2026-10-05 (after DEV-028 issuance)
+
+No matching latest returned instruction/run was located in the available native
+session stores. The checkout is clean at exact issued planning revision
+`3124cc516baac87b27db3a6e47b06f5590ea0342`; no source/test/schema/lock delta from
+accepted `1496c286`, and no later implementation commit. No new acceptance.
+Preserve43 numbered local acceptances and all existing findings/external gates.
+DEV-028 remains the sole technical amendment. All34 checkpoints remain pending:
+P04-R1 then S044–S076 inclusive, `pfc through EQM-P05`, complete P04 and P05 before
+independent reference-evaluator review/S077. Reconcile and preserve any work found
+elsewhere before repeating implementation. The next run must record its exclusive
+external startup receipt before code so actual repository/revision/runtime and
+available native identity are discoverable. A missing returned log does not
+change scope or block already-approved pure software work. Original64R/AC21RA,
+Q01–Q15,S211 unchanged; whole RA02/RA13 and platform/live gates remain open.
+This is execution evidence revalidation, not a new technical requirements plan.
+
 ## DEV-028 — Accept local P03 and implement complete selection/evaluation
 
 **Date/author:** 2026-10-05, Codex under owner delegation.

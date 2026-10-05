@@ -1,5 +1,10 @@
 # Verification and implementation status
 
+Latest execution revalidation: no matching latest returned run or new product
+delta available. Clean checkout remains at exact issued `3124cc5`; no new
+acceptance. All34 DEV-028 checkpoints remain pending. Preserve prior independent
+review below and reconcile any implementation located elsewhere before repeating.
+
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
 matching the actual issued native instruction and completed branch. All four
 P03-R14/R15/R16/S043-R6 commits retained; RF68/RF69 allocated fixes and S043/P03
