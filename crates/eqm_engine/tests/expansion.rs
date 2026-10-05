@@ -119,7 +119,7 @@ fn semantic_mutation_changes_final_digest_but_source_layout_does_not() -> Result
     let baseline_digest = canonicalize_graph(&finalized)?.digest();
     assert_eq!(
         baseline_digest.to_string(),
-        "sha256:edaea5fb3e53ebac478e1916ac360b137ad281bfed2e8914dc67c5eb8b39eb78"
+        "sha256:4d3252cd506168e9dda01f213a6b4bdf8e0b1441a686fa114341a79f7758f6b3"
     );
 
     let repository = workspace()?;
@@ -147,5 +147,109 @@ fn semantic_mutation_changes_final_digest_but_source_layout_does_not() -> Result
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let finalized = expand_fragments(graph.clone(), &digest_map(&graph)?, loaded.source_map())?;
     assert_eq!(canonicalize_graph(&finalized)?.digest(), baseline_digest);
+    Ok(())
+}
+
+/// Returns the exact inherited risk of the expanded OTP fragment requirement.
+fn expanded_otp_risk(
+    repository: &tempfile::TempDir,
+) -> Result<eqm_domain::RiskClass, Box<dyn Error>> {
+    let loaded = load_workspace(repository.path(), None)?;
+    let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
+    let finalized = expand_fragments(graph.clone(), &digest_map(&graph)?, loaded.source_map())?;
+    finalized
+        .graph()
+        .surfaces()
+        .get(&"account.create.signup.otp".parse()?)
+        .ok_or("OTP surface missing")?
+        .requirements()
+        .get(&"six_decimal_digits".parse()?)
+        .ok_or("requirement missing")?
+        .risk_class()
+        .ok_or_else(|| "expanded requirement has no risk".into())
+}
+
+/// Re-pins the OTP fragment to its mutated canonical digest.
+fn repin_otp_fragment(repository: &tempfile::TempDir) -> Result<(), Box<dyn Error>> {
+    let loaded = load_workspace(repository.path(), None)?;
+    let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
+    let digest = digest_map(&graph)?
+        .get(&(
+            eqm_domain::FragmentId::new("auth.otp_entry")?,
+            eqm_domain::Revision::new(1)?,
+        ))
+        .cloned()
+        .ok_or("fragment digest missing")?;
+    replace(
+        repository.path().join("eqm/contracts/auth.signup.otp.toml"),
+        "sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378",
+        &digest.to_string(),
+    )?;
+    Ok(())
+}
+
+#[test]
+fn expanded_fragment_requirements_inherit_the_stronger_risk() -> Result<(), Box<dyn Error>> {
+    // The fragment default (high) is stronger than the destination journey
+    // default (low), so the copied requirement inherits high.
+    let repository = workspace()?;
+    replace(
+        repository.path().join("eqm/contracts/auth.signup.toml"),
+        "risk_class = \"high\"",
+        "risk_class = \"low\"",
+    )?;
+    assert_eq!(expanded_otp_risk(&repository)?, eqm_domain::RiskClass::High);
+
+    // The journey default (critical) is stronger than the fragment default
+    // (high), so the copied requirement inherits critical.
+    let repository = workspace()?;
+    replace(
+        repository.path().join("eqm/contracts/auth.signup.toml"),
+        "risk_class = \"high\"",
+        "risk_class = \"critical\"",
+    )?;
+    assert_eq!(
+        expanded_otp_risk(&repository)?,
+        eqm_domain::RiskClass::Critical
+    );
+
+    // An explicit requirement risk between the fragment default (high) and the
+    // stronger journey default (critical) rejects after expansion. Pre-expansion
+    // validation admits it because the fragment default alone still allows high.
+    let repository = workspace()?;
+    replace(
+        repository.path().join("eqm/contracts/auth.signup.toml"),
+        "risk_class = \"high\"",
+        "risk_class = \"critical\"",
+    )?;
+    let fragment_path = repository.path().join("eqm/contracts/auth.otp_entry.toml");
+    let text = fs::read_to_string(&fragment_path)?;
+    fs::write(&fragment_path, format!("{text}\nrisk_class = \"high\"\n"))?;
+    repin_otp_fragment(&repository)?;
+    let loaded = load_workspace(repository.path(), None)?;
+    let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
+    let error = expand_fragments(graph.clone(), &digest_map(&graph)?, loaded.source_map())
+        .err()
+        .ok_or("lowered inherited risk accepted")?;
+    assert_eq!(error.diagnostics()[0].code().to_string(), "EQM-E0305");
+
+    // An explicit requirement at the inherited ceiling is retained.
+    let repository = workspace()?;
+    replace(
+        repository.path().join("eqm/contracts/auth.signup.toml"),
+        "risk_class = \"high\"",
+        "risk_class = \"critical\"",
+    )?;
+    let fragment_path = repository.path().join("eqm/contracts/auth.otp_entry.toml");
+    let text = fs::read_to_string(&fragment_path)?;
+    fs::write(
+        &fragment_path,
+        format!("{text}\nrisk_class = \"critical\"\n"),
+    )?;
+    repin_otp_fragment(&repository)?;
+    assert_eq!(
+        expanded_otp_risk(&repository)?,
+        eqm_domain::RiskClass::Critical
+    );
     Ok(())
 }

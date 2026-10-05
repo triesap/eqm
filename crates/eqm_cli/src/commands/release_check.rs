@@ -9,8 +9,9 @@ use eqm_domain::{
     Sha256Digest, SourceCommit, TargetId, TrustLevel, UtcInstant,
 };
 use eqm_engine::{
-    FacetStatus, ReleaseCheck, ReleaseContext, ReleaseGateInput, ReleaseGateStatus, ReleaseSubject,
-    ScopeSubject, TargetConformance, evaluate_release_gate, evaluate_target_conformance,
+    CompletePolicyResolution, FacetStatus, ReleaseCheck, ReleaseContext, ReleaseGateInput,
+    ReleaseGateStatus, ReleaseSubject, ScopeSubject, TargetConformance,
+    evaluate_complete_target_conformance, evaluate_release_gate,
 };
 use eqm_protocol::{
     CommandIdentity, EvaluationModeDto, EvidencePayloadDto, EvidenceResultDto,
@@ -51,8 +52,8 @@ fn execute_with_authority(
         .to_owned();
     let request = SessionRequest::at(parsed.global, parsed.command.name, now);
     let session = prepare(&request, start)?;
-    let (selection, obligations) =
-        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
+    let (selection, obligations, universe) =
+        evaluation::derive_with_policy_universe(&session, policy.as_deref(), &profiles)?;
     let (record_dto, record) = read_release_record(&session, &record_path)?;
     if !session
         .finalized()
@@ -113,8 +114,9 @@ fn execute_with_authority(
             profile_values: &profile_values,
         },
     );
-    let conformance = evaluate_target_conformance(record.target(), &facets, true)?;
-    let release_facets = facets.values().copied().collect::<Vec<_>>();
+    let resolution = CompletePolicyResolution::new(universe, facets)?;
+    let conformance = evaluate_complete_target_conformance(record.target(), &resolution)?;
+    let release_facets = resolution.facets().values().copied().collect::<Vec<_>>();
     let effective_trust = matching
         .iter()
         .filter_map(|value| effective_evidence_trust(value, authority))

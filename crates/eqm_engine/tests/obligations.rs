@@ -2,12 +2,15 @@
 
 mod support;
 
-use eqm_domain::{DimensionId, FullRequirementId, PolicyId, ProfileId, Revision, SymbolicValueId};
+use eqm_domain::{
+    DimensionId, FullRequirementId, PolicyId, ProfileId, Revision, SymbolicValueId, TargetId,
+};
 use eqm_engine::{
-    ApplicabilityContext, AuthorityOrigin, EvaluationMode, FragmentDigestMap, PolicyProfileRequest,
-    PolicyRef, ProfileRequest, RequiredUniverse, ScopeSubject, UnresolvedReason,
-    derive_obligations, derive_required_universe, expand_fragments, resolve_graph,
-    select_policy_profiles,
+    ApplicabilityContext, AuthorityOrigin, CompletePolicyResolution, ConformanceError,
+    EvaluationMode, FacetStatus, FragmentDigestMap, PolicyProfileRequest, PolicyRef,
+    ProfileRequest, RequiredUniverse, ScopeSubject, TargetConformance, UnresolvedReason,
+    derive_obligations, derive_required_universe, evaluate_complete_target_conformance,
+    expand_fragments, resolve_graph, select_policy_profiles,
 };
 use eqm_manifest::canonicalize_fragment;
 use std::collections::BTreeMap;
@@ -156,6 +159,47 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
                 .next()
                 .ok_or("coordinate missing")?
         )
+    );
+
+    // The checked completeness boundary accepts a complete resolution and
+    // rejects one that omits a participating required coordinate or names an
+    // unrelated coordinate.
+    let complete: BTreeMap<_, _> = first
+        .coordinates()
+        .iter()
+        .cloned()
+        .map(|key| (key, FacetStatus::Satisfied))
+        .collect();
+    let resolution = CompletePolicyResolution::new(first.clone(), complete.clone())?;
+    assert_eq!(
+        evaluate_complete_target_conformance(&TargetId::new("android")?, &resolution)?,
+        TargetConformance::Conformant
+    );
+    let (removed_key, removed_target) = first
+        .coordinates()
+        .iter()
+        .find_map(|key| match &key.subject {
+            ScopeSubject::Target(target) => Some((key.clone(), target.clone())),
+            _ => None,
+        })
+        .ok_or("target coordinate missing")?;
+    let mut missing = complete;
+    missing.remove(&removed_key);
+    let resolution = CompletePolicyResolution::new(first.clone(), missing)?;
+    assert_eq!(
+        evaluate_complete_target_conformance(&removed_target, &resolution),
+        Err(ConformanceError::IncompletePolicyResolution)
+    );
+    let extra: BTreeMap<_, _> = first
+        .coordinates()
+        .iter()
+        .take(1)
+        .cloned()
+        .map(|key| (key, FacetStatus::Satisfied))
+        .collect();
+    assert_eq!(
+        CompletePolicyResolution::new(RequiredUniverse::default(), extra),
+        Err(ConformanceError::UnexpectedCoordinate)
     );
     Ok(())
 }

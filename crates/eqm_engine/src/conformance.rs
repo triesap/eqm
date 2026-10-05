@@ -185,11 +185,77 @@ fn participates(subject: &ScopeSubject, target: &TargetId) -> bool {
     }
 }
 
+/// Checked policy resolution whose completeness is validated against the
+/// pre-evidence required universe instead of a freely asserted flag.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompletePolicyResolution {
+    universe: crate::RequiredUniverse,
+    facets: BTreeMap<ObligationKey, FacetStatus>,
+}
+
+impl CompletePolicyResolution {
+    /// Pairs a validated required universe with per-coordinate facet statuses.
+    ///
+    /// A status for a coordinate outside the required universe rejects, so a
+    /// caller cannot inflate assurance with unrelated facets. Per-target
+    /// participation completeness is checked when the target result is derived.
+    pub fn new(
+        universe: crate::RequiredUniverse,
+        facets: BTreeMap<ObligationKey, FacetStatus>,
+    ) -> Result<Self, ConformanceError> {
+        if facets.keys().any(|key| !universe.contains(key)) {
+            return Err(ConformanceError::UnexpectedCoordinate);
+        }
+        Ok(Self { universe, facets })
+    }
+
+    /// Returns the validated required universe.
+    #[must_use]
+    pub const fn universe(&self) -> &crate::RequiredUniverse {
+        &self.universe
+    }
+
+    /// Returns the per-coordinate facet statuses.
+    #[must_use]
+    pub const fn facets(&self) -> &BTreeMap<ObligationKey, FacetStatus> {
+        &self.facets
+    }
+}
+
+/// Derives one target result from a checked complete resolution, rejecting a
+/// resolution that omits a required per-target coordinate. Provider and
+/// target-set participation aggregation is completed by the later participant
+/// conformance step; this boundary binds the resolution to the derived universe
+/// and rejects an omitted target coordinate or an unrelated coordinate.
+pub fn evaluate_complete_target_conformance(
+    target: &TargetId,
+    resolution: &CompletePolicyResolution,
+) -> Result<TargetConformance, ConformanceError> {
+    if resolution
+        .universe
+        .coordinates()
+        .iter()
+        .filter(|key| matches!(&key.subject, ScopeSubject::Target(value) if value == target))
+        .any(|key| !resolution.facets.contains_key(key))
+    {
+        return Err(ConformanceError::IncompletePolicyResolution);
+    }
+    let statuses: Vec<_> = resolution
+        .facets
+        .iter()
+        .filter(|(key, _)| participates(&key.subject, target))
+        .map(|(_, status)| *status)
+        .collect();
+    Ok(classify_statuses(&statuses))
+}
+
 /// Target result construction failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ConformanceError {
     /// Required policy/obligation construction did not complete.
     IncompletePolicyResolution,
+    /// A facet status named a coordinate outside the required universe.
+    UnexpectedCoordinate,
 }
 
 impl Display for ConformanceError {

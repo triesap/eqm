@@ -33,8 +33,9 @@ pub use comparison::{
     ComparisonEligibility, ComparisonParticipant, evaluate_comparison_eligibility,
 };
 pub use conformance::{
-    ConformanceError, FacetEvaluationInput, FacetStatus, SupportingCheck, TargetConformance,
-    TrustEvaluation, evaluate_facet_status, evaluate_target_conformance,
+    CompletePolicyResolution, ConformanceError, FacetEvaluationInput, FacetStatus, SupportingCheck,
+    TargetConformance, TrustEvaluation, evaluate_complete_target_conformance,
+    evaluate_facet_status, evaluate_target_conformance,
 };
 pub use coverage::{
     CoverageExpectation, CoverageMismatch, CoverageReport, CoverageStatus, EvidenceCandidate,

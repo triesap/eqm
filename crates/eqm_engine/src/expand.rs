@@ -4,7 +4,7 @@ use crate::resolve::diagnostic;
 use crate::{ResolutionError, validate_graph_invariants};
 use eqm_domain::{
     FinalizedWorkspaceGraph, FragmentId, LocalRequirementId, RepoPath, Requirement, Revision,
-    Sha256Digest, Surface, WorkspaceGraph,
+    RiskClass, Sha256Digest, Surface, WorkspaceGraph,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -18,6 +18,11 @@ pub fn expand_fragments(
     sources: &BTreeMap<Box<str>, RepoPath>,
 ) -> Result<FinalizedWorkspaceGraph, ResolutionError> {
     validate_graph_invariants(&graph, sources)?;
+    let journey_risks: BTreeMap<_, _> = graph
+        .journeys()
+        .iter()
+        .map(|(id, journey)| (id.clone(), journey.risk_class()))
+        .collect();
     let mut findings = Vec::new();
     let mut input = graph.into_input();
     let fragments: BTreeMap<_, _> = input
@@ -105,7 +110,32 @@ pub fn expand_fragments(
                     )?);
                     continue;
                 }
-                requirements.push(rename_requirement(requirement, final_id)?);
+                let destination_risk = *journey_risks
+                    .get(surface.journey())
+                    .ok_or(ResolutionError::Expansion)?;
+                // The stronger fragment-default and destination-journey risk is
+                // inherited; absence inherits it and an explicit lower value is
+                // rejected rather than silently weakening the expanded scope.
+                let inherited_risk = fragment.risk_class().max(destination_risk);
+                let risk = match requirement.risk_class() {
+                    None => Some(inherited_risk),
+                    Some(explicit) if inherited_risk.allows_child(explicit) => Some(explicit),
+                    Some(explicit) => {
+                        findings.push(diagnostic(
+                            305,
+                            format!(
+                                "fragment pin `{}@{}` lowers inherited risk `{inherited_risk}` to `{explicit}` at requirement `{final_id}`",
+                                pin.fragment(),
+                                pin.revision().get()
+                            ),
+                            Some(&owner),
+                            std::iter::empty(),
+                            sources,
+                        )?);
+                        continue;
+                    }
+                };
+                requirements.push(rename_requirement(requirement, final_id, risk)?);
             }
         }
         expanded_surfaces.push(
@@ -131,6 +161,9 @@ pub fn expand_fragments(
     }
     input.surfaces = expanded_surfaces;
     let graph = WorkspaceGraph::new(input).map_err(ResolutionError::Graph)?;
+    // Revalidate the expanded graph before it can become finalized. The
+    // pre-expansion graph cannot cover requirements copied in from fragments.
+    validate_graph_invariants(&graph, sources)?;
     Ok(FinalizedWorkspaceGraph::from_engine(graph))
 }
 
@@ -147,6 +180,7 @@ fn expanded_id(
 fn rename_requirement(
     requirement: &Requirement,
     id: LocalRequirementId,
+    risk: Option<RiskClass>,
 ) -> Result<Requirement, ResolutionError> {
     Requirement::new(
         id,
@@ -155,7 +189,7 @@ fn rename_requirement(
         requirement.statement().clone(),
         requirement.facets().iter().copied().collect(),
         requirement.applicability().clone(),
-        requirement.risk_class(),
+        risk,
         requirement.provider().cloned(),
         requirement.extensions().clone(),
     )

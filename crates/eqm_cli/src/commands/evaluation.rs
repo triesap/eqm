@@ -5,7 +5,7 @@ use eqm_application::prepare_obligations;
 use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId, WorkspaceGraph};
 use eqm_engine::{
     AuthorityOrigin, EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest,
-    PolicyRef, ProfileRequest, ScopeSubject, SelectedPolicyProfiles,
+    PolicyRef, ProfileRequest, RequiredUniverse, ScopeSubject, SelectedPolicyProfiles,
 };
 use eqm_protocol::{FacetStatusDto, ObligationDto, ProfileValueDto};
 use std::collections::BTreeMap;
@@ -156,8 +156,34 @@ pub fn derive_with_policy<'a>(
         None,
         None,
     )?;
-    let (selection, _applicability, derivation) = prepared.into_parts();
+    let (selection, _applicability, derivation, _universe) = prepared.into_parts();
     Ok((selection, derivation))
+}
+
+/// Selects development authority and also returns the checked required
+/// universe for callers that must validate completeness before a decision.
+pub fn derive_with_policy_universe<'a>(
+    session: &'a PreparedSession,
+    policy: Option<&str>,
+    requested: &[String],
+) -> Result<
+    (
+        SelectedPolicyProfiles<'a>,
+        ObligationDerivation,
+        RequiredUniverse,
+    ),
+    Box<dyn Error>,
+> {
+    let request = development_request(session, policy, requested)?;
+    let prepared = prepare_obligations(
+        session.finalized(),
+        EvaluationMode::Development,
+        Some(&request),
+        None,
+        None,
+    )?;
+    let (selection, _applicability, derivation, universe) = prepared.into_parts();
+    Ok((selection, derivation, universe))
 }
 
 fn parse_policy(value: &str) -> Result<(PolicyId, Option<Revision>), Box<dyn Error>> {

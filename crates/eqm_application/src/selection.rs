@@ -12,8 +12,8 @@
 use eqm_domain::{FinalizedWorkspaceGraph, ProfileId, Sha256Digest, WorkspaceGraph};
 use eqm_engine::{
     ApplicabilityContext, ApplicabilityError, EvaluationMode, ObligationDerivation,
-    ObligationError, PolicyProfileRequest, SelectedPolicyProfiles, SelectionError,
-    derive_obligations, select_policy_profiles,
+    ObligationError, PolicyProfileRequest, RequiredUniverse, SelectedPolicyProfiles,
+    SelectionError, derive_obligations, derive_required_universe, select_policy_profiles,
 };
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -26,6 +26,7 @@ pub struct PreparedObligations<'a> {
     selection: SelectedPolicyProfiles<'a>,
     applicability: ApplicabilityContext,
     derivation: ObligationDerivation,
+    universe: RequiredUniverse,
 }
 
 impl<'a> PreparedObligations<'a> {
@@ -47,6 +48,12 @@ impl<'a> PreparedObligations<'a> {
         &self.derivation
     }
 
+    /// Returns the complete pre-evidence required universe.
+    #[must_use]
+    pub const fn universe(&self) -> &RequiredUniverse {
+        &self.universe
+    }
+
     /// Consumes the bundle into its exact parts.
     #[must_use]
     pub fn into_parts(
@@ -55,8 +62,14 @@ impl<'a> PreparedObligations<'a> {
         SelectedPolicyProfiles<'a>,
         ApplicabilityContext,
         ObligationDerivation,
+        RequiredUniverse,
     ) {
-        (self.selection, self.applicability, self.derivation)
+        (
+            self.selection,
+            self.applicability,
+            self.derivation,
+            self.universe,
+        )
     }
 }
 
@@ -124,10 +137,13 @@ pub fn prepare_obligations<'a>(
     let applicability = applicability_context(graph, &selection)?;
     let derivation = derive_obligations(finalized, &selection, &applicability, release_context)
         .map_err(ObligationPreparationError::Obligations)?;
+    let universe = derive_required_universe(finalized, &selection, &applicability, release_context)
+        .map_err(ObligationPreparationError::Obligations)?;
     Ok(PreparedObligations {
         selection,
         applicability,
         derivation,
+        universe,
     })
 }
 

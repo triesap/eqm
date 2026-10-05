@@ -17,7 +17,12 @@ selection that never guesses a latest revision. S047 introduces the pure
 `RequiredUniverse` denominator derived before any evidence, with a subset check
 for later policy-strengthening comparisons. S048 retains unknown and justified
 not-applicable coordinates in the visible universe so skipped requirements
-cannot disappear from completeness. S049–S076 remain pending (28 checkpoints).
+cannot disappear from completeness. S049 applies DEV-001: expanded fragment
+requirements inherit the stronger fragment/journey risk, explicit lower risk
+rejects, the expanded graph is revalidated before finalization, and the release
+path uses the checked `CompletePolicyResolution` universe boundary. The two
+reviewed CLI goldens changed only their graph digest. S050–S076 remain pending
+(27 checkpoints).
 
 Codex independently reviewed clean `1496c28616a769b9c958965c0377cb3b83ded32e`,
 matching the actual issued native instruction and completed branch. All four
