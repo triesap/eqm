@@ -29,8 +29,8 @@ use super::support::{
 };
 use super::{CanonicalizationError, MAX_PROJECTION_BYTES, insert_optional, object};
 use eqm_domain::{
-    Capability, ContractDigest, FinalizedWorkspaceGraph, Fragment, FragmentUse, Journey,
-    Requirement, Surface, Transition,
+    Capability, ContractDigest, Fragment, FragmentUse, Journey, Requirement, Surface, Transition,
+    WorkspaceGraph,
 };
 use serde_json::{Value, json};
 
@@ -227,9 +227,9 @@ pub(super) fn fragment_v2(value: &Fragment) -> Result<Value, CanonicalizationErr
     ))
 }
 
-/// Projects one finalized graph into the exact v2 contract semantic shape.
-pub fn contract_v2(finalized: &FinalizedWorkspaceGraph) -> Result<Value, CanonicalizationError> {
-    let graph = finalized.graph();
+/// Projects one finalized graph's raw data into the exact v2 contract semantic
+/// shape.
+pub fn contract_v2(graph: &WorkspaceGraph) -> Result<Value, CanonicalizationError> {
     Ok(object([
         (
             "capabilities",
@@ -275,11 +275,12 @@ pub fn contract_v2(finalized: &FinalizedWorkspaceGraph) -> Result<Value, Canonic
     ]))
 }
 
-/// Canonicalizes one finalized graph under the existing `ContractDigest` domain.
+/// Canonicalizes one finalized graph's raw data under the existing
+/// `ContractDigest` domain.
 pub fn canonicalize_contract_v2(
-    finalized: &FinalizedWorkspaceGraph,
+    graph: &WorkspaceGraph,
 ) -> Result<CanonicalContractV2, CanonicalizationError> {
-    let projected = contract_v2(finalized)?;
+    let projected = contract_v2(graph)?;
     let bytes = serde_json_canonicalizer::to_vec(&projected)
         .map_err(|_| CanonicalizationError::Serialization)?;
     if bytes.len() > MAX_PROJECTION_BYTES {

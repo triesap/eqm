@@ -10,13 +10,13 @@
 use eqm_domain::{
     Applicability, ArgumentTemplate, CalendarDate, Capability, CapabilityId, DimensionId,
     DurationMillis, EvidenceScopeSubject, ExtensionNamespace, ExtensionValue, Extensions, Facet,
-    FinalizedWorkspaceGraph, FrameworkId, FullRequirementId, LifecycleStatus, OwnerRef,
-    ParticipationRule, ParticipationRuleId, PlatformId, PolicyId, PositiveCount, ProfileId,
-    Provider, ProviderId, RepoPath, Revision, RoleId, RunnerBackend, RunnerDefinition, RunnerId,
-    RunnerLimits, RunnerProgram, SelectorText, SemanticGraphV2Digest, Sha256Digest,
-    SourceComponent, SourceComponentId, SymbolicValueId, Target, TargetId, Title, UnitId, Waiver,
-    WaiverId, WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate,
-    WorkspaceGraph, WorkspaceGraphInput,
+    FrameworkId, FullRequirementId, LifecycleStatus, OwnerRef, ParticipationRule,
+    ParticipationRuleId, PlatformId, PolicyId, PositiveCount, ProfileId, Provider, ProviderId,
+    RepoPath, Revision, RoleId, RunnerBackend, RunnerDefinition, RunnerId, RunnerLimits,
+    RunnerProgram, SelectorText, SemanticGraphV2Digest, Sha256Digest, SourceComponent,
+    SourceComponentId, SymbolicValueId, Target, TargetId, Title, UnitId, Waiver, WaiverId,
+    WaiverProfileScope, WaiverReason, WaiverScope, WorkingDirectoryTemplate, WorkspaceGraph,
+    WorkspaceGraphInput,
 };
 use eqm_manifest::{canonicalize_graph, canonicalize_graph_v2, project_graph_v2};
 use jsonschema::{Draft, Validator};
@@ -80,7 +80,7 @@ fn graph(
     dependency: Option<&str>,
     component_extensions: Extensions,
     include_participation: bool,
-) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+) -> Result<WorkspaceGraph, Box<dyn Error>> {
     let mut component = source_component(dependency)?;
     if !component_extensions.values().is_empty() {
         component = SourceComponent::new(
@@ -95,19 +95,17 @@ fn graph(
             component_extensions,
         )?;
     }
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            capabilities: vec![capability()?],
-            targets: vec![web_target(role)?],
-            source_components: vec![component],
-            participation: if include_participation {
-                vec![participation()?]
-            } else {
-                Vec::new()
-            },
-            ..WorkspaceGraphInput::default()
+    Ok(WorkspaceGraph::new(WorkspaceGraphInput {
+        capabilities: vec![capability()?],
+        targets: vec![web_target(role)?],
+        source_components: vec![component],
+        participation: if include_participation {
+            vec![participation()?]
+        } else {
+            Vec::new()
         },
-    )?))
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 fn extra_extensions(value: ExtensionValue) -> Result<Extensions, Box<dyn Error>> {
@@ -160,7 +158,7 @@ fn copy_directory(
 
 /// A genuine finalized graph produced by the real authored loader from the
 /// repository's complete example workspace, not a hand-authored JSON fixture.
-fn example_workspace_finalized() -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+fn example_workspace_finalized() -> Result<WorkspaceGraph, Box<dyn Error>> {
     let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(std::path::Path::parent)
@@ -170,9 +168,7 @@ fn example_workspace_finalized() -> Result<FinalizedWorkspaceGraph, Box<dyn Erro
     copy_directory(&source, repository.path())?;
     std::fs::create_dir(repository.path().join(".git"))?;
     let loaded = eqm_manifest::load_workspace(repository.path(), None)?;
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        loaded.into_graph_input(),
-    )?))
+    Ok(WorkspaceGraph::new(loaded.into_graph_input())?)
 }
 
 /// The real loader output projects a genuinely finalized positive graph that the
@@ -245,8 +241,7 @@ fn loader_projected_positive_days_boundary_is_schema_valid() -> Result<(), Box<d
     );
     std::fs::write(&policy, updated)?;
     let loaded = eqm_manifest::load_workspace(repository.path(), None)?;
-    let finalized =
-        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(loaded.into_graph_input())?);
+    let finalized = WorkspaceGraph::new(loaded.into_graph_input())?;
     let projected = project_graph_v2(&finalized)?;
     assert!(
         validator.is_valid(&projected),
@@ -500,7 +495,7 @@ fn v1_graph_projection_rejects_v2_only_metadata() -> Result<(), Box<dyn Error>> 
         Err(eqm_manifest::CanonicalizationError::V2OnlyMetadata)
     );
     // A genuinely v1 graph still projects under the frozen v1 domain.
-    let v1 = FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+    let v1 = WorkspaceGraph::new(WorkspaceGraphInput {
         capabilities: vec![capability()?],
         targets: vec![Target::new(
             TargetId::new("web")?,
@@ -511,7 +506,7 @@ fn v1_graph_projection_rejects_v2_only_metadata() -> Result<(), Box<dyn Error>> 
             Extensions::default(),
         )?],
         ..WorkspaceGraphInput::default()
-    })?);
+    })?;
     let canonical = canonicalize_graph(&v1)?;
     assert_eq!(
         canonical.digest(),
@@ -526,7 +521,7 @@ fn v1_graph_projection_rejects_v2_only_metadata() -> Result<(), Box<dyn Error>> 
 #[test]
 fn component_set_order_is_permutation_invariant_but_content_sensitive() -> Result<(), Box<dyn Error>>
 {
-    let forward = FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+    let forward = WorkspaceGraph::new(WorkspaceGraphInput {
         targets: vec![web_target("control_tower")?],
         source_components: vec![
             SourceComponent::new(
@@ -539,22 +534,21 @@ fn component_set_order_is_permutation_invariant_but_content_sensitive() -> Resul
             source_component(None)?,
         ],
         ..WorkspaceGraphInput::default()
-    })?);
-    let reversed =
-        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
-            targets: vec![web_target("control_tower")?],
-            source_components: vec![
-                source_component(None)?,
-                SourceComponent::new(
-                    SourceComponentId::new("shared.auth")?,
-                    vec![RepoPath::new("shared/auth")?],
-                    vec![owner("owner://team/shared")?],
-                    vec![],
-                    Extensions::default(),
-                )?,
-            ],
-            ..WorkspaceGraphInput::default()
-        })?);
+    })?;
+    let reversed = WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![web_target("control_tower")?],
+        source_components: vec![
+            source_component(None)?,
+            SourceComponent::new(
+                SourceComponentId::new("shared.auth")?,
+                vec![RepoPath::new("shared/auth")?],
+                vec![owner("owner://team/shared")?],
+                vec![],
+                Extensions::default(),
+            )?,
+        ],
+        ..WorkspaceGraphInput::default()
+    })?;
     assert_eq!(
         canonicalize_graph_v2(&forward)?,
         canonicalize_graph_v2(&reversed)?
@@ -566,20 +560,18 @@ fn component_set_order_is_permutation_invariant_but_content_sensitive() -> Resul
 fn v1_and_v2_graph_identities_stay_domain_separated() -> Result<(), Box<dyn Error>> {
     // Same semantic content is not projected as v1 while being reported as v2.
     let v2 = canonicalize_graph_v2(&graph("control_tower", None, Extensions::default(), true)?)?;
-    let v1 = canonicalize_graph(&FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            capabilities: vec![capability()?],
-            targets: vec![Target::new(
-                TargetId::new("web")?,
-                RepoPath::new("apps/web")?,
-                PlatformId::new("web")?,
-                FrameworkId::new("sveltekit")?,
-                vec![owner("owner://team/web")?],
-                Extensions::default(),
-            )?],
-            ..WorkspaceGraphInput::default()
-        },
-    )?))?;
+    let v1 = canonicalize_graph(&WorkspaceGraph::new(WorkspaceGraphInput {
+        capabilities: vec![capability()?],
+        targets: vec![Target::new(
+            TargetId::new("web")?,
+            RepoPath::new("apps/web")?,
+            PlatformId::new("web")?,
+            FrameworkId::new("sveltekit")?,
+            vec![owner("owner://team/web")?],
+            Extensions::default(),
+        )?],
+        ..WorkspaceGraphInput::default()
+    })?)?;
     assert_ne!(v1.digest().as_bytes(), v2.digest().as_digest().as_bytes());
     Ok(())
 }
@@ -647,7 +639,7 @@ fn scenario_collection_participates_in_v2_identity_and_v1_rejects() -> Result<()
         )?],
         Extensions::default(),
     )?;
-    let plain = FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+    let plain = WorkspaceGraph::new(WorkspaceGraphInput {
         targets: vec![Target::new(
             TargetId::new("web")?,
             RepoPath::new("apps/web")?,
@@ -657,20 +649,19 @@ fn scenario_collection_participates_in_v2_identity_and_v1_rejects() -> Result<()
             Extensions::default(),
         )?],
         ..WorkspaceGraphInput::default()
-    })?);
-    let with_scenario =
-        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
-            targets: vec![Target::new(
-                TargetId::new("web")?,
-                RepoPath::new("apps/web")?,
-                PlatformId::new("web")?,
-                FrameworkId::new("sveltekit")?,
-                vec![owner("owner://team/web")?],
-                Extensions::default(),
-            )?],
-            scenarios: vec![scenario],
-            ..WorkspaceGraphInput::default()
-        })?);
+    })?;
+    let with_scenario = WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![Target::new(
+            TargetId::new("web")?,
+            RepoPath::new("apps/web")?,
+            PlatformId::new("web")?,
+            FrameworkId::new("sveltekit")?,
+            vec![owner("owner://team/web")?],
+            Extensions::default(),
+        )?],
+        scenarios: vec![scenario],
+        ..WorkspaceGraphInput::default()
+    })?;
     assert_ne!(
         canonicalize_graph_v2(&plain)?.digest(),
         canonicalize_graph_v2(&with_scenario)?.digest()
@@ -715,13 +706,11 @@ fn runner(
 fn runner_graph(
     args: Vec<ArgumentTemplate>,
     cwd: Option<WorkingDirectoryTemplate>,
-) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            runners: vec![runner(args, cwd)?],
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+) -> Result<WorkspaceGraph, Box<dyn Error>> {
+    Ok(WorkspaceGraph::new(WorkspaceGraphInput {
+        runners: vec![runner(args, cwd)?],
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 /// The literal `{target_root}` argument text and repository-path placeholder
@@ -816,13 +805,11 @@ fn waiver(subject: EvidenceScopeSubject) -> Result<Waiver, Box<dyn Error>> {
     )?)
 }
 
-fn waiver_graph(subject: EvidenceScopeSubject) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            waivers: vec![waiver(subject)?],
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+fn waiver_graph(subject: EvidenceScopeSubject) -> Result<WorkspaceGraph, Box<dyn Error>> {
+    Ok(WorkspaceGraph::new(WorkspaceGraphInput {
+        waivers: vec![waiver(subject)?],
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 #[test]
@@ -867,18 +854,16 @@ fn waiver_subject_kind_survives_v2_graph_projection() -> Result<(), Box<dyn Erro
     Ok(())
 }
 
-fn provider_graph(seed: &[u8]) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            providers: vec![Provider::new(
-                ProviderId::new("provider.mailgun")?,
-                Sha256Digest::hash_content(seed),
-                vec![owner("owner://team/providers")?],
-                Extensions::default(),
-            )?],
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+fn provider_graph(seed: &[u8]) -> Result<WorkspaceGraph, Box<dyn Error>> {
+    Ok(WorkspaceGraph::new(WorkspaceGraphInput {
+        providers: vec![Provider::new(
+            ProviderId::new("provider.mailgun")?,
+            Sha256Digest::hash_content(seed),
+            vec![owner("owner://team/providers")?],
+            Extensions::default(),
+        )?],
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 #[test]
@@ -894,24 +879,23 @@ fn provider_definition_and_target_reference_participate_in_v2_identity()
     );
 
     // A target provider reference is a distinct member and is not inferred.
-    let plain = FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
+    let plain = WorkspaceGraph::new(WorkspaceGraphInput {
         targets: vec![web_target("control_tower")?],
         ..WorkspaceGraphInput::default()
-    })?);
-    let referenced =
-        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
-            targets: vec![
-                web_target("control_tower")?
-                    .with_providers(vec![ProviderId::new("provider.mailgun")?])?,
-            ],
-            providers: vec![Provider::new(
-                ProviderId::new("provider.mailgun")?,
-                Sha256Digest::hash_content(b"configuration-a"),
-                vec![owner("owner://team/providers")?],
-                Extensions::default(),
-            )?],
-            ..WorkspaceGraphInput::default()
-        })?);
+    })?;
+    let referenced = WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![
+            web_target("control_tower")?
+                .with_providers(vec![ProviderId::new("provider.mailgun")?])?,
+        ],
+        providers: vec![Provider::new(
+            ProviderId::new("provider.mailgun")?,
+            Sha256Digest::hash_content(b"configuration-a"),
+            vec![owner("owner://team/providers")?],
+            Extensions::default(),
+        )?],
+        ..WorkspaceGraphInput::default()
+    })?;
     assert_ne!(
         canonicalize_graph_v2(&plain)?.digest(),
         canonicalize_graph_v2(&referenced)?.digest()

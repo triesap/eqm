@@ -12,6 +12,7 @@ mod diff;
 mod equivalence;
 mod expand;
 mod exposure;
+mod finalized;
 mod freshness;
 mod invariants;
 mod matrix;
@@ -54,6 +55,7 @@ pub use exposure::{
     ConformanceFact, ExpectedExposure, ExposureComparison, ExposureFacts, ExposureReconciliation,
     ObservedExposure, reconcile_exposure,
 };
+pub use finalized::FinalizedWorkspaceGraph;
 pub use freshness::{
     FreshnessKey, FreshnessMismatch, FreshnessReport, FreshnessStatus, evaluate_evidence_freshness,
 };

@@ -332,7 +332,7 @@ fn obligation_statuses<A: ReleaseTrustAuthority>(
     derived
         .obligations
         .iter()
-        .filter(|(key, _)| matches!(&key.subject, ScopeSubject::Target(value) if value == target))
+        .filter(|(key, _)| subject_participates(&key.subject, target))
         .map(|(key, obligation)| {
             let candidates = evidence.iter().filter(|value| {
                 value.unit == key.unit.as_str()
@@ -367,6 +367,15 @@ fn obligation_statuses<A: ReleaseTrustAuthority>(
         .collect()
 }
 
+/// Returns whether `subject` participates in the exact `target` coordinate.
+fn subject_participates(subject: &ScopeSubject, target: &TargetId) -> bool {
+    match subject {
+        ScopeSubject::Target(value) => value == target,
+        ScopeSubject::Provider(_) => true,
+        ScopeSubject::TargetSet(values) => values.contains(target),
+    }
+}
+
 fn evidence_coordinate_matches(
     session: &PreparedSession,
     key: &eqm_engine::ObligationKey,
@@ -375,15 +384,22 @@ fn evidence_coordinate_matches(
     runtime_digest: Option<Sha256Digest>,
     profile_values: &[eqm_protocol::ProfileValueDto],
 ) -> bool {
-    let eqm_engine::ScopeSubject::Target(target) = &key.subject else {
-        return false;
+    let allowed: Option<BTreeSet<&TargetId>> = match &key.subject {
+        ScopeSubject::Target(target) => Some(BTreeSet::from([target])),
+        ScopeSubject::TargetSet(targets) => Some(targets.iter().collect()),
+        ScopeSubject::Provider(_) => None,
     };
     let matching = session
         .finalized()
         .graph()
         .bindings()
         .values()
-        .filter(|binding| binding.target() == target && binding.unit().as_str() == evidence.unit)
+        .filter(|binding| {
+            allowed
+                .as_ref()
+                .is_none_or(|set| set.contains(binding.target()))
+                && binding.unit().as_str() == evidence.unit
+        })
         .flat_map(|binding| {
             binding
                 .evidence()
@@ -1069,6 +1085,12 @@ pub(crate) mod tests {
                 "account.create.signup.otp",
                 vec!["account.create.signup.otp#six_decimal_digits"],
                 vec!["accessibility", "behavior"],
+            ),
+            (
+                "binding.web.signup_otp:otp_end_to_end",
+                "account.create.signup.otp",
+                vec!["account.create.signup.otp#valid_code_advances"],
+                vec!["behavior"],
             ),
         ] {
             let coordinate = Sha256Digest::hash_content(coordinate.as_bytes());

@@ -7,11 +7,10 @@
 
 use crate::clock::ClockError;
 use crate::cohort::{CohortError, resolve_cohort};
-use eqm_domain::{
-    DigestDomain, FinalizedWorkspaceGraph, RepoPath, RepoPathError, SchemaVersion, Sha256Digest,
-    UtcInstant,
+use eqm_domain::{DigestDomain, RepoPath, RepoPathError, SchemaVersion, Sha256Digest, UtcInstant};
+use eqm_engine::{
+    FinalizedWorkspaceGraph, FragmentDigestMap, ResolutionError, expand_fragments, resolve_graph,
 };
-use eqm_engine::{FragmentDigestMap, ResolutionError, expand_fragments, resolve_graph};
 use eqm_manifest::{
     CanonicalizationError, LoadError, canonicalize_fragment, canonicalize_graph,
     canonicalize_graph_v2, load_workspace,
@@ -200,10 +199,10 @@ pub fn prepare(request: &SessionRequest, start: &Path) -> Result<PreparedSession
     // omitted.
     let graph_version = loaded.authored_version();
     let workspace_digest = match graph_version {
-        SchemaVersion::V1 => canonicalize_graph(&finalized)
+        SchemaVersion::V1 => canonicalize_graph(finalized.graph())
             .map_err(SessionError::Canonicalize)?
             .digest(),
-        SchemaVersion::V2 => canonicalize_graph_v2(&finalized)
+        SchemaVersion::V2 => canonicalize_graph_v2(finalized.graph())
             .map_err(SessionError::Canonicalize)?
             .digest()
             .as_digest(),

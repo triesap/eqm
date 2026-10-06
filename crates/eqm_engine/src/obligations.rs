@@ -1,13 +1,13 @@
 //! Deterministic policy obligation derivation.
 
 use crate::{
-    ApplicabilityContext, ApplicabilityError, SelectedPolicyProfiles, SelectedProfile, TruthValue,
-    evaluate_applicability,
+    ApplicabilityContext, ApplicabilityError, FinalizedWorkspaceGraph, SelectedPolicyProfiles,
+    SelectedProfile, TruthValue, evaluate_applicability, evaluate_participation,
 };
 use eqm_domain::{
-    DurationMillis, Facet, FinalizedWorkspaceGraph, FullRequirementId, LifecycleStatus, PolicyId,
-    PositiveCount, ProfileId, ProviderId, Requirement, RequirementLevel, RequirementScope,
-    Revision, RiskClass, Sha256Digest, TargetId, TrustLevel, UnitId,
+    DurationMillis, Facet, FullRequirementId, LifecycleStatus, PolicyId, PositiveCount, ProfileId,
+    ProviderId, Requirement, RequirementLevel, RequirementScope, Revision, RiskClass, Sha256Digest,
+    TargetId, TrustLevel, UnitId,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -74,17 +74,30 @@ pub enum UnresolvedReason {
     NotApplicable,
     /// Applicability could not be resolved from the selected profile context.
     UnknownApplicability,
+    /// Coordinate participation is declared but not resolved from the selected
+    /// profile context.
+    UnknownParticipation,
     /// A non-required active requirement matched no policy rule.
     UnmatchedPolicy,
 }
 
 /// One visible requirement coordinate that yielded no derived obligation.
+///
+/// The exact subject, selected profiles and immutable release context are
+/// retained so an unresolved coordinate cannot be collapsed into a
+/// requirement-only marker and cannot be attributed to a different context.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct UnresolvedCoordinate {
     /// Owning surface-derived unit.
     pub unit: UnitId,
     /// Fully qualified requirement identity.
     pub requirement: FullRequirementId,
+    /// Exact coordinate subject when the requirement fanout is defined.
+    pub subject: Option<ScopeSubject>,
+    /// Every exact profile and selected known/unknown dimension.
+    pub profiles: BTreeMap<ProfileId, SelectedProfile>,
+    /// Exact optional release-context digest.
+    pub release_context: Option<Sha256Digest>,
     /// Why the requirement is not an obligation.
     pub reason: UnresolvedReason,
 }
@@ -109,7 +122,18 @@ pub struct ObligationDerivation {
 /// applicability context, before any evidence is read. Evidence filtering,
 /// pagination or resource limits must not shrink this set, so later steps
 /// compare candidate universes against it rather than regenerating scope.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+///
+/// Construction is crate-private: there is no public `Default` or unchecked
+/// constructor, so an empty or partial set cannot be asserted as complete
+/// authority. Mixing a universe with status maps from a distinct selection is
+/// rejected because every coordinate carries its exact policy revision,
+/// profiles, subject, facet and release context. There is no public default or
+/// unchecked constructor:
+///
+/// ```compile_fail
+/// let _ = eqm_engine::RequiredUniverse::default();
+/// ```
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RequiredUniverse {
     coordinates: BTreeSet<ObligationKey>,
     unresolved: BTreeSet<UnresolvedCoordinate>,
@@ -177,6 +201,12 @@ fn derive_derivation(
 ) -> Result<ObligationDerivation, ObligationError> {
     let graph = finalized.graph();
     let policy = selection.policy();
+    // Coordinate participation is evaluated only when the graph declares
+    // participation authority. A v1 graph cannot carry that axis, so
+    // applicability alone governs there; a graph that declares participation is
+    // held to the strict no-rule->Unknown and ambiguity->error contract.
+    let participation = graph.participation();
+    let participation_active = !participation.is_empty();
     let mut result = ObligationDerivation::default();
     for surface in graph.surfaces().values() {
         if surface.status() != LifecycleStatus::Active {
@@ -191,22 +221,33 @@ fn derive_derivation(
         for requirement in surface.requirements().values() {
             let full = FullRequirementId::new(format!("{unit}#{}", requirement.id()))
                 .map_err(|_| ObligationError::InvalidFinalizedGraph)?;
+            let base = base_subjects(requirement, policy.required_targets())?;
             match evaluate_applicability(requirement.applicability(), applicability)? {
                 TruthValue::False => {
-                    result.unresolved.insert(UnresolvedCoordinate {
-                        unit: unit.clone(),
-                        requirement: full.clone(),
-                        reason: UnresolvedReason::NotApplicable,
-                    });
+                    for subject in &base {
+                        result.unresolved.insert(unresolved_coordinate(
+                            &unit,
+                            &full,
+                            Some(subject.clone()),
+                            selection,
+                            release_context,
+                            UnresolvedReason::NotApplicable,
+                        ));
+                    }
                     continue;
                 }
                 TruthValue::Unknown => {
                     result.unknown_applicability.insert(full.clone());
-                    result.unresolved.insert(UnresolvedCoordinate {
-                        unit: unit.clone(),
-                        requirement: full.clone(),
-                        reason: UnresolvedReason::UnknownApplicability,
-                    });
+                    for subject in &base {
+                        result.unresolved.insert(unresolved_coordinate(
+                            &unit,
+                            &full,
+                            Some(subject.clone()),
+                            selection,
+                            release_context,
+                            UnresolvedReason::UnknownApplicability,
+                        ));
+                    }
                     continue;
                 }
                 TruthValue::True => {}
@@ -227,18 +268,41 @@ fn derive_derivation(
                     return Err(ObligationError::UnmatchedRequiredRequirement);
                 }
                 result.unmatched_warnings.insert(full.clone());
-                result.unresolved.insert(UnresolvedCoordinate {
-                    unit: unit.clone(),
-                    requirement: full,
-                    reason: UnresolvedReason::UnmatchedPolicy,
-                });
+                for subject in &base {
+                    result.unresolved.insert(unresolved_coordinate(
+                        &unit,
+                        &full,
+                        Some(subject.clone()),
+                        selection,
+                        release_context,
+                        UnresolvedReason::UnmatchedPolicy,
+                    ));
+                }
                 continue;
             }
             let facets: BTreeSet<_> = rules
                 .iter()
                 .flat_map(|rule| rule.facets().iter().copied())
                 .collect();
-            for subject in subjects(requirement, policy.required_targets())? {
+            let resolved = resolved_subjects(
+                requirement,
+                policy.required_targets(),
+                &full,
+                applicability,
+                participation,
+                participation_active,
+            )?;
+            for (subject, reason) in resolved.unresolved {
+                result.unresolved.insert(unresolved_coordinate(
+                    &unit,
+                    &full,
+                    subject,
+                    selection,
+                    release_context,
+                    reason,
+                ));
+            }
+            for subject in resolved.subjects {
                 for facet in &facets {
                     // Each facet composes only the rules that declare it, so an
                     // unrelated facet's trust/count/age strength cannot leak in.
@@ -270,6 +334,24 @@ fn derive_derivation(
         }
     }
     Ok(result)
+}
+
+fn unresolved_coordinate(
+    unit: &UnitId,
+    requirement: &FullRequirementId,
+    subject: Option<ScopeSubject>,
+    selection: &SelectedPolicyProfiles<'_>,
+    release_context: Option<Sha256Digest>,
+    reason: UnresolvedReason,
+) -> UnresolvedCoordinate {
+    UnresolvedCoordinate {
+        unit: unit.clone(),
+        requirement: requirement.clone(),
+        subject,
+        profiles: selection.profiles().clone(),
+        release_context,
+        reason,
+    }
 }
 
 fn selector_matches(
@@ -312,7 +394,7 @@ fn compose_strength(rules: &[&eqm_domain::PolicyRule]) -> ObligationStrength {
     )
 }
 
-fn subjects(
+fn base_subjects(
     requirement: &Requirement,
     targets: &BTreeSet<TargetId>,
 ) -> Result<Vec<ScopeSubject>, ObligationError> {
@@ -328,6 +410,112 @@ fn subjects(
         )]),
         RequirementScope::EndToEnd => Ok(vec![ScopeSubject::TargetSet(targets.clone())]),
     }
+}
+
+/// Resolves the exact participating subjects for one requirement, combining
+/// requirement-level applicability with per-coordinate participation.
+///
+/// Returns the surviving subjects plus any unresolved coordinate that must
+/// remain visible. When the graph declares no participation authority the
+/// requirement fans out to its full declared scope; when it does, a missing
+/// rule is Unknown and never an implicit global inclusion, an ambiguous rule is
+/// an error, explicit false is visible N/A and only a true result participates.
+/// Exact participating subjects plus the unresolved participation coordinates
+/// that must remain visible for one requirement.
+struct ResolvedSubjects {
+    subjects: Vec<ScopeSubject>,
+    unresolved: Vec<(Option<ScopeSubject>, UnresolvedReason)>,
+}
+
+fn resolved_subjects(
+    requirement: &Requirement,
+    targets: &BTreeSet<TargetId>,
+    full: &FullRequirementId,
+    applicability: &ApplicabilityContext,
+    participation: &BTreeMap<eqm_domain::ParticipationRuleId, eqm_domain::ParticipationRule>,
+    participation_active: bool,
+) -> Result<ResolvedSubjects, ObligationError> {
+    let truth = |target: &TargetId| -> Result<Option<TruthValue>, ObligationError> {
+        if participation_active {
+            Ok(Some(evaluate_participation(
+                participation,
+                full,
+                target,
+                applicability,
+            )?))
+        } else {
+            Ok(None)
+        }
+    };
+    let mut subjects = Vec::new();
+    let mut unresolved = Vec::new();
+    match requirement.scope() {
+        RequirementScope::EachTarget => {
+            for target in targets {
+                match truth(target)? {
+                    None | Some(TruthValue::True) => {
+                        subjects.push(ScopeSubject::Target(target.clone()))
+                    }
+                    Some(TruthValue::False) => unresolved.push((
+                        Some(ScopeSubject::Target(target.clone())),
+                        UnresolvedReason::NotApplicable,
+                    )),
+                    Some(TruthValue::Unknown) => unresolved.push((
+                        Some(ScopeSubject::Target(target.clone())),
+                        UnresolvedReason::UnknownParticipation,
+                    )),
+                }
+            }
+        }
+        RequirementScope::SharedProvider => {
+            let provider = requirement
+                .provider()
+                .cloned()
+                .ok_or(ObligationError::InvalidFinalizedGraph)?;
+            let mut any_true = false;
+            let mut any_unknown = false;
+            for target in targets {
+                match truth(target)? {
+                    None | Some(TruthValue::True) => any_true = true,
+                    Some(TruthValue::False) => {}
+                    Some(TruthValue::Unknown) => any_unknown = true,
+                }
+            }
+            let subject = Some(ScopeSubject::Provider(provider.clone()));
+            if any_unknown {
+                unresolved.push((subject, UnresolvedReason::UnknownParticipation));
+            } else if any_true {
+                subjects.push(ScopeSubject::Provider(provider));
+            } else {
+                unresolved.push((subject, UnresolvedReason::NotApplicable));
+            }
+        }
+        RequirementScope::EndToEnd => {
+            let mut participating = BTreeSet::new();
+            let mut any_unknown = false;
+            for target in targets {
+                match truth(target)? {
+                    None | Some(TruthValue::True) => {
+                        participating.insert(target.clone());
+                    }
+                    Some(TruthValue::False) => {}
+                    Some(TruthValue::Unknown) => any_unknown = true,
+                }
+            }
+            let full_set = Some(ScopeSubject::TargetSet(targets.clone()));
+            if any_unknown {
+                unresolved.push((full_set, UnresolvedReason::UnknownParticipation));
+            } else if participating.is_empty() {
+                unresolved.push((full_set, UnresolvedReason::NotApplicable));
+            } else {
+                subjects.push(ScopeSubject::TargetSet(participating));
+            }
+        }
+    }
+    Ok(ResolvedSubjects {
+        subjects,
+        unresolved,
+    })
 }
 
 /// Obligation derivation failure.
@@ -382,18 +570,18 @@ mod tests {
     fn every_scope_maps_to_its_exact_subject_shape() -> Result<(), Box<dyn Error>> {
         let targets = BTreeSet::from([TargetId::new("ios")?, TargetId::new("web")?]);
         assert_eq!(
-            subjects(&requirement(RequirementScope::EachTarget)?, &targets)?,
+            base_subjects(&requirement(RequirementScope::EachTarget)?, &targets)?,
             vec![
                 ScopeSubject::Target(TargetId::new("ios")?),
                 ScopeSubject::Target(TargetId::new("web")?),
             ]
         );
         assert_eq!(
-            subjects(&requirement(RequirementScope::SharedProvider)?, &targets)?,
+            base_subjects(&requirement(RequirementScope::SharedProvider)?, &targets)?,
             vec![ScopeSubject::Provider(ProviderId::new("identity.primary")?)]
         );
         assert_eq!(
-            subjects(&requirement(RequirementScope::EndToEnd)?, &targets)?,
+            base_subjects(&requirement(RequirementScope::EndToEnd)?, &targets)?,
             vec![ScopeSubject::TargetSet(targets)]
         );
         Ok(())

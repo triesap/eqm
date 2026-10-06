@@ -141,7 +141,7 @@ fn v2_workspace_prepares_under_the_complete_v2_graph_domain() -> Result<(), Box<
         session.semantic_graph_domain(),
         DigestDomain::SemanticGraphV2
     );
-    let expected = eqm_manifest::canonicalize_graph_v2(session.finalized())?
+    let expected = eqm_manifest::canonicalize_graph_v2(session.finalized().graph())?
         .digest()
         .as_digest();
     assert_eq!(session.workspace_digest(), expected);
@@ -179,7 +179,7 @@ fn v1_workspace_prepares_under_the_frozen_v1_graph_domain() -> Result<(), Box<dy
     )?;
     assert_eq!(session.semantic_graph_version(), SchemaVersion::V1);
     assert_eq!(session.semantic_graph_domain(), DigestDomain::SemanticGraph);
-    let expected = eqm_manifest::canonicalize_graph(session.finalized())?.digest();
+    let expected = eqm_manifest::canonicalize_graph(session.finalized().graph())?.digest();
     assert_eq!(session.workspace_digest(), expected);
     Ok(())
 }
@@ -403,7 +403,7 @@ fn prepared_session_runner_templates_project_as_lossless_tagged_records()
         session.semantic_graph_domain(),
         DigestDomain::SemanticGraphV2
     );
-    let projected = eqm_manifest::project_graph_v2(session.finalized())?;
+    let projected = eqm_manifest::project_graph_v2(session.finalized().graph())?;
     assert_eq!(
         projected["runners"][0]["args"],
         json!([
@@ -417,7 +417,7 @@ fn prepared_session_runner_templates_project_as_lossless_tagged_records()
         json!({"kind": "target_root"})
     );
     // The session digest is exactly the domain-separated digest of the v2 bytes.
-    let canonical = eqm_manifest::canonicalize_graph_v2(session.finalized())?;
+    let canonical = eqm_manifest::canonicalize_graph_v2(session.finalized().graph())?;
     assert_eq!(session.workspace_digest(), canonical.digest().as_digest());
     Ok(())
 }

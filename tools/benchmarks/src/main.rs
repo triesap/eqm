@@ -135,7 +135,7 @@ fn worker() -> Result<(), Box<dyn Error>> {
     }
 
     let canonical_started = Instant::now();
-    let canonical = canonicalize_graph(&finalized)?;
+    let canonical = canonicalize_graph(finalized.graph())?;
     let canonical_ms = duration_millis(canonical_started.elapsed())?;
     let session = PreparedMcpSession::new(
         repository.path(),

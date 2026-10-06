@@ -11,9 +11,9 @@
 //! no acquisition or trust.
 
 use eqm_domain::{
-    Cohort, FinalizedWorkspaceGraph, OccurrenceId, Revision, ScenarioId, ScenarioSubject,
-    SelectorText, SubjectManifest,
+    Cohort, OccurrenceId, Revision, ScenarioId, ScenarioSubject, SelectorText, SubjectManifest,
 };
+use eqm_engine::FinalizedWorkspaceGraph;
 use eqm_manifest::{
     CanonicalizationError, canonicalize_provider_configuration_v2,
     canonicalize_target_configuration_v2,

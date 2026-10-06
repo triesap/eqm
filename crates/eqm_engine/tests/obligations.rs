@@ -4,14 +4,14 @@ mod support;
 
 use eqm_domain::{
     DimensionId, Facet, FullRequirementId, PolicyId, ProfileId, Revision, SymbolicValueId,
-    TargetId, TrustLevel,
+    TargetId, TrustLevel, WorkspaceGraph, WorkspaceGraphInput,
 };
 use eqm_engine::{
     ApplicabilityContext, AuthorityOrigin, CompletePolicyResolution, ConformanceError,
     EvaluationMode, FacetStatus, FragmentDigestMap, PolicyProfileRequest, PolicyRef,
-    ProfileRequest, RequiredUniverse, ScopeSubject, TargetConformance, UnresolvedReason,
-    derive_obligations, derive_required_universe, evaluate_complete_target_conformance,
-    expand_fragments, resolve_graph, select_policy_profiles,
+    ProfileRequest, ScopeSubject, TargetConformance, UnresolvedReason, derive_obligations,
+    derive_required_universe, evaluate_complete_target_conformance, expand_fragments,
+    resolve_graph, select_policy_profiles,
 };
 use eqm_manifest::canonicalize_fragment;
 use std::collections::BTreeMap;
@@ -149,7 +149,25 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
     );
 
     // A candidate universe that omits a required coordinate is not a superset.
-    let empty = RequiredUniverse::default();
+    // An empty universe is derived from a genuine graph with no surface
+    // requirements; it is never publicly asserted.
+    let minimal = expand_fragments(
+        WorkspaceGraph::new(WorkspaceGraphInput {
+            policies: selection_graph.policies().values().cloned().collect(),
+            profiles: selection_graph.profiles().values().cloned().collect(),
+            ..WorkspaceGraphInput::default()
+        })?,
+        &FragmentDigestMap::new(),
+        &BTreeMap::new(),
+    )?;
+    let empty_selection = select_policy_profiles(
+        minimal.graph(),
+        EvaluationMode::PullRequest,
+        Some(&request),
+        None,
+    )?;
+    let empty = derive_required_universe(&minimal, &empty_selection, &applicability, None)?;
+    assert!(empty.coordinates().is_empty());
     assert!(!first.is_subset_of(&empty));
     assert!(empty.is_subset_of(&first));
     assert!(
@@ -199,7 +217,7 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
         .map(|key| (key, FacetStatus::Satisfied))
         .collect();
     assert_eq!(
-        CompletePolicyResolution::new(RequiredUniverse::default(), extra),
+        CompletePolicyResolution::new(empty, extra),
         Err(ConformanceError::UnexpectedCoordinate)
     );
     Ok(())

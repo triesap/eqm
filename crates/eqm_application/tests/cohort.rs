@@ -2,15 +2,25 @@
 
 use eqm_application::{CohortError, match_cohort_subjects, resolve_cohort};
 use eqm_domain::{
-    Cohort, CohortAssignment, Extensions, FinalizedWorkspaceGraph, FrameworkId, OccurrenceId,
-    OwnerRef, PlatformId, Provider, ProviderId, RepoPath, Revision, RoleId, Scenario, ScenarioId,
-    ScenarioParticipant, ScenarioSubject, SelectorText, Sha256Digest, SourceCommit, Target,
-    TargetConfigurationDigest, TargetId, WorkspaceGraph, WorkspaceGraphInput,
+    Cohort, CohortAssignment, Extensions, FrameworkId, OccurrenceId, OwnerRef, PlatformId,
+    Provider, ProviderId, RepoPath, Revision, RoleId, Scenario, ScenarioId, ScenarioParticipant,
+    ScenarioSubject, SelectorText, Sha256Digest, SourceCommit, Target, TargetConfigurationDigest,
+    TargetId, WorkspaceGraph, WorkspaceGraphInput,
 };
+use eqm_engine::{FinalizedWorkspaceGraph, FragmentDigestMap, expand_fragments};
 use eqm_manifest::{canonicalize_provider_configuration_v2, canonicalize_target_configuration_v2};
 use eqm_protocol::v2::{CheckedSubjectManifestV2, SubjectMatchError};
 use serde_json::json;
+use std::collections::BTreeMap;
 use std::error::Error;
+
+fn finalize(graph: WorkspaceGraph) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(expand_fragments(
+        graph,
+        &FragmentDigestMap::new(),
+        &BTreeMap::new(),
+    )?)
+}
 
 fn owner(value: &str) -> Result<OwnerRef, Box<dyn Error>> {
     Ok(value.parse()?)
@@ -100,18 +110,16 @@ fn cohort() -> Result<Cohort, Box<dyn Error>> {
 }
 
 fn graph(cohort: &Cohort, revisions: &[u64]) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            targets: vec![target()?],
-            providers: vec![provider()?],
-            scenarios: revisions
-                .iter()
-                .map(|revision| scenario(*revision))
-                .collect::<Result<Vec<_>, _>>()?,
-            cohorts: vec![cohort.clone()],
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+    finalize(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![target()?],
+        providers: vec![provider()?],
+        scenarios: revisions
+            .iter()
+            .map(|revision| scenario(*revision))
+            .collect::<Result<Vec<_>, _>>()?,
+        cohorts: vec![cohort.clone()],
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 fn candidate(

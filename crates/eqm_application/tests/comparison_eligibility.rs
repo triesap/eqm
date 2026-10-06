@@ -12,18 +12,29 @@ use eqm_application::{
 };
 use eqm_domain::{
     Cohort, CohortAssignment, ComparisonContextInputV2, DimensionId, Extensions, Facet,
-    FinalizedWorkspaceGraph, FrameworkId, OccurrenceId, OwnerRef, PlatformId, Policy, PolicyId,
-    PolicyRule, PolicySelectionInputV2, PolicySelector, PositiveCount, Profile, ProfileDimension,
-    ProfileId, Provider, ProviderId, RepoPath, Revision, RoleId, Scenario, ScenarioDependency,
-    ScenarioId, ScenarioParticipant, ScenarioSubject, SelectedDimensionStateV2,
-    SelectedProfileInputV2, SelectorText, Sha256Digest, SourceCommit, SymbolicValueId, Target,
-    TargetId, Title, TrustLevel, UnitId, WaiverPolicy, WorkspaceGraph, WorkspaceGraphInput,
+    FrameworkId, OccurrenceId, OwnerRef, PlatformId, Policy, PolicyId, PolicyRule,
+    PolicySelectionInputV2, PolicySelector, PositiveCount, Profile, ProfileDimension, ProfileId,
+    Provider, ProviderId, RepoPath, Revision, RoleId, Scenario, ScenarioDependency, ScenarioId,
+    ScenarioParticipant, ScenarioSubject, SelectedDimensionStateV2, SelectedProfileInputV2,
+    SelectorText, Sha256Digest, SourceCommit, SymbolicValueId, Target, TargetId, Title, TrustLevel,
+    UnitId, WaiverPolicy, WorkspaceGraph, WorkspaceGraphInput,
 };
-use eqm_engine::ComparisonEligibility;
+use eqm_engine::{
+    ComparisonEligibility, FinalizedWorkspaceGraph, FragmentDigestMap, expand_fragments,
+};
 use eqm_protocol::schema_graph_v2::CheckedComparisonContextV2;
 use eqm_protocol::v2::{CheckedSubjectManifestV2, SubjectMatchError};
 use serde_json::json;
+use std::collections::BTreeMap;
 use std::error::Error;
+
+fn finalize(graph: WorkspaceGraph) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+    Ok(expand_fragments(
+        graph,
+        &FragmentDigestMap::new(),
+        &BTreeMap::new(),
+    )?)
+}
 
 fn owner(value: &str) -> Result<OwnerRef, Box<dyn Error>> {
     Ok(value.parse()?)
@@ -184,15 +195,14 @@ struct Fixture {
 fn fixture_with(scenario: Scenario) -> Result<Fixture, Box<dyn Error>> {
     let policy = policy(1)?;
     let profile = profile(1)?;
-    let finalized =
-        FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(WorkspaceGraphInput {
-            targets: vec![target()?],
-            providers: vec![provider()?],
-            scenarios: vec![scenario.clone()],
-            policies: vec![policy.clone()],
-            profiles: vec![profile.clone()],
-            ..WorkspaceGraphInput::default()
-        })?);
+    let finalized = finalize(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![target()?],
+        providers: vec![provider()?],
+        scenarios: vec![scenario.clone()],
+        policies: vec![policy.clone()],
+        profiles: vec![profile.clone()],
+        ..WorkspaceGraphInput::default()
+    })?)?;
     Ok(Fixture {
         finalized,
         scenario,
@@ -211,17 +221,15 @@ fn graph_with_cohorts(
     fixture: &Fixture,
     cohorts: Vec<Cohort>,
 ) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            targets: vec![target()?],
-            providers: vec![provider()?],
-            scenarios: vec![fixture.scenario.clone()],
-            policies: vec![fixture.policy.clone()],
-            profiles: vec![fixture.profile.clone()],
-            cohorts,
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+    finalize(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![target()?],
+        providers: vec![provider()?],
+        scenarios: vec![fixture.scenario.clone()],
+        policies: vec![fixture.policy.clone()],
+        profiles: vec![fixture.profile.clone()],
+        cohorts,
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 /// Rebuilds the fixture graph with an explicit scenario set and cohorts.
@@ -230,17 +238,15 @@ fn graph_with_scenarios(
     scenarios: Vec<Scenario>,
     cohorts: Vec<Cohort>,
 ) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            targets: vec![target()?],
-            providers: vec![provider()?],
-            scenarios,
-            policies: vec![fixture.policy.clone()],
-            profiles: vec![fixture.profile.clone()],
-            cohorts,
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+    finalize(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![target()?],
+        providers: vec![provider()?],
+        scenarios,
+        policies: vec![fixture.policy.clone()],
+        profiles: vec![fixture.profile.clone()],
+        cohorts,
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 /// Rebuilds the fixture graph with a substituted target configuration.
@@ -249,17 +255,15 @@ fn graph_with_target(
     target: Target,
     cohorts: Vec<Cohort>,
 ) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            targets: vec![target],
-            providers: vec![provider()?],
-            scenarios: vec![fixture.scenario.clone()],
-            policies: vec![fixture.policy.clone()],
-            profiles: vec![fixture.profile.clone()],
-            cohorts,
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+    finalize(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![target],
+        providers: vec![provider()?],
+        scenarios: vec![fixture.scenario.clone()],
+        policies: vec![fixture.policy.clone()],
+        profiles: vec![fixture.profile.clone()],
+        cohorts,
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 /// Rebuilds the fixture graph with a substituted provider configuration.
@@ -268,17 +272,15 @@ fn graph_with_provider(
     provider: Provider,
     cohorts: Vec<Cohort>,
 ) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        WorkspaceGraphInput {
-            targets: vec![target()?],
-            providers: vec![provider],
-            scenarios: vec![fixture.scenario.clone()],
-            policies: vec![fixture.policy.clone()],
-            profiles: vec![fixture.profile.clone()],
-            cohorts,
-            ..WorkspaceGraphInput::default()
-        },
-    )?))
+    finalize(WorkspaceGraph::new(WorkspaceGraphInput {
+        targets: vec![target()?],
+        providers: vec![provider],
+        scenarios: vec![fixture.scenario.clone()],
+        policies: vec![fixture.policy.clone()],
+        profiles: vec![fixture.profile.clone()],
+        cohorts,
+        ..WorkspaceGraphInput::default()
+    })?)
 }
 
 /// A scenario with a different ID but identical occurrence names, roles and
@@ -490,7 +492,7 @@ fn checked_context(
     let rule = Sha256Digest::hash_content(rule_seed);
     let derived =
         shared_comparison_context(&fixture.finalized, &fixture.scenario, &selection, rule)?;
-    let contract = eqm_manifest::canonicalize_contract_v2(&fixture.finalized)?.digest();
+    let contract = eqm_manifest::canonicalize_contract_v2(fixture.finalized.graph())?.digest();
     let input = ComparisonContextInputV2::new(contract, &fixture.scenario, &selection, rule);
     let mut wire = eqm_manifest::project_comparison_context_v2(&input)?;
     wire["schema"] = json!(eqm_protocol::COMPARISON_CONTEXT_SCHEMA_V2.to_string());

@@ -9,11 +9,12 @@
 //! command, reselects a latest revision, reloads files, reads the clock, or
 //! executes a runner. Host verification stays a separate capability port.
 
-use eqm_domain::{FinalizedWorkspaceGraph, ProfileId, Sha256Digest, WorkspaceGraph};
+use eqm_domain::{ProfileId, Sha256Digest, WorkspaceGraph};
 use eqm_engine::{
-    ApplicabilityContext, ApplicabilityError, EvaluationMode, ObligationDerivation,
-    ObligationError, PolicyProfileRequest, RequiredUniverse, SelectedPolicyProfiles,
-    SelectionError, derive_obligations, derive_required_universe, select_policy_profiles,
+    ApplicabilityContext, ApplicabilityError, EvaluationMode, FinalizedWorkspaceGraph,
+    ObligationDerivation, ObligationError, PolicyProfileRequest, RequiredUniverse,
+    SelectedPolicyProfiles, SelectionError, derive_obligations, derive_required_universe,
+    select_policy_profiles,
 };
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};

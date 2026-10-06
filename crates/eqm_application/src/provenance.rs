@@ -142,8 +142,8 @@ pub fn prepare_policy_provenance(
 
     let carrier = PolicySelectionInputV2::new(selected.policy(), profiles)
         .map_err(PolicyProvenanceError::Carrier)?;
-    let contract =
-        canonicalize_contract_v2(session.finalized()).map_err(PolicyProvenanceError::Contract)?;
+    let contract = canonicalize_contract_v2(session.finalized().graph())
+        .map_err(PolicyProvenanceError::Contract)?;
     let policy_selection = canonicalize_policy_selection_v2(&carrier)
         .map_err(PolicyProvenanceError::PolicySelection)?;
     Ok(PolicyProvenanceV2 {

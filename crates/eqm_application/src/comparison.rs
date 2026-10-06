@@ -24,10 +24,13 @@
 
 use crate::cohort::{CohortError, ResolvedCohort, resolve_cohort};
 use eqm_domain::{
-    ComparisonContextDigest, ComparisonContextInputV2, FinalizedWorkspaceGraph,
-    PolicySelectionInputV2, Scenario, Sha256Digest, SubjectManifest, SubjectManifestDigest,
+    ComparisonContextDigest, ComparisonContextInputV2, PolicySelectionInputV2, Scenario,
+    Sha256Digest, SubjectManifest, SubjectManifestDigest,
 };
-use eqm_engine::{ComparisonEligibility, ComparisonParticipant, evaluate_comparison_eligibility};
+use eqm_engine::{
+    ComparisonEligibility, ComparisonParticipant, FinalizedWorkspaceGraph,
+    evaluate_comparison_eligibility,
+};
 use eqm_manifest::{
     CanonicalizationError, canonicalize_comparison_context_v2, canonicalize_contract_v2,
 };
@@ -122,7 +125,7 @@ pub fn shared_comparison_context(
             return Err(ComparisonContextError::ProfileNotInGraph);
         }
     }
-    let contract = canonicalize_contract_v2(graph)?.digest();
+    let contract = canonicalize_contract_v2(graph.graph())?.digest();
     let input = ComparisonContextInputV2::new(contract, scenario, selection, rule_digest);
     Ok(canonicalize_comparison_context_v2(&input)?.digest())
 }

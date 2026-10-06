@@ -32,9 +32,9 @@ use super::{
 };
 use eqm_domain::{
     AdapterLockIdentity, ArgumentTemplate, Cohort, CohortAssignment, EnvironmentSource,
-    EvidenceScopeSubject, FinalizedWorkspaceGraph, ImportLockIdentity, Provider,
-    ProviderConfigurationDigest, RunnerDefinition, RunnerProgram, SchemaKind, SchemaUri,
-    SchemaVersion, SemanticGraphV2Digest, SourceComponent, Waiver, WorkingDirectoryTemplate,
+    EvidenceScopeSubject, ImportLockIdentity, Provider, ProviderConfigurationDigest,
+    RunnerDefinition, RunnerProgram, SchemaKind, SchemaUri, SchemaVersion, SemanticGraphV2Digest,
+    SourceComponent, Waiver, WorkingDirectoryTemplate, WorkspaceGraph,
 };
 use serde_json::{Value, json};
 
@@ -431,9 +431,9 @@ fn adapter_lock_v2(value: &AdapterLockIdentity) -> Result<Value, Canonicalizatio
     Ok(projected)
 }
 
-/// Projects one finalized graph into the complete v2 semantic-graph shape.
-pub fn graph_v2(finalized: &FinalizedWorkspaceGraph) -> Result<Value, CanonicalizationError> {
-    let graph = finalized.graph();
+/// Projects one finalized graph's raw data into the complete v2 semantic-graph
+/// shape.
+pub fn graph_v2(graph: &WorkspaceGraph) -> Result<Value, CanonicalizationError> {
     Ok(object([
         ("schema", json!(semantic_graph_v2_schema_uri())),
         (
@@ -610,11 +610,12 @@ pub fn graph_v2(finalized: &FinalizedWorkspaceGraph) -> Result<Value, Canonicali
     ]))
 }
 
-/// Canonicalizes one finalized graph under the complete v2 graph domain.
+/// Canonicalizes one finalized graph's raw data under the complete v2 graph
+/// domain.
 pub fn canonicalize_graph_v2(
-    finalized: &FinalizedWorkspaceGraph,
+    graph: &WorkspaceGraph,
 ) -> Result<CanonicalGraphV2, CanonicalizationError> {
-    let projected = graph_v2(finalized)?;
+    let projected = graph_v2(graph)?;
     let bytes = serde_json_canonicalizer::to_vec(&projected)
         .map_err(|_| CanonicalizationError::Serialization)?;
     if bytes.len() > MAX_PROJECTION_BYTES {

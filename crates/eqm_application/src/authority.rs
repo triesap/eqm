@@ -5,8 +5,7 @@
 //! permissive fallback: a use case that requires authority and does not have
 //! the capability receives an explicit error.
 
-use eqm_domain::FinalizedWorkspaceGraph;
-use eqm_engine::EvaluationMode;
+use eqm_engine::{EvaluationMode, FinalizedWorkspaceGraph};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 

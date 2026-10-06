@@ -147,7 +147,7 @@ fn example_workspace_owning_forms_survive_real_preparation_and_projection()
     assert!(artifact.surface().is_some());
 
     // The genuine v2 projection remains complete and order-preserving.
-    let projected = eqm_manifest::project_graph_v2(session.finalized())?;
+    let projected = eqm_manifest::project_graph_v2(session.finalized().graph())?;
     assert_eq!(
         projected["journeys"][0]["surfaces"]
             .as_array()
@@ -207,9 +207,9 @@ fn asymmetric_fixture_loads_resolves_projects_and_matches_cohorts() -> Result<()
     assert_eq!(scenario.participants().len(), 3);
 
     // The v2 projection is complete and identity-stable.
-    let projected = eqm_manifest::project_graph_v2(session.finalized())?;
+    let projected = eqm_manifest::project_graph_v2(session.finalized().graph())?;
     assert_eq!(projected["cohorts"].as_array().map(Vec::len), Some(2));
-    let canonical = eqm_manifest::canonicalize_graph_v2(session.finalized())?;
+    let canonical = eqm_manifest::canonicalize_graph_v2(session.finalized().graph())?;
     assert_eq!(session.workspace_digest(), canonical.digest().as_digest());
 
     // Both approved cohorts resolve against the immutable graph; N and N+1 are
@@ -282,7 +282,7 @@ fn asymmetric_fixture_exercises_checked_comparison_consumer() -> Result<(), Box<
         )?],
     )?;
     let rule = Sha256Digest::hash_content(b"approved.rule");
-    let contract = eqm_manifest::canonicalize_contract_v2(session.finalized())?.digest();
+    let contract = eqm_manifest::canonicalize_contract_v2(session.finalized().graph())?.digest();
     let input = ComparisonContextInputV2::new(contract, scenario, &selection, rule);
     let mut wire = eqm_manifest::project_comparison_context_v2(&input)?;
     wire["schema"] = json!(eqm_protocol::COMPARISON_CONTEXT_SCHEMA_V2.to_string());
@@ -444,7 +444,7 @@ fn comparison_setup(session: &PreparedSession) -> Result<ComparisonSetup<'_>, Bo
         )?],
     )?;
     let rule = Sha256Digest::hash_content(b"approved.rule");
-    let contract = eqm_manifest::canonicalize_contract_v2(session.finalized())?.digest();
+    let contract = eqm_manifest::canonicalize_contract_v2(session.finalized().graph())?.digest();
     let input = ComparisonContextInputV2::new(contract, scenario, &selection, rule);
     let mut wire = eqm_manifest::project_comparison_context_v2(&input)?;
     wire["schema"] = json!(eqm_protocol::COMPARISON_CONTEXT_SCHEMA_V2.to_string());

@@ -2,7 +2,7 @@
 
 use crate::{
     CoverageStatus, EvidenceOutcome, FreshnessStatus, ObligationKey, ScopeSubject, TruthValue,
-    WaiverEvaluation,
+    UnresolvedCoordinate, UnresolvedReason, WaiverEvaluation,
 };
 use eqm_domain::TargetId;
 use std::collections::BTreeMap;
@@ -223,10 +223,12 @@ impl CompletePolicyResolution {
 }
 
 /// Derives one target result from a checked complete resolution, rejecting a
-/// resolution that omits a required per-target coordinate. Provider and
-/// target-set participation aggregation is completed by the later participant
-/// conformance step; this boundary binds the resolution to the derived universe
-/// and rejects an omitted target coordinate or an unrelated coordinate.
+/// resolution that omits any participating required coordinate. Every target,
+/// provider and target-set coordinate that participates in this target must
+/// carry an explicit facet status, and any unresolved applicability or
+/// participation coordinate is non-authorizing, so a set of reported passes
+/// cannot be promoted to Conformant while work is still unknown. Unmatched
+/// optional warnings and explicit not-applicable outcomes remain nonblocking.
 pub fn evaluate_complete_target_conformance(
     target: &TargetId,
     resolution: &CompletePolicyResolution,
@@ -235,10 +237,18 @@ pub fn evaluate_complete_target_conformance(
         .universe
         .coordinates()
         .iter()
-        .filter(|key| matches!(&key.subject, ScopeSubject::Target(value) if value == target))
+        .filter(|key| participates(&key.subject, target))
         .any(|key| !resolution.facets.contains_key(key))
     {
         return Err(ConformanceError::IncompletePolicyResolution);
+    }
+    if resolution
+        .universe
+        .unresolved()
+        .iter()
+        .any(|unresolved| unresolved_blocks(unresolved, target))
+    {
+        return Ok(TargetConformance::Nonconformant);
     }
     let statuses: Vec<_> = resolution
         .facets
@@ -247,6 +257,18 @@ pub fn evaluate_complete_target_conformance(
         .map(|(_, status)| *status)
         .collect();
     Ok(classify_statuses(&statuses))
+}
+
+fn unresolved_blocks(unresolved: &UnresolvedCoordinate, target: &TargetId) -> bool {
+    let affects = match &unresolved.subject {
+        Some(subject) => participates(subject, target),
+        None => true,
+    };
+    affects
+        && matches!(
+            unresolved.reason,
+            UnresolvedReason::UnknownApplicability | UnresolvedReason::UnknownParticipation
+        )
 }
 
 /// Target result construction failure.

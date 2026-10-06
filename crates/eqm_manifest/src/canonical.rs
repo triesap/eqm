@@ -37,10 +37,10 @@ pub use target_v2::{
 use eqm_domain::{
     AdapterLockIdentity, Applicability, ApplicabilityView, ArgumentTemplate, Artifact,
     ArtifactSelector, Binding, Capability, DigestDomain, EnvironmentSource, EvidenceScopeSubject,
-    EvidenceSelector, EvidenceSpecification, ExtensionValue, Extensions, FinalizedWorkspaceGraph,
-    Fragment, ImportLockIdentity, Journey, Policy, PolicyRule, PolicySelector, Profile,
-    Requirement, RunnerDefinition, RunnerProgram, Sha256Digest, Surface, Target, Waiver,
-    WaiverPolicy, WorkingDirectoryTemplate,
+    EvidenceSelector, EvidenceSpecification, ExtensionValue, Extensions, Fragment,
+    ImportLockIdentity, Journey, Policy, PolicyRule, PolicySelector, Profile, Requirement,
+    RunnerDefinition, RunnerProgram, Sha256Digest, Surface, Target, Waiver, WaiverPolicy,
+    WorkingDirectoryTemplate, WorkspaceGraph,
 };
 use serde_json::{Map, Value, json};
 use std::error::Error;
@@ -88,17 +88,16 @@ impl CanonicalGraph {
     }
 }
 
-/// Projects only a finalized graph, serializes it with JCS, and hashes it.
+/// Projects only a finalized graph's raw data, serializes it with JCS, and
+/// hashes it.
 ///
 /// This is the v1 graph identity. It rejects a graph carrying any v2-only
 /// metadata or authority (target role/source-component/target-dependency
 /// references, source-component authorities or participation rules) instead of
 /// silently omitting it. A v2 workspace is projected by
-/// [`canonicalize_graph_v2`]; there is no implicit v2-to-v1 coercion.
-pub fn canonicalize_graph(
-    finalized: &FinalizedWorkspaceGraph,
-) -> Result<CanonicalGraph, CanonicalizationError> {
-    let graph = finalized.graph();
+/// [`canonicalize_graph_v2`]; there is no implicit v2-to-v1 coercion. The input
+/// is raw projection data; it is never authority.
+pub fn canonicalize_graph(graph: &WorkspaceGraph) -> Result<CanonicalGraph, CanonicalizationError> {
     reject_v2_only_graph(graph)?;
     let mut bindings: Vec<_> = graph.bindings().values().collect();
     bindings.sort_by_key(|value| (value.target(), value.unit(), value.id()));
@@ -899,9 +898,7 @@ mod tests {
     #[test]
     fn independent_empty_graph_vector_matches_exact_bytes_and_digest() -> Result<(), Box<dyn Error>>
     {
-        let graph = FinalizedWorkspaceGraph::from_engine(eqm_domain::WorkspaceGraph::new(
-            WorkspaceGraphInput::default(),
-        )?);
+        let graph = eqm_domain::WorkspaceGraph::new(WorkspaceGraphInput::default())?;
         let canonical = canonicalize_graph(&graph)?;
         assert_eq!(canonical.bytes(), EMPTY.as_bytes());
         assert_eq!(
@@ -914,20 +911,16 @@ mod tests {
     #[test]
     fn independent_capability_target_vector_matches_and_order_is_stable()
     -> Result<(), Box<dyn Error>> {
-        let first = FinalizedWorkspaceGraph::from_engine(eqm_domain::WorkspaceGraph::new(
-            WorkspaceGraphInput {
-                capabilities: vec![capability()?],
-                targets: vec![target_value()?],
-                ..WorkspaceGraphInput::default()
-            },
-        )?);
-        let second = FinalizedWorkspaceGraph::from_engine(eqm_domain::WorkspaceGraph::new(
-            WorkspaceGraphInput {
-                targets: vec![target_value()?],
-                capabilities: vec![capability()?],
-                ..WorkspaceGraphInput::default()
-            },
-        )?);
+        let first = eqm_domain::WorkspaceGraph::new(WorkspaceGraphInput {
+            capabilities: vec![capability()?],
+            targets: vec![target_value()?],
+            ..WorkspaceGraphInput::default()
+        })?;
+        let second = eqm_domain::WorkspaceGraph::new(WorkspaceGraphInput {
+            targets: vec![target_value()?],
+            capabilities: vec![capability()?],
+            ..WorkspaceGraphInput::default()
+        })?;
         let canonical = canonicalize_graph(&first)?;
         assert_eq!(canonical.bytes(), CAPABILITY_TARGET.as_bytes());
         assert_eq!(

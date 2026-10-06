@@ -73,8 +73,8 @@ fn exact_pins_expand_before_finalized_canonicalization() -> Result<(), Box<dyn E
         otp.requirements()
             .contains_key(&"six_decimal_digits".parse()?)
     );
-    let first = canonicalize_graph(&finalized)?;
-    let second = canonicalize_graph(&finalized)?;
+    let first = canonicalize_graph(finalized.graph())?;
+    let second = canonicalize_graph(finalized.graph())?;
     assert_eq!(first, second);
     Ok(())
 }
@@ -116,7 +116,7 @@ fn semantic_mutation_changes_final_digest_but_source_layout_does_not() -> Result
     let baseline = load_workspace(baseline_repository.path(), None)?;
     let graph = resolve_graph(baseline.graph_input().clone(), baseline.source_map())?;
     let finalized = expand_fragments(graph.clone(), &digest_map(&graph)?, baseline.source_map())?;
-    let baseline_digest = canonicalize_graph(&finalized)?.digest();
+    let baseline_digest = canonicalize_graph(finalized.graph())?.digest();
     assert_eq!(
         baseline_digest.to_string(),
         "sha256:4d3252cd506168e9dda01f213a6b4bdf8e0b1441a686fa114341a79f7758f6b3"
@@ -131,7 +131,10 @@ fn semantic_mutation_changes_final_digest_but_source_layout_does_not() -> Result
     let loaded = load_workspace(repository.path(), None)?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let finalized = expand_fragments(graph.clone(), &digest_map(&graph)?, loaded.source_map())?;
-    assert_ne!(canonicalize_graph(&finalized)?.digest(), baseline_digest);
+    assert_ne!(
+        canonicalize_graph(finalized.graph())?.digest(),
+        baseline_digest
+    );
 
     let repository = workspace()?;
     let fragment_path = repository.path().join("eqm/contracts/auth.otp_entry.toml");
@@ -146,7 +149,10 @@ fn semantic_mutation_changes_final_digest_but_source_layout_does_not() -> Result
     let loaded = load_workspace(repository.path(), None)?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let finalized = expand_fragments(graph.clone(), &digest_map(&graph)?, loaded.source_map())?;
-    assert_eq!(canonicalize_graph(&finalized)?.digest(), baseline_digest);
+    assert_eq!(
+        canonicalize_graph(finalized.graph())?.digest(),
+        baseline_digest
+    );
     Ok(())
 }
 

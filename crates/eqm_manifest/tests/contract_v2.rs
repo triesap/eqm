@@ -7,11 +7,10 @@
 
 use eqm_domain::{
     Applicability, Capability, CapabilityId, ContractDigest, Description, DimensionId, Extensions,
-    Facet, FinalizedWorkspaceGraph, Fragment, FragmentId, FragmentUse, Journey, JourneyId,
-    LifecycleStatus, LocalRequirementId, MembershipOperator, OwnerRef, ProviderId, Requirement,
-    RequirementLevel, RequirementScope, RequirementStatement, Revision, RiskClass, Sha256Digest,
-    Surface, SurfaceId, SymbolicValueId, Title, Transition, TransitionTrigger, WorkspaceGraph,
-    WorkspaceGraphInput,
+    Facet, Fragment, FragmentId, FragmentUse, Journey, JourneyId, LifecycleStatus,
+    LocalRequirementId, MembershipOperator, OwnerRef, ProviderId, Requirement, RequirementLevel,
+    RequirementScope, RequirementStatement, Revision, RiskClass, Sha256Digest, Surface, SurfaceId,
+    SymbolicValueId, Title, Transition, TransitionTrigger, WorkspaceGraph, WorkspaceGraphInput,
 };
 use eqm_domain::{ExtensionNamespace, ExtensionValue};
 use eqm_manifest::{canonicalize_contract_v2, project_contract_v2};
@@ -129,13 +128,11 @@ fn input() -> Result<WorkspaceGraphInput, Box<dyn Error>> {
     })
 }
 
-fn finalize(input: WorkspaceGraphInput) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
-    Ok(FinalizedWorkspaceGraph::from_engine(WorkspaceGraph::new(
-        input,
-    )?))
+fn finalize(input: WorkspaceGraphInput) -> Result<WorkspaceGraph, Box<dyn Error>> {
+    Ok(WorkspaceGraph::new(input)?)
 }
 
-fn workspace() -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
+fn workspace() -> Result<WorkspaceGraph, Box<dyn Error>> {
     finalize(input()?)
 }
 

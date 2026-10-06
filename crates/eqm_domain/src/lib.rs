@@ -95,8 +95,8 @@ pub use evidence_result::{
     ProfileSelection, RawEvidenceObject, RepositoryIdentity, SourceCommit,
 };
 pub use graph::{
-    AdapterLockIdentity, FinalizedWorkspaceGraph, ImportLockIdentity, SourceComponentError,
-    WorkspaceGraph, WorkspaceGraphBuildError, WorkspaceGraphInput, validate_source_components,
+    AdapterLockIdentity, ImportLockIdentity, SourceComponentError, WorkspaceGraph,
+    WorkspaceGraphBuildError, WorkspaceGraphInput, validate_source_components,
 };
 pub use id::{
     AdapterId, ArtifactId, AttemptId, BindingId, CampaignId, CapabilityId, DimensionId,

@@ -1,10 +1,10 @@
 //! Exact-pinned, collision-free fragment expansion.
 
 use crate::resolve::diagnostic;
-use crate::{ResolutionError, validate_graph_invariants};
+use crate::{FinalizedWorkspaceGraph, ResolutionError, validate_graph_invariants};
 use eqm_domain::{
-    FinalizedWorkspaceGraph, FragmentId, LocalRequirementId, RepoPath, Requirement, Revision,
-    RiskClass, Sha256Digest, Surface, WorkspaceGraph,
+    FragmentId, LocalRequirementId, RepoPath, Requirement, Revision, RiskClass, Sha256Digest,
+    Surface, WorkspaceGraph,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -164,7 +164,7 @@ pub fn expand_fragments(
     // Revalidate the expanded graph before it can become finalized. The
     // pre-expansion graph cannot cover requirements copied in from fragments.
     validate_graph_invariants(&graph, sources)?;
-    Ok(FinalizedWorkspaceGraph::from_engine(graph))
+    Ok(FinalizedWorkspaceGraph::new(graph))
 }
 
 fn expanded_id(

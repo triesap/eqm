@@ -1,6 +1,7 @@
 //! Borrowed boundary over a workspace finalized by CLI orchestration.
 
-use eqm_domain::{FinalizedWorkspaceGraph, RepoPath, Sha256Digest};
+use eqm_domain::{RepoPath, Sha256Digest};
+use eqm_engine::FinalizedWorkspaceGraph;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
