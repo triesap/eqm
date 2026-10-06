@@ -43,6 +43,20 @@ fn finalize(loaded: &eqm_manifest::LoadedWorkspace) -> Result<Finalized, Box<dyn
 
 fn with_participation() -> Result<(tempfile::TempDir, Finalized), Box<dyn Error>> {
     let (repository, loaded) = support::loaded_example_with(|root| {
+        // Replace every authored participation document with the asymmetric
+        // fixture: android declared true, ios deliberately absent so both the
+        // identifier coordinate and every end-to-end target set stay Unknown and
+        // non-authorizing.
+        for entry in std::fs::read_dir(root.join("eqm/contracts"))? {
+            let entry = entry?;
+            if entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("participation.")
+            {
+                std::fs::remove_file(entry.path())?;
+            }
+        }
         std::fs::write(
             root.join("eqm/contracts/participation.toml"),
             r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json"

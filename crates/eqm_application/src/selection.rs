@@ -217,6 +217,21 @@ pub enum SelectionPreparationError {
         /// The explicit revision, if one was supplied.
         revision: Option<Revision>,
     },
+    /// A protected mode omitted the exact policy revision it must name.
+    PolicyRevisionRequired {
+        /// The policy ID whose revision must be explicit.
+        id: PolicyId,
+    },
+    /// A protected mode omitted the exact profile revision it must name.
+    ProfileRevisionRequired {
+        /// The profile ID whose revision must be explicit.
+        id: ProfileId,
+    },
+    /// A protected mode omitted a profile the resolved policy declares.
+    ProfileSelectionRequired {
+        /// The omitted profile authority.
+        id: ProfileId,
+    },
     /// More than one stored revision exists for the policy ID.
     PolicyAmbiguous {
         /// The ambiguous policy ID.
@@ -258,6 +273,18 @@ impl Display for SelectionPreparationError {
                 Some(revision) => write!(formatter, "policy `{id}@{revision}` was not found"),
                 None => write!(formatter, "policy `{id}` was not found"),
             },
+            Self::PolicyRevisionRequired { id } => write!(
+                formatter,
+                "policy `{id}` must name an explicit exact revision in this mode"
+            ),
+            Self::ProfileRevisionRequired { id } => write!(
+                formatter,
+                "profile `{id}` must name an explicit exact revision in this mode"
+            ),
+            Self::ProfileSelectionRequired { id } => write!(
+                formatter,
+                "profile `{id}` must be explicitly selected in this mode"
+            ),
             Self::PolicyAmbiguous { id } => write!(
                 formatter,
                 "policy `{id}` has multiple revisions; select one explicitly"
@@ -301,13 +328,17 @@ impl From<SelectionError> for SelectionPreparationError {
 ///
 /// The exact policy is the supplied reference or, when absent, the unique stored
 /// policy ID. An omitted revision resolves only when exactly one stored revision
-/// exists; otherwise the request is an explicit ambiguity. Every profile in the
-/// resolved policy set is filled from its unique stored revision unless the
-/// request names an exact revision, and a profile outside that set rejects.
-/// The same immutable graph is used for every lookup, so distinct sessions or
-/// contexts cannot be mixed.
+/// exists; otherwise the request is an explicit missing or ambiguity error.
+/// Development may use that unique/default candidate lookup; PullRequest and
+/// Release require an explicit exact policy and explicit exact profile
+/// revisions instead of filling them, so protected authority never comes from
+/// an omitted input. Every profile in the resolved policy set is filled from
+/// its unique stored revision unless the request names an exact revision, and a
+/// profile outside that set rejects. The same immutable graph is used for every
+/// lookup, so distinct sessions or contexts cannot be mixed.
 pub fn resolve_selection_request(
     finalized: &FinalizedWorkspaceGraph,
+    mode: EvaluationMode,
     request: &PolicySelectionRequest,
 ) -> Result<PolicyProfileRequest, SelectionPreparationError> {
     let graph = finalized.graph();
@@ -334,20 +365,36 @@ pub fn resolve_selection_request(
                     }
                     revision
                 }
-                None => unique_revision(
-                    graph
-                        .policies()
-                        .keys()
-                        .filter(|(id, _)| id == &reference.id)
-                        .map(|(_, revision)| *revision),
-                )
-                .ok_or_else(|| SelectionPreparationError::PolicyAmbiguous {
-                    id: reference.id.clone(),
-                })?,
+                None => {
+                    if mode != EvaluationMode::Development {
+                        return Err(SelectionPreparationError::PolicyRevisionRequired {
+                            id: reference.id.clone(),
+                        });
+                    }
+                    resolve_omitted_revision(
+                        graph
+                            .policies()
+                            .keys()
+                            .filter(|(id, _)| id == &reference.id)
+                            .map(|(_, revision)| *revision),
+                    )
+                    .map_err(|cause| match cause {
+                        RevisionCause::Missing => SelectionPreparationError::PolicyNotFound {
+                            id: reference.id.clone(),
+                            revision: None,
+                        },
+                        RevisionCause::Ambiguous => SelectionPreparationError::PolicyAmbiguous {
+                            id: reference.id.clone(),
+                        },
+                    })?
+                }
             };
             (reference.id.clone(), revision)
         }
         None => {
+            if mode != EvaluationMode::Development {
+                return Err(SelectionPreparationError::PolicyIdRequired);
+            }
             let ids: std::collections::BTreeSet<&PolicyId> =
                 graph.policies().keys().map(|(id, _)| id).collect();
             if ids.len() != 1 {
@@ -358,14 +405,22 @@ pub fn resolve_selection_request(
                 .next()
                 .ok_or(SelectionPreparationError::PolicyIdRequired)?
                 .clone();
-            let revision = unique_revision(
+            let revision = resolve_omitted_revision(
                 graph
                     .policies()
                     .keys()
                     .filter(|(candidate, _)| candidate == &id)
                     .map(|(_, revision)| *revision),
             )
-            .ok_or_else(|| SelectionPreparationError::PolicyAmbiguous { id: id.clone() })?;
+            .map_err(|cause| match cause {
+                RevisionCause::Missing => SelectionPreparationError::PolicyNotFound {
+                    id: id.clone(),
+                    revision: None,
+                },
+                RevisionCause::Ambiguous => {
+                    SelectionPreparationError::PolicyAmbiguous { id: id.clone() }
+                }
+            })?;
             (id, revision)
         }
     };
@@ -393,23 +448,53 @@ pub fn resolve_selection_request(
         let revision = match selected.get(id) {
             Some(selection) => match selection.revision {
                 Some(revision) => revision,
-                None => unique_revision(
+                None => {
+                    if mode != EvaluationMode::Development {
+                        return Err(SelectionPreparationError::ProfileRevisionRequired {
+                            id: id.clone(),
+                        });
+                    }
+                    resolve_omitted_revision(
+                        graph
+                            .profiles()
+                            .keys()
+                            .filter(|(candidate, _)| candidate == id)
+                            .map(|(_, revision)| *revision),
+                    )
+                    .map_err(|cause| match cause {
+                        RevisionCause::Missing => SelectionPreparationError::ProfileNotFound {
+                            id: id.clone(),
+                            revision: None,
+                        },
+                        RevisionCause::Ambiguous => {
+                            SelectionPreparationError::ProfileAmbiguous { id: id.clone() }
+                        }
+                    })?
+                }
+            },
+            None => {
+                if mode != EvaluationMode::Development {
+                    return Err(SelectionPreparationError::ProfileSelectionRequired {
+                        id: id.clone(),
+                    });
+                }
+                resolve_omitted_revision(
                     graph
                         .profiles()
                         .keys()
                         .filter(|(candidate, _)| candidate == id)
                         .map(|(_, revision)| *revision),
                 )
-                .ok_or_else(|| SelectionPreparationError::ProfileAmbiguous { id: id.clone() })?,
-            },
-            None => unique_revision(
-                graph
-                    .profiles()
-                    .keys()
-                    .filter(|(candidate, _)| candidate == id)
-                    .map(|(_, revision)| *revision),
-            )
-            .ok_or_else(|| SelectionPreparationError::ProfileAmbiguous { id: id.clone() })?,
+                .map_err(|cause| match cause {
+                    RevisionCause::Missing => SelectionPreparationError::ProfileNotFound {
+                        id: id.clone(),
+                        revision: None,
+                    },
+                    RevisionCause::Ambiguous => {
+                        SelectionPreparationError::ProfileAmbiguous { id: id.clone() }
+                    }
+                })?
+            }
         };
         if !graph.profiles().contains_key(&(id.clone(), revision)) {
             return Err(SelectionPreparationError::ProfileNotFound {
@@ -430,11 +515,22 @@ pub fn resolve_selection_request(
     )?)
 }
 
-fn unique_revision(revisions: impl Iterator<Item = Revision>) -> Option<Revision> {
+/// Why an omitted exact revision could not be resolved.
+enum RevisionCause {
+    /// No stored revision exists for the authority.
+    Missing,
+    /// More than one stored revision exists for the authority.
+    Ambiguous,
+}
+
+fn resolve_omitted_revision(
+    revisions: impl Iterator<Item = Revision>,
+) -> Result<Revision, RevisionCause> {
     let revisions: Vec<_> = revisions.collect();
     match revisions.as_slice() {
-        [revision] => Some(*revision),
-        _ => None,
+        [revision] => Ok(*revision),
+        [] => Err(RevisionCause::Missing),
+        _ => Err(RevisionCause::Ambiguous),
     }
 }
 
@@ -445,7 +541,7 @@ pub fn prepare_obligations_from_request<'a>(
     request: &PolicySelectionRequest,
     release_context: Option<Sha256Digest>,
 ) -> Result<PreparedObligations<'a>, ObligationPreparationError> {
-    let resolved = resolve_selection_request(finalized, request)
+    let resolved = resolve_selection_request(finalized, mode, request)
         .map_err(ObligationPreparationError::SelectionPreparation)?;
     prepare_obligations(finalized, mode, Some(&resolved), None, release_context)
 }

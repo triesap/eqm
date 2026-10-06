@@ -206,7 +206,7 @@ fn example_workspace_projection_is_a_genuine_finalized_positive_graph() -> Resul
     let canonical = canonicalize_graph_v2(&finalized)?;
     assert_eq!(
         canonical.digest().to_string(),
-        "sha256:77b92a2ee835a37d9a7ad243d3f7914ecf0578cab54249b8f8d87e50f877c5dd"
+        "sha256:fe810467f0eaaa52df99b9dab534cb567522e4b818be73978388cee56e9bdcf7"
     );
     assert_eq!(
         canonical.digest(),

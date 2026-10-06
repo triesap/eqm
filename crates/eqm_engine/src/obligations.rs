@@ -200,13 +200,13 @@ fn derive_derivation(
     release_context: Option<Sha256Digest>,
 ) -> Result<ObligationDerivation, ObligationError> {
     let graph = finalized.graph();
+    verify_same_graph_context(finalized, selection, applicability)?;
     let policy = selection.policy();
-    // Coordinate participation is evaluated only when the graph declares
-    // participation authority. A v1 graph cannot carry that axis, so
-    // applicability alone governs there; a graph that declares participation is
-    // held to the strict no-rule->Unknown and ambiguity->error contract.
+    // Coordinate participation always requires exact declared authority. A graph
+    // that carries no rule for a coordinate, including v1 data without the
+    // axis, is Unknown and non-authorizing; registry emptiness is never treated
+    // as version detection or implicit global inclusion.
     let participation = graph.participation();
-    let participation_active = !participation.is_empty();
     let mut result = ObligationDerivation::default();
     for surface in graph.surfaces().values() {
         if surface.status() != LifecycleStatus::Active {
@@ -290,7 +290,6 @@ fn derive_derivation(
                 &full,
                 applicability,
                 participation,
-                participation_active,
             )?;
             for (subject, reason) in resolved.unresolved {
                 result.unresolved.insert(unresolved_coordinate(
@@ -416,10 +415,10 @@ fn base_subjects(
 /// requirement-level applicability with per-coordinate participation.
 ///
 /// Returns the surviving subjects plus any unresolved coordinate that must
-/// remain visible. When the graph declares no participation authority the
-/// requirement fans out to its full declared scope; when it does, a missing
-/// rule is Unknown and never an implicit global inclusion, an ambiguous rule is
-/// an error, explicit false is visible N/A and only a true result participates.
+/// remain visible. A missing exact rule is Unknown and never an implicit global
+/// inclusion, an ambiguous rule is an error, explicit false is visible N/A and
+/// only a true result participates. Registry emptiness is not version
+/// detection, so a v1 graph without the axis stays Unknown and non-authorizing.
 /// Exact participating subjects plus the unresolved participation coordinates
 /// that must remain visible for one requirement.
 struct ResolvedSubjects {
@@ -433,19 +432,14 @@ fn resolved_subjects(
     full: &FullRequirementId,
     applicability: &ApplicabilityContext,
     participation: &BTreeMap<eqm_domain::ParticipationRuleId, eqm_domain::ParticipationRule>,
-    participation_active: bool,
 ) -> Result<ResolvedSubjects, ObligationError> {
-    let truth = |target: &TargetId| -> Result<Option<TruthValue>, ObligationError> {
-        if participation_active {
-            Ok(Some(evaluate_participation(
-                participation,
-                full,
-                target,
-                applicability,
-            )?))
-        } else {
-            Ok(None)
-        }
+    let truth = |target: &TargetId| -> Result<TruthValue, ObligationError> {
+        Ok(evaluate_participation(
+            participation,
+            full,
+            target,
+            applicability,
+        )?)
     };
     let mut subjects = Vec::new();
     let mut unresolved = Vec::new();
@@ -453,14 +447,12 @@ fn resolved_subjects(
         RequirementScope::EachTarget => {
             for target in targets {
                 match truth(target)? {
-                    None | Some(TruthValue::True) => {
-                        subjects.push(ScopeSubject::Target(target.clone()))
-                    }
-                    Some(TruthValue::False) => unresolved.push((
+                    TruthValue::True => subjects.push(ScopeSubject::Target(target.clone())),
+                    TruthValue::False => unresolved.push((
                         Some(ScopeSubject::Target(target.clone())),
                         UnresolvedReason::NotApplicable,
                     )),
-                    Some(TruthValue::Unknown) => unresolved.push((
+                    TruthValue::Unknown => unresolved.push((
                         Some(ScopeSubject::Target(target.clone())),
                         UnresolvedReason::UnknownParticipation,
                     )),
@@ -476,9 +468,9 @@ fn resolved_subjects(
             let mut any_unknown = false;
             for target in targets {
                 match truth(target)? {
-                    None | Some(TruthValue::True) => any_true = true,
-                    Some(TruthValue::False) => {}
-                    Some(TruthValue::Unknown) => any_unknown = true,
+                    TruthValue::True => any_true = true,
+                    TruthValue::False => {}
+                    TruthValue::Unknown => any_unknown = true,
                 }
             }
             let subject = Some(ScopeSubject::Provider(provider.clone()));
@@ -495,11 +487,11 @@ fn resolved_subjects(
             let mut any_unknown = false;
             for target in targets {
                 match truth(target)? {
-                    None | Some(TruthValue::True) => {
+                    TruthValue::True => {
                         participating.insert(target.clone());
                     }
-                    Some(TruthValue::False) => {}
-                    Some(TruthValue::Unknown) => any_unknown = true,
+                    TruthValue::False => {}
+                    TruthValue::Unknown => any_unknown = true,
                 }
             }
             let full_set = Some(ScopeSubject::TargetSet(targets.clone()));
@@ -518,6 +510,43 @@ fn resolved_subjects(
     })
 }
 
+/// Verifies that one authorizing derivation consumes an exact selection and
+/// applicability context resolved from the same checked graph.
+///
+/// A structurally identical policy/profile/context borrowed from a different
+/// graph is indistinguishable and therefore admissible; a weaker foreign policy
+/// with the same ID/revision, a foreign applicability context, or a selected
+/// profile revision absent from this graph rejects rather than silently
+/// shrinking the denominator.
+fn verify_same_graph_context(
+    finalized: &FinalizedWorkspaceGraph,
+    selection: &SelectedPolicyProfiles<'_>,
+    applicability: &ApplicabilityContext,
+) -> Result<(), ObligationError> {
+    let graph = finalized.graph();
+    let policy = selection.policy();
+    let graph_policy = graph
+        .policies()
+        .get(&(policy.id().clone(), policy.revision()))
+        .ok_or(ObligationError::ForeignSelection)?;
+    if graph_policy != policy {
+        return Err(ObligationError::ForeignSelection);
+    }
+    let mut inputs = Vec::with_capacity(selection.profiles().len());
+    for selected in selection.profiles().values() {
+        let definition = graph
+            .profiles()
+            .get(&(selected.id().clone(), selected.revision()))
+            .ok_or(ObligationError::ForeignSelection)?;
+        inputs.push((definition, selected.values()));
+    }
+    let expected = ApplicabilityContext::from_profiles(inputs)?;
+    if &expected != applicability {
+        return Err(ObligationError::ForeignApplicability);
+    }
+    Ok(())
+}
+
 /// Obligation derivation failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ObligationError {
@@ -525,6 +554,12 @@ pub enum ObligationError {
     InvalidFinalizedGraph,
     /// Applicability named undeclared profile authority.
     Applicability(ApplicabilityError),
+    /// The selection policy, or a selected profile definition, is not the exact
+    /// definition of this checked graph.
+    ForeignSelection,
+    /// The supplied applicability context was not resolved from this graph's
+    /// exact selected profile definitions.
+    ForeignApplicability,
     /// An active required requirement matched no policy rule.
     UnmatchedRequiredRequirement,
     /// Two derivations unexpectedly produced the same exact key.

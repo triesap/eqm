@@ -1,0 +1,7 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json"
+id = "participation.signup.identifier"
+requirement = "account.create.signup.identifier#email_default"
+targets = ["web", "ios", "android"]
+
+[applicability]
+always = true

@@ -27,7 +27,11 @@ pub fn development_request(
     requested: &[String],
 ) -> Result<PolicyProfileRequest, Box<dyn Error>> {
     let input = development_selection(policy, requested)?;
-    Ok(resolve_selection_request(session.finalized(), &input)?)
+    Ok(resolve_selection_request(
+        session.finalized(),
+        EvaluationMode::Development,
+        &input,
+    )?)
 }
 
 /// Parses CLI policy/profile arguments into the shared typed selection request.

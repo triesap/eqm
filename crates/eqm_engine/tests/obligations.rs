@@ -9,13 +9,54 @@ use eqm_domain::{
 use eqm_engine::{
     ApplicabilityContext, AuthorityOrigin, CompletePolicyResolution, ConformanceError,
     EvaluationMode, FacetStatus, FragmentDigestMap, PolicyProfileRequest, PolicyRef,
-    ProfileRequest, ScopeSubject, TargetConformance, UnresolvedReason, derive_obligations,
-    derive_required_universe, evaluate_complete_target_conformance, expand_fragments,
-    resolve_graph, select_policy_profiles,
+    ProfileRequest, ScopeSubject, SelectedPolicyProfiles, TargetConformance, UnresolvedReason,
+    derive_obligations, derive_required_universe, evaluate_complete_target_conformance,
+    expand_fragments, resolve_graph, select_policy_profiles,
 };
 use eqm_manifest::canonicalize_fragment;
 use std::collections::BTreeMap;
 use std::error::Error;
+
+type Finalized = eqm_engine::FinalizedWorkspaceGraph;
+
+/// Selects exact authority and builds the applicability context from the same
+/// immutable finalized graph, as an authorizing derivation now requires.
+fn select_and_context<'a>(
+    finalized: &'a Finalized,
+    region: Option<&str>,
+) -> Result<(SelectedPolicyProfiles<'a>, ApplicabilityContext), Box<dyn Error>> {
+    let request = PolicyProfileRequest::new(
+        AuthorityOrigin::TrustedInvocation,
+        PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?),
+        vec![ProfileRequest::new(
+            ProfileId::new("audience.default")?,
+            Revision::new(1)?,
+            vec![(
+                DimensionId::new("region")?,
+                region.map(SymbolicValueId::new).transpose()?,
+            )],
+        )?],
+    )?;
+    let selection = select_policy_profiles(
+        finalized.graph(),
+        EvaluationMode::PullRequest,
+        Some(&request),
+        None,
+    )?;
+    let applicability = {
+        let mut inputs = Vec::new();
+        for selected in selection.profiles().values() {
+            let definition = finalized
+                .graph()
+                .profiles()
+                .get(&(selected.id().clone(), selected.revision()))
+                .ok_or("profile definition missing")?;
+            inputs.push((definition, selected.values()));
+        }
+        ApplicabilityContext::from_profiles(inputs)?
+    };
+    Ok((selection, applicability))
+}
 
 #[test]
 fn signup_obligations_cover_each_target_and_end_to_end_without_duplicates()
@@ -235,68 +276,29 @@ fn unknown_and_not_applicable_coordinates_remain_visible() -> Result<(), Box<dyn
         Ok(())
     })?;
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
-    let selection_graph = graph.clone();
     let digests: FragmentDigestMap = graph
         .fragments()
         .iter()
         .map(|(key, fragment)| Ok((key.clone(), canonicalize_fragment(fragment)?.digest())))
         .collect::<Result<_, Box<dyn Error>>>()?;
     let finalized = expand_fragments(graph, &digests, loaded.source_map())?;
-    let request = PolicyProfileRequest::new(
-        AuthorityOrigin::TrustedInvocation,
-        PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?),
-        vec![ProfileRequest::new(
-            ProfileId::new("audience.default")?,
-            Revision::new(1)?,
-            vec![(
-                DimensionId::new("region")?,
-                Some(SymbolicValueId::new("us")?),
-            )],
-        )?],
-    )?;
-    let selection = select_policy_profiles(
-        &selection_graph,
-        EvaluationMode::PullRequest,
-        Some(&request),
-        None,
-    )?;
-    let profile = selection_graph
-        .profiles()
-        .values()
-        .next()
-        .ok_or("profile missing")?;
     let requirement = FullRequirementId::new("account.create.signup.identifier#email_default")?;
 
-    let unknown = ApplicabilityContext::new(
-        profile,
-        BTreeMap::from([(DimensionId::new("region")?, None)]),
-    )?;
+    let (selection, unknown) = select_and_context(&finalized, None)?;
     let universe = derive_required_universe(&finalized, &selection, &unknown, None)?;
     assert!(universe.unresolved().iter().any(|coordinate| {
         coordinate.requirement == requirement
             && coordinate.reason == UnresolvedReason::UnknownApplicability
     }));
 
-    let not_applicable = ApplicabilityContext::new(
-        profile,
-        BTreeMap::from([(
-            DimensionId::new("region")?,
-            Some(SymbolicValueId::new("us")?),
-        )]),
-    )?;
+    let (selection, not_applicable) = select_and_context(&finalized, Some("us"))?;
     let universe = derive_required_universe(&finalized, &selection, &not_applicable, None)?;
     assert!(universe.unresolved().iter().any(|coordinate| {
         coordinate.requirement == requirement
             && coordinate.reason == UnresolvedReason::NotApplicable
     }));
 
-    let applicable = ApplicabilityContext::new(
-        profile,
-        BTreeMap::from([(
-            DimensionId::new("region")?,
-            Some(SymbolicValueId::new("eu")?),
-        )]),
-    )?;
+    let (selection, applicable) = select_and_context(&finalized, Some("eu"))?;
     let universe = derive_required_universe(&finalized, &selection, &applicable, None)?;
     assert!(
         universe

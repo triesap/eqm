@@ -384,22 +384,23 @@ fn evidence_coordinate_matches(
     runtime_digest: Option<Sha256Digest>,
     profile_values: &[eqm_protocol::ProfileValueDto],
 ) -> bool {
-    let allowed: Option<BTreeSet<&TargetId>> = match &key.subject {
-        ScopeSubject::Target(target) => Some(BTreeSet::from([target])),
-        ScopeSubject::TargetSet(targets) => Some(targets.iter().collect()),
-        ScopeSubject::Provider(_) => None,
+    // RF79: an ordinary per-target evidence result can only satisfy the exact
+    // target coordinate it was produced for. Provider and TargetSet (scenario/
+    // end-to-end) scope requires complete exact subject, configuration,
+    // participant and dependency authority; until that representation is
+    // integrated by its owning later step these coordinates must fail closed
+    // rather than accept an unrestricted-provider or any-member-target-set
+    // shortcut. They stay visible as Missing/Unknown and can never produce
+    // Pass or Conditional.
+    let ScopeSubject::Target(target) = &key.subject else {
+        return false;
     };
     let matching = session
         .finalized()
         .graph()
         .bindings()
         .values()
-        .filter(|binding| {
-            allowed
-                .as_ref()
-                .is_none_or(|set| set.contains(binding.target()))
-                && binding.unit().as_str() == evidence.unit
-        })
+        .filter(|binding| binding.target() == target && binding.unit().as_str() == evidence.unit)
         .flat_map(|binding| {
             binding
                 .evidence()
@@ -774,7 +775,13 @@ pub(crate) mod tests {
             ("fail", true, "signed_ci", "fail", 1),
             ("unknown", false, "trusted_ci", "unknown", 7),
         ] {
-            let repository = release_fixture(name, failed, claim)?;
+            let repository = if name == "pass" {
+                // The supported positive control is each-target-only and separate
+                // from the authored full-scope signup fixture.
+                release_fixture_with(name, failed, claim, each_target_only)?
+            } else {
+                release_fixture(name, failed, claim)?
+            };
             let parsed = release_invocation(name)?;
             let execution = execute_with_authority(
                 parsed,
@@ -806,9 +813,85 @@ pub(crate) mod tests {
         Ok(())
     }
 
+    /// RF79 real-ingress control: the authored full-scope signup fixture keeps its
+    /// end-to-end target-set obligation, so ordinary web target evidence can never
+    /// authorize the release and the coordinate stays visible and unresolved.
+    #[test]
+    fn full_scope_signup_rejects_incomplete_non_target_evidence() -> Result<(), Box<dyn Error>> {
+        let repository = release_fixture("pass", false, "signed_ci")?;
+        assert_non_authorizing(repository.path(), "pass")?;
+        assert!(
+            non_target_keys(repository.path())?
+                .iter()
+                .any(|key| matches!(key.subject, ScopeSubject::TargetSet(_))),
+            "the original end-to-end target set must remain visible"
+        );
+        Ok(())
+    }
+
+    /// RF79 real-ingress control: a single-member end-to-end target set still
+    /// cannot be satisfied by ordinary target evidence.
+    #[test]
+    fn single_member_target_set_rejects_ordinary_target_evidence() -> Result<(), Box<dyn Error>> {
+        let repository =
+            release_fixture_with("pass", false, "signed_ci", single_member_target_set)?;
+        assert_non_authorizing(repository.path(), "pass")?;
+        let web = TargetId::new("web")?;
+        assert!(
+            non_target_keys(repository.path())?
+                .iter()
+                .any(|key| matches!(
+                    &key.subject,
+                    ScopeSubject::TargetSet(values) if values.len() == 1 && values.contains(&web)
+                )),
+            "a single-member target set must remain visible and unresolved"
+        );
+        Ok(())
+    }
+
+    /// RF79 real-ingress control: a declared provider requirement cannot be
+    /// satisfied by ordinary target evidence for the wrong provider subject.
+    #[test]
+    fn provider_scope_rejects_ordinary_target_evidence() -> Result<(), Box<dyn Error>> {
+        let repository = release_fixture_with("pass", false, "signed_ci", wrong_provider_scope)?;
+        assert_non_authorizing(repository.path(), "pass")?;
+        assert!(
+            non_target_keys(repository.path())?
+                .iter()
+                .any(|key| matches!(key.subject, ScopeSubject::Provider(_))),
+            "the provider coordinate must remain visible and unresolved"
+        );
+        Ok(())
+    }
+
+    /// The separate, explicitly authored each-target-only synthetic control proves
+    /// the supported per-target release path passes; it does not claim full
+    /// signup/scenario coverage.
+    #[test]
+    fn each_target_only_synthetic_control_passes_supported_scope() -> Result<(), Box<dyn Error>> {
+        let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
+        let execution = execute_with_authority(
+            release_invocation("pass")?,
+            repository.path(),
+            "2026-08-08T12:00:00Z".parse()?,
+            &SyntheticSignedTrust,
+        )?;
+        assert_eq!(
+            execution.payload.json["result"]["status"], "pass",
+            "{}",
+            execution.payload.json
+        );
+        assert_eq!(execution.exit_code, 0);
+        assert!(
+            non_target_keys(repository.path())?.is_empty(),
+            "the each-target-only control must not carry non-target scope"
+        );
+        Ok(())
+    }
+
     #[test]
     fn generated_output_tree_is_neutral_for_a_clean_pass() -> Result<(), Box<dyn Error>> {
-        let repository = release_fixture("pass", false, "signed_ci")?;
+        let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
         // Additional generated output below `.eqm/` is neutral.
         fs::create_dir_all(repository.path().join(".eqm/extra"))?;
         fs::write(repository.path().join(".eqm/extra/more.json"), "{}")?;
@@ -978,9 +1061,23 @@ pub(crate) mod tests {
         failed: bool,
         claim: &str,
     ) -> Result<tempfile::TempDir, Box<dyn Error>> {
+        release_fixture_with(name, failed, claim, |_| Ok(()))
+    }
+
+    /// Materializes the signup fixture, applies one explicit authored transform,
+    /// then prepares the real release ingress and writes the authored
+    /// target-scoped evidence shared by the negative and positive controls. The
+    /// authored full-scope fixture on disk is never modified.
+    fn release_fixture_with(
+        name: &str,
+        failed: bool,
+        claim: &str,
+        transform: impl FnOnce(&Path) -> Result<(), Box<dyn Error>>,
+    ) -> Result<tempfile::TempDir, Box<dyn Error>> {
         let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/signup");
         let repository = tempfile::tempdir()?;
         copy_fixture(&source, repository.path())?;
+        transform(repository.path())?;
         git(repository.path(), &["init", "-q"])?;
         git(
             repository.path(),
@@ -1144,6 +1241,125 @@ pub(crate) mod tests {
             }
         }
         Ok(repository)
+    }
+
+    /// Explicit synthetic positive control: the copied workspace keeps only
+    /// each-target scope, proving the supported per-target release path without
+    /// claiming full signup/scenario coverage. The authored full-scope fixture on
+    /// disk is never modified.
+    fn each_target_only(root: &Path) -> Result<(), Box<dyn Error>> {
+        rewrite_contract(
+            root,
+            "eqm/contracts/otp.toml",
+            "scope = \"end_to_end\"",
+            "scope = \"each_target\"",
+        )
+    }
+
+    /// Explicit synthetic control: exactly one target participates in the
+    /// end-to-end requirement, so the target set has a single member. Ordinary
+    /// target evidence must still not satisfy it.
+    fn single_member_target_set(root: &Path) -> Result<(), Box<dyn Error>> {
+        let directory = root.join("eqm/contracts");
+        fs::write(
+            directory.join("participation.signup.otp_advance.toml"),
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json"
+id = "participation.signup.otp_advance"
+requirement = "account.create.signup.otp#valid_code_advances"
+targets = ["web"]
+
+[applicability]
+always = true
+"#,
+        )?;
+        for target in ["ios", "android"] {
+            fs::write(
+                directory.join(format!("participation.signup.otp_advance.{target}.toml")),
+                format!(
+                    r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json"
+id = "participation.signup.otp_advance.{target}"
+requirement = "account.create.signup.otp#valid_code_advances"
+targets = ["{target}"]
+
+[applicability]
+always = false
+"#
+                ),
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Explicit synthetic control: a declared provider requirement exists, but
+    /// only target-scoped web evidence is available for it. The release must
+    /// reject the wrong provider rather than accept ordinary target evidence.
+    fn wrong_provider_scope(root: &Path) -> Result<(), Box<dyn Error>> {
+        fs::write(
+            root.join("eqm/contracts/provider.required.toml"),
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/provider.schema.json"
+id = "provider.required"
+configuration_digest = "sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e"
+owners = ["owner://team/providers"]
+"#,
+        )?;
+        rewrite_contract(
+            root,
+            "eqm/contracts/otp.toml",
+            "scope = \"end_to_end\"",
+            "scope = \"shared_provider\"\nprovider = \"provider.required\"",
+        )
+    }
+
+    fn rewrite_contract(
+        root: &Path,
+        relative: &str,
+        from: &str,
+        to: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        let path = root.join(relative);
+        let text = fs::read_to_string(&path)?;
+        let rewritten = text.replace(from, to);
+        if rewritten == text {
+            return Err(format!("fixture transform {relative} did not apply").into());
+        }
+        fs::write(path, rewritten)?;
+        Ok(())
+    }
+
+    /// Executes the real release ingress and asserts a non-authorizing outcome.
+    fn assert_non_authorizing(root: &Path, name: &str) -> Result<(), Box<dyn Error>> {
+        let execution = execute_with_authority(
+            release_invocation(name)?,
+            root,
+            "2026-08-08T12:00:00Z".parse()?,
+            &SyntheticSignedTrust,
+        )?;
+        let status = execution.payload.json["result"]["status"].as_str();
+        assert_ne!(status, Some("pass"), "{}", execution.payload.json);
+        assert_ne!(status, Some("conditional"), "{}", execution.payload.json);
+        assert_ne!(execution.exit_code, 0, "{}", execution.payload.json);
+        Ok(())
+    }
+
+    /// Returns the participating non-target (provider/target-set) coordinates of
+    /// the prepared fixture, proving the denominator was preserved rather than
+    /// silently deleted.
+    fn non_target_keys(root: &Path) -> Result<Vec<eqm_engine::ObligationKey>, Box<dyn Error>> {
+        let request =
+            SessionRequest::new(Default::default(), crate::cli::CommandName::ReleaseCheck);
+        let session = prepare(&request, root)?;
+        let (_selection, obligations) =
+            evaluation::derive_with_policy(&session, None, &["audience.default".to_owned()])?;
+        let web = TargetId::new("web")?;
+        Ok(obligations
+            .obligations
+            .keys()
+            .filter(|key| {
+                subject_participates(&key.subject, &web)
+                    && !matches!(key.subject, ScopeSubject::Target(_))
+            })
+            .cloned()
+            .collect())
     }
 
     fn seal_field(value: &mut Value, field: &str) -> Result<String, Box<dyn Error>> {

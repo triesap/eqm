@@ -1,34 +1,39 @@
-# Verification and implementation status
+# Implementation status
 
-Codex reviewed candidate `7a5b2465d293f482c22f2e8e4271a6b1507915c2` and retained
-all ten commits. P04-R1/RF70 and allocated S045/S046/S050/S051 are accepted;
-43 prior numbered steps remain accepted:47 total. S044/S047/S048/S049 are partial,
-changes-required. Retain S049's inherited-risk and post-expansion validation fixes.
-RF72 incomplete denominator/unknown applicability, RF73 public graph promotion,
-RF74 CLI-owned semantic selection and RF75 ignored coordinate participation
-require repairs. RF76 missing commit/frontier/count records are reconciled;
-future attempt evidence must remain distinct, including failures.
+Current supervisor amendment is DEV-034 in the sole governing COMMIT_SEQUENCE.md.
+The returned candidate is preserved uncommitted P04-R4 at
+3265bbee657d08ae43b801cf6f5beaec42be8c23, not a new commit. Preserve 47 earlier
+numbered acceptances and RF73/RF77 allocated acceptance. No new numbered/whole
+acceptance is granted. S044/S047/S048/S049 remain partial; S052 onward unstarted.
 
-S052's previously unmade scenario mapping is now settled by DEV-030: explicit
-fully qualified requirement→exact scenario revision authority input; preserve
-repeated actors/dependencies and exact provider dependers. S053 expected manifests
-are frozen independently of results. No owner-only decision blocks this batch.
+Confirmed partial corrections: no empty participation fallback, rejection of
+foreign weaker policy at derivation, mode-aware protected omitted-policy rejection,
+typed revision causes and formatting. RF78 exact status/context provenance and
+RF81 protected actual consumer integration remain incomplete. RF79 non-target
+matcher unchanged; RF82 reproduces stronger-graph acceptance of weaker-graph
+statuses with identical keys. RF83 restores real-CLI v1 positive coverage lost
+by the approved synthetic v2 example migration. Durable controls/report required.
 
-Next `pfc through EQM-P05`: P04-R2 → P04-R3 → S052–S076 inclusive,27 checkpoints.
-Continue across S058/S059. Independent full denominator/reference-evaluator review
-precedes S077 storage integration. Original steps/criteria/dependencies remain;
-Pi records implementation/evidence, Codex grants independent acceptance.
+Independent current product standard gate passed exit 0 with 799 successful test
+executions including repeated integration controls (workspace component 792/71
+result summaries); formatting, locked check, Clippy, docs, 22v1/13v2 schema parity,
+CLI/MCP/release/three-target integration and diff passed. Five isolated probes
+confirmed three corrections and reproduced two remaining defects. Passing helper
+or repository gates do not establish whole-feature acceptance. Product source
+was unchanged during supervisor verification; final planning validation is
+separate and all gates rerun after final repair edits. Review probes do not ship.
 
-See [review](reports/CODEX-7a5b246.md) and sole [governing plan](COMMIT_SEQUENCE.md).
-Whole RA02/RA13, all original 64 R/AC,21 RA,Q01–Q15 and S211 remain pending where
-not independently evidenced. No full-feature acceptance inferred from references.
-P01–P03 local implementation complete; P04–P15 remain unfinished.
-Independent standard check792 plus end-to-end,9 owning doctests,2 isolated defect
-probes,repository-owned planning admission1,structure and diff checks pass.
-Two existing rustdoc warnings RF77 are assigned to P04-R3.
-No release/human release-testing gate reached. Extended verify/Linux/coverage/
-mutation/fuzz/benchmark/package/live product/crypto/host/signing/operational lanes
-unverified; missing local automation is not inherently hardware-blocked.
-No Codex product source/test changes in the owning checkout. Isolated review
-probes do not ship. Generated schema bytes/Cargo.lock unchanged this batch.
-No push/publication/deployment/signing/activation authority.
+Next `pfc through P04-R4A`: only RF79 release matching and its real-ingress
+controls, one green checkpoint then Codex review, per explicit owner request.
+P04-R4B/P04-R4C and S052–S076 remain unfinished and outside this smaller batch.
+DEV-033 technical decisions and every original acceptance criterion are retained.
+No new product commit, source change or acceptance was observed in the subsequent
+implementation period. Do not claim aggregate P04-R4 completion from R4A.
+
+Original 64 R/AC, 21 RA, Q01–Q15 and S211 unchanged. Global RA02/RA13 and extended
+verify/Linux/coverage/mutation/fuzz/bench/package/live product/crypto/host/signing/
+operational acceptance remain open. Planning and preserved product work remain
+uncommitted until the complete repair is green; Pi includes approved planning
+in that checkpoint. No supervisor product edits, parent gitlink staging, push,
+publication, deployment, signing or optional-native activation.
+See [review](reports/CODEX-P04-R4-partial.md) and [plan](COMMIT_SEQUENCE.md).

@@ -260,6 +260,10 @@ fn duplicate_source_component_authority_rejects() -> Result<(), Box<dyn Error>> 
 fn participation_references_resolve_and_missing_references_reject() -> Result<(), Box<dyn Error>> {
     let (_repository, loaded) = support::loaded_example()?;
     let mut input = loaded.graph_input().clone();
+    // The example now authors its own participation; this control isolates the
+    // dangling-reference check, so start from a registry that carries only the
+    // synthetic rule under test.
+    input.participation.clear();
     let target = input.targets.first().ok_or("target missing")?.id().clone();
     let requirement = input
         .surfaces

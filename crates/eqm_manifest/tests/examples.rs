@@ -87,9 +87,17 @@ fn positive_examples_are_current_toml_and_contain_no_placeholder_digest()
             }
             let source = fs::read_to_string(entry.path())?;
             let _: toml::Table = toml::from_str(&source)?;
-            assert!(source.contains(
-                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/"
-            ));
+            let current_v1 = source.contains(
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/",
+            );
+            let current_v2_participation = source.contains(
+                "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json",
+            );
+            assert!(
+                current_v1 || current_v2_participation,
+                "example document uses an unexpected schema URI: {}",
+                entry.path().display()
+            );
             assert!(!source.to_ascii_lowercase().contains("placeholder"));
         }
     }

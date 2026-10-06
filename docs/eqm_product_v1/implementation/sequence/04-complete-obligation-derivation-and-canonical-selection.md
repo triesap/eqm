@@ -1,8 +1,10 @@
+<!-- DEV-034 supersedes current batch: P04-R4A only; all original criteria and later steps remain pending. -->
+<!-- Current execution: DEV-033 in COMMIT_SEQUENCE.md; preserved partial P04-R4 then S052–S076. -->
 # Chapter 04: Complete obligation derivation and canonical selection
 
 Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P04, containing 15 separate ordered commits, S044–S058; it is not one combined commit. Allocated S045/S046/S050/S051 are locally accepted; other scope remains unfinished.
 
-DEV-030 in the sole governing sequence authorizes P04-R2/P04-R3 then S052–S076,
+DEV-033 retaining DEV-032 in the sole governing sequence authorizes P04-R4 then S052–S076,
 continuing across P04/P05. Read its checked graph/universe/participation repairs,
 shared request preparation, exact scenario bindings and expected manifest decisions.
 Preserve every original step criterion below; Codex reviews before S077.

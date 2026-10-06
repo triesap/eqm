@@ -76,6 +76,20 @@ fn example_workspace_owning_forms_survive_real_preparation_and_projection()
             "\"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"\nprefix = \"card\"",
         ),
     )?;
+    // The owning-form control mutates fragment prefix identity, which changes
+    // the exact expanded requirement IDs. Authored participation is keyed to
+    // those IDs, so drop it here; this control does not assert obligation
+    // derivation.
+    for entry in fs::read_dir(repository.path().join("eqm/contracts"))? {
+        let entry = entry?;
+        if entry
+            .file_name()
+            .to_string_lossy()
+            .starts_with("participation.")
+        {
+            fs::remove_file(entry.path())?;
+        }
+    }
     let session = prepare(
         &SessionRequest::new(None, evaluation_time()?),
         repository.path(),

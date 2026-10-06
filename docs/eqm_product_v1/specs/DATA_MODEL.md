@@ -128,3 +128,27 @@ target-dependency closure. Missing mappings do not mean implicit all-target scop
 ExpectedSelectionManifest is frozen independently of reported outcomes and binds
 logical selections and count units. Exact allocation and canonical map shape are
 in [DEV-030](../implementation/COMMIT_SEQUENCE.md).
+
+## DEV-032 admission clarification
+
+An empty participation registry never implies inclusion, including v1 data
+without the new axis. Missing scope authority stays non-authorizing while v1
+bytes/readers remain unchanged. Checked derivation binds graph, selected exact
+policy/profile definitions and applicability values; foreign selections or
+contexts cannot shrink scope. Protected unresolved requests require explicit
+exact authority rather than unique candidate defaults. Target evidence cannot
+prove Provider or multi-participant scope without the exact required subjects
+and dependencies. These are existing acceptance closures, governed by
+[DEV-032](../implementation/COMMIT_SEQUENCE.md); no new product policy is added.
+
+## DEV-033 admission provenance clarification
+
+Existing exact-context acceptance requires graph semantics, policy/profile
+definitions and values, applicability, mode/authority and immutable scope context
+to remain bound through derivation and status admission. Equal visible coordinate
+labels across graphs with different strength are insufficient. Authorizing status
+results require privately validated provenance; a caller-supplied digest/tag or
+naked status map is data, not authority. Canonicalization remains application/
+manifest owned, the engine pure, and frozen projection roots unchanged.
+S054 later extends complete wire identity; present false-success admission must
+be repaired in P04-R4. See governing DEV-033 and its independent review.

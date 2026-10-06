@@ -1,0 +1,7 @@
+schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/participation.schema.json"
+id = "participation.signup.otp_six_digits"
+requirement = "account.create.signup.otp#six_decimal_digits"
+targets = ["web", "ios", "android"]
+
+[applicability]
+always = true

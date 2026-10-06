@@ -132,7 +132,10 @@ mod tests {
     use crate::cli::{ParseOutcome, parse};
     use std::fs;
 
-    const V1_WORKSPACE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json";
+    // The public example authors v2 participation, so its workspace document
+    // declares the additive v2 workspace family; an unsupported v3 URI must
+    // still reject through the real preparation boundary.
+    const V1_WORKSPACE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json";
     const V1_LOCK: &str =
         "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json";
 
@@ -528,14 +531,32 @@ mod tests {
         );
 
         // RF66: the optional fragment prefix is the owning single segment.
+        // Authored participation is keyed to exact expanded requirement identity,
+        // so the valid prefix mutation updates the participation reference too;
+        // both edits are one semantic change to the same requirement coordinate.
+        let repository = crate::test_support::example_repository()?;
+        let otp_path = repository.path().join("eqm/contracts/auth.signup.otp.toml");
+        let otp = fs::read_to_string(&otp_path)?;
+        fs::write(
+            &otp_path,
+            otp.replace(
+                "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"",
+                "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"\nprefix = \"card\"",
+            ),
+        )?;
+        let participation_path = repository
+            .path()
+            .join("eqm/contracts/participation.signup.otp_six_digits.toml");
+        let participation = fs::read_to_string(&participation_path)?;
+        fs::write(
+            &participation_path,
+            participation.replace(
+                "account.create.signup.otp#six_decimal_digits",
+                "account.create.signup.otp#card_six_decimal_digits",
+            ),
+        )?;
         assert_eq!(
-            mutate("eqm/contracts/auth.signup.otp.toml", |text| {
-                text
-                .replace(
-                    "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"",
-                    "digest = \"sha256:f4bd7d44c2fc00b13840d5f1d4b04826d6830e698359e4e468ce51d931e36378\"\nprefix = \"card\""
-                )
-            })?,
+            run_validate(repository.path())?,
             0,
             "valid fragment prefix denied"
         );

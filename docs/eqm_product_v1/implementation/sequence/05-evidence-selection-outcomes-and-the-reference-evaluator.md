@@ -1,9 +1,11 @@
+<!-- DEV-034 supersedes current batch: P04-R4A only; all original criteria and later steps remain pending. -->
+<!-- Current execution: DEV-033 in COMMIT_SEQUENCE.md; continue through S076 after P04 prerequisites, independent review before S077. -->
 # Chapter 05: Evidence selection outcomes and the reference evaluator
 
 Read the [global execution rules](../COMMIT_SEQUENCE.md) and [verification contract](../VERIFICATION.md) first. This is cycle EQM-P05, containing 18 separate ordered commits, S059–S076; it is not one combined commit. All implementation steps are pending.
 
-DEV-028 in the sole governing sequence now authorizes P04-R1 then complete
-S044–S076, continuing across the P04/P05 boundary. Preserve every original
+DEV-033 retaining DEV-032/DEV-030/DEV-028 in the sole governing sequence
+authorizes preserved P04-R4 then S052–S076, continuing across P04/P05. Preserve every original
 step criterion below; Codex reviews the full evaluator before S077.
 
 **Definition of green:** Reference evaluator implements every evidence kind, count, retry, campaign, freshness and waiver rule; meaningful properties pass.

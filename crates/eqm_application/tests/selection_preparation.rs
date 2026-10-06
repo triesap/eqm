@@ -202,7 +202,8 @@ fn typed_request_resolves_the_same_exact_authority_as_the_adapter() -> Result<()
             )],
         )],
     );
-    let resolved = resolve_selection_request(session.finalized(), &input)?;
+    let resolved =
+        resolve_selection_request(session.finalized(), EvaluationMode::Development, &input)?;
     let expected = request(AuthorityOrigin::CandidateLocal, "us")?;
     assert_eq!(resolved, expected);
     let prepared = prepare_obligations(
@@ -224,10 +225,9 @@ fn duplicate_identical_profile_selection_rejects_before_resolution() -> Result<(
         repository.path(),
     )?;
     let selection = ProfileSelection::new(ProfileId::new("audience.default")?, None, vec![]);
-    let input =
-        PolicySelectionRequest::development(None, vec![selection.clone(), selection]);
+    let input = PolicySelectionRequest::development(None, vec![selection.clone(), selection]);
     assert!(matches!(
-        resolve_selection_request(session.finalized(), &input),
+        resolve_selection_request(session.finalized(), EvaluationMode::Development, &input),
         Err(SelectionPreparationError::DuplicateProfile { .. })
     ));
     Ok(())
@@ -262,6 +262,7 @@ fn missing_and_ambiguous_exact_revisions_reject() -> Result<(), Box<dyn Error>> 
     assert!(matches!(
         resolve_selection_request(
             session.finalized(),
+            EvaluationMode::Development,
             &typed(
                 Some(PolicyReference::new(
                     PolicyId::new("consumer.critical_flow")?,
@@ -276,6 +277,7 @@ fn missing_and_ambiguous_exact_revisions_reject() -> Result<(), Box<dyn Error>> 
     assert!(matches!(
         resolve_selection_request(
             session.finalized(),
+            EvaluationMode::Development,
             &typed(
                 Some(PolicyReference::new(
                     PolicyId::new("consumer.critical_flow")?,
@@ -289,6 +291,7 @@ fn missing_and_ambiguous_exact_revisions_reject() -> Result<(), Box<dyn Error>> 
     assert!(matches!(
         resolve_selection_request(
             session.finalized(),
+            EvaluationMode::Development,
             &typed(
                 Some(PolicyReference::new(
                     PolicyId::new("consumer.critical_flow")?,

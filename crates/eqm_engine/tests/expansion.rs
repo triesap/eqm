@@ -44,6 +44,21 @@ fn workspace() -> Result<tempfile::TempDir, Box<dyn Error>> {
         fs::copy(root.join(file), directory.path().join(file))?;
     }
     copy_tree(&root.join("eqm"), &directory.path().join("eqm"))?;
+    // This fixture exercises fragment expansion and the frozen v1 graph
+    // projection in isolation. Participation authority is a v2-only axis and
+    // is covered by its own fixtures and steps, so remove the authored v2
+    // participation documents here rather than teaching this v1 projection to
+    // carry them.
+    for entry in fs::read_dir(directory.path().join("eqm/contracts"))? {
+        let entry = entry?;
+        if entry
+            .file_name()
+            .to_string_lossy()
+            .starts_with("participation.")
+        {
+            fs::remove_file(entry.path())?;
+        }
+    }
     Ok(directory)
 }
 

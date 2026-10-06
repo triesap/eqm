@@ -1,6 +1,268 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
-## DEV-030 — Close checked scope boundaries and complete P04/P05
+## DEV-034 — Owner-requested smaller implementation batch
+
+The owner requests a smaller batch after the preceding implementation session
+ended without product edits or a commit. Preserve all uncommitted work and all
+47 numbered acceptances. Original requirements, acceptance criteria, verification
+and the full MVP through S211 remain unchanged. DEV-033 technical decisions are
+retained; its 26-checkpoint execution authorization is superseded for this run.
+
+**Current command:** `pfc through P04-R4A`. Complete only the focused release
+matching repair below, one green checkpoint, then return for Codex review. Do not
+start P04-R4B/P04-R4C or S052. This smaller endpoint is explicitly owner-requested.
+
+### P04-R4A — Reject incomplete non-target evidence (RF79)
+
+Commit `fix: reject incomplete non-target release evidence`.
+Remove the any-member TargetSet and unrestricted Provider matcher shortcuts.
+Ordinary target evidence cannot satisfy provider/target-set/scenario obligations
+without complete exact subject/configuration/participant/dependency authority.
+Until the later owning steps integrate that complete representation, these
+coordinates remain Missing/Unknown and cannot produce Pass/Conditional.
+
+Add same-ingress single-member and wrong-provider negative controls. Preserve
+all original signup end-to-end obligations and their denominator. Keep a separate,
+explicitly authored supported EachTarget-only synthetic positive control; it
+must not masquerade as full signup/scenario coverage or remove required work
+from the original fixture. Regenerate only causally changed reviewed goldens and
+disclose them. No premature S052/S054/S059/S061/S073 implementation.
+
+Retain the existing partial participation/selection edits. They may be included
+with approved pending planning in this first verified repair commit, with honest
+partial dispositions; this does not close their outstanding acceptance. RF82
+provenance and RF81 protected consumer integration remain open and non-authorizing
+where required. No claim that green tests make all release admission complete.
+
+**Green:** real release ingress rejects incomplete non-target evidence, supported
+positive control passes under explicit synthetic authority, original complete
+scope remains visible; original owning tests, fmt, locked workspace check,
+Clippy, full `cargo xtask check`, relevant doctests, schema parity, package
+structure and diff pass after final edits. No thresholds or assertions weakened.
+
+### Remaining aggregate repair and sequence (not this batch)
+
+- P04-R4B: RF78/RF81/RF82 complete checked graph/context/status provenance and
+  protected actual consumer preparation, retaining DEV-033 decisions.
+- P04-R4C: remaining RF75/RF81 durable matrix, RF83 real-CLI v1/v2 controls,
+  version/usage guidance and final aggregate admission/integration evidence.
+- Only after all three allocated slices and aggregate criteria are verified may
+  P04-R4 be considered implemented. Codex independently accepts it. Then original
+  S052–S076, independent evaluator review before S077, and the full S211 plan.
+
+Load only current amendment, active finding/criterion and relevant source/tests.
+Use targeted tests while iterating and full gates when the slice is ready. Keep
+large logs external, inspect concise failure excerpts, and update compact resume
+state. Do not load the whole ledger, native history or later-step specifications.
+No product scope reduction, acceptance waiver or public private metadata.
+
+## Historical DEV-033 — superseded execution horizon; decisions retained
+
+## DEV-033 — Resume preserved repair and complete P04/P05
+
+**Codex disposition:** the returned candidate is the uncommitted working tree at
+`3265bbee657d08ae43b801cf6f5beaec42be8c23`, not a new commit. Preserve every
+implementation edit and all 47 earlier numbered acceptances. P04-R4 is partial;
+S052–S076 are unstarted. [Independent review](reports/CODEX-P04-R4-partial.md)
+records verified contributions and remaining authority defects. DEV-032 and
+DEV-030 representation decisions below remain binding; this amendment clarifies
+execution and the already-required status provenance. Original 64 R/AC, 21 RA,
+Q01–Q15 and full S211 scope remain unchanged.
+
+**Batch:** `pfc through EQM-P05`, finish P04-R4 then S052–S076 inclusive (26
+coherent checkpoints). Continue across S058/S059; independent complete-universe/
+reference-evaluator review at S076 before S077. No new repair-only review gate.
+No genuine owner-only blocker or human release-test milestone is reached.
+
+### Preserve and finish P04-R4
+
+- Retain removal of the empty participation fallback, mode-aware unresolved
+  selection with typed missing/ambiguous causes, same-graph policy comparison,
+  explicit synthetic v2 participation and formatting repairs. These are partial
+  contributions, not complete RF75/RF78/RF81 acceptance: durable adversarial
+  controls and the full original admission contract must still land.
+- RF79 remains unchanged in production. Reject ordinary target evidence for
+  Provider/TargetSet/scenario scope unless complete exact subjects/configuration/
+  participants/dependencies are validated. Fail closed now; complete scope
+  integration remains allocated to S052/S054/S059/S061/S073. Preserve supported
+  single-target positive controls, same-ingress non-target negatives and complete
+  scenario positives at their owning steps. Do not delete required end-to-end
+  work, invent authority, or treat separate target passes as a scenario proof.
+- **RF82 (remaining RF78 contract):** graph policy/context equality at derivation
+  does not bind status admission. A graph with minimum_count=1 and a graph with
+  minimum_count=2 produce identical current keys; the stronger graph accepts
+  the weaker graph's satisfied status map. Bind graph semantics, exact selected
+  policy/profile definitions and values, applicability, mode/authority and
+  immutable scope context to derivation and its status carrier. Privately validate
+  the carrier and reject cross-context admission even when visible keys match.
+  Keep the engine pure; canonical identity is computed by the application through
+  existing manifest projection boundaries, with no manifest→engine production
+  edge. Do not let a freely caller-assigned identity or origin tag establish
+  provenance. Same immutable semantic context may be reused without artificial
+  object-address identity. S054 adds the later complete wire obligation identity;
+  it does not defer this present admission safety. A naked BTreeMap is data, not
+  an authorizing evaluated result. Pure reference/fixture status inputs remain
+  explicitly non-authorizing. Update actual consumers together.
+- RF81 integration remains open: release_check calls
+  evaluation::derive_with_policy_universe, which hardcodes Development. The new
+  mode-aware resolver is not yet used as protected release preparation. Do not
+  promote a candidate-local development snapshot to a protected result. Use
+  exact permitted protected selection in the application; absent host authority
+  stays explicitly non-authorizing. Synthetic explicitly injected authority may
+  test local semantics but cannot prove live trust readiness. Do not build the
+  later host trust system prematurely or fabricate production inputs.
+- Require real preparation controls for empty/asymmetric/false/unknown
+  participation; foreign weaker policy/applicability/profile definition; changed
+  graph with identical coordinate labels and different strength; absent provider/
+  scenario coverage; single-member/wrong-provider evidence; protected omitted
+  policy/revisions/profiles/values versus exact complete input; typed missing vs
+  ambiguous failures. Retain private-constructor compile-fail proofs.
+- **RF83:** retain an independent real-CLI valid v1 workspace/lock positive
+  control alongside v2 and unsupported-version/wrong-kind negatives. The changed
+  V1_WORKSPACE constant now names v2, so the comment claiming an unmutated v1
+  control is false. Name fixtures/constants accurately and synchronize authored
+  format/agent usage guidance with the actually supported v1/v2 families;
+  migrating the shared
+  example must not erase the earlier v1 reader regression coverage.
+- The approved v2 example migration is synthetic authored authority. Frozen v1
+  readers/schema bytes remain intact. Isolated v1 projection tests may omit v2
+  participation only when they assert projection/expansion, never conformance.
+  Record old/new example and reviewed golden digests; do not regenerate semantic
+  goldens merely to hide a coverage regression. P04-R4 report and progress must
+  describe all preserved uncommitted work and the actual completed controls.
+
+### Continuation and context discipline
+
+All scenario-binding, provider dependency, expected-selection and evaluator
+choices in DEV-030/DEV-032 are settled. Resume implementation rather than reload
+all historical ledgers/logs. Read the current amendment and review, then use
+scoped structured ledger queries and the active step's exact acceptance criteria.
+Keep logs externally; summarize failures with relevant lines rather than dump
+whole repeated logs. Maintain a concise external resume receipt after each green
+checkpoint. Preserve every required lane and threshold. A long conversation or
+passing workspace subset is not completion; continue until S076 or a genuine
+runtime limit/user stop/new hard dependency. Record observed limit evidence
+separately from an estimate; do not assert a hard runtime error without one.
+
+All standard/owning/schema/structure/diff gates in DEV-032 remain required after
+final product edits and before each authorized green commit. First P04-R4 commit
+includes the approved supervisor planning files and preserved implementation.
+No Codex product changes, scope waiver, public private metadata, parent gitlink
+staging, push, deployment, signing or native activation is authorized.
+
+## Historical DEV-032 — prior repair issuance
+
+## DEV-032 — Finish exact admission repairs and the full reference evaluator
+
+**Date/author:** 2026-10-06, Codex under owner delegation.
+**Reviewed candidate:** `3265bbee657d08ae43b801cf6f5beaec42be8c23`.
+[Independent review](reports/CODEX-3265bbe.md) retains both repair commits.
+P04-R2/R3 are partial, not independently accepted as complete checkpoints.
+The engine-owned private finalization/token and raw-data manifest API repair
+(RF73), and documentation link repair (RF77), are allocated accepted contributions.
+Preserve all47 earlier numbered local acceptances. S044/S047/S048/S049 remain
+changes-required; no full AC/RA/platform/live gate is closed by these subsets.
+DEV-031 active observation is now superseded by the completed candidate.
+All original64R/AC21RAQ01–Q15S211 and retained DEV-030/DEV-028 decisions remain.
+
+**Batch:** `pfc through EQM-P05`, P04-R4 then S052–S076 inclusive,26 separate
+coherent green checkpoints. Complete the admission repair and all25 later steps,
+continuing across S058/S059. Stop after S076 for required independent full
+required-universe/reference-evaluator review before S077 storage integration.
+No new review gate is inserted after the repair or after P04. Original dependencies
+and available verification remain binding; genuinely unavailable external inputs
+block their dependent acceptance, not other approved configurable/local work.
+
+### P04-R4 — Bind derivation to explicit complete scope
+
+Commit `fix: bind derivation to explicit complete scope`.
+Owns remaining RF72/RF74/RF75 and new RF78/RF79/RF80/RF81.
+
+1. **No empty-registry fallback (RF75).** Remove `participation_active`/None→true
+   bypass. Missing exact participation is Unknown in every mode and wire version;
+   an empty registry is not version detection. Raw v1 bytes/readers remain their
+   declared contract, but missing new scope authority cannot authorize. Synthetic
+   positive fixtures may migrate deliberately to explicit v2 authored participation
+   and real loader input where required. Do not infer rules from target lists,
+   invent live values or add a legacy/compatibility reader. Preserve explicit false
+   and every exact unresolved coordinate. Evaluate and validate all declared
+   applicability axes, including combined false/unknown controls.
+2. **Same checked derivation inputs (RF78).** Current public derivation accepts a
+   selected policy borrowed from a different graph; same IDs/revisions can shrink
+   the denominator and make an omitted original target Conformant. Bind selection
+   and applicability to the same immutable checked graph and exact mode/authority/
+   profile values, with private engine-owned validated preparation provenance.
+   Public authorizing derivation must either consume that checked preparation or
+   verify exact same-graph selection/definition/context before deriving; raw helper
+   requests cannot promote authority. A foreign policy or context is an error,
+   not an empty scope or fallback. Bind semantic graph/scope identity to later
+   status admission so identically spelled keys across different contract inputs
+   cannot masquerade as the same denominator. Engine remains pure/no serializer;
+   application supplies canonical identity through existing manifest projection
+   boundaries. Exact graph identity and current context are verified, not parsed
+   tags. Keep no production manifest→engine dependency.
+3. **No target evidence promotion (RF79).** Current release matcher accepts any
+   target member for TargetSet and any binding for Provider. A passing web-target
+   test cannot prove an ios+web scenario or exact provider obligation. Reject or
+   retain Unknown/Missing for unsupported/incomplete scope evidence now; remove
+   permissive matching shortcuts. Non-target evidence must match complete scope,
+   participant/dependency/subject/configuration authority. S052/S054/S059/S061/S073
+   integrate full representations at their original steps; do not implement those
+   later steps inside this repair. Preserve a same-ingress negative regression
+   for one-member/wrong-provider evidence. If a v1 fixture cannot express the
+   required scope, it stays explicitly non-authorizing; document legitimate
+   semantic golden changes and retain independent supported complete-scope
+   positive controls without deleting required-work or adversarial assertions.
+4. **Explicit protected preparation (RF81/RF74).** New typed resolution is shared,
+   but `prepare_obligations_from_request` fills omitted policy/revisions even in
+   Release with ProtectedBaseline. Unique candidate lookup is Development only.
+   Make mode explicit at the unresolved request admission boundary. PullRequest/
+   Release require explicit exact policy and complete selected profile revisions/
+   values from their permitted authority; reject absent policy/revision/profile
+   instead of filling it. No implicit defaults or authority from an origin tag.
+   Existing host/trust integration remains separate; synthetic origins prove pure
+   negative semantics only. Distinguish zero stored revisions (NotFound) from
+   multiple (Ambiguous); both reject, retaining typed causal diagnostics.
+5. **Actual green/evidence discipline (RF80/RF76).** Current standard check fails
+   rustfmt at selection_preparation.rs:224; P04-R3 did not run the combined standard
+   gate after its final edits. Pi repairs formatting and runs the full actual gate
+   on the final tree before committing this repair and each later checkpoint.
+   Update reports/cursors/actual SHAs and keep implemented/verified/accepted
+   distinct. Preserve unique failed attempt logs with true upstream exits.
+   Cosmetic progress indentation is normalized by the supervisor; do not
+   reserialize it wholesale or overwrite acceptance records.
+
+**Required durable controls:** empty registry; positive/false/unknown/asymmetric
+participation via real preparation; foreign same-ID weaker policy and foreign
+applicability; changed graph with identical coordinate labels; omitted provider/
+scenario coverage; wrong provider and single-target evidence; protected omitted
+policy/revisions/profiles versus explicit complete inputs; exact missing versus
+ambiguous cause; existing private-constructor compile-fail tests. Original
+unmatched advisory warnings do not become new mandatory obligations.
+
+**Green/verification:** original S044/S047/S048/S049 lanes, all-target domain/
+manifest/protocol/engine/application/CLI tests, relevant owning doctests and actual
+application/release ingress; fmt/check/Clippy/full `cargo xtask check`, schemas
+parity, package structure and diff. All run after the final edits, logs retain
+failed and successful attempts. Do not commit a red checkpoint or substitute
+helper/component tests for the required full standard gate.
+
+### Eligible successor decisions remain settled
+
+S052 uses explicit FullRequirementId→exact ScenarioRef bindings as immutable
+preparation authority, repeated role-bearing actor/dependency scope and existing
+provider dependency closure; the separate `eqm:v2:requirement-scenario-bindings`
+projection/domain is frozen in DEV-030/ADR-0013. No guessed/all-scenario/TargetSet
+fallback. S053 expected logical manifests precede results, AND by default,
+protected frozen alternatives only, broad selectors need explicit approved sets.
+S054 complete identity binds graph/profile/scope/expectations; S055–S058 inventory/
+strengthening/query rules and all S059–S076 evidence/count/retry/campaign/freshness/
+waiver/participant/reference-evaluator contracts remain exactly as approved.
+Continue all26 checkpoints; no correction-only handback after a green repair.
+Q05 missing live business values do not block pure configurable semantics or
+local/synthetic automation. All original external acceptance gates remain explicit.
+
+## Historical DEV-030 — Close checked scope boundaries and complete P04/P05
 
 **Date/author:** 2026-10-05, Codex under owner delegation.
 **Reviewed candidate:** `7a5b2465d293f482c22f2e8e4271a6b1507915c2`.
