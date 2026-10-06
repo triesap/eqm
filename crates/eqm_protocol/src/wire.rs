@@ -188,7 +188,7 @@ fn unsigned_schema() -> Schema {
 
 /// Returns the schema for a canonical unsigned v2 wire integer of at least one.
 ///
-/// This mirrors [`unsigned_schema`] but excludes zero, matching owning positive
+/// This mirrors `unsigned_schema` but excludes zero, matching owning positive
 /// authority revisions such as `Revision` (`NonZeroU64`).
 pub fn positive_unsigned_schema(_generator: &mut SchemaGenerator) -> Schema {
     let mut object = Map::new();

@@ -789,7 +789,7 @@ fn usage(message: impl Into<String>) -> UsageError {
 
 /// Returns deterministic top-level help.
 pub const fn help() -> &'static str {
-    "EquivalenceMatrix\n\nUsage: eqm [GLOBAL OPTIONS] <COMMAND> [ARGS] [OPTIONS]\n\nCommands:\n  init  new  fmt  validate  check  show  locate  context\n  matrix  obligations  diff  affected  discover  reconcile\n  verify  attest  release check  explain  doctor  lock update  mcp serve\n\nGlobal options:\n  --config <PATH>  --profile <ID[=VALUES]>  --policy <ID[@REVISION]>  --format <FORMAT>\n  --offline  --no-progress  --color <WHEN>  --baseline <IDENTITY>\n  --output <PATH>\n"
+    "EquivalenceMatrix\n\nUsage: eqm [GLOBAL OPTIONS] <COMMAND> [ARGS] [OPTIONS]\n\nCommands:\n  init  new  fmt  validate  check  show  locate  context\n  matrix  obligations  diff  affected  discover  reconcile\n  verify  attest  release check  explain  doctor  lock update  mcp serve\n\nGlobal options:\n  --config <PATH>  --profile <ID[@REVISION][=VALUES]>  --policy <ID[@REVISION]>  --format <FORMAT>\n  --offline  --no-progress  --color <WHEN>  --baseline <IDENTITY>\n  --output <PATH>\n"
 }
 
 #[cfg(test)]

@@ -438,7 +438,8 @@ fn inspect_repository(
 /// Missing or failed Git, unsupported identity, concealed entries, nested
 /// concealment, Gitlink `HEAD` mismatch, unavailable nested inspection and
 /// traversal bounds are typed errors that never default to clean. `dirty` is
-/// true, and [`clean`] false, when any non-authorizing content is present.
+/// true, and [`SourceProvenance::clean`] false, when any non-authorizing content
+/// is present.
 pub fn inspect_source_provenance(root: &Path) -> Result<SourceProvenance, SourceProvenanceError> {
     let repository = repository_identity(root)?;
     let commit = git_stdout(root, &["rev-parse", "HEAD"])?;

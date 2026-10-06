@@ -5,7 +5,11 @@
 //! that protected modes can never take an implicit development branch or a
 //! candidate-local authority.
 
-use eqm_application::{ObligationPreparationError, SessionRequest, prepare, prepare_obligations};
+use eqm_application::{
+    ObligationPreparationError, PolicyReference, PolicySelectionRequest, ProfileSelection,
+    SelectionPreparationError, SessionRequest, prepare, prepare_obligations,
+    resolve_selection_request,
+};
 use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId, UtcInstant};
 use eqm_engine::{
     AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,
@@ -167,5 +171,137 @@ fn trusted_invocation_selection_is_reusable_across_modes() -> Result<(), Box<dyn
         ),
         "release mode requires protected baseline authority"
     );
+    Ok(())
+}
+
+fn typed(
+    policy: Option<PolicyReference>,
+    profiles: Vec<ProfileSelection>,
+) -> PolicySelectionRequest {
+    PolicySelectionRequest::development(policy, profiles)
+}
+
+#[test]
+fn typed_request_resolves_the_same_exact_authority_as_the_adapter() -> Result<(), Box<dyn Error>> {
+    let repository = example()?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let input = typed(
+        Some(PolicyReference::new(
+            PolicyId::new("consumer.critical_flow")?,
+            None,
+        )),
+        vec![ProfileSelection::new(
+            ProfileId::new("audience.default")?,
+            None,
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new("us")?),
+            )],
+        )],
+    );
+    let resolved = resolve_selection_request(session.finalized(), &input)?;
+    let expected = request(AuthorityOrigin::CandidateLocal, "us")?;
+    assert_eq!(resolved, expected);
+    let prepared = prepare_obligations(
+        session.finalized(),
+        EvaluationMode::Development,
+        Some(&resolved),
+        None,
+        None,
+    )?;
+    assert!(!prepared.derivation().obligations.is_empty());
+    Ok(())
+}
+
+#[test]
+fn duplicate_identical_profile_selection_rejects_before_resolution() -> Result<(), Box<dyn Error>> {
+    let repository = example()?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let selection = ProfileSelection::new(ProfileId::new("audience.default")?, None, vec![]);
+    let input =
+        PolicySelectionRequest::development(None, vec![selection.clone(), selection]);
+    assert!(matches!(
+        resolve_selection_request(session.finalized(), &input),
+        Err(SelectionPreparationError::DuplicateProfile { .. })
+    ));
+    Ok(())
+}
+
+#[test]
+fn missing_and_ambiguous_exact_revisions_reject() -> Result<(), Box<dyn Error>> {
+    let repository = example()?;
+    let policy_path = repository
+        .path()
+        .join("eqm/policies/consumer.critical_flow.toml");
+    let policy = fs::read_to_string(&policy_path)?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/policies/consumer.critical_flow.r2.toml"),
+        policy.replace("revision = 1", "revision = 2"),
+    )?;
+    let profile_path = repository.path().join("eqm/profiles/audience.default.toml");
+    let profile = fs::read_to_string(&profile_path)?;
+    fs::write(
+        repository
+            .path()
+            .join("eqm/profiles/audience.default.r2.toml"),
+        profile.replace("revision = 1", "revision = 2"),
+    )?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    // An omitted revision with more than one stored revision is ambiguous.
+    assert!(matches!(
+        resolve_selection_request(
+            session.finalized(),
+            &typed(
+                Some(PolicyReference::new(
+                    PolicyId::new("consumer.critical_flow")?,
+                    None
+                )),
+                vec![]
+            )
+        ),
+        Err(SelectionPreparationError::PolicyAmbiguous { .. })
+    ));
+    // An explicit revision that is not stored is missing, never remapped.
+    assert!(matches!(
+        resolve_selection_request(
+            session.finalized(),
+            &typed(
+                Some(PolicyReference::new(
+                    PolicyId::new("consumer.critical_flow")?,
+                    Some(Revision::new(9)?)
+                )),
+                vec![]
+            )
+        ),
+        Err(SelectionPreparationError::PolicyNotFound { .. })
+    ));
+    assert!(matches!(
+        resolve_selection_request(
+            session.finalized(),
+            &typed(
+                Some(PolicyReference::new(
+                    PolicyId::new("consumer.critical_flow")?,
+                    Some(Revision::new(1)?)
+                )),
+                vec![ProfileSelection::new(
+                    ProfileId::new("audience.default")?,
+                    Some(Revision::new(9)?),
+                    vec![],
+                )]
+            )
+        ),
+        Err(SelectionPreparationError::ProfileNotFound { .. })
+    ));
     Ok(())
 }

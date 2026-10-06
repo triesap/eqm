@@ -1,145 +1,46 @@
 //! Thin CLI adapter over application-owned policy selection preparation.
 
 use crate::session::PreparedSession;
-use eqm_application::prepare_obligations;
-use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId, WorkspaceGraph};
+use eqm_application::{
+    PolicyReference, PolicySelectionRequest, ProfileSelection, prepare_obligations,
+    resolve_selection_request,
+};
+use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId};
 use eqm_engine::{
-    AuthorityOrigin, EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest,
-    PolicyRef, ProfileRequest, RequiredUniverse, ScopeSubject, SelectedPolicyProfiles,
+    EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest, RequiredUniverse,
+    ScopeSubject, SelectedPolicyProfiles,
 };
 use eqm_protocol::{FacetStatusDto, ObligationDto, ProfileValueDto};
-use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::error::Error;
 
-type ProfileValues = Vec<(DimensionId, Option<SymbolicValueId>)>;
-
-/// Builds the explicit development request from CLI policy/profile arguments.
+/// Parses CLI policy/profile arguments and resolves them through the shared
+/// application operation.
 ///
-/// Reusing the application selection operation keeps authority preparation out
-/// of the calling command; this adapter only parses transport arguments and
-/// resolves exact policy/profile revisions. It never selects a latest revision:
-/// an ambiguous or missing stored authority requires an explicit selection.
+/// This adapter only parses transport syntax into a typed
+/// [`PolicySelectionRequest`]; exact revision resolution, ambiguity rejection
+/// and policy membership are owned by
+/// [`eqm_application::resolve_selection_request`] over the one immutable session.
 pub fn development_request(
     session: &PreparedSession,
     policy: Option<&str>,
     requested: &[String],
 ) -> Result<PolicyProfileRequest, Box<dyn Error>> {
-    let graph = session.finalized().graph();
-    let (policy_id, policy_revision) = resolve_policy(graph, policy)?;
-    let policy = graph
-        .policies()
-        .get(&(policy_id, policy_revision))
-        .ok_or("selected policy revision was not found")?;
-    let mut selected: BTreeMap<ProfileId, (Option<Revision>, ProfileValues)> = BTreeMap::new();
-    for value in requested {
-        let (id, revision, values) = parse_profile(value)?;
-        if selected.insert(id.clone(), (revision, values)).is_some() {
-            return Err(format!("profile `{id}` was selected more than once").into());
-        }
-    }
-    if selected.keys().any(|id| !policy.profiles().contains(id)) {
-        return Err("selected profile is outside the policy profile set".into());
-    }
-    let profiles = policy
-        .profiles()
-        .iter()
-        .map(|id| {
-            let (explicit_revision, values) = selected.get(id).cloned().unwrap_or_default();
-            let revision = resolve_profile_revision(graph, id, explicit_revision)?;
-            Ok(ProfileRequest::new(id.clone(), revision, values)?)
-        })
-        .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
-    Ok(PolicyProfileRequest::new(
-        AuthorityOrigin::CandidateLocal,
-        PolicyRef::new(policy.id().clone(), policy.revision()),
-        profiles,
-    )?)
+    let input = development_selection(policy, requested)?;
+    Ok(resolve_selection_request(session.finalized(), &input)?)
 }
 
-/// Resolves the exact policy authority for development selection.
-///
-/// An explicit `ID` or `ID@REVISION` is authoritative; without one, exactly one
-/// stored policy ID and revision must exist. Multiple IDs or revisions are an
-/// explicit ambiguity, never an arbitrary or latest choice.
-fn resolve_policy(
-    graph: &WorkspaceGraph,
+/// Parses CLI policy/profile arguments into the shared typed selection request.
+pub fn development_selection(
     policy: Option<&str>,
-) -> Result<(PolicyId, Revision), Box<dyn Error>> {
-    match policy {
-        Some(value) => {
-            let (id, revision) = parse_policy(value)?;
-            let revision = match revision {
-                Some(revision) => revision,
-                None => unique_revision(policy_revisions(graph, &id), "policy", &id)?,
-            };
-            if !graph.policies().contains_key(&(id.clone(), revision)) {
-                return Err(format!("policy `{id}@{revision}` was not found").into());
-            }
-            Ok((id, revision))
-        }
-        None => {
-            let ids: BTreeSet<&PolicyId> = graph.policies().keys().map(|(id, _)| id).collect();
-            if ids.len() != 1 {
-                return Err(
-                    "exactly one development policy ID is required; select --policy explicitly"
-                        .into(),
-                );
-            }
-            let id = ids.into_iter().next().ok_or("policy ID")?.clone();
-            let revision = unique_revision(policy_revisions(graph, &id), "policy", &id)?;
-            Ok((id, revision))
-        }
-    }
-}
-
-/// Resolves one exact profile revision, rejecting an ambiguous or missing
-/// stored authority rather than selecting a latest revision.
-fn resolve_profile_revision(
-    graph: &WorkspaceGraph,
-    id: &ProfileId,
-    explicit: Option<Revision>,
-) -> Result<Revision, Box<dyn Error>> {
-    match explicit {
-        Some(revision) => {
-            if graph.profiles().contains_key(&(id.clone(), revision)) {
-                Ok(revision)
-            } else {
-                Err(format!("profile `{id}@{revision}` was not found").into())
-            }
-        }
-        None => unique_revision(profile_revisions(graph, id), "profile", id),
-    }
-}
-
-fn policy_revisions(graph: &WorkspaceGraph, id: &PolicyId) -> Vec<Revision> {
-    graph
-        .policies()
-        .keys()
-        .filter(|(candidate, _)| candidate == id)
-        .map(|(_, revision)| *revision)
-        .collect()
-}
-
-fn profile_revisions(graph: &WorkspaceGraph, id: &ProfileId) -> Vec<Revision> {
-    graph
-        .profiles()
-        .keys()
-        .filter(|(candidate, _)| candidate == id)
-        .map(|(_, revision)| *revision)
-        .collect()
-}
-
-fn unique_revision(
-    revisions: Vec<Revision>,
-    kind: &str,
-    id: &impl std::fmt::Display,
-) -> Result<Revision, Box<dyn Error>> {
-    match revisions.as_slice() {
-        [revision] => Ok(*revision),
-        [] => Err(format!("{kind} `{id}` was not found").into()),
-        _ => Err(format!("{kind} `{id}` has multiple revisions; select one explicitly").into()),
-    }
+    requested: &[String],
+) -> Result<PolicySelectionRequest, Box<dyn Error>> {
+    let policy = policy.map(parse_policy).transpose()?;
+    let profiles = requested
+        .iter()
+        .map(|value| parse_profile(value))
+        .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+    Ok(PolicySelectionRequest::development(policy, profiles))
 }
 
 /// Selects development authority for an optional explicit policy reference.
@@ -186,17 +87,15 @@ pub fn derive_with_policy_universe<'a>(
     Ok((selection, derivation, universe))
 }
 
-fn parse_policy(value: &str) -> Result<(PolicyId, Option<Revision>), Box<dyn Error>> {
+fn parse_policy(value: &str) -> Result<PolicyReference, Box<dyn Error>> {
     let (id, revision) = match value.split_once('@') {
         Some((id, revision)) => (id, Some(parse_revision(revision)?)),
         None => (value, None),
     };
-    Ok((PolicyId::new(id)?, revision))
+    Ok(PolicyReference::new(PolicyId::new(id)?, revision))
 }
 
-fn parse_profile(
-    value: &str,
-) -> Result<(ProfileId, Option<Revision>, ProfileValues), Box<dyn Error>> {
+fn parse_profile(value: &str) -> Result<ProfileSelection, Box<dyn Error>> {
     let (head, assignments) = value.split_once('=').unwrap_or((value, ""));
     let (id, revision) = match head.split_once('@') {
         Some((id, revision)) => (id, Some(parse_revision(revision)?)),
@@ -216,7 +115,7 @@ fn parse_profile(
             })
             .collect::<Result<Vec<_>, Box<dyn Error>>>()?
     };
-    Ok((ProfileId::new(id)?, revision, values))
+    Ok(ProfileSelection::new(ProfileId::new(id)?, revision, values))
 }
 
 fn parse_revision(value: &str) -> Result<Revision, Box<dyn Error>> {

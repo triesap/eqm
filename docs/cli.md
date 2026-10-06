@@ -3,11 +3,22 @@
 ## Global options
 
 Global options may appear before or after the command. Important options are
-`--config PATH`, repeatable `--profile SELECTION`, `--format
-human|json|sarif|markdown`, `--offline`, `--no-progress`, `--color
-auto|always|never`, `--baseline ID`, and `--output PATH`. `--output -` means
-stdout. Machine formats emit one deterministic document on stdout; progress
-and diagnostics belong on stderr.
+`--config PATH`, repeatable `--profile ID[@REVISION][=DIM:VALUE,...]`, `--policy
+ID[@REVISION]`, `--format human|json|sarif|markdown`, `--offline`,
+`--no-progress`, `--color auto|always|never`, `--baseline ID`, and `--output
+PATH`. `--output -` means stdout. Machine formats emit one deterministic
+document on stdout; progress and diagnostics belong on stderr.
+
+`--policy` and `--profile` accept an optional exact `@REVISION`. An omitted
+revision resolves only when exactly one stored revision exists; an ambiguous or
+missing stored authority requires an explicit selection and is never replaced
+by a latest revision. An explicit `--profile` must name a profile declared by
+the resolved policy, and duplicate profile or dimension selections reject.
+
+These options are unverified candidate inputs. They are accepted only as an
+explicit development selection; a protected mode requires protected authority
+and never falls back to a development default. Parsing an exact revision does
+not itself grant trust.
 
 ## Authoring commands
 

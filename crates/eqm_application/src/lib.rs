@@ -60,7 +60,9 @@ pub use provenance::{
     prepare_target_configuration,
 };
 pub use selection::{
-    ObligationPreparationError, PreparedObligations, applicability_context, prepare_obligations,
+    ObligationPreparationError, PolicyReference, PolicySelectionRequest, PreparedObligations,
+    ProfileSelection, SelectionPreparationError, applicability_context, prepare_obligations,
+    prepare_obligations_from_request, resolve_selection_request,
 };
 pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
 pub use source::{
