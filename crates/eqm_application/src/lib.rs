@@ -36,6 +36,7 @@ pub mod clock;
 pub mod cohort;
 pub mod comparison;
 pub mod evaluation;
+pub mod expected_selection;
 pub mod provenance;
 pub mod selection;
 pub mod session;
@@ -54,6 +55,10 @@ pub use comparison::{
 };
 pub use evaluation::{
     EvaluationRequest, EvidenceReadError, EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ,
+};
+pub use expected_selection::{
+    ExpectedSelectionPreparationError, ExpectedSelectionProvider, PreparedExpectedSelections,
+    prepare_expected_selections,
 };
 pub use provenance::{
     PolicyProvenanceError, PolicyProvenanceV2, TargetConfigurationError, prepare_policy_provenance,

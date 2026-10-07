@@ -121,19 +121,28 @@ pub fn prepare_protected_obligations<'a>(
         return Err(ProtectedPreparationError::CandidateScopeMismatch);
     }
     let exact = exact.with_scope_bindings(authority.scope_bindings().clone());
-    prepare_obligations_from_request(protected, mode, &exact, release_context)
-        .map_err(ProtectedPreparationError::Preparation)
+    let mut prepared = prepare_obligations_from_request(protected, mode, &exact, release_context)
+        .map_err(ProtectedPreparationError::Preparation)?;
+    prepared.protected_authority_verified = true;
+    Ok(prepared)
 }
 
 /// One prepared selection with its applicability context and derived universe.
 ///
 /// The selection borrows the exact policy/profile definitions from the same
 /// immutable finalized graph the operation was given.
+/// A caller cannot assert protected graph-provider provenance:
+/// ```compile_fail
+/// fn forge(mut prepared: eqm_application::PreparedObligations<'_>) {
+///     prepared.protected_authority_verified = true;
+/// }
+/// ```
 pub struct PreparedObligations<'a> {
     selection: SelectedPolicyProfiles<'a>,
     applicability: ApplicabilityContext,
     derivation: ObligationDerivation,
     universe: RequiredUniverse,
+    pub(crate) protected_authority_verified: bool,
 }
 
 impl<'a> PreparedObligations<'a> {
@@ -784,6 +793,7 @@ pub fn prepare_obligations_with_scope_bindings<'a>(
     )
     .map_err(ObligationPreparationError::Obligations)?;
     Ok(PreparedObligations {
+        protected_authority_verified: false,
         selection,
         applicability,
         derivation,

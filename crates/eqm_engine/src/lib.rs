@@ -93,3 +93,10 @@ pub use structure::{
 pub use waivers::{WaivableStatus, WaiverEvaluation, WaiverInvalidReason, evaluate_waivers};
 
 pub use scope::{ProviderScope, ScenarioScope, ScopeBindingFailure, validate_scope_bindings};
+
+mod expected_selection;
+pub use expected_selection::{
+    ExpectedSelectionBindingError, ExpectedSelectionMap, SelectionObservation,
+    bind_expected_selections, evaluate_required_facets_with_expected_selections,
+    expected_selection_coverage,
+};

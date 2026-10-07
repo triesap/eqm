@@ -21,6 +21,8 @@ pub enum DigestDomain {
     Scenario,
     /// Explicit requirement-to-scenario binding identity (v2).
     RequirementScenarioBindings,
+    /// Frozen expected logical selection manifest (v2).
+    ExpectedSelectionManifest,
     /// Shared comparison-context identity (v2).
     ComparisonContext,
     /// Exact stored raw object bytes (v2).
@@ -70,6 +72,7 @@ impl DigestDomain {
             Self::SemanticGraph => b"eqm:v1:semantic-graph",
             Self::SemanticGraphV2 => b"eqm:v2:semantic-graph",
             Self::Scenario => b"eqm:v2:scenario",
+            Self::ExpectedSelectionManifest => b"eqm:v2:expected-selection-manifest",
             Self::RequirementScenarioBindings => b"eqm:v2:requirement-scenario-bindings",
             Self::ComparisonContext => b"eqm:v2:comparison-context",
             Self::RawObject => b"eqm:v2:raw-object",
@@ -327,6 +330,15 @@ define_identity_digest!(
     RequirementScenarioBindingsDigest,
     DigestDomain::RequirementScenarioBindings
 );
+define_identity_digest!(
+    /// Distinct expected-selection identity; cannot substitute for a plan.
+    /// ```compile_fail
+    /// let expected = eqm_domain::ExpectedSelectionManifestDigest::hash_content(b"x");
+    /// let _: eqm_domain::PlanDigest = expected;
+    /// ```
+    ExpectedSelectionManifestDigest,
+    DigestDomain::ExpectedSelectionManifest
+);
 
 fn decode_hex(byte: u8) -> Option<u8> {
     match byte {
@@ -462,6 +474,7 @@ mod tests {
             DigestDomain::Participation,
             DigestDomain::Scenario,
             DigestDomain::RequirementScenarioBindings,
+            DigestDomain::ExpectedSelectionManifest,
             DigestDomain::ComparisonContext,
         ];
         let mut labels = BTreeSet::new();

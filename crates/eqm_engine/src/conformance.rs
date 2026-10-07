@@ -211,6 +211,20 @@ pub fn evaluate_required_facets(
     universe: &crate::RequiredUniverse,
     inputs: BTreeMap<ObligationKey, FacetEvaluationInput>,
 ) -> Result<EvaluatedFacets, ConformanceError> {
+    if universe.expected_selections().is_some() {
+        return crate::evaluate_required_facets_with_expected_selections(
+            universe,
+            inputs,
+            &BTreeMap::new(),
+        );
+    }
+    evaluate_prepared_facets(universe, inputs)
+}
+
+pub(crate) fn evaluate_prepared_facets(
+    universe: &crate::RequiredUniverse,
+    inputs: BTreeMap<ObligationKey, FacetEvaluationInput>,
+) -> Result<EvaluatedFacets, ConformanceError> {
     if inputs.keys().any(|key| !universe.contains(key)) {
         return Err(ConformanceError::UnexpectedCoordinate);
     }

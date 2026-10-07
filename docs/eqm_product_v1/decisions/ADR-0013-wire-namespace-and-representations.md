@@ -212,3 +212,17 @@ zero-byte delimiter. This new map identity does not expand or replace frozen
 contract/policy-selection/graph roots. S052 owns the pure representation and
 independent literal oracle; S054 binds it to complete obligation identity. Any
 new public wire record requires atomic source DTO/reader/schema validation.
+
+## DEV-035 expected-selection identity allocation
+
+The pre-result expected-selection manifest uses a separate
+`eqm:v2:expected-selection-manifest` SHA-256 domain and zero delimiter. Its exact
+root is source, kind, count_unit, required, alternatives and
+independent_review_principals. Source retains binding ID/revision/component
+digest, binding-local specification ID/component digest, plan and campaign.
+Alternatives retain group IDs, all option definitions and the option selected
+before evidence. Required members, groups and options use canonical set rules;
+existing v2 numeric/NFC/JCS forms apply. No final obligation identity occurs
+inside the manifest. S053 owns representation/independent literal proof; S054
+binds its distinct digest into full obligation identity. Frozen component roots
+and v1 bytes remain unchanged. These projection bytes are not a new wire DTO.

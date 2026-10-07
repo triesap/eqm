@@ -15,14 +15,17 @@ coordinates. P04-R4A is accepted; complete provider/scenario semantics still
 belong to later owning steps. Preserve all 47 numbered acceptances and earlier
 RF73/RF77 acceptance. At that review S044/S047/S048/S049 remained partial. After P04-R4B/C
 standard and independent aggregate review, S044/S048/S049 receive numbered local
-acceptance (50 total); S047 exact scope integration remains S052/S054/S073.
-See [aggregate repair disposition](reports/P04-R4C.md). S052–S211 remain unfinished.
+acceptance (50 total). S052-A/B/C subsequently passed their allocated gates (51
+numbered acceptances). S047 residual identity/aggregation remains S054/S073.
+See [aggregate repair disposition](reports/P04-R4C.md) and [scope report](reports/S052.md).
+S053 subsequently passed its allocated gates (52 numbered local acceptances).
+S047 plus S054–S211 remain unfinished.
 See [independent review](reports/CODEX-b442b80.md).
 
-**Next order:** S052-A/B/C, S053–S076, mandatory independent complete-universe
+**Next order:** S054–S076, mandatory independent complete-universe
 and reference-evaluator acceptance before S077, then S077–S211 subject to their
-existing dependencies and gates. Repair RF84 in P04-R4C before aggregate repair
-acceptance. Retain DEV-033 representation/provenance decisions: exact checked
+existing dependencies and gates. RF84 is accepted for its allocated P04-R4C
+contribution. Retain DEV-033 representation/provenance decisions: exact checked
 same-graph policy/context/status authority; protected actual release callers use
 explicit policy/profile revisions; no weaker-graph status admission or implicit
 protected defaults. No new owner decision is currently required.
@@ -570,6 +573,47 @@ multiple selections require an explicit approved expected manifest; observed
 passing results cannot define it. Missing/ambiguous expectation is Unknown/
 incomplete, not success. Synthetic injected manifests prove pure semantics,
 not product values. Include exact manifest digest in S054 and later lineage.
+
+**DEV-035 S053 implementation allocation:** domain manifests are explicit claims,
+not trust constructors. Retain exact binding ID/revision/component digest and
+binding-local specification ID/component digest, kind/count unit, plan/campaign,
+required logical IDs and explicitly preselected alternative groups. Reject empty,
+duplicate or kind-incompatible selections. Never interpret SelectorText as a
+LogicalCaseId or discover expected IDs from observed outcomes.
+
+The application validates component hashes against the same immutable prepared
+graph, specification requirement/facet coverage and checked scope membership.
+Protected expectations come from a separate configured expected-selection port;
+candidate claims must equal that immutable provider response. Load it once; no
+clock, execution, graph reload or candidate fallback. Development expectations
+are explicit non-protected claims. Engine binding retains the complete map keyed
+by pre-identity ObligationKey in the private universe context; omission remains
+visible incomplete. Do not include a final ObligationDigest in the manifest,
+avoiding the S054 manifest/obligation identity cycle. Manifest serialization owns
+a distinct `eqm:v2:expected-selection-manifest` domain, separate from plan/spec.
+
+Development claims containing any chosen alternative reject with a typed
+UnprotectedAlternative error; ordinary required AND claims remain supported.
+Only the configured protected graph and expected-selection operations may admit
+a chosen alternative. Domain/pure projection constructors remain claims.
+
+Protected preparation additionally requires a private application marker set only
+after the configured graph-provider operation succeeds; caller origin/mode tags
+are insufficient. Count units and selected plan/campaign are uniform within one
+coordinate. Coverage requires every binding/specification association, but count
+credit uses distinct logical IDs, never multiple declarations of the same unit.
+Prior Unknown coverage dominates a missing expected member and cannot become
+waiver-eligible Missing.
+
+An expected-aware evaluation operation checks exact plan/campaign/component
+lineage, selected-case completeness and distinct declared units before admitting
+prepared facet facts. Missing/unselected/foreign cases cannot make a coordinate
+Satisfied; ordinary status evaluation on an expectation-bound universe cannot
+bypass this check. Observation claims still require owning evidence admission,
+trust and attempt/outcome validation in S059–S068. Keep original legacy consumer
+controls and track remaining transport integration under its owning steps; no
+whole RA03/feature closure follows from synthetic scope/case fixtures. Extend the
+S053 owning lane to manifest/application and doctests for the actual operation.
 
 For S057 strengthening, compare full visible denominator, including unresolved
 coordinates. Validate any authority transition before comparing semantic

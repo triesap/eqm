@@ -183,7 +183,7 @@ pub struct RequiredUniverse {
 /// Private semantic provenance; only checked derivation can construct it.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct EvaluationContext {
-    graph: eqm_domain::WorkspaceGraph,
+    pub(crate) graph: eqm_domain::WorkspaceGraph,
     scope_bindings: RequirementScenarioBindings,
     policy: eqm_domain::Policy,
     profiles: BTreeMap<ProfileId, SelectedProfile>,
@@ -191,7 +191,8 @@ pub(crate) struct EvaluationContext {
     mode: crate::EvaluationMode,
     origin: crate::AuthorityOrigin,
     release_context: Option<Sha256Digest>,
-    obligations: BTreeMap<ObligationKey, Obligation>,
+    pub(crate) obligations: BTreeMap<ObligationKey, Obligation>,
+    pub(crate) expected_selections: Option<crate::expected_selection::ExpectedSelectionMap>,
 }
 
 impl RequiredUniverse {
@@ -313,6 +314,7 @@ pub fn derive_required_universe_with_scope_bindings(
             origin: selection.origin(),
             release_context,
             obligations: derived.obligations,
+            expected_selections: None,
         },
     })
 }

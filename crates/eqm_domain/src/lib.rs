@@ -46,6 +46,7 @@ mod digest;
 mod entity;
 mod evidence;
 mod evidence_result;
+mod expected_selection;
 mod graph;
 mod id;
 mod inventory;
@@ -73,11 +74,11 @@ pub use diagnostic::{
 pub use digest::{
     AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest,
     ComparisonContextDigest, ContractDigest, DigestDomain, DigestParseError,
-    EvaluationContextDigest, EvidenceSpecificationDigest, ParticipationDigest, PlanDigest,
-    PolicySelectionDigest, ProviderConfigurationDigest, RawObjectDigest,
-    RequirementScenarioBindingsDigest, RunnerDigest, ScenarioDigest, SemanticEvidenceDigest,
-    SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest, TargetConfigurationDigest,
-    TrustConfigurationDigest,
+    EvaluationContextDigest, EvidenceSpecificationDigest, ExpectedSelectionManifestDigest,
+    ParticipationDigest, PlanDigest, PolicySelectionDigest, ProviderConfigurationDigest,
+    RawObjectDigest, RequirementScenarioBindingsDigest, RunnerDigest, ScenarioDigest,
+    SemanticEvidenceDigest, SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest,
+    TargetConfigurationDigest, TrustConfigurationDigest,
 };
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
@@ -95,6 +96,10 @@ pub use evidence_result::{
     EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject,
     ExecutionPayload, ExpectedLineageAuthority, MAX_RAW_EVIDENCE_BYTES, ProducerRef,
     ProfileSelection, RawEvidenceObject, RepositoryIdentity, SourceCommit,
+};
+pub use expected_selection::{
+    ExpectedSelectionError, ExpectedSelectionManifest, ExpectedSelectionSource,
+    FrozenSelectionAlternative, SelectionCountUnit,
 };
 pub use graph::{
     AdapterLockIdentity, ImportLockIdentity, SourceComponentError, WorkspaceGraph,

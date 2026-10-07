@@ -4,6 +4,7 @@ mod binding_v2;
 mod comparison_context_v2;
 mod contract_v2;
 mod evidence_spec_v2;
+mod expected_selection_v2;
 mod graph_v2;
 mod participation_v2;
 mod policy_v2;
@@ -19,6 +20,9 @@ pub use comparison_context_v2::{
 pub use contract_v2::{CanonicalContractV2, canonicalize_contract_v2, contract_v2};
 pub use evidence_spec_v2::{
     CanonicalEvidenceSpecV2, canonicalize_evidence_spec_v2, evidence_spec_v2,
+};
+pub use expected_selection_v2::{
+    CanonicalExpectedSelectionV2, canonicalize_expected_selection_v2, expected_selection_v2,
 };
 pub use graph_v2::{
     CanonicalGraphV2, CanonicalProviderConfigurationV2, canonicalize_graph_v2,
