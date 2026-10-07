@@ -44,8 +44,12 @@ eqm/
 .eqm/                 generated local state; never authored or committed
 ```
 
-Every authored TOML document declares an exact current schema URI under
-`https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/`.
+Every authored TOML document declares an exact supported schema URI under
+`https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/` or
+the explicitly supported additive `v2/manifest/` family. Workspace/participation
+examples use v2; lock and other retained families use their exact v1 readers.
+See [manifest versions](manifests.md) for the supported kinds. Legacy structural
+validity does not authorize implicit participation or protected release grading.
 The URI identifies the contract. Validation uses compiled local types and does
 not fetch schemas from the network.
 

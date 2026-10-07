@@ -187,7 +187,7 @@ fn participates(subject: &ScopeSubject, target: &TargetId) -> bool {
 }
 
 /// Engine-evaluated facet statuses bound to their immutable derivation context.
-/// Raw maps and serialized claims cannot construct this carrier.
+/// Raw status maps and serialized claims cannot construct this carrier.
 ///
 /// ```compile_fail
 /// use eqm_engine::{CompletePolicyResolution, RequiredUniverse};

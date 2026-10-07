@@ -135,7 +135,8 @@ mod tests {
     // The public example authors v2 participation, so its workspace document
     // declares the additive v2 workspace family; an unsupported v3 URI must
     // still reject through the real preparation boundary.
-    const V1_WORKSPACE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json";
+    const V2_WORKSPACE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/workspace.schema.json";
+    const V1_WORKSPACE: &str = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/workspace.schema.json";
     const V1_LOCK: &str =
         "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/lock.schema.json";
 
@@ -150,7 +151,7 @@ mod tests {
     #[test]
     fn unsupported_workspace_and_lock_uris_fail_through_actual_preparation()
     -> Result<(), Box<dyn Error>> {
-        // Control: the unmutated v1 workspace and lock validate successfully.
+        // Control: the unmutated v2 workspace and v1 lock validate successfully.
         let repository = crate::test_support::example_repository()?;
         assert_eq!(run_validate(repository.path())?, 0);
 
@@ -165,7 +166,7 @@ mod tests {
             let config = fs::read_to_string(repository.path().join("eqm.toml"))?;
             fs::write(
                 repository.path().join("eqm.toml"),
-                config.replace(V1_WORKSPACE, mutation),
+                config.replace(V2_WORKSPACE, mutation),
             )?;
             assert_eq!(
                 run_validate(repository.path())?,
@@ -178,7 +179,7 @@ mod tests {
         for mutation in [
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/lock.schema.json",
             "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v3/manifest/lock.schema.json",
-            V1_WORKSPACE,
+            V2_WORKSPACE,
         ] {
             let repository = crate::test_support::example_repository()?;
             let lock = fs::read_to_string(repository.path().join("eqm.lock"))?;
@@ -192,6 +193,42 @@ mod tests {
                 "accepted lock schema {mutation}"
             );
         }
+        Ok(())
+    }
+
+    #[test]
+    fn genuine_legacy_v1_workspace_and_lock_validate_at_cli_ingress() -> Result<(), Box<dyn Error>>
+    {
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
+        let config = root.join("eqm.toml");
+        fs::write(
+            &config,
+            fs::read_to_string(&config)?.replace(V2_WORKSPACE, V1_WORKSPACE),
+        )?;
+        for entry in fs::read_dir(root.join("eqm/contracts"))? {
+            let entry = entry?;
+            if entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with("participation.")
+            {
+                fs::remove_file(entry.path())?;
+            }
+        }
+        assert!(fs::read_to_string(root.join("eqm.lock"))?.contains(V1_LOCK));
+        assert_eq!(
+            run_validate(root)?,
+            0,
+            "legacy structural admission remains supported"
+        );
+        // Structural validity is not protected participation/conformance proof.
+        let request = crate::session::SessionRequest::new(
+            Default::default(),
+            crate::cli::CommandName::Validate,
+        );
+        let session = crate::session::prepare(&request, root)?;
+        assert!(session.finalized().graph().participation().is_empty());
         Ok(())
     }
 

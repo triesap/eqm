@@ -13,10 +13,13 @@ uncommitted tree. RF79 is independently accepted for its allocated fail-closed
 matcher scope: ordinary target evidence cannot authorize Provider/TargetSet
 coordinates. P04-R4A is accepted; complete provider/scenario semantics still
 belong to later owning steps. Preserve all 47 numbered acceptances and earlier
-RF73/RF77 acceptance. S044/S047/S048/S049 remain partial; S052–S211 are unstarted.
+RF73/RF77 acceptance. At that review S044/S047/S048/S049 remained partial. After P04-R4B/C
+standard and independent aggregate review, S044/S048/S049 receive numbered local
+acceptance (50 total); S047 exact scope integration remains S052/S054/S073.
+See [aggregate repair disposition](reports/P04-R4C.md). S052–S211 remain unfinished.
 See [independent review](reports/CODEX-b442b80.md).
 
-**Next order:** P04-R4B, P04-R4C, S052–S076, mandatory independent complete-universe
+**Next order:** S052-A/B/C, S053–S076, mandatory independent complete-universe
 and reference-evaluator acceptance before S077, then S077–S211 subject to their
 existing dependencies and gates. Repair RF84 in P04-R4C before aggregate repair
 acceptance. Retain DEV-033 representation/provenance decisions: exact checked
@@ -55,6 +58,33 @@ authority. Keep subject/context digests valid for each fixture so stale identity
 or unsupported scope cannot mask the count control. Prepared fact maps remain
 non-authorizing inputs to pure classification; previously evaluated carriers
 cannot cross contexts. Complete lineage/count admission remains S059/S061.
+
+P04-R4C additionally requires a loaded-graph UnknownApplicability-only control:
+all remaining facets satisfied still yields Nonconformant, without another
+unresolved cause masking it. A complete prepared provider universe must pass its
+positive completeness control, while omitting the provider fact yields typed
+IncompletePolicyResolution. Genuine v1 workspace/lock ingestion stays supported
+but cannot manufacture participation authority. Protected usage examples require
+exact policy/profile revisions and every dimension; absent graph authority remains
+Unknown. Exact provider dependency, scenario occurrence and repeated-actor scope
+integration remains S052/S054/S073; this checkpoint does not claim that later work.
+
+### S052 verification slices
+
+After green P04-R4C, implement S052-A typed exact ScenarioRef and duplicate-
+rejecting RequirementScenarioBindings plus the separate canonical projection and
+digest; S052-B checked provider dependency closure and exact scenario derivation,
+including private evaluation-context bindings and non-authorizing missing scope;
+S052-C application/protected-authority/CLI integration and aggregate owning tests.
+Each slice must be independently green; S052 stays incomplete until all three
+slices and original acceptance controls pass. No later step begins between them.
+The existing target-only Provider membership and TargetSet reduction are unsafe
+for S052 exact scope; replace their authorizing use with exact dependers and
+occurrences, preserving unrelated target semantics and earlier safety controls.
+A missing provider assignment stays unresolved. Unrelated non-dependers cannot
+block or satisfy provider work. Protected scope bindings come from authority;
+CLI values are claims and cannot replace them. Binding/scenario semantic context
+is checked before accepting statuses; S054 adds complete public identities.
 
 **RF84 — restore causal dirty-source regression coverage.** The dirty-source
 release test uses the original full-scope fixture, which is already non-authorizing

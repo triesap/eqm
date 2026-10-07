@@ -1,7 +1,7 @@
 # Manifests
 
-EQM v1 uses strict TOML documents. Unknown fields, duplicate keys, invalid
-Unicode normalization, old/future/foreign schemas, path escapes, portable path
+EQM uses strict versioned TOML documents. Unknown fields, duplicate keys, invalid
+Unicode normalization, unsupported/foreign schemas, path escapes, portable path
 collisions, and ambiguous discovery fail closed.
 
 ## Schema namespace
@@ -15,6 +15,14 @@ https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/manifest/WORKSPA
 Replace `WORKSPACE` with `workspace`, `lock`, `capability`, `journey`,
 `surface`, `fragment`, `binding`, `policy`, `profile`, `runner`, or `waiver`.
 The matching committed JSON files are under `schemas/v1/manifest/`.
+
+Additive v2 readers currently support `workspace`, `participation`, `provider`,
+`scenario`, and `cohort` under `schemas/v2/manifest/`. A workspace declaring
+v2-only axes uses the v2 workspace identity; other document families, including `lock`, retain their
+exact supported v1 identities. Merely changing a URI does not migrate a document:
+a v1 workspace rejects v2-only metadata, and unsupported versions or kinds reject. A genuine
+v1 workspace remains structurally valid, but missing participation is Unknown
+and cannot establish protected conformance or a release authorization.
 
 ## Workspace
 

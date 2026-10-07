@@ -948,13 +948,9 @@ pub(crate) mod tests {
             ("fail", true, "signed_ci", "fail", 1),
             ("unknown", false, "trusted_ci", "unknown", 7),
         ] {
-            let repository = if name == "pass" {
-                // The supported positive control is each-target-only and separate
-                // from the authored full-scope signup fixture.
-                release_fixture_with(name, failed, claim, each_target_only)?
-            } else {
-                release_fixture(name, failed, claim)?
-            };
+            // Every outcome has a supported denominator. An already failing
+            // full-scope fixture cannot prove payload failure or trust rejection.
+            let repository = release_fixture_with(name, failed, claim, each_target_only)?;
             let parsed = release_invocation(name)?;
             let execution = execute_with_authority(
                 parsed,
@@ -1150,6 +1146,52 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn current_required_count_is_enforced_at_real_release_ingress() -> Result<(), Box<dyn Error>> {
+        for count in [1, 2] {
+            // Identical logical observations, with every identity generated
+            // against its own exact graph. No stale-digest/scope failure masks
+            // the stronger count: each required web coordinate has one result.
+            let repository = release_fixture_with("pass", false, "signed_ci", |root| {
+                each_target_only(root)?;
+                let path = root.join("eqm/policies/release.toml");
+                fs::write(
+                    &path,
+                    fs::read_to_string(&path)?
+                        .replace("minimum_count = 1", &format!("minimum_count = {count}")),
+                )?;
+                Ok(())
+            })?;
+            let authority = synthetic_release_authority(repository.path())?;
+            let execution = execute_with_authority(
+                release_invocation("pass")?,
+                repository.path(),
+                "2026-08-08T12:00:00Z".parse()?,
+                &authority,
+            )?;
+            assert_eq!(
+                execution.payload.json["result"]["exposure"][0],
+                "runtime_facts:match"
+            );
+            assert_eq!(
+                execution.payload.json["result"]["status"],
+                if count == 1 { "pass" } else { "fail" },
+                "count={count}: {}",
+                execution.payload.json
+            );
+            assert_eq!(
+                execution.payload.json["result"]["conformance"],
+                if count == 1 {
+                    "conformant"
+                } else {
+                    "nonconformant"
+                }
+            );
+            assert_eq!(execution.exit_code, if count == 1 { 0 } else { 1 });
+        }
+        Ok(())
+    }
+
+    #[test]
     fn actual_release_omissions_reject_without_development_defaults() -> Result<(), Box<dyn Error>>
     {
         let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
@@ -1187,6 +1229,13 @@ pub(crate) mod tests {
             )
             .err()
             .ok_or("release omission was admitted")?;
+            assert!(
+                matches!(
+                    error.downcast_ref::<eqm_application::ProtectedPreparationError>(),
+                    Some(eqm_application::ProtectedPreparationError::Preparation(_))
+                ),
+                "{error}"
+            );
             assert!(error.to_string().contains(expected), "{expected}: {error}");
         }
         Ok(())
@@ -1219,8 +1268,21 @@ pub(crate) mod tests {
             "ignored",
             "tracked_output",
         ] {
-            let repository = release_fixture("pass", false, "signed_ci")?;
+            let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
             let root = repository.path();
+            let authority = synthetic_release_authority(root)?;
+            let clean = execute_with_authority(
+                release_invocation("pass")?,
+                root,
+                "2026-08-08T12:00:00Z".parse()?,
+                &authority,
+            )?;
+            assert_eq!(
+                clean.exit_code, 0,
+                "{mutation}: clean control must pass: {}",
+                clean.payload.json
+            );
+            assert_eq!(clean.payload.json["result"]["status"], "pass", "{mutation}");
             match mutation {
                 "tracked" => fs::write(root.join("releases/pass.json"), "changed")?,
                 "staged" => {
@@ -1237,12 +1299,8 @@ pub(crate) mod tests {
                 _ => return Err("unknown mutation".into()),
             }
             let parsed = release_invocation("pass")?;
-            let execution = execute_with_authority(
-                parsed,
-                root,
-                "2026-08-08T12:00:00Z".parse()?,
-                &synthetic_release_authority(repository.path())?,
-            )?;
+            let execution =
+                execute_with_authority(parsed, root, "2026-08-08T12:00:00Z".parse()?, &authority)?;
             let status = execution.payload.json["result"]["status"].as_str();
             assert_ne!(status, Some("pass"), "{mutation} must not pass");
             assert_ne!(status, Some("conditional"), "{mutation} must not condition");

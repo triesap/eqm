@@ -9,16 +9,15 @@ ID[@REVISION]`, `--format human|json|sarif|markdown`, `--offline`,
 PATH`. `--output -` means stdout. Machine formats emit one deterministic
 document on stdout; progress and diagnostics belong on stderr.
 
-`--policy` and `--profile` accept an optional exact `@REVISION`. An omitted
-revision resolves only when exactly one stored revision exists; an ambiguous or
-missing stored authority requires an explicit selection and is never replaced
-by a latest revision. An explicit `--profile` must name a profile declared by
-the resolved policy, and duplicate profile or dimension selections reject.
+Development selections allow omitted revisions only when exactly one stored
+revision exists. Ambiguous or missing selections never resolve to a latest
+revision. An explicit profile must belong to the selected policy; duplicate
+profile or dimension selections reject.
 
-These options are unverified candidate inputs. They are accepted only as an
-explicit development selection; a protected mode requires protected authority
-and never falls back to a development default. Parsing an exact revision does
-not itself grant trust.
+Protected selections require exact policy and profile revisions and every
+profile dimension value. These arguments are unverified claims checked against
+independent protected authority, and never grant trust or fall back to
+development defaults.
 
 ## Authoring commands
 

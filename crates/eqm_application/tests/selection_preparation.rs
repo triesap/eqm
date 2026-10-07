@@ -174,7 +174,7 @@ fn protected_omissions_reject_before_loading_authority() -> Result<(), Box<dyn E
             Some(SymbolicValueId::new("us")?),
         )],
     );
-    for (input, expected) in [
+    for (index, (input, expected)) in [
         (typed(None, vec![profile.clone()]), "policy ID"),
         (
             typed(
@@ -209,7 +209,10 @@ fn protected_omissions_reject_before_loading_authority() -> Result<(), Box<dyn E
             ),
             "DimensionSelectionRequired",
         ),
-    ] {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let error = prepare_protected_obligations(
             session.finalized(),
             EvaluationMode::Release,
@@ -224,6 +227,48 @@ fn protected_omissions_reject_before_loading_authority() -> Result<(), Box<dyn E
             "{error}"
         );
         assert!(error.to_string().contains(expected), "{expected}: {error}");
+        let exact_cause = match (index, &error) {
+            (
+                0,
+                ProtectedPreparationError::Preparation(
+                    ObligationPreparationError::SelectionPreparation(
+                        SelectionPreparationError::PolicyIdRequired,
+                    ),
+                ),
+            ) => true,
+            (
+                1,
+                ProtectedPreparationError::Preparation(
+                    ObligationPreparationError::SelectionPreparation(
+                        SelectionPreparationError::PolicyRevisionRequired { id },
+                    ),
+                ),
+            ) => id.as_str() == "consumer.critical_flow",
+            (
+                2,
+                ProtectedPreparationError::Preparation(
+                    ObligationPreparationError::SelectionPreparation(
+                        SelectionPreparationError::ProfileSelectionRequired { id },
+                    ),
+                ),
+            ) => id.as_str() == "audience.default",
+            (
+                3,
+                ProtectedPreparationError::Preparation(
+                    ObligationPreparationError::SelectionPreparation(
+                        SelectionPreparationError::ProfileRevisionRequired { id },
+                    ),
+                ),
+            ) => id.as_str() == "audience.default",
+            (
+                4,
+                ProtectedPreparationError::Preparation(ObligationPreparationError::Selection(
+                    SelectionError::DimensionSelectionRequired,
+                )),
+            ) => true,
+            _ => false,
+        };
+        assert!(exact_cause, "{index}: wrong typed cause: {error}");
     }
     assert_eq!(provider.calls.get(), 0);
     // An explicitly unknown value remains unknown rather than using a default.

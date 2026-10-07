@@ -209,3 +209,23 @@ decisions and orders six corrections followed by S039–S043. No renumbering,
 original acceptance relaxation, frozen ContractDigest change or external waiver.
 Independent standard609/doctests8 pass; isolated probes reproduce four defects.
 Required S043 review and full S211 scope remain; no release/human-only milestone.
+
+## DEV-035-S052 — independently green exact-scope slices
+
+Codex, 2026-10-07; inspected HEAD e3c4e8c813ad3ed7de393d2c0eb20dbda5a9baab.
+S052 retains its original requirements, acceptance cases and predecessor. Current
+engine `ScopeSubject::TargetSet` loses repeated actors, and conformance treats
+every Provider as participating in every target. Neither representation can
+safely implement approved exact cross-runtime scope without coordinated changes
+across domain, canonicalization, engine, application and CLI. Retained DEV-030
+already freezes the replacement and allocates those modules to S052.
+
+Implement independently green S052-A carriers/canonical identity, S052-B checked
+scope derivation and semantic context, S052-C protected application/CLI integration
+and aggregate controls, as recorded in the sole COMMIT_SEQUENCE. S052 remains
+incomplete until all slices satisfy its original green contract; S053 cannot
+start early. No reordering, renamed requirement, implicit legacy format, weaker
+criterion or new product subsystem is introduced. Each slice runs owning tests,
+standard checks and final diff review; results belong in S052.md/progress.json.
+The owner authorizes manageable checkpoints under active `pfc all`. Separate
+reviewer agrees with this allocation; implementation is not yet claimed.

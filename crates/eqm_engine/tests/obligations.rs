@@ -291,6 +291,27 @@ fn unknown_and_not_applicable_coordinates_remain_visible() -> Result<(), Box<dyn
             && coordinate.reason == UnresolvedReason::UnknownApplicability
     }));
 
+    assert!(
+        universe
+            .unresolved()
+            .iter()
+            .all(|coordinate| { coordinate.reason == UnresolvedReason::UnknownApplicability }),
+        "the unknown-applicability control must not be masked by another unresolved cause"
+    );
+    let facets = universe
+        .coordinates()
+        .iter()
+        .cloned()
+        .map(|key| (key, FacetStatus::Satisfied))
+        .collect();
+    let resolution = fixture_resolution(universe, facets)?;
+    for target in ["android", "ios"] {
+        assert_eq!(
+            evaluate_complete_target_conformance(&TargetId::new(target)?, &resolution)?,
+            TargetConformance::Nonconformant
+        );
+    }
+
     let (selection, not_applicable) = select_and_context(&finalized, Some("us"))?;
     let universe = derive_required_universe(&finalized, &selection, &not_applicable, None)?;
     assert!(universe.unresolved().iter().any(|coordinate| {

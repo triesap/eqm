@@ -75,9 +75,13 @@ eqm --baseline 23f3d83a51788ac88863cdc95e21b8c77c3832c7 affected
 For a release decision, use the release profile and an exact release record:
 
 ```text
-eqm --profile audience.default=region:us release check \
+eqm --policy consumer.critical_flow@1 --profile audience.default@1=region:us release check \
   --release-record releases/ios.json
 ```
+
+Release checks also require independent protected graph authority. Without a
+configured protected provider, a well-formed invocation returns Unknown (exit 7).
+Exact command arguments do not establish trust.
 
 Release results distinguish pass, fail, and unknown. Never coerce unknown into
 pass in wrapper automation.

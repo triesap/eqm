@@ -17,6 +17,10 @@ use std::error::Error;
 type Finalized = eqm_engine::FinalizedWorkspaceGraph;
 
 fn request() -> Result<PolicyProfileRequest, Box<dyn Error>> {
+    request_value(Some("us"))
+}
+
+fn request_value(region: Option<&str>) -> Result<PolicyProfileRequest, Box<dyn Error>> {
     Ok(PolicyProfileRequest::new(
         AuthorityOrigin::TrustedInvocation,
         PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?),
@@ -25,7 +29,7 @@ fn request() -> Result<PolicyProfileRequest, Box<dyn Error>> {
             Revision::new(1)?,
             vec![(
                 DimensionId::new("region")?,
-                Some(SymbolicValueId::new("us")?),
+                region.map(SymbolicValueId::new).transpose()?,
             )],
         )?],
     )?)
@@ -80,6 +84,13 @@ fn context(finalized: &Finalized) -> Result<ApplicabilityContext, Box<dyn Error>
         Some(&request()?),
         None,
     )?;
+    context_for(finalized, &selection)
+}
+
+fn context_for(
+    finalized: &Finalized,
+    selection: &eqm_engine::SelectedPolicyProfiles<'_>,
+) -> Result<ApplicabilityContext, Box<dyn Error>> {
     let mut inputs = Vec::new();
     for selected in selection.profiles().values() {
         let definition = finalized
@@ -176,6 +187,217 @@ fn asymmetric_and_unknown_participation_is_non_authorizing() -> Result<(), Box<d
         evaluate_complete_target_conformance(&android, &resolution)?,
         TargetConformance::Nonconformant
     );
+    Ok(())
+}
+
+#[test]
+fn empty_participation_is_non_authorizing_for_v2_and_genuine_v1() -> Result<(), Box<dyn Error>> {
+    for legacy in [false, true] {
+        let (_repository, loaded) = support::loaded_example_with(|root| {
+            for entry in std::fs::read_dir(root.join("eqm/contracts"))? {
+                let entry = entry?;
+                if entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("participation.")
+                {
+                    std::fs::remove_file(entry.path())?;
+                }
+            }
+            if legacy {
+                let path = root.join("eqm.toml");
+                std::fs::write(
+                    &path,
+                    std::fs::read_to_string(&path)?.replace(
+                        "schemas/v2/manifest/workspace",
+                        "schemas/v1/manifest/workspace",
+                    ),
+                )?;
+            }
+            Ok(())
+        })?;
+        let finalized = finalize(&loaded)?;
+        assert!(finalized.graph().participation().is_empty());
+        let selected = select_policy_profiles(
+            finalized.graph(),
+            EvaluationMode::PullRequest,
+            Some(&request()?),
+            None,
+        )?;
+        let applicability = context_for(&finalized, &selected)?;
+        let universe = derive_required_universe(&finalized, &selected, &applicability, None)?;
+        assert!(
+            universe.coordinates().is_empty(),
+            "legacy={legacy}: implicit global participation"
+        );
+        for target in [TargetId::new("android")?, TargetId::new("ios")?] {
+            assert!(
+                universe
+                    .unresolved()
+                    .iter()
+                    .any(|coordinate| coordinate.subject
+                        == Some(ScopeSubject::Target(target.clone()))
+                        && coordinate.reason == UnresolvedReason::UnknownParticipation)
+            );
+            let resolution = fixture_resolution(universe.clone(), BTreeMap::new())?;
+            assert_eq!(
+                evaluate_complete_target_conformance(&target, &resolution)?,
+                TargetConformance::Nonconformant,
+                "legacy={legacy}"
+            );
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn authored_participation_true_false_unknown_remains_coordinate_exact() -> Result<(), Box<dyn Error>>
+{
+    let requirement: eqm_domain::FullRequirementId =
+        "account.create.signup.identifier#email_default".parse()?;
+    for (predicate, region, reason) in [
+        ("always = true", Some("us"), None),
+        (
+            "always = false",
+            Some("us"),
+            Some(UnresolvedReason::NotApplicable),
+        ),
+        (
+            "dimension = \"region\"\noperator = \"eq\"\nvalue = \"us\"",
+            None,
+            Some(UnresolvedReason::UnknownParticipation),
+        ),
+    ] {
+        let (_repository, loaded) = support::loaded_example_with(|root| {
+            let path = root.join("eqm/contracts/participation.signup.identifier.toml");
+            std::fs::write(
+                &path,
+                std::fs::read_to_string(&path)?.replace("always = true", predicate),
+            )?;
+            Ok(())
+        })?;
+        let finalized = finalize(&loaded)?;
+        let selected = select_policy_profiles(
+            finalized.graph(),
+            EvaluationMode::PullRequest,
+            Some(&request_value(region)?),
+            None,
+        )?;
+        let applicability = context_for(&finalized, &selected)?;
+        let universe = derive_required_universe(&finalized, &selected, &applicability, None)?;
+        assert!(
+            universe
+                .coordinates()
+                .iter()
+                .any(|key| key.requirement != requirement),
+            "one predicate must not globally drop other requirements"
+        );
+        for target in [TargetId::new("android")?, TargetId::new("ios")?] {
+            let subject = ScopeSubject::Target(target.clone());
+            assert_eq!(
+                universe
+                    .coordinates()
+                    .iter()
+                    .any(|key| key.requirement == requirement && key.subject == subject),
+                reason.is_none(),
+                "{predicate}"
+            );
+            if let Some(reason) = reason {
+                assert!(
+                    universe
+                        .unresolved()
+                        .iter()
+                        .any(|coordinate| coordinate.requirement == requirement
+                            && coordinate.subject == Some(subject.clone())
+                            && coordinate.reason == reason),
+                    "{predicate}: {reason:?}"
+                );
+            }
+            if reason == Some(UnresolvedReason::UnknownParticipation) {
+                let facets = universe
+                    .coordinates()
+                    .iter()
+                    .cloned()
+                    .map(|key| (key, FacetStatus::Satisfied))
+                    .collect();
+                let resolution = fixture_resolution(universe.clone(), facets)?;
+                assert_eq!(
+                    evaluate_complete_target_conformance(&target, &resolution)?,
+                    TargetConformance::Nonconformant
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn foreign_policy_profile_definitions_and_applicability_reject_at_derivation()
+-> Result<(), Box<dyn Error>> {
+    let (_repository, loaded) = support::loaded_example()?;
+    let finalized = finalize(&loaded)?;
+    let selected = select_policy_profiles(
+        finalized.graph(),
+        EvaluationMode::PullRequest,
+        Some(&request()?),
+        None,
+    )?;
+    let applicability = context_for(&finalized, &selected)?;
+    let baseline = derive_required_universe(&finalized, &selected, &applicability, None)?;
+    for axis in ["policy", "profile"] {
+        let (_foreign_repository, foreign_loaded) = support::loaded_example_with(|root| {
+            let (relative, before, after) = if axis == "policy" {
+                (
+                    "eqm/policies/consumer.critical_flow.toml",
+                    "minimum_count = 1",
+                    "minimum_count = 2",
+                )
+            } else {
+                (
+                    "eqm/profiles/audience.default.toml",
+                    "region = \"us\"",
+                    "region = \"eu\"",
+                )
+            };
+            let path = root.join(relative);
+            let original = std::fs::read_to_string(&path)?;
+            let changed = original.replace(before, after);
+            assert_ne!(original, changed, "{axis} mutation must be real");
+            std::fs::write(path, changed)?;
+            Ok(())
+        })?;
+        let foreign = finalize(&foreign_loaded)?;
+        assert_eq!(
+            derive_required_universe(&foreign, &selected, &applicability, None),
+            Err(eqm_engine::ObligationError::ForeignSelection),
+            "{axis}"
+        );
+        let fresh = select_policy_profiles(
+            foreign.graph(),
+            EvaluationMode::PullRequest,
+            Some(&request()?),
+            None,
+        )?;
+        let fresh_context = context_for(&foreign, &fresh)?;
+        let fresh_universe = derive_required_universe(&foreign, &fresh, &fresh_context, None)?;
+        assert_eq!(
+            fresh_universe.coordinates(),
+            baseline.coordinates(),
+            "visible keys deliberately coincide: {axis}"
+        );
+    }
+    let eu = select_policy_profiles(
+        finalized.graph(),
+        EvaluationMode::PullRequest,
+        Some(&request_value(Some("eu"))?),
+        None,
+    )?;
+    let eu_context = context_for(&finalized, &eu)?;
+    assert_eq!(
+        derive_required_universe(&finalized, &selected, &eu_context, None),
+        Err(eqm_engine::ObligationError::ForeignApplicability)
+    );
+    assert!(derive_required_universe(&finalized, &eu, &eu_context, None).is_ok());
     Ok(())
 }
 
@@ -369,5 +591,59 @@ fn equal_keys_do_not_erase_strength_graph_or_mode_provenance() -> Result<(), Box
             "{mutation}"
         );
     }
+    Ok(())
+}
+
+#[test]
+fn omitted_provider_coordinate_cannot_yield_conformant() -> Result<(), Box<dyn Error>> {
+    let (_repository, loaded) = support::loaded_example_with(|root| {
+        let path = root.join("eqm/contracts/auth.signup.otp.toml");
+        let text = std::fs::read_to_string(&path)?.replace(
+            "scope = \"end_to_end\"",
+            "scope = \"shared_provider\"\nprovider = \"provider.required\"",
+        );
+        std::fs::write(path, text)?;
+        std::fs::write(
+            root.join("eqm/contracts/provider.required.toml"),
+            r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/provider.schema.json"
+id = "provider.required"
+configuration_digest = "sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e"
+owners = ["owner://team/providers"]
+"#,
+        )?;
+        Ok(())
+    })?;
+    let finalized = finalize(&loaded)?;
+    let selection = select_policy_profiles(
+        finalized.graph(),
+        EvaluationMode::PullRequest,
+        Some(&request()?),
+        None,
+    )?;
+    let universe = derive_required_universe(&finalized, &selection, &context(&finalized)?, None)?;
+    assert!(universe.unresolved().is_empty());
+    let provider = universe
+        .coordinates()
+        .iter()
+        .find(|key| matches!(key.subject, ScopeSubject::Provider(_)))
+        .cloned()
+        .ok_or("provider coordinate missing")?;
+    let mut facets: BTreeMap<_, _> = universe
+        .coordinates()
+        .iter()
+        .cloned()
+        .map(|key| (key, FacetStatus::Satisfied))
+        .collect();
+    let complete = fixture_resolution(universe.clone(), facets.clone())?;
+    assert_eq!(
+        evaluate_complete_target_conformance(&TargetId::new("android")?, &complete)?,
+        TargetConformance::Conformant
+    );
+    facets.remove(&provider);
+    let incomplete = fixture_resolution(universe, facets)?;
+    assert_eq!(
+        evaluate_complete_target_conformance(&TargetId::new("android")?, &incomplete),
+        Err(ConformanceError::IncompletePolicyResolution)
+    );
     Ok(())
 }

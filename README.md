@@ -27,11 +27,15 @@ authored contracts + target bindings + policy + evidence
 The public JSON Schema namespace is rooted at:
 
 ```text
-https://raw.githubusercontent.com/triesap/eqm/master/schemas/v1/
+https://raw.githubusercontent.com/triesap/eqm/master/schemas/
 ```
 
 Schemas are committed with the source and validation is local; schema URIs are
 stable identities, not a requirement for runtime network access.
+The `v1/` and additive `v2/` families have exact separate readers. The example
+uses a v2 workspace and participation records with supported v1 document families;
+there is no implicit reader for unsupported versions. Legacy v1 structural
+validity alone does not establish required participation or release authority.
 
 ## Repository layout
 
@@ -39,7 +43,7 @@ stable identities, not a requirement for runtime network access.
 crates/                 production Rust crates
 docs/                   integration and usage documentation
 examples/android-ios/   complete consumer workspace example
-schemas/v1/             versioned manifest and protocol schemas
+schemas/v1/, v2/        versioned manifest and protocol schemas
 tests/                   cross-crate fixtures and security cases
 tools/                   xtask, benchmarks, and fuzz targets
 ```
