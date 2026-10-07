@@ -6,18 +6,252 @@
 //! candidate-local authority.
 
 use eqm_application::{
-    ObligationPreparationError, PolicyReference, PolicySelectionRequest, ProfileSelection,
+    AuthorityError, AuthorityProvider, AuthorityRequest, ObligationPreparationError,
+    PolicyReference, PolicySelectionRequest, ProfileSelection, ProtectedPreparationError,
     SelectionPreparationError, SessionRequest, prepare, prepare_obligations,
-    resolve_selection_request,
+    prepare_protected_obligations, resolve_selection_request,
 };
 use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId, UtcInstant};
 use eqm_engine::{
     AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,
     SelectionError,
 };
+use std::cell::Cell;
 use std::error::Error;
 use std::fs;
 use std::path::Path;
+
+struct ProtectedGraph {
+    graph: eqm_engine::FinalizedWorkspaceGraph,
+    calls: Cell<usize>,
+}
+
+impl AuthorityProvider for ProtectedGraph {
+    fn load_authority(
+        &self,
+        request: &AuthorityRequest,
+    ) -> Result<&eqm_engine::FinalizedWorkspaceGraph, AuthorityError> {
+        assert_eq!(request.mode, EvaluationMode::Release);
+        self.calls.set(self.calls.get() + 1);
+        Ok(&self.graph)
+    }
+}
+
+fn exact_selection() -> Result<PolicySelectionRequest, Box<dyn Error>> {
+    Ok(typed(
+        Some(PolicyReference::new(
+            PolicyId::new("consumer.critical_flow")?,
+            Some(Revision::new(1)?),
+        )),
+        vec![ProfileSelection::new(
+            ProfileId::new("audience.default")?,
+            Some(Revision::new(1)?),
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new("us")?),
+            )],
+        )],
+    ))
+}
+
+#[test]
+fn protected_preparation_requires_a_real_capability_and_exact_context() -> Result<(), Box<dyn Error>>
+{
+    let repository = example()?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let input = exact_selection()?;
+    assert!(matches!(
+        prepare_protected_obligations(
+            session.finalized(),
+            EvaluationMode::Release,
+            &input,
+            None,
+            None
+        ),
+        Err(ProtectedPreparationError::Authority(
+            AuthorityError::MissingProvider
+        ))
+    ));
+    let provider = ProtectedGraph {
+        graph: session.finalized().clone(),
+        calls: Cell::new(0),
+    };
+    assert!(matches!(
+        prepare_protected_obligations(
+            session.finalized(),
+            EvaluationMode::Development,
+            &input,
+            Some(&provider),
+            None
+        ),
+        Err(ProtectedPreparationError::DevelopmentMode)
+    ));
+    assert_eq!(provider.calls.get(), 0);
+    let context = eqm_domain::Sha256Digest::hash_content(b"validated release record");
+    let prepared = prepare_protected_obligations(
+        session.finalized(),
+        EvaluationMode::Release,
+        &input,
+        Some(&provider),
+        Some(context),
+    )?;
+    assert_eq!(provider.calls.get(), 1);
+    assert_eq!(prepared.selection().mode(), EvaluationMode::Release);
+    assert_eq!(
+        prepared.selection().origin(),
+        AuthorityOrigin::ProtectedBaseline
+    );
+    assert!(!prepared.derivation().obligations.is_empty());
+    assert!(
+        prepared
+            .derivation()
+            .obligations
+            .keys()
+            .all(|key| key.release_context == Some(context))
+    );
+
+    // Same visible IDs cannot conceal different independently loaded definitions.
+    let foreign = example()?;
+    let path = foreign
+        .path()
+        .join("eqm/contracts/auth.signup.identifier.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path)?.replace(
+            "Email is selected when the surface is first presented.",
+            "Email must be selected when the surface is first presented.",
+        ),
+    )?;
+    let foreign_session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        foreign.path(),
+    )?;
+    assert_ne!(
+        foreign_session.finalized().graph(),
+        session.finalized().graph()
+    );
+    let foreign_provider = ProtectedGraph {
+        graph: foreign_session.finalized().clone(),
+        calls: Cell::new(0),
+    };
+    assert!(matches!(
+        prepare_protected_obligations(
+            session.finalized(),
+            EvaluationMode::Release,
+            &input,
+            Some(&foreign_provider),
+            Some(context)
+        ),
+        Err(ProtectedPreparationError::CandidateMismatch)
+    ));
+    assert_eq!(foreign_provider.calls.get(), 1);
+    Ok(())
+}
+
+#[test]
+fn protected_omissions_reject_before_loading_authority() -> Result<(), Box<dyn Error>> {
+    let repository = example()?;
+    let session = prepare(
+        &SessionRequest::new(None, evaluation_time()?),
+        repository.path(),
+    )?;
+    let provider = ProtectedGraph {
+        graph: session.finalized().clone(),
+        calls: Cell::new(0),
+    };
+    let policy = Some(PolicyReference::new(
+        PolicyId::new("consumer.critical_flow")?,
+        Some(Revision::new(1)?),
+    ));
+    let profile = ProfileSelection::new(
+        ProfileId::new("audience.default")?,
+        Some(Revision::new(1)?),
+        vec![(
+            DimensionId::new("region")?,
+            Some(SymbolicValueId::new("us")?),
+        )],
+    );
+    for (input, expected) in [
+        (typed(None, vec![profile.clone()]), "policy ID"),
+        (
+            typed(
+                Some(PolicyReference::new(
+                    PolicyId::new("consumer.critical_flow")?,
+                    None,
+                )),
+                vec![profile.clone()],
+            ),
+            "explicit exact revision",
+        ),
+        (typed(policy.clone(), vec![]), "explicitly selected"),
+        (
+            typed(
+                policy.clone(),
+                vec![ProfileSelection::new(
+                    ProfileId::new("audience.default")?,
+                    None,
+                    profile.values().to_vec(),
+                )],
+            ),
+            "explicit exact revision",
+        ),
+        (
+            typed(
+                policy,
+                vec![ProfileSelection::new(
+                    ProfileId::new("audience.default")?,
+                    Some(Revision::new(1)?),
+                    vec![],
+                )],
+            ),
+            "DimensionSelectionRequired",
+        ),
+    ] {
+        let error = prepare_protected_obligations(
+            session.finalized(),
+            EvaluationMode::Release,
+            &input,
+            Some(&provider),
+            None,
+        )
+        .err()
+        .ok_or("protected omission was admitted")?;
+        assert!(
+            matches!(error, ProtectedPreparationError::Preparation(_)),
+            "{error}"
+        );
+        assert!(error.to_string().contains(expected), "{expected}: {error}");
+    }
+    assert_eq!(provider.calls.get(), 0);
+    // An explicitly unknown value remains unknown rather than using a default.
+    let unknown = typed(
+        Some(PolicyReference::new(
+            PolicyId::new("consumer.critical_flow")?,
+            Some(Revision::new(1)?),
+        )),
+        vec![ProfileSelection::new(
+            ProfileId::new("audience.default")?,
+            Some(Revision::new(1)?),
+            vec![(DimensionId::new("region")?, None)],
+        )],
+    );
+    let prepared = prepare_protected_obligations(
+        session.finalized(),
+        EvaluationMode::Release,
+        &unknown,
+        Some(&provider),
+        None,
+    )?;
+    assert_eq!(
+        prepared.selection().profiles()[&ProfileId::new("audience.default")?].values()
+            [&DimensionId::new("region")?],
+        None
+    );
+    Ok(())
+}
 
 fn copy_directory(source: &Path, destination: &Path) -> Result<(), Box<dyn Error>> {
     fs::create_dir_all(destination)?;

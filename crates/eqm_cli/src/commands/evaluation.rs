@@ -7,8 +7,8 @@ use eqm_application::{
 };
 use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId};
 use eqm_engine::{
-    EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest, RequiredUniverse,
-    ScopeSubject, SelectedPolicyProfiles,
+    EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest, ScopeSubject,
+    SelectedPolicyProfiles,
 };
 use eqm_protocol::{FacetStatusDto, ObligationDto, ProfileValueDto};
 use std::collections::BTreeSet;
@@ -26,7 +26,7 @@ pub fn development_request(
     policy: Option<&str>,
     requested: &[String],
 ) -> Result<PolicyProfileRequest, Box<dyn Error>> {
-    let input = development_selection(policy, requested)?;
+    let input = selection_request(policy, requested)?;
     Ok(resolve_selection_request(
         session.finalized(),
         EvaluationMode::Development,
@@ -35,7 +35,7 @@ pub fn development_request(
 }
 
 /// Parses CLI policy/profile arguments into the shared typed selection request.
-pub fn development_selection(
+pub fn selection_request(
     policy: Option<&str>,
     requested: &[String],
 ) -> Result<PolicySelectionRequest, Box<dyn Error>> {
@@ -63,32 +63,6 @@ pub fn derive_with_policy<'a>(
     )?;
     let (selection, _applicability, derivation, _universe) = prepared.into_parts();
     Ok((selection, derivation))
-}
-
-/// Selects development authority and also returns the checked required
-/// universe for callers that must validate completeness before a decision.
-pub fn derive_with_policy_universe<'a>(
-    session: &'a PreparedSession,
-    policy: Option<&str>,
-    requested: &[String],
-) -> Result<
-    (
-        SelectedPolicyProfiles<'a>,
-        ObligationDerivation,
-        RequiredUniverse,
-    ),
-    Box<dyn Error>,
-> {
-    let request = development_request(session, policy, requested)?;
-    let prepared = prepare_obligations(
-        session.finalized(),
-        EvaluationMode::Development,
-        Some(&request),
-        None,
-        None,
-    )?;
-    let (selection, _applicability, derivation, universe) = prepared.into_parts();
-    Ok((selection, derivation, universe))
 }
 
 fn parse_policy(value: &str) -> Result<PolicyReference, Box<dyn Error>> {

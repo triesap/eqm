@@ -43,9 +43,6 @@ fn execute_with_authority(
     now: UtcInstant,
     authority: &impl ReleaseTrustAuthority,
 ) -> Result<CommandExecution, Box<dyn Error>> {
-    if parsed.global.profiles.is_empty() {
-        return Err("release check requires an explicit release profile".into());
-    }
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
     let policy = parsed.global.policy.clone();
@@ -54,8 +51,6 @@ fn execute_with_authority(
         .to_owned();
     let request = SessionRequest::at(parsed.global, parsed.command.name, now);
     let session = prepare(&request, start)?;
-    let (selection, obligations, universe) =
-        evaluation::derive_with_policy_universe(&session, policy.as_deref(), &profiles)?;
     let (record_dto, record) = read_release_record(&session, &record_path)?;
     if !session
         .finalized()
@@ -65,6 +60,30 @@ fn execute_with_authority(
     {
         return Err("release target is outside the prepared workspace".into());
     }
+    let input = evaluation::selection_request(policy.as_deref(), &profiles)?;
+    let prepared = match eqm_application::prepare_protected_obligations(
+        session.finalized(),
+        eqm_engine::EvaluationMode::Release,
+        &input,
+        authority.graph_provider(),
+        Some(record.record_digest()),
+    ) {
+        Ok(prepared) => prepared,
+        Err(eqm_application::ProtectedPreparationError::Authority(_)) => {
+            return release_execution(
+                &session,
+                record_dto,
+                ReleaseGateStatus::Unknown,
+                None,
+                "protected_authority:unknown",
+                now,
+                offline,
+            );
+        }
+        Err(error) => return Err(error.into()),
+    };
+    let (selection, _applicability, obligations, universe) = prepared.into_parts();
+    // The protected denominator is fixed before any evidence is read or filtered.
     let evidence = read_evidence_set(&session)?;
     let runtime_facts = read_runtime_facts(&session)?;
     let matching = evidence
@@ -120,12 +139,18 @@ fn execute_with_authority(
     let resolution = CompletePolicyResolution::new(universe, evaluated)?;
     let conformance = evaluate_complete_target_conformance(record.target(), &resolution)?;
     let release_facets = resolution.facets().values().copied().collect::<Vec<_>>();
-    let effective_trust = matching
+    let evidence_trust = matching
         .iter()
-        .filter_map(|value| effective_evidence_trust(value, authority))
-        .chain(effective_record_trust(&record_dto, authority))
-        .chain(runtime.and_then(|value| effective_runtime_trust(value, authority)))
-        .min();
+        .map(|value| effective_evidence_trust(value, authority))
+        .collect::<Option<Vec<_>>>();
+    let effective_trust = evidence_trust.and_then(|values| {
+        let record_trust = effective_record_trust(&record_dto, authority)?;
+        let runtime_trust = effective_runtime_trust(runtime?, authority)?;
+        values
+            .into_iter()
+            .chain([record_trust, runtime_trust])
+            .min()
+    });
     let provenance = eqm_application::source::inspect_source_provenance(session.repository_root())?;
     let current_repository = provenance.repository().as_str().to_owned();
     let current_commit = provenance.source_commit().as_str().to_owned();
@@ -164,18 +189,38 @@ fn execute_with_authority(
         empty_scope_authorized: false,
     };
     let status = evaluate_release_gate(&input);
+    release_execution(
+        &session,
+        record_dto,
+        status,
+        Some(conformance),
+        if runtime_digest.is_some() {
+            "runtime_facts:match"
+        } else {
+            "runtime_facts:unknown"
+        },
+        now,
+        offline,
+    )
+}
+
+fn release_execution(
+    session: &PreparedSession,
+    record: ReleaseRecordDto,
+    status: ReleaseGateStatus,
+    conformance: Option<TargetConformance>,
+    exposure: &str,
+    now: UtcInstant,
+    offline: bool,
+) -> Result<CommandExecution, Box<dyn Error>> {
     let result = ReleaseCheckResultDto {
         kind: CommandIdentity::ReleaseCheck,
-        subject: record_dto,
+        subject: record,
         status: gate(status).to_owned(),
-        conformance: target_conformance(conformance).to_owned(),
+        conformance: conformance.map_or("unknown", target_conformance).to_owned(),
         equivalence: "unknown".to_owned(),
-        exposure: BTreeSet::from([if runtime_digest.is_some() {
-            "runtime_facts:match".to_owned()
-        } else {
-            "runtime_facts:unknown".to_owned()
-        }]),
-        waivers: waivers.iter().map(ToString::to_string).collect(),
+        exposure: BTreeSet::from([exposure.to_owned()]),
+        waivers: BTreeSet::new(),
     };
     let envelope = ReportEnvelope::new(
         CommandIdentity::ReleaseCheck,
@@ -200,6 +245,9 @@ fn execute_with_authority(
 }
 
 trait ReleaseTrustAuthority {
+    fn graph_provider(&self) -> Option<&dyn eqm_application::AuthorityProvider> {
+        None
+    }
     fn evidence_trust(&self, evidence: &EvidenceResultDto) -> Option<TrustLevel>;
     fn record_trust(&self, record: &ReleaseRecordDto) -> Option<TrustLevel>;
     fn runtime_trust(&self, runtime: &RuntimeFactsDto) -> Option<TrustLevel>;
@@ -714,7 +762,7 @@ pub(crate) mod tests {
             release_invocation("pass")?,
             repository.path(),
             at,
-            &SyntheticSignedTrust,
+            &synthetic_release_authority(repository.path())?,
         )?;
         assert_eq!(
             execution.payload.json["context"]["evaluated_at"],
@@ -750,6 +798,54 @@ pub(crate) mod tests {
     }
 
     struct SyntheticSignedTrust;
+
+    // This explicit test-only provider represents independently approved graph
+    // authority. Evidence signing alone (SyntheticSignedTrust) supplies no graph.
+    struct SyntheticReleaseAuthority {
+        graph: eqm_engine::FinalizedWorkspaceGraph,
+        record_verified: bool,
+        runtime_verified: bool,
+    }
+
+    fn synthetic_release_authority(
+        root: &Path,
+    ) -> Result<SyntheticReleaseAuthority, Box<dyn Error>> {
+        let request =
+            SessionRequest::new(Default::default(), crate::cli::CommandName::ReleaseCheck);
+        let session = prepare(&request, root)?;
+        Ok(SyntheticReleaseAuthority {
+            graph: session.finalized().clone(),
+            record_verified: true,
+            runtime_verified: true,
+        })
+    }
+
+    impl eqm_application::AuthorityProvider for SyntheticReleaseAuthority {
+        fn load_authority(
+            &self,
+            request: &eqm_application::AuthorityRequest,
+        ) -> Result<&eqm_engine::FinalizedWorkspaceGraph, eqm_application::AuthorityError> {
+            if request.mode != eqm_engine::EvaluationMode::Release {
+                return Err(eqm_application::AuthorityError::Invalid);
+            }
+            Ok(&self.graph)
+        }
+    }
+
+    impl ReleaseTrustAuthority for SyntheticReleaseAuthority {
+        fn graph_provider(&self) -> Option<&dyn eqm_application::AuthorityProvider> {
+            Some(self)
+        }
+        fn evidence_trust(&self, _: &EvidenceResultDto) -> Option<TrustLevel> {
+            Some(TrustLevel::SignedCi)
+        }
+        fn record_trust(&self, _: &ReleaseRecordDto) -> Option<TrustLevel> {
+            self.record_verified.then_some(TrustLevel::SignedCi)
+        }
+        fn runtime_trust(&self, _: &RuntimeFactsDto) -> Option<TrustLevel> {
+            self.runtime_verified.then_some(TrustLevel::SignedCi)
+        }
+    }
 
     impl ReleaseTrustAuthority for SyntheticSignedTrust {
         fn evidence_trust(&self, _evidence: &EvidenceResultDto) -> Option<TrustLevel> {
@@ -864,7 +960,7 @@ pub(crate) mod tests {
                 parsed,
                 repository.path(),
                 "2026-08-08T12:00:00Z".parse()?,
-                &SyntheticSignedTrust,
+                &synthetic_release_authority(repository.path())?,
             )?;
             assert_eq!(
                 execution.exit_code, expected_exit,
@@ -951,7 +1047,7 @@ pub(crate) mod tests {
             release_invocation("pass")?,
             repository.path(),
             "2026-08-08T12:00:00Z".parse()?,
-            &SyntheticSignedTrust,
+            &synthetic_release_authority(repository.path())?,
         )?;
         assert_eq!(
             execution.payload.json["result"]["status"], "pass",
@@ -967,6 +1063,136 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn signing_alone_never_supplies_protected_graph_authority() -> Result<(), Box<dyn Error>> {
+        let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
+        // If read, this invalid evidence would fail. Missing graph authority must
+        // return Unknown before acquisition rather than grade a candidate graph.
+        fs::write(
+            repository.path().join(".eqm/results/invalid.json"),
+            "{\"x\":1,\"x\":2}",
+        )?;
+        let execution = execute_with_authority(
+            release_invocation("pass")?,
+            repository.path(),
+            "2026-08-08T12:00:00.000000123Z".parse()?,
+            &SyntheticSignedTrust,
+        )?;
+        assert_eq!(execution.exit_code, 7);
+        assert_eq!(execution.payload.json["result"]["status"], "unknown");
+        assert_eq!(execution.payload.json["result"]["conformance"], "unknown");
+        assert_eq!(
+            execution.payload.json["result"]["exposure"][0],
+            "protected_authority:unknown"
+        );
+        assert_eq!(
+            execution.payload.json["context"]["evaluated_at"],
+            "2026-08-08T12:00:00.000000123Z"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn actual_release_rejects_foreign_protected_definitions() -> Result<(), Box<dyn Error>> {
+        let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
+        let foreign = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
+        let path = foreign.path().join("eqm/policies/release.toml");
+        fs::write(
+            &path,
+            fs::read_to_string(&path)?.replace("minimum_count = 1", "minimum_count = 2"),
+        )?;
+        let authority = synthetic_release_authority(foreign.path())?;
+        let candidate = synthetic_release_authority(repository.path())?;
+        assert_ne!(authority.graph.graph(), candidate.graph.graph());
+        let error = execute_with_authority(
+            release_invocation("pass")?,
+            repository.path(),
+            "2026-08-08T12:00:00Z".parse()?,
+            &authority,
+        )
+        .err()
+        .ok_or("foreign protected graph admitted")?;
+        assert!(
+            matches!(
+                error.downcast_ref::<eqm_application::ProtectedPreparationError>(),
+                Some(eqm_application::ProtectedPreparationError::CandidateMismatch)
+            ),
+            "{error}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn missing_mandatory_trust_cannot_disappear_from_release_gate() -> Result<(), Box<dyn Error>> {
+        let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
+        let mut authority = synthetic_release_authority(repository.path())?;
+        for (record_verified, runtime_verified, expected) in
+            [(true, true, 0), (false, true, 7), (true, false, 7)]
+        {
+            authority.record_verified = record_verified;
+            authority.runtime_verified = runtime_verified;
+            let execution = execute_with_authority(
+                release_invocation("pass")?,
+                repository.path(),
+                "2026-08-08T12:00:00Z".parse()?,
+                &authority,
+            )?;
+            assert_eq!(
+                execution.exit_code, expected,
+                "record={record_verified}, runtime={runtime_verified}: {}",
+                execution.payload.json
+            );
+            assert_eq!(
+                execution.payload.json["result"]["status"],
+                if expected == 0 { "pass" } else { "unknown" }
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn actual_release_omissions_reject_without_development_defaults() -> Result<(), Box<dyn Error>>
+    {
+        let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
+        for (policy, profiles, expected) in [
+            (None, vec!["audience.default@1=region:us"], "policy ID"),
+            (
+                Some("consumer.critical_flow"),
+                vec!["audience.default@1=region:us"],
+                "explicit exact revision",
+            ),
+            (
+                Some("consumer.critical_flow@1"),
+                vec![],
+                "explicitly selected",
+            ),
+            (
+                Some("consumer.critical_flow@1"),
+                vec!["audience.default=region:us"],
+                "explicit exact revision",
+            ),
+            (
+                Some("consumer.critical_flow@1"),
+                vec!["audience.default@1"],
+                "DimensionSelectionRequired",
+            ),
+        ] {
+            let mut parsed = release_invocation("pass")?;
+            parsed.global.policy = policy.map(str::to_owned);
+            parsed.global.profiles = profiles.into_iter().map(str::to_owned).collect();
+            let error = execute_with_authority(
+                parsed,
+                repository.path(),
+                "2026-08-08T12:00:00Z".parse()?,
+                &SyntheticSignedTrust,
+            )
+            .err()
+            .ok_or("release omission was admitted")?;
+            assert!(error.to_string().contains(expected), "{expected}: {error}");
+        }
+        Ok(())
+    }
+
+    #[test]
     fn generated_output_tree_is_neutral_for_a_clean_pass() -> Result<(), Box<dyn Error>> {
         let repository = release_fixture_with("pass", false, "signed_ci", each_target_only)?;
         // Additional generated output below `.eqm/` is neutral.
@@ -976,7 +1202,7 @@ pub(crate) mod tests {
             release_invocation("pass")?,
             repository.path(),
             "2026-08-08T12:00:00Z".parse()?,
-            &SyntheticSignedTrust,
+            &synthetic_release_authority(repository.path())?,
         )?;
         assert_eq!(execution.payload.json["result"]["status"], "pass");
         assert_eq!(execution.exit_code, 0);
@@ -1015,7 +1241,7 @@ pub(crate) mod tests {
                 parsed,
                 root,
                 "2026-08-08T12:00:00Z".parse()?,
-                &SyntheticSignedTrust,
+                &synthetic_release_authority(repository.path())?,
             )?;
             let status = execution.payload.json["result"]["status"].as_str();
             assert_ne!(status, Some("pass"), "{mutation} must not pass");
@@ -1036,7 +1262,7 @@ pub(crate) mod tests {
                 parsed,
                 root,
                 "2026-08-08T12:00:00Z".parse()?,
-                &SyntheticSignedTrust,
+                &synthetic_release_authority(repository.path())?,
             );
             assert!(result.is_err(), "{flag} must not authorize a clean claim");
         }
@@ -1063,7 +1289,7 @@ pub(crate) mod tests {
                 parsed,
                 root,
                 "2026-08-08T12:00:00Z".parse()?,
-                &SyntheticSignedTrust,
+                &synthetic_release_authority(repository.path())?,
             );
             assert!(
                 result.is_err(),
@@ -1105,7 +1331,7 @@ pub(crate) mod tests {
             parsed,
             root,
             "2026-08-08T12:00:00Z".parse()?,
-            &SyntheticSignedTrust,
+            &synthetic_release_authority(repository.path())?,
         );
         assert!(
             result.is_err(),
@@ -1122,7 +1348,9 @@ pub(crate) mod tests {
             "--release-record",
             path.as_str(),
             "--profile",
-            "audience.default",
+            "audience.default@1=region:us",
+            "--policy",
+            "consumer.critical_flow@1",
             "--format",
             "json",
             "--no-progress",
@@ -1409,7 +1637,7 @@ owners = ["owner://team/providers"]
             release_invocation(name)?,
             root,
             "2026-08-08T12:00:00Z".parse()?,
-            &SyntheticSignedTrust,
+            &synthetic_release_authority(root)?,
         )?;
         let status = execution.payload.json["result"]["status"].as_str();
         assert_ne!(status, Some("pass"), "{}", execution.payload.json);

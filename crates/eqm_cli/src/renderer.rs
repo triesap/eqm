@@ -413,7 +413,9 @@ mod tests {
                 "release_check",
                 vec![
                     "--profile",
-                    "audience.default",
+                    "audience.default@1=region:us",
+                    "--policy",
+                    "consumer.critical_flow@1",
                     "release",
                     "check",
                     "--release-record",

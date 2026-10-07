@@ -9,6 +9,7 @@
 //! command, reselects a latest revision, reloads files, reads the clock, or
 //! executes a runner. Host verification stays a separate capability port.
 
+use crate::{AuthorityError, AuthorityProvider, AuthorityRequest};
 use eqm_domain::{
     DimensionId, PolicyId, ProfileId, Revision, Sha256Digest, SymbolicValueId, WorkspaceGraph,
 };
@@ -20,6 +21,89 @@ use eqm_engine::{
 };
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+
+/// Failure at the capability-backed protected preparation boundary.
+#[derive(Debug)]
+pub enum ProtectedPreparationError {
+    /// Development evaluation must use the separate non-protected operation.
+    DevelopmentMode,
+    /// Protected graph authority was absent, unavailable or invalid.
+    Authority(AuthorityError),
+    /// Candidate definitions differ from the independently supplied authority.
+    CandidateMismatch,
+    /// Exact selection or obligation preparation failed.
+    Preparation(ObligationPreparationError),
+}
+
+impl Display for ProtectedPreparationError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DevelopmentMode => {
+                formatter.write_str("protected preparation requires a protected evaluation mode")
+            }
+            Self::Authority(error) => {
+                write!(formatter, "protected preparation authority failed: {error}")
+            }
+            Self::CandidateMismatch => {
+                formatter.write_str("candidate graph differs from protected authority")
+            }
+            Self::Preparation(error) => write!(formatter, "protected preparation failed: {error}"),
+        }
+    }
+}
+
+impl Error for ProtectedPreparationError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Authority(error) => Some(error),
+            Self::Preparation(error) => Some(error),
+            Self::DevelopmentMode | Self::CandidateMismatch => None,
+        }
+    }
+}
+
+/// Prepares protected obligations only from independently supplied graph authority.
+///
+/// Candidate validation does not authorize it. Exact policy/profile revisions and
+/// all dimension assignments are checked before a missing capability is reported.
+/// The provider is loaded once, and only its immutable graph is used to derive
+/// the denominator. Full semantic equality is deliberately conservative until
+/// the separately allocated baseline-change comparison is implemented.
+pub fn prepare_protected_obligations<'a>(
+    candidate: &FinalizedWorkspaceGraph,
+    mode: EvaluationMode,
+    input: &PolicySelectionRequest,
+    provider: Option<&'a dyn AuthorityProvider>,
+    release_context: Option<Sha256Digest>,
+) -> Result<PreparedObligations<'a>, ProtectedPreparationError> {
+    if mode == EvaluationMode::Development {
+        return Err(ProtectedPreparationError::DevelopmentMode);
+    }
+    // Origin supplied by a transport is a claim. This local prevalidation returns
+    // no prepared authority; the returned bundle can only borrow the provider.
+    let exact = PolicySelectionRequest::new(
+        AuthorityOrigin::ProtectedBaseline,
+        input.policy.clone(),
+        input.profiles.clone(),
+    );
+    let resolved = resolve_selection_request(candidate, mode, &exact)
+        .map_err(ObligationPreparationError::SelectionPreparation)
+        .map_err(ProtectedPreparationError::Preparation)?;
+    select_policy_profiles(candidate.graph(), mode, Some(&resolved), None)
+        .map_err(ObligationPreparationError::Selection)
+        .map_err(ProtectedPreparationError::Preparation)?;
+    let protected = provider
+        .ok_or(ProtectedPreparationError::Authority(
+            AuthorityError::MissingProvider,
+        ))?
+        .load_authority(&AuthorityRequest::new(mode))
+        .map_err(ProtectedPreparationError::Authority)?;
+    if candidate.graph() != protected.graph() {
+        return Err(ProtectedPreparationError::CandidateMismatch);
+    }
+    prepare_obligations_from_request(protected, mode, &exact, release_context)
+        .map_err(ProtectedPreparationError::Preparation)
+}
 
 /// One prepared selection with its applicability context and derived universe.
 ///

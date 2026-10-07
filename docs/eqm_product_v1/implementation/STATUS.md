@@ -2,7 +2,10 @@
 
 Current amendment: DEV-035 in COMMIT_SEQUENCE.md. Codex owns implementation and
 planning; implementation and green checkpoint commits are authorized by `pfc all`.
-Active checkpoint: P04-R4B2, then P04-R4C. P04-R4B1 semantic evaluated carrier
+Active checkpoint: P04-R4C. P04-R4B2 protected provider/exact release preparation
+and complete mandatory trust is verified and independently reviewed for allocated
+scope; full standard gate passes with 804 successful workspace test executions.
+P04-R4B1 semantic evaluated carrier
 is verified and independently reviewed for allocated scope; full standard gate
 passes with 798 successful test executions. Candidate
 b442b806e26a7ddd08ca8543b802c1b3d91251f0 is committed. RF79/P04-R4A independently

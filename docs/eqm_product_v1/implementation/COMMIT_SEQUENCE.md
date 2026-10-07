@@ -36,6 +36,26 @@ review before aggregate acceptance. No serializer dependency enters the engine;
 application-computed canonical projections remain descriptive identities and do
 not replace checked semantic provenance. A caller-supplied digest grants no trust.
 
+P04-R4B2 uses the existing AuthorityProvider capability, loads once, and derives
+the protected denominator before evidence acquisition. Candidate validation is
+non-authorizing; conservative semantic graph equality rejects differing authority
+until S129 owns baseline change comparisons. Exact missing selections remain
+typed errors even without a provider; absent/unavailable protected authority
+returns Unknown. Record context uses the validated immutable record digest and
+the already captured evaluation time. Every mandatory record/runtime/evidence
+trust conclusion must be present before computing minimum trust; an absent
+conclusion cannot disappear through optional iteration. No synthetic signing
+adapter grants graph authority in production. These choices enforce existing
+requirements and do not implement or waive later host/cryptographic acceptance.
+
+P04-R4C also verifies current strength through the real release ingress: supported
+EachTarget evidence with one exact observation passes count 1 and remains Missing
+and non-authorizing at count 2 under corresponding explicit synthetic graph
+authority. Keep subject/context digests valid for each fixture so stale identity
+or unsupported scope cannot mask the count control. Prepared fact maps remain
+non-authorizing inputs to pure classification; previously evaluated carriers
+cannot cross contexts. Complete lineage/count admission remains S059/S061.
+
 **RF84 — restore causal dirty-source regression coverage.** The dirty-source
 release test uses the original full-scope fixture, which is already non-authorizing
 after RF79. Use a separately authored supported EachTarget-only synthetic clean

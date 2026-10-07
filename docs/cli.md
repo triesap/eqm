@@ -62,6 +62,18 @@ path causes conservative expansion rather than a falsely narrow result.
 | `release check --release-record PATH` | Evaluate one exact release subject |
 | `mcp serve [--allow-verify --audit-output PATH]` | Serve the bounded MCP surface over stdio |
 
+Release checks require exact explicit policy and profile revisions and every
+profile dimension value, for example:
+
+```sh
+eqm --policy consumer.critical_flow@1 --profile audience.default@1=region:us release check --release-record .eqm/releases/pass.generated.json
+```
+
+Protected graph authority is independent of the candidate workspace and evidence
+signatures. Until a protected provider is configured, a well-formed invocation
+returns Unknown (exit 7); omitted or invalid selections remain errors. Local
+synthetic test providers demonstrate semantics and do not establish live trust.
+
 `discover`, non-dry-run `verify`, and an explicitly enabled MCP verify tool are
 execution boundaries. Treat them as requiring separate authority. `attest`
 without a signer remains explicitly unsigned.

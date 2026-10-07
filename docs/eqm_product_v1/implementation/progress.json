@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "P04-R4B2",
+ "next_step": "P04-R4C",
  "implementation": "in_progress",
- "local_verification": "47_prior_numbered_acceptances_preserved;RF79_P04_R4A_accepted_allocated_scope;16_release_tests_passed;unsafe_matcher_mutant_three_negatives_fail;RF84_dirty_source_causal_coverage_open;not_release_ready",
+ "local_verification": "47_prior_numbered_acceptances_preserved;P04_R4A_R4B1_R4B2_accepted_allocated_scopes;full_standard_804_workspace_executions_and_end_to_end_pass;app_doctest_and_structure_pass;RF84_dirty_source_causal_coverage_and_C_controls_open;not_release_ready",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -3174,7 +3174,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P04",
- "active_step": "P04-R4B2",
+ "active_step": "P04-R4C",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3521,7 +3521,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "P04-R4B2",
+ "next_checkpoint": "P04-R4C",
  "supervisor_review": {
   "source_commit": "b442b806e26a7ddd08ca8543b802c1b3d91251f0",
   "candidate": "committed",
@@ -4362,12 +4362,21 @@
   },
   {
    "id": "P04-R4B1",
-   "commit": null,
+   "commit": "4c1ce61",
    "status": "accepted_for_allocated_scope",
    "scope": "semantic graph/selection/applicability/mode/origin/release/strength-bound engine-evaluated carrier; protected consumer and aggregate findings remain open",
    "report": "implementation/reports/P04-R4B1.md",
    "verification": ["cargo xtask check", "cargo test --workspace --locked --doc", "package structure", "git diff --check"],
    "independent_review": "separate reviewer source PASS for allocated carrier scope"
+  },
+  {
+   "id": "P04-R4B2",
+   "commit": null,
+   "status": "accepted_for_allocated_scope",
+   "scope": "capability-backed protected graph/exact release preparation before evidence and complete mandatory trust; durable controls and aggregate findings remain open",
+   "report": "implementation/reports/P04-R4B2.md",
+   "verification": ["cargo xtask check", "cargo test --locked -p eqm_application --doc", "package structure", "git diff --check"],
+   "independent_review": "separate reviewer source PASS for allocated protected consumer scope"
   },
   {
    "id": "RF80",
