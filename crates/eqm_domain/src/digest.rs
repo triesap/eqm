@@ -19,6 +19,8 @@ pub enum DigestDomain {
     SemanticGraphV2,
     /// Exact authored scenario occurrence projection (v2).
     Scenario,
+    /// Explicit requirement-to-scenario binding identity (v2).
+    RequirementScenarioBindings,
     /// Shared comparison-context identity (v2).
     ComparisonContext,
     /// Exact stored raw object bytes (v2).
@@ -68,6 +70,7 @@ impl DigestDomain {
             Self::SemanticGraph => b"eqm:v1:semantic-graph",
             Self::SemanticGraphV2 => b"eqm:v2:semantic-graph",
             Self::Scenario => b"eqm:v2:scenario",
+            Self::RequirementScenarioBindings => b"eqm:v2:requirement-scenario-bindings",
             Self::ComparisonContext => b"eqm:v2:comparison-context",
             Self::RawObject => b"eqm:v2:raw-object",
             Self::SemanticEvidence => b"eqm:v2:semantic-evidence",
@@ -313,6 +316,18 @@ define_identity_digest!(
     DigestDomain::ProviderConfiguration
 );
 
+define_identity_digest!(
+    /// Explicit requirement-to-scenario binding projection.
+    ///
+    /// This identity cannot substitute a scenario's own projection identity:
+    /// ```compile_fail
+    /// let scope = eqm_domain::RequirementScenarioBindingsDigest::hash_content(b"x");
+    /// let _: eqm_domain::ScenarioDigest = scope;
+    /// ```
+    RequirementScenarioBindingsDigest,
+    DigestDomain::RequirementScenarioBindings
+);
+
 fn decode_hex(byte: u8) -> Option<u8> {
     match byte {
         b'0'..=b'9' => Some(byte - b'0'),
@@ -446,6 +461,7 @@ mod tests {
             DigestDomain::SemanticGraphV2,
             DigestDomain::Participation,
             DigestDomain::Scenario,
+            DigestDomain::RequirementScenarioBindings,
             DigestDomain::ComparisonContext,
         ];
         let mut labels = BTreeSet::new();

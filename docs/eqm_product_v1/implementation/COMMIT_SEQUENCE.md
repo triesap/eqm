@@ -86,6 +86,36 @@ block or satisfy provider work. Protected scope bindings come from authority;
 CLI values are claims and cannot replace them. Binding/scenario semantic context
 is checked before accepting statuses; S054 adds complete public identities.
 
+S052-B retains the complete selected scenario for every outcome. The approved
+spec does not define an atomic reduction rule for mixed true/false actor
+participation: do not invent AND/OR semantics or prune occurrences. Under true
+requirement applicability, all relevant participation true requires the full
+scope; all explicitly false is visible N/A; any unknown or mixed true/false
+retains incomplete/non-authorizing scope with the complete actor/edge data.
+Actors outside the policy-required target set remain visible in scenario authority
+without enlarging that target cohort; missing actor participation stays unknown.
+Provider-only scenarios affect actual selected dependers through declared provider
+assignments and checked target dependencies. No assigned depender is missing scope
+authority, never empty success or global provider participation. Preserve explicit
+requirement-level false/N/A. These are fail-closed ambiguity dispositions within
+existing completeness requirements, not a new scenario composition policy.
+
+Exact provider/scenario scopes must not be downconverted into legacy provider-ID
+or target-set waiver authority. Until the owning exact waiver representation
+lands, these unrepresentable subjects reject with the explicit Subject reason.
+Keep one checked membership operation for engine and report adapters; legacy
+reference subjects do not grant exact scope authority. If safe derivation needs
+its application/CLI migration to remain green, combine dependent B/C work in one
+coherent checkpoint and disclose the allocation; never retain an unsafe implicit
+scope merely to manufacture an intermediate green commit.
+
+Codex selects a combined S052-B/C checkpoint: replacing implicit scope changes
+the engine output consumed by the application and all report adapters, and the
+existing full-scope omission controls require exact scenario fixtures/inputs.
+Land checked derivation, protected request consumption, adapter membership and
+those dependent controls together. A remains separate; no S053 work is included
+and S052 acceptance still requires the full original aggregate gate.
+
 **RF84 — restore causal dirty-source regression coverage.** The dirty-source
 release test uses the original full-scope fixture, which is already non-authorizing
 after RF79. Use a separately authored supported EachTarget-only synthetic clean

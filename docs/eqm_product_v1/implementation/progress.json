@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S052-A",
+ "next_step": "S052-B/C",
  "implementation": "in_progress",
- "local_verification": "50_numbered_local_acceptances;P04_R4_allocated_safety_accepted;standard_810_workspace_plus_7_end_to_end_executions_pass;relevant_doctests_5_pass;structure_189_pass;three_causal_probes_exit101_restored;not_release_ready",
+ "local_verification": "S052_A_allocated_accepted_standard816workspace_plus7endtoend_3owning_doctests_structure190;50_numbered_accepted;S052_B_C_pending;whole_MVP_incomplete",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1437,7 +1437,8 @@
    "implementation_status": "implemented_verified",
    "supervisor_status": "accepted_for_allocated_scope",
    "review_report": "implementation/reports/P04-R4C.md",
-   "completion_repair": "P04-R4B1/P04-R4B2/P04-R4C"
+   "completion_repair": "P04-R4B1/P04-R4B2/P04-R4C",
+   "acceptance_commit_sha": "5c1a92d9bb34dd553fc1813e24a1676e399d15d1"
   },
   {
    "id": "S045",
@@ -1507,7 +1508,8 @@
    "implementation_status": "implemented_verified",
    "supervisor_status": "accepted_for_allocated_scope",
    "review_report": "implementation/reports/P04-R4C.md",
-   "completion_repair": "P04-R4B1/P04-R4B2/P04-R4C"
+   "completion_repair": "P04-R4B1/P04-R4B2/P04-R4C",
+   "acceptance_commit_sha": "5c1a92d9bb34dd553fc1813e24a1676e399d15d1"
   },
   {
    "id": "S049",
@@ -1525,7 +1527,8 @@
    "implementation_status": "implemented_verified",
    "supervisor_status": "accepted_for_allocated_scope",
    "review_report": "implementation/reports/P04-R4C.md",
-   "completion_repair": "P04-R4B1/P04-R4B2/P04-R4C"
+   "completion_repair": "P04-R4B1/P04-R4B2/P04-R4C",
+   "acceptance_commit_sha": "5c1a92d9bb34dd553fc1813e24a1676e399d15d1"
   },
   {
    "id": "S050",
@@ -1563,11 +1566,33 @@
   },
   {
    "id": "S052",
-   "status": "pending",
+   "status": "in_progress",
    "commit_sha": null,
-   "report": null,
+   "report": "implementation/reports/S052.md",
    "verification": [],
-   "baseline_exceptions": []
+   "baseline_exceptions": [],
+   "implementation_status": "S052_A_allocated_accepted_B_C_unstarted",
+   "supervisor_status": "incomplete",
+   "implementation_checkpoints": [
+    {
+     "id": "S052-A",
+     "status": "accepted_for_allocated_scope",
+     "commit_sha": null,
+     "report": "implementation/reports/S052.md",
+     "verification": [
+      "standard check exit0:816 workspace executions plus7 end-to-end",
+      "domain/manifest doctests exit0:3 controls",
+      "package structure exit0:190 files",
+      "diff check exit0"
+     ]
+    },
+    {
+     "id": "S052-B/C",
+     "status": "unstarted",
+     "commit_sha": null,
+     "report": "implementation/reports/S052.md"
+    }
+   ]
   },
   {
    "id": "S053",
@@ -3174,7 +3199,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P04",
- "active_step": "S052-A",
+ "active_step": "S052-B/C",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3525,10 +3550,10 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S052-A",
+ "next_checkpoint": "S052-B/C",
  "supervisor_review": {
-  "source_commit": "e3c4e8c813ad3ed7de393d2c0eb20dbda5a9baab",
-  "candidate": "P04-R4C_green_awaiting_commit",
+  "source_commit": "5c1a92d9bb34dd553fc1813e24a1676e399d15d1",
+  "candidate": "committed",
   "report": "implementation/reports/P04-R4C.md",
   "status": "allocated_safety_accepted_50_numbered_local_acceptances",
   "amendment": "DEV-035",
@@ -4451,7 +4476,7 @@
   },
   {
    "id": "P04-R4C",
-   "commit": null,
+   "commit": "5c1a92d9bb34dd553fc1813e24a1676e399d15d1",
    "status": "accepted_for_allocated_scope",
    "report": "implementation/reports/P04-R4C.md",
    "verification": [
@@ -4629,7 +4654,7 @@
   "S210",
   "S211"
  ],
- "first_unfinished_original_step": "S044",
+ "first_unfinished_original_step": "S047",
  "supervisor_batch": {
   "amendment": "DEV-035",
   "command": "pfc all",
@@ -5394,7 +5419,7 @@
   },
   {
    "id": "P04-R4C",
-   "commit": null,
+   "commit": "5c1a92d9bb34dd553fc1813e24a1676e399d15d1",
    "status": "accepted_for_allocated_scope",
    "scope": "durable typed/participation/version/omission/sourceclean/count/applicability controls and allocated aggregate safety",
    "report": "implementation/reports/P04-R4C.md"

@@ -57,6 +57,7 @@ mod reference;
 mod runner;
 mod scenario;
 mod schema;
+mod scope_bindings;
 mod selection;
 mod subject_manifest;
 mod time;
@@ -73,9 +74,10 @@ pub use digest::{
     AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest,
     ComparisonContextDigest, ContractDigest, DigestDomain, DigestParseError,
     EvaluationContextDigest, EvidenceSpecificationDigest, ParticipationDigest, PlanDigest,
-    PolicySelectionDigest, ProviderConfigurationDigest, RawObjectDigest, RunnerDigest,
-    ScenarioDigest, SemanticEvidenceDigest, SemanticGraphV2Digest, Sha256Digest,
-    SubjectManifestDigest, TargetConfigurationDigest, TrustConfigurationDigest,
+    PolicySelectionDigest, ProviderConfigurationDigest, RawObjectDigest,
+    RequirementScenarioBindingsDigest, RunnerDigest, ScenarioDigest, SemanticEvidenceDigest,
+    SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest, TargetConfigurationDigest,
+    TrustConfigurationDigest,
 };
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
@@ -132,6 +134,7 @@ pub use scenario::{
 pub use schema::{
     SchemaGroup, SchemaKind, SchemaParseError, SchemaUri, SchemaVersion, ToolVersion,
 };
+pub use scope_bindings::{RequirementScenarioBindings, ScenarioRef, ScopeBindingsError};
 pub use selection::{
     ComparisonContextInputV2, PolicySelectionInputError, PolicySelectionInputV2,
     SelectedDimensionStateV2, SelectedProfileInputV2,

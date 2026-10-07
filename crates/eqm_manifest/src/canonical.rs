@@ -8,6 +8,7 @@ mod graph_v2;
 mod participation_v2;
 mod policy_v2;
 mod scenario_v2;
+mod scope_bindings_v2;
 mod support;
 mod target_v2;
 
@@ -30,6 +31,9 @@ pub use policy_v2::{
     CanonicalPolicySelectionV2, canonicalize_policy_selection_v2, policy_selection_v2,
 };
 pub use scenario_v2::{CanonicalScenarioV2, canonicalize_scenario_v2, scenario_v2};
+pub use scope_bindings_v2::{
+    CanonicalScopeBindingsV2, canonicalize_scope_bindings_v2, scope_bindings_v2,
+};
 pub use target_v2::{
     CanonicalTargetConfigurationV2, canonicalize_target_configuration_v2, target_configuration_v2,
 };

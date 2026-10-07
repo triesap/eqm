@@ -3,7 +3,11 @@
 DEV-035 in COMMIT_SEQUENCE.md governs active `pfc all`. Codex owns implementation,
 tests, planning and green local commits through all eligible S211 work.
 P04-R4B1/R4B2/R4C are verified and independently accepted for allocated safety
-scope. Active next checkpoint: S052-A, followed by S052-B/C, then S053–S076 and
+scope. S052-A claims/canonical identity passed its allocated gates: standard 816 workspace
+executions plus seven end-to-end, three owning doctests, structure 190 and diff.
+Active next checkpoint: combined S052-B/C checked provider/scenario derivation,
+protected application/CLI consumption and dependent aggregate controls. S052 remains
+incomplete. It is followed by S053–S076 and
 mandatory independent complete-universe/reference-evaluator acceptance before
 S077; continue remaining eligible work under original gates.
 

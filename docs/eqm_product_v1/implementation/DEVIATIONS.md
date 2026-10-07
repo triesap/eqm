@@ -229,3 +229,10 @@ criterion or new product subsystem is introduced. Each slice runs owning tests,
 standard checks and final diff review; results belong in S052.md/progress.json.
 The owner authorizes manageable checkpoints under active `pfc all`. Separate
 reviewer agrees with this allocation; implementation is not yet claimed.
+
+S052 continuation: Codex selects combined B/C after inspecting authorizing and
+report consumers and the full-scope omission fixtures. The exact engine subject
+change requires these dependent migrations; they form one coherent green slice,
+not two commits separated by an unsafe implicit fallback. Separate source review
+agrees with this dependency boundary. A stays separate and S052 overall criteria,
+aggregate gates and S053 predecessor remain unchanged.
