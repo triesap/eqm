@@ -70,9 +70,9 @@ live product readiness.
 ## Supervisor-owned decisions
 
 The owner delegates scope, representation, sequencing and acceptance decisions
-between implementation periods to the Codex supervisor. DEV-034 (with retained DEV-002 through DEV-033 decisions) in the existing
-governing COMMIT_SEQUENCE.md is the current binding amendment. The implementation
-agent generates code and records verification/progress; it may select internal
+between implementation periods to the Codex supervisor. DEV-035 (with retained DEV-002 through DEV-034 decisions) in the existing
+governing COMMIT_SEQUENCE.md is the current binding amendment. Codex owns implementation and tests as well as planning; mandatory independent
+review gates remain required. The implementation agent records verification/progress; it may select internal
 mechanics within the decided contract but may not defer required work, change
 wire semantics, waive gates, reorder steps or activate new scope. Return newly
 evidenced decision requirements to the supervisor. Routine reports and verified

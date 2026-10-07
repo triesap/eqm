@@ -141,7 +141,8 @@ pub enum TargetConformance {
     Nonconformant,
 }
 
-/// Derives one target result from a complete policy-derived obligation map.
+/// Non-authorizing reference classification of an asserted status map.
+/// Production admission uses the checked evaluated carrier below.
 pub fn evaluate_target_conformance(
     target: &TargetId,
     facets: &BTreeMap<ObligationKey, FacetStatus>,
@@ -185,6 +186,47 @@ fn participates(subject: &ScopeSubject, target: &TargetId) -> bool {
     }
 }
 
+/// Engine-evaluated facet statuses bound to their immutable derivation context.
+/// Raw maps and serialized claims cannot construct this carrier.
+///
+/// ```compile_fail
+/// use eqm_engine::{CompletePolicyResolution, RequiredUniverse};
+/// fn forge(universe: RequiredUniverse) {
+///     let statuses = std::collections::BTreeMap::new();
+///     let _ = CompletePolicyResolution::new(universe, statuses);
+/// }
+/// ```
+///
+/// ```compile_fail
+/// use eqm_engine::EvaluatedFacets;
+/// let forged = EvaluatedFacets { facets: Default::default() };
+/// ```
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EvaluatedFacets {
+    context: crate::obligations::EvaluationContext,
+    facets: BTreeMap<ObligationKey, FacetStatus>,
+}
+
+/// Evaluates prepared facet facts in one checked derivation context.
+/// Facts are inputs, not trust authority: application callers must validate
+/// evidence, subject, counts, freshness and effective trust before supplying them.
+/// Reference fixtures using asserted facts prove only local engine semantics.
+pub fn evaluate_required_facets(
+    universe: &crate::RequiredUniverse,
+    inputs: BTreeMap<ObligationKey, FacetEvaluationInput>,
+) -> Result<EvaluatedFacets, ConformanceError> {
+    if inputs.keys().any(|key| !universe.contains(key)) {
+        return Err(ConformanceError::UnexpectedCoordinate);
+    }
+    Ok(EvaluatedFacets {
+        context: universe.context.clone(),
+        facets: inputs
+            .into_iter()
+            .map(|(key, input)| (key, evaluate_facet_status(&input)))
+            .collect(),
+    })
+}
+
 /// Checked policy resolution whose completeness is validated against the
 /// pre-evidence required universe instead of a freely asserted flag.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -194,19 +236,22 @@ pub struct CompletePolicyResolution {
 }
 
 impl CompletePolicyResolution {
-    /// Pairs a validated required universe with per-coordinate facet statuses.
+    /// Pairs a validated universe with engine-evaluated same-context facet statuses.
     ///
-    /// A status for a coordinate outside the required universe rejects, so a
-    /// caller cannot inflate assurance with unrelated facets. Per-target
+    /// Context is checked even when coordinate keys coincide. Evaluation rejects
+    /// facts outside the required universe before producing its carrier. Per-target
     /// participation completeness is checked when the target result is derived.
     pub fn new(
         universe: crate::RequiredUniverse,
-        facets: BTreeMap<ObligationKey, FacetStatus>,
+        evaluated: EvaluatedFacets,
     ) -> Result<Self, ConformanceError> {
-        if facets.keys().any(|key| !universe.contains(key)) {
-            return Err(ConformanceError::UnexpectedCoordinate);
+        if universe.context != evaluated.context {
+            return Err(ConformanceError::ForeignEvaluationContext);
         }
-        Ok(Self { universe, facets })
+        Ok(Self {
+            universe,
+            facets: evaluated.facets,
+        })
     }
 
     /// Returns the validated required universe.
@@ -278,6 +323,8 @@ pub enum ConformanceError {
     IncompletePolicyResolution,
     /// A facet status named a coordinate outside the required universe.
     UnexpectedCoordinate,
+    /// Evaluated facts belong to a different semantic graph or selection context.
+    ForeignEvaluationContext,
 }
 
 impl Display for ConformanceError {

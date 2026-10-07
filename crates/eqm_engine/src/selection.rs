@@ -1,7 +1,7 @@
 //! Exact policy/profile selection over prepared authority.
 
 use eqm_domain::{
-    DimensionId, Facet, FullRequirementId, Policy, PolicyId, PolicyRule, ProfileId,
+    DimensionId, Facet, FullRequirementId, Policy, PolicyId, PolicyRule, Profile, ProfileId,
     RequirementScope, Revision, RiskClass, SymbolicValueId, UnitId, WorkspaceGraph,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -133,10 +133,26 @@ impl SelectedProfile {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SelectedPolicyProfiles<'a> {
     policy: &'a Policy,
+    mode: EvaluationMode,
+    origin: AuthorityOrigin,
+    definitions: BTreeMap<ProfileId, Profile>,
     profiles: BTreeMap<ProfileId, SelectedProfile>,
 }
 
 impl<'a> SelectedPolicyProfiles<'a> {
+    /// Returns the validated evaluation mode.
+    #[must_use]
+    pub const fn mode(&self) -> EvaluationMode {
+        self.mode
+    }
+    /// Returns the selection authority boundary.
+    #[must_use]
+    pub const fn origin(&self) -> AuthorityOrigin {
+        self.origin
+    }
+    pub(crate) fn definitions(&self) -> &BTreeMap<ProfileId, Profile> {
+        &self.definitions
+    }
     /// Returns selected policy authority.
     #[must_use]
     pub const fn policy(&self) -> &'a Policy {
@@ -232,7 +248,20 @@ pub fn select_policy_profiles<'a>(
             },
         );
     }
-    Ok(SelectedPolicyProfiles { policy, profiles })
+    let definitions = profiles
+        .iter()
+        .map(|(id, selected)| {
+            let definition = &graph.profiles()[&(id.clone(), selected.revision())];
+            (id.clone(), definition.clone())
+        })
+        .collect();
+    Ok(SelectedPolicyProfiles {
+        policy,
+        profiles,
+        definitions,
+        mode,
+        origin: request.origin,
+    })
 }
 
 /// Returns policy rules whose every populated closed-selector axis matches.

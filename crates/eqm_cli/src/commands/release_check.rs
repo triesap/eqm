@@ -9,9 +9,11 @@ use eqm_domain::{
     Sha256Digest, SourceCommit, TargetId, TrustLevel, UtcInstant,
 };
 use eqm_engine::{
-    CompletePolicyResolution, FacetStatus, ReleaseCheck, ReleaseContext, ReleaseGateInput,
-    ReleaseGateStatus, ReleaseSubject, ScopeSubject, TargetConformance,
-    evaluate_complete_target_conformance, evaluate_release_gate,
+    CompletePolicyResolution, CoverageStatus, EvidenceOutcome, FacetEvaluationInput, FacetStatus,
+    FreshnessStatus, ReleaseCheck, ReleaseContext, ReleaseGateInput, ReleaseGateStatus,
+    ReleaseSubject, ScopeSubject, SupportingCheck, TargetConformance, TrustEvaluation, TruthValue,
+    WaiverEvaluation, evaluate_complete_target_conformance, evaluate_release_gate,
+    evaluate_required_facets,
 };
 use eqm_protocol::{
     CommandIdentity, EvaluationModeDto, EvidencePayloadDto, EvidenceResultDto,
@@ -101,7 +103,7 @@ fn execute_with_authority(
         release_record_digest: record.record_digest(),
         evaluated_at: now,
     };
-    let facets = obligation_statuses(
+    let inputs = obligation_inputs(
         &obligations,
         record.target(),
         &matching,
@@ -114,7 +116,8 @@ fn execute_with_authority(
             profile_values: &profile_values,
         },
     );
-    let resolution = CompletePolicyResolution::new(universe, facets)?;
+    let evaluated = evaluate_required_facets(&universe, inputs)?;
+    let resolution = CompletePolicyResolution::new(universe, evaluated)?;
     let conformance = evaluate_complete_target_conformance(record.target(), &resolution)?;
     let release_facets = resolution.facets().values().copied().collect::<Vec<_>>();
     let effective_trust = matching
@@ -322,13 +325,13 @@ struct EvidenceEvaluationContext<'a, A> {
     profile_values: &'a [eqm_protocol::ProfileValueDto],
 }
 
-fn obligation_statuses<A: ReleaseTrustAuthority>(
+fn obligation_inputs<A: ReleaseTrustAuthority>(
     derived: &eqm_engine::ObligationDerivation,
     target: &TargetId,
     evidence: &[&EvidenceResultDto],
     evaluated_at: UtcInstant,
     context: &EvidenceEvaluationContext<'_, A>,
-) -> BTreeMap<eqm_engine::ObligationKey, FacetStatus> {
+) -> BTreeMap<eqm_engine::ObligationKey, FacetEvaluationInput> {
     derived
         .obligations
         .iter()
@@ -347,7 +350,7 @@ fn obligation_statuses<A: ReleaseTrustAuthority>(
                         context.profile_values,
                     )
             });
-            let mut statuses = candidates
+            let statuses = candidates
                 .map(|value| {
                     evidence_status(
                         value,
@@ -358,11 +361,13 @@ fn obligation_statuses<A: ReleaseTrustAuthority>(
                     )
                 })
                 .collect::<Vec<_>>();
-            if statuses.len() < obligation.strength.minimum_count.get() as usize {
-                statuses.push(FacetStatus::Missing);
-            }
-            let status = aggregate_statuses(&statuses);
-            (key.clone(), status)
+            // These are actual subject/context/trust/freshness evaluations of
+            // matching evidence, not imported or caller-asserted facet statuses.
+            let input = aggregate_evidence_facts(
+                &statuses,
+                obligation.strength.minimum_count.get() as usize,
+            );
+            (key.clone(), input)
         })
         .collect()
 }
@@ -373,6 +378,47 @@ fn subject_participates(subject: &ScopeSubject, target: &TargetId) -> bool {
         ScopeSubject::Target(value) => value == target,
         ScopeSubject::Provider(_) => true,
         ScopeSubject::TargetSet(values) => values.contains(target),
+    }
+}
+
+fn aggregate_evidence_facts(
+    statuses: &[FacetStatus],
+    minimum_count: usize,
+) -> FacetEvaluationInput {
+    FacetEvaluationInput {
+        applicability: TruthValue::True,
+        context_valid: true,
+        coverage: if statuses.len() < minimum_count {
+            CoverageStatus::Missing
+        } else {
+            CoverageStatus::Covered
+        },
+        outcome: if statuses.contains(&FacetStatus::Unknown) {
+            EvidenceOutcome::Unknown
+        } else if statuses.contains(&FacetStatus::Unstable)
+            || (statuses.contains(&FacetStatus::Satisfied)
+                && statuses.contains(&FacetStatus::Failed))
+        {
+            EvidenceOutcome::Unstable
+        } else if statuses.contains(&FacetStatus::Failed) {
+            EvidenceOutcome::Failed
+        } else if statuses.contains(&FacetStatus::Missing) {
+            EvidenceOutcome::Missing
+        } else {
+            EvidenceOutcome::Satisfied
+        },
+        freshness: if statuses.contains(&FacetStatus::Stale) {
+            FreshnessStatus::Stale
+        } else {
+            FreshnessStatus::Fresh
+        },
+        // Actual insufficient/unknown effective trust is already a
+        // Failed/Unknown evidence outcome above; it cannot become pass.
+        trust: TrustEvaluation::Sufficient,
+        structure: SupportingCheck::NotRequired,
+        exposure: SupportingCheck::NotRequired,
+        release: SupportingCheck::NotRequired,
+        waiver: WaiverEvaluation::NotApplied(BTreeMap::new()),
     }
 }
 
@@ -550,6 +596,7 @@ fn evidence_status(
     }
 }
 
+#[cfg(test)]
 fn aggregate_statuses(statuses: &[FacetStatus]) -> FacetStatus {
     let has = |status| statuses.contains(&status);
     if has(FacetStatus::Satisfied) && has(FacetStatus::Failed) {
@@ -744,6 +791,36 @@ pub(crate) mod tests {
             aggregate_statuses(&[FacetStatus::Satisfied, FacetStatus::Missing]),
             FacetStatus::Missing
         );
+    }
+
+    #[test]
+    fn prepared_evidence_facts_cannot_promote_missing_or_insufficient_counts() {
+        for (statuses, count, expected) in [
+            (vec![], 1, FacetStatus::Missing),
+            (vec![FacetStatus::Satisfied], 2, FacetStatus::Missing),
+            (vec![FacetStatus::Missing], 1, FacetStatus::Missing),
+            (
+                vec![FacetStatus::Satisfied, FacetStatus::Missing],
+                1,
+                FacetStatus::Missing,
+            ),
+            (vec![FacetStatus::Satisfied], 1, FacetStatus::Satisfied),
+            (
+                vec![FacetStatus::Satisfied, FacetStatus::Failed],
+                1,
+                FacetStatus::Unstable,
+            ),
+            (
+                vec![FacetStatus::Unknown, FacetStatus::Failed],
+                1,
+                FacetStatus::Unknown,
+            ),
+        ] {
+            assert_eq!(
+                eqm_engine::evaluate_facet_status(&aggregate_evidence_facts(&statuses, count)),
+                expected
+            );
+        }
     }
 
     #[test]

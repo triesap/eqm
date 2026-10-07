@@ -1,5 +1,59 @@
 # Commit-by-commit implementation sequence — eqm_product_v1
 
+## DEV-035 — Codex takeover and independent release-matcher review
+
+Codex now owns implementation, tests, planning and engineering decisions within
+the approved MVP. The owner requests an execution command; product implementation
+and green checkpoint commits are authorized by the active `pfc all` directive. Earlier
+implementation-agent role restrictions are superseded. Original 64 R/AC, 21 RA,
+Q01–Q15, S001–S211, ordering and acceptance gates remain unchanged.
+
+Candidate b442b806e26a7ddd08ca8543b802c1b3d91251f0 is committed, not an
+uncommitted tree. RF79 is independently accepted for its allocated fail-closed
+matcher scope: ordinary target evidence cannot authorize Provider/TargetSet
+coordinates. P04-R4A is accepted; complete provider/scenario semantics still
+belong to later owning steps. Preserve all 47 numbered acceptances and earlier
+RF73/RF77 acceptance. S044/S047/S048/S049 remain partial; S052–S211 are unstarted.
+See [independent review](reports/CODEX-b442b80.md).
+
+**Next order:** P04-R4B, P04-R4C, S052–S076, mandatory independent complete-universe
+and reference-evaluator acceptance before S077, then S077–S211 subject to their
+existing dependencies and gates. Repair RF84 in P04-R4C before aggregate repair
+acceptance. Retain DEV-033 representation/provenance decisions: exact checked
+same-graph policy/context/status authority; protected actual release callers use
+explicit policy/profile revisions; no weaker-graph status admission or implicit
+protected defaults. No new owner decision is currently required.
+
+
+### P04-R4B verification slices
+
+Implement P04-R4B in two coherent green commits: P04-R4B1 binds evaluated
+facet carriers to checked full semantic graph, exact definitions/values,
+applicability, mode, origin, release context and composed strength; P04-R4B2
+integrates protected graph authority and exact selection in the actual release
+consumer. This split changes no acceptance or ordering. Preserve independent
+review before aggregate acceptance. No serializer dependency enters the engine;
+application-computed canonical projections remain descriptive identities and do
+not replace checked semantic provenance. A caller-supplied digest grants no trust.
+
+**RF84 — restore causal dirty-source regression coverage.** The dirty-source
+release test uses the original full-scope fixture, which is already non-authorizing
+after RF79. Use a separately authored supported EachTarget-only synthetic clean
+Pass control, then mutate dirty source and require non-authorization; retain the
+original full-scope negative unchanged. Prove the source-clean guard regression
+is detected independently of non-target scope rejection. Audit nearby negative
+controls for the same masking, without weakening typed-error or original scope
+assertions. This restores existing acceptance evidence, not a new product rule.
+
+Execute one bounded checkpoint at a time; retain compact resume state and external
+logs. Continue eligible work after green checkpoints. Implementation by Codex does
+not waive independent review: use a separate reviewer at mandatory gates and do
+not self-certify whole-feature acceptance. Missing automation is software work;
+only actual external authority/platform inputs block their dependent acceptance.
+`pfc all` does not authorize push, signing, deployment or publication.
+
+## Historical DEV-034 — completed execution batch
+
 ## DEV-034 — Owner-requested smaller implementation batch
 
 The owner requests a smaller batch after the preceding implementation session

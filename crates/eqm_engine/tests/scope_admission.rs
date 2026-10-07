@@ -118,7 +118,7 @@ fn omitted_target_set_coordinate_cannot_yield_conformant() -> Result<(), Box<dyn
         .map(|key| (key, FacetStatus::Satisfied))
         .collect();
     facets.remove(&target_set);
-    let resolution = CompletePolicyResolution::new(universe, facets)?;
+    let resolution = fixture_resolution(universe, facets)?;
     assert_eq!(
         evaluate_complete_target_conformance(&TargetId::new("android")?, &resolution),
         Err(ConformanceError::IncompletePolicyResolution)
@@ -167,7 +167,7 @@ fn asymmetric_and_unknown_participation_is_non_authorizing() -> Result<(), Box<d
         .cloned()
         .map(|key| (key, FacetStatus::Satisfied))
         .collect();
-    let resolution = CompletePolicyResolution::new(universe, facets)?;
+    let resolution = fixture_resolution(universe, facets)?;
     assert_eq!(
         evaluate_complete_target_conformance(&ios, &resolution)?,
         TargetConformance::Nonconformant
@@ -204,8 +204,170 @@ fn distinct_context_status_maps_cannot_be_mixed() -> Result<(), Box<dyn Error>> 
         })
         .collect();
     assert_eq!(
-        CompletePolicyResolution::new(universe, foreign),
+        fixture_resolution(universe, foreign),
         Err(ConformanceError::UnexpectedCoordinate)
     );
+    Ok(())
+}
+
+// Asserted fixture facts test pure engine semantics, not protected trust.
+fn fixture_input() -> eqm_engine::FacetEvaluationInput {
+    use eqm_engine::*;
+    FacetEvaluationInput {
+        applicability: TruthValue::True,
+        context_valid: true,
+        coverage: CoverageStatus::Covered,
+        outcome: EvidenceOutcome::Satisfied,
+        freshness: FreshnessStatus::Fresh,
+        trust: TrustEvaluation::Sufficient,
+        structure: SupportingCheck::NotRequired,
+        exposure: SupportingCheck::NotRequired,
+        release: SupportingCheck::NotRequired,
+        waiver: WaiverEvaluation::NotApplied(BTreeMap::new()),
+    }
+}
+fn fixture_resolution(
+    universe: eqm_engine::RequiredUniverse,
+    facets: BTreeMap<eqm_engine::ObligationKey, FacetStatus>,
+) -> Result<CompletePolicyResolution, ConformanceError> {
+    let inputs = facets
+        .into_iter()
+        .map(|(key, status)| {
+            assert_eq!(
+                status,
+                FacetStatus::Satisfied,
+                "fixture facts require an explicit passing control"
+            );
+            (key, fixture_input())
+        })
+        .collect();
+    let evaluated = eqm_engine::evaluate_required_facets(&universe, inputs)?;
+    CompletePolicyResolution::new(universe, evaluated)
+}
+
+#[test]
+fn equal_keys_do_not_erase_strength_graph_or_mode_provenance() -> Result<(), Box<dyn Error>> {
+    let (_repo, loaded) = support::loaded_example()?;
+    let original = finalize(&loaded)?;
+    let derive = |graph: &Finalized,
+                  mode,
+                  origin,
+                  release|
+     -> Result<eqm_engine::RequiredUniverse, Box<dyn Error>> {
+        let req = PolicyProfileRequest::new(
+            origin,
+            PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?),
+            vec![ProfileRequest::new(
+                ProfileId::new("audience.default")?,
+                Revision::new(1)?,
+                vec![(
+                    DimensionId::new("region")?,
+                    Some(SymbolicValueId::new("us")?),
+                )],
+            )?],
+        )?;
+        let selection = select_policy_profiles(graph.graph(), mode, Some(&req), None)?;
+        let inputs = selection.profiles().values().map(|selected| {
+            (
+                &graph.graph().profiles()[&(selected.id().clone(), selected.revision())],
+                selected.values(),
+            )
+        });
+        let context = ApplicabilityContext::from_profiles(inputs)?;
+        Ok(derive_required_universe(
+            graph, &selection, &context, release,
+        )?)
+    };
+    let weak = derive(
+        &original,
+        EvaluationMode::PullRequest,
+        AuthorityOrigin::TrustedInvocation,
+        None,
+    )?;
+    assert!(!weak.coordinates().is_empty());
+    let inputs = weak
+        .coordinates()
+        .iter()
+        .cloned()
+        .map(|key| (key, fixture_input()))
+        .collect();
+    let evaluated = eqm_engine::evaluate_required_facets(&weak, inputs)?;
+    // Repeated loading/semantic cloning remains reusable, without pointer identity.
+    let equivalent = derive(
+        &finalize(&loaded)?,
+        EvaluationMode::PullRequest,
+        AuthorityOrigin::TrustedInvocation,
+        None,
+    )?;
+    CompletePolicyResolution::new(equivalent, evaluated.clone())?;
+    for (mode, origin, release) in [
+        (
+            EvaluationMode::Development,
+            AuthorityOrigin::TrustedInvocation,
+            None,
+        ),
+        (
+            EvaluationMode::PullRequest,
+            AuthorityOrigin::ProtectedBaseline,
+            None,
+        ),
+        (
+            EvaluationMode::PullRequest,
+            AuthorityOrigin::TrustedInvocation,
+            Some(eqm_domain::Sha256Digest::hash_content(b"release")),
+        ),
+    ] {
+        let changed = derive(&original, mode, origin, release)?;
+        assert_eq!(
+            CompletePolicyResolution::new(changed, evaluated.clone()),
+            Err(ConformanceError::ForeignEvaluationContext)
+        );
+    }
+    for mutation in ["strength", "profile", "contract"] {
+        let (_repo, changed) = support::loaded_example_with(|root| {
+            let path = match mutation {
+                "strength" => root.join("eqm/policies/consumer.critical_flow.toml"),
+                "profile" => root.join("eqm/profiles/audience.default.toml"),
+                _ => root.join("eqm/contracts/signup.toml"),
+            };
+            // Contract filename is discovered by its exact schema/unit, not assumed.
+            let path = if mutation == "contract" {
+                std::fs::read_dir(root.join("eqm/contracts"))?
+                    .filter_map(Result::ok)
+                    .map(|e| e.path())
+                    .find(|p| {
+                        p.file_name()
+                            .is_some_and(|n| n == "auth.signup.identifier.toml")
+                    })
+                    .ok_or("identifier fixture missing")?
+            } else {
+                path
+            };
+            let text = std::fs::read_to_string(&path)?;
+            let text = match mutation {
+                "strength" => text.replace("minimum_count = 1", "minimum_count = 2"),
+                "profile" => text.replace("region = \"us\"", "region = \"eu\""),
+                _ => text.replace("Email is selected", "Email must be selected"),
+            };
+            std::fs::write(path, text)?;
+            Ok(())
+        })?;
+        let changed = derive(
+            &finalize(&changed)?,
+            EvaluationMode::PullRequest,
+            AuthorityOrigin::TrustedInvocation,
+            None,
+        )?;
+        assert_eq!(
+            weak.coordinates(),
+            changed.coordinates(),
+            "{mutation}: test must retain visible keys"
+        );
+        assert_eq!(
+            CompletePolicyResolution::new(changed, evaluated.clone()),
+            Err(ConformanceError::ForeignEvaluationContext),
+            "{mutation}"
+        );
+    }
     Ok(())
 }

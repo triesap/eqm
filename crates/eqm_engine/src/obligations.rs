@@ -126,8 +126,9 @@ pub struct ObligationDerivation {
 /// Construction is crate-private: there is no public `Default` or unchecked
 /// constructor, so an empty or partial set cannot be asserted as complete
 /// authority. Mixing a universe with status maps from a distinct selection is
-/// rejected because every coordinate carries its exact policy revision,
-/// profiles, subject, facet and release context. There is no public default or
+/// rejected using private semantic provenance, including graph definitions,
+/// composed strength, mode, origin, applicability and immutable release context.
+/// Coordinate labels alone are insufficient. There is no public default or
 /// unchecked constructor:
 ///
 /// ```compile_fail
@@ -137,6 +138,20 @@ pub struct ObligationDerivation {
 pub struct RequiredUniverse {
     coordinates: BTreeSet<ObligationKey>,
     unresolved: BTreeSet<UnresolvedCoordinate>,
+    pub(crate) context: EvaluationContext,
+}
+
+/// Private semantic provenance; only checked derivation can construct it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct EvaluationContext {
+    graph: eqm_domain::WorkspaceGraph,
+    policy: eqm_domain::Policy,
+    profiles: BTreeMap<ProfileId, SelectedProfile>,
+    applicability: ApplicabilityContext,
+    mode: crate::EvaluationMode,
+    origin: crate::AuthorityOrigin,
+    release_context: Option<Sha256Digest>,
+    obligations: BTreeMap<ObligationKey, Obligation>,
 }
 
 impl RequiredUniverse {
@@ -190,6 +205,16 @@ pub fn derive_required_universe(
     Ok(RequiredUniverse {
         coordinates: derived.obligations.keys().cloned().collect(),
         unresolved: derived.unresolved,
+        context: EvaluationContext {
+            graph: finalized.graph().clone(),
+            policy: selection.policy().clone(),
+            profiles: selection.profiles().clone(),
+            applicability: applicability.clone(),
+            mode: selection.mode(),
+            origin: selection.origin(),
+            release_context,
+            obligations: derived.obligations,
+        },
     })
 }
 
@@ -538,6 +563,9 @@ fn verify_same_graph_context(
             .profiles()
             .get(&(selected.id().clone(), selected.revision()))
             .ok_or(ObligationError::ForeignSelection)?;
+        if selection.definitions().get(selected.id()) != Some(definition) {
+            return Err(ObligationError::ForeignSelection);
+        }
         inputs.push((definition, selected.values()));
     }
     let expected = ApplicabilityContext::from_profiles(inputs)?;

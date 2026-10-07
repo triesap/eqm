@@ -230,7 +230,7 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
         .cloned()
         .map(|key| (key, FacetStatus::Satisfied))
         .collect();
-    let resolution = CompletePolicyResolution::new(first.clone(), complete.clone())?;
+    let resolution = fixture_resolution(first.clone(), complete.clone())?;
     assert_eq!(
         evaluate_complete_target_conformance(&TargetId::new("android")?, &resolution)?,
         TargetConformance::Conformant
@@ -245,7 +245,7 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
         .ok_or("target coordinate missing")?;
     let mut missing = complete;
     missing.remove(&removed_key);
-    let resolution = CompletePolicyResolution::new(first.clone(), missing)?;
+    let resolution = fixture_resolution(first.clone(), missing)?;
     assert_eq!(
         evaluate_complete_target_conformance(&removed_target, &resolution),
         Err(ConformanceError::IncompletePolicyResolution)
@@ -258,7 +258,7 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
         .map(|key| (key, FacetStatus::Satisfied))
         .collect();
     assert_eq!(
-        CompletePolicyResolution::new(empty, extra),
+        fixture_resolution(empty, extra),
         Err(ConformanceError::UnexpectedCoordinate)
     );
     Ok(())
@@ -379,4 +379,39 @@ fn facet_strength_does_not_leak_across_facets() -> Result<(), Box<dyn Error>> {
     assert_eq!(strength(Facet::Behavior)?, TrustLevel::SignedCi);
     assert_eq!(strength(Facet::Accessibility)?, TrustLevel::TrustedCi);
     Ok(())
+}
+
+// Asserted fixture facts test pure engine semantics, not protected trust.
+fn fixture_input() -> eqm_engine::FacetEvaluationInput {
+    use eqm_engine::*;
+    FacetEvaluationInput {
+        applicability: TruthValue::True,
+        context_valid: true,
+        coverage: CoverageStatus::Covered,
+        outcome: EvidenceOutcome::Satisfied,
+        freshness: FreshnessStatus::Fresh,
+        trust: TrustEvaluation::Sufficient,
+        structure: SupportingCheck::NotRequired,
+        exposure: SupportingCheck::NotRequired,
+        release: SupportingCheck::NotRequired,
+        waiver: WaiverEvaluation::NotApplied(BTreeMap::new()),
+    }
+}
+fn fixture_resolution(
+    universe: eqm_engine::RequiredUniverse,
+    facets: BTreeMap<eqm_engine::ObligationKey, FacetStatus>,
+) -> Result<CompletePolicyResolution, ConformanceError> {
+    let inputs = facets
+        .into_iter()
+        .map(|(key, status)| {
+            assert_eq!(
+                status,
+                FacetStatus::Satisfied,
+                "fixture facts require an explicit passing control"
+            );
+            (key, fixture_input())
+        })
+        .collect();
+    let evaluated = eqm_engine::evaluate_required_facets(&universe, inputs)?;
+    CompletePolicyResolution::new(universe, evaluated)
 }
