@@ -116,6 +116,16 @@ Land checked derivation, protected request consumption, adapter membership and
 those dependent controls together. A remains separate; no S053 work is included
 and S052 acceptance still requires the full original aggregate gate.
 
+Protected preparation loads one immutable authority bundle containing the finalized
+graph and explicit scope-binding map. Candidate supplied maps are prevalidated
+claims and, when supplied, must equal that protected map; omitted candidate maps
+never cause fallback to candidate scope. Development passes explicit claims.
+No extra load, clock capture, latest lookup or runner effect is introduced.
+Read/report adapters must retain unresolved scope/applicability/participation as
+non-authorizing diagnostics. Allocate EQM-E0501 within the existing diagnostic
+range for required unresolved scope; update its registry/explanation and owning
+checks. An otherwise empty check cannot pass by dropping those coordinates.
+
 **RF84 — restore causal dirty-source regression coverage.** The dirty-source
 release test uses the original full-scope fixture, which is already non-authorizing
 after RF79. Use a separately authored supported EachTarget-only synthetic clean
@@ -531,6 +541,22 @@ success; repeated actor and wrong-scenario/revision controls execute through rea
 preparation. Expand S052's file allocation to domain/application/manifest/CLI and
 usage docs, and run their all-target tests plus original engine/standard/schema/
 structure gates. This is an allocation clarification, not a new backend feature.
+
+A mapped active scenario with no actor or assigned provider depender in the
+selected cohort is incomplete scope, not an obligation invisible to every
+required target. Retain its full occurrences/edges and emit MissingScopeAuthority;
+this closes the existing non-empty exact denominator criterion. It does not
+enlarge the selected cohort or invent actor participation.
+
+Shared-provider affected membership includes True/Unknown actual dependers,
+not an explicitly False depender merely because a different depender is Unknown.
+Unknown requirement applicability combined with known False coordinate
+participation is visible NotApplicable under the existing three-valued AND.
+All-False exact provider/scenario participation is N/A; mixed scenario
+participation remains unresolved with full actors retained. Missing scope never
+uses these rules to create an implicit subject. An unknown requirement with
+missing scope is still MissingScopeAuthority, including an exact outside-only
+scenario or an unassigned provider; empty affected membership cannot hide it.
 
 ### S053 and remaining P04/P05 decisions
 

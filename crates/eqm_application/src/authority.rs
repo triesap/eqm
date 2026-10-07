@@ -5,6 +5,7 @@
 //! permissive fallback: a use case that requires authority and does not have
 //! the capability receives an explicit error.
 
+use eqm_domain::RequirementScenarioBindings;
 use eqm_engine::{EvaluationMode, FinalizedWorkspaceGraph};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -48,14 +49,50 @@ impl Display for AuthorityError {
 
 impl Error for AuthorityError {}
 
+/// One immutable provider-owned graph and explicit scope-binding selection.
+///
+/// Construction grants no verification result. The application validates the
+/// exact map against this graph, and only the explicitly configured protected
+/// capability supplies this bundle for protected evaluation.
+pub struct ProtectedAuthority<'a> {
+    graph: &'a FinalizedWorkspaceGraph,
+    scope_bindings: &'a RequirementScenarioBindings,
+}
+
+impl<'a> ProtectedAuthority<'a> {
+    /// Supplies both authority inputs in the one provider response.
+    #[must_use]
+    pub const fn new(
+        graph: &'a FinalizedWorkspaceGraph,
+        scope_bindings: &'a RequirementScenarioBindings,
+    ) -> Self {
+        Self {
+            graph,
+            scope_bindings,
+        }
+    }
+
+    /// Returns the immutable finalized graph.
+    #[must_use]
+    pub const fn graph(&self) -> &'a FinalizedWorkspaceGraph {
+        self.graph
+    }
+
+    /// Returns the provider's explicit scenario selection.
+    #[must_use]
+    pub const fn scope_bindings(&self) -> &'a RequirementScenarioBindings {
+        self.scope_bindings
+    }
+}
+
 /// Narrow provider of protected, already-finalized graph authority.
 ///
 /// Implementations read protected authority configuration; they never execute
 /// runners, fetch network content, or mutate authored state.
 pub trait AuthorityProvider {
-    /// Loads the protected finalized graph for the requested mode.
+    /// Loads the immutable protected graph and explicit scope map once.
     fn load_authority(
         &self,
         request: &AuthorityRequest,
-    ) -> Result<&FinalizedWorkspaceGraph, AuthorityError>;
+    ) -> Result<ProtectedAuthority<'_>, AuthorityError>;
 }

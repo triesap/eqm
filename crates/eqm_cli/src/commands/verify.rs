@@ -30,6 +30,7 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let scenarios = parsed.global.scenarios.clone();
     let policy = parsed.global.policy.clone();
     let unit = option(&parsed, "--unit").map(str::to_owned);
     let target = option(&parsed, "--target").map(str::to_owned);
@@ -45,7 +46,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         let _ = baseline.workspace_digest();
     }
     let (selection, obligations) =
-        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles, &scenarios)?;
     let selected_profiles = profile_values(&selection)?;
     let mut plan = Vec::new();
     for binding in session
@@ -79,7 +80,13 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
             evidence_results: BTreeSet::<String>::new(),
             summary: BTreeMap::new(),
         };
-        return render(&session, offline, result, 0);
+        return render(
+            &session,
+            offline,
+            result,
+            0,
+            evaluation::scope_diagnostics(&obligations)?,
+        );
     }
     let work = work_directory(session.repository_root())?;
     let mut results = BTreeSet::new();
@@ -195,6 +202,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         } else {
             0
         },
+        evaluation::scope_diagnostics(&obligations)?,
     )
 }
 
@@ -380,13 +388,17 @@ fn render<S: serde::Serialize, E: serde::Serialize>(
     offline: bool,
     result: VerifyResultDto<S, E>,
     exit_code: u8,
+    scope_diagnostics: Vec<eqm_domain::Diagnostic>,
 ) -> Result<CommandExecution, Box<dyn Error>> {
     let envelope = ReportEnvelope::new(
         CommandIdentity::Verify,
         Some(session.workspace_digest()),
         context(offline)?,
         Some(result),
-        Vec::new(),
+        scope_diagnostics
+            .iter()
+            .map(eqm_protocol::DiagnosticDto::from_domain)
+            .collect(),
     )?;
     Ok(CommandExecution {
         payload: OutputPayload {

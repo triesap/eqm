@@ -88,6 +88,14 @@ pub fn diagnostic_registry() -> Result<Vec<DiagnosticDescriptor>, DiagnosticBuil
             remediation: "Provide current trusted evidence for the reported obligation.",
         },
         DiagnosticDescriptor {
+            code: code(501)?,
+            severity: Severity::Error,
+            title: "required scope is unresolved",
+            authority: "docs/cli.md",
+            explanation: "A required coordinate lacks exact scenario/provider authority or has unresolved applicability or participation. It remains non-authorizing before evidence selection.",
+            remediation: "Supply exact scenario bindings and declared provider/participation authority with complete profile context; protected modes require the independent protected inputs.",
+        },
+        DiagnosticDescriptor {
             code: code(700)?,
             severity: Severity::Error,
             title: "adapter discovery failed",
@@ -119,7 +127,7 @@ mod tests {
     fn registry_is_complete_unique_live_and_explainable() -> Result<(), Box<dyn Error>> {
         let registry = diagnostic_registry()?;
         validate_diagnostic_registry(&registry)?;
-        let emitted = [1, 100, 200, 300, 301, 302, 303, 304, 305, 500, 700]
+        let emitted = [1, 100, 200, 300, 301, 302, 303, 304, 305, 500, 501, 700]
             .into_iter()
             .map(|number| DiagnosticCode::from_number(number).ok_or("invalid emitted code"))
             .collect::<Result<Vec<_>, _>>()?;

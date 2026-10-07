@@ -7,7 +7,7 @@ use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId, Ta
 use eqm_engine::{
     ApplicabilityContext, AuthorityOrigin, CompletePolicyResolution, ConformanceError,
     EvaluationMode, FacetStatus, FragmentDigestMap, PolicyProfileRequest, PolicyRef,
-    ProfileRequest, ScopeSubject, TargetConformance, UnresolvedReason, derive_required_universe,
+    ProfileRequest, ScopeSubject, TargetConformance, UnresolvedReason,
     evaluate_complete_target_conformance, expand_fragments, resolve_graph, select_policy_profiles,
 };
 use eqm_manifest::canonicalize_fragment;
@@ -104,7 +104,7 @@ fn context_for(
 }
 
 #[test]
-fn omitted_target_set_coordinate_cannot_yield_conformant() -> Result<(), Box<dyn Error>> {
+fn omitted_exact_scenario_coordinate_cannot_yield_conformant() -> Result<(), Box<dyn Error>> {
     let (_repository, loaded) = support::loaded_example()?;
     let finalized = finalize(&loaded)?;
     let selection = select_policy_profiles(
@@ -114,14 +114,14 @@ fn omitted_target_set_coordinate_cannot_yield_conformant() -> Result<(), Box<dyn
         None,
     )?;
     let applicability = context(&finalized)?;
-    let universe = derive_required_universe(&finalized, &selection, &applicability, None)?;
+    let universe = support::derive_fixture_universe(&finalized, &selection, &applicability, None)?;
     // The end-to-end requirement produces a target-set coordinate.
     let target_set = universe
         .coordinates()
         .iter()
-        .find(|key| matches!(key.subject, ScopeSubject::TargetSet(_)))
+        .find(|key| matches!(key.subject, ScopeSubject::Scenario(_)))
         .cloned()
-        .ok_or("target-set coordinate missing")?;
+        .ok_or("exact scenario coordinate missing")?;
     let mut facets: BTreeMap<_, _> = universe
         .coordinates()
         .iter()
@@ -147,7 +147,7 @@ fn asymmetric_and_unknown_participation_is_non_authorizing() -> Result<(), Box<d
         None,
     )?;
     let applicability = context(&finalized)?;
-    let universe = derive_required_universe(&finalized, &selection, &applicability, None)?;
+    let universe = support::derive_fixture_universe(&finalized, &selection, &applicability, None)?;
     let requirement: eqm_domain::FullRequirementId =
         "account.create.signup.identifier#email_default".parse()?;
     let android = TargetId::new("android")?;
@@ -225,7 +225,8 @@ fn empty_participation_is_non_authorizing_for_v2_and_genuine_v1() -> Result<(), 
             None,
         )?;
         let applicability = context_for(&finalized, &selected)?;
-        let universe = derive_required_universe(&finalized, &selected, &applicability, None)?;
+        let universe =
+            support::derive_fixture_universe(&finalized, &selected, &applicability, None)?;
         assert!(
             universe.coordinates().is_empty(),
             "legacy={legacy}: implicit global participation"
@@ -284,7 +285,8 @@ fn authored_participation_true_false_unknown_remains_coordinate_exact() -> Resul
             None,
         )?;
         let applicability = context_for(&finalized, &selected)?;
-        let universe = derive_required_universe(&finalized, &selected, &applicability, None)?;
+        let universe =
+            support::derive_fixture_universe(&finalized, &selected, &applicability, None)?;
         assert!(
             universe
                 .coordinates()
@@ -343,7 +345,7 @@ fn foreign_policy_profile_definitions_and_applicability_reject_at_derivation()
         None,
     )?;
     let applicability = context_for(&finalized, &selected)?;
-    let baseline = derive_required_universe(&finalized, &selected, &applicability, None)?;
+    let baseline = support::derive_fixture_universe(&finalized, &selected, &applicability, None)?;
     for axis in ["policy", "profile"] {
         let (_foreign_repository, foreign_loaded) = support::loaded_example_with(|root| {
             let (relative, before, after) = if axis == "policy" {
@@ -368,7 +370,7 @@ fn foreign_policy_profile_definitions_and_applicability_reject_at_derivation()
         })?;
         let foreign = finalize(&foreign_loaded)?;
         assert_eq!(
-            derive_required_universe(&foreign, &selected, &applicability, None),
+            support::derive_fixture_universe(&foreign, &selected, &applicability, None),
             Err(eqm_engine::ObligationError::ForeignSelection),
             "{axis}"
         );
@@ -379,7 +381,8 @@ fn foreign_policy_profile_definitions_and_applicability_reject_at_derivation()
             None,
         )?;
         let fresh_context = context_for(&foreign, &fresh)?;
-        let fresh_universe = derive_required_universe(&foreign, &fresh, &fresh_context, None)?;
+        let fresh_universe =
+            support::derive_fixture_universe(&foreign, &fresh, &fresh_context, None)?;
         assert_eq!(
             fresh_universe.coordinates(),
             baseline.coordinates(),
@@ -394,10 +397,10 @@ fn foreign_policy_profile_definitions_and_applicability_reject_at_derivation()
     )?;
     let eu_context = context_for(&finalized, &eu)?;
     assert_eq!(
-        derive_required_universe(&finalized, &selected, &eu_context, None),
+        support::derive_fixture_universe(&finalized, &selected, &eu_context, None),
         Err(eqm_engine::ObligationError::ForeignApplicability)
     );
-    assert!(derive_required_universe(&finalized, &eu, &eu_context, None).is_ok());
+    assert!(support::derive_fixture_universe(&finalized, &eu, &eu_context, None).is_ok());
     Ok(())
 }
 
@@ -412,7 +415,7 @@ fn distinct_context_status_maps_cannot_be_mixed() -> Result<(), Box<dyn Error>> 
         None,
     )?;
     let applicability = context(&finalized)?;
-    let universe = derive_required_universe(&finalized, &selection, &applicability, None)?;
+    let universe = support::derive_fixture_universe(&finalized, &selection, &applicability, None)?;
     // A status map for a different release context names coordinates outside
     // this universe and is rejected rather than silently ignored.
     let foreign: BTreeMap<_, _> = universe
@@ -496,7 +499,7 @@ fn equal_keys_do_not_erase_strength_graph_or_mode_provenance() -> Result<(), Box
             )
         });
         let context = ApplicabilityContext::from_profiles(inputs)?;
-        Ok(derive_required_universe(
+        Ok(support::derive_fixture_universe(
             graph, &selection, &context, release,
         )?)
     };
@@ -611,6 +614,15 @@ configuration_digest = "sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f3
 owners = ["owner://team/providers"]
 "#,
         )?;
+        let workspace = root.join("eqm.toml");
+        let original = std::fs::read_to_string(&workspace)?;
+        std::fs::write(
+            workspace,
+            original.replace(
+                "[targets.android]",
+                "[targets.android]\nproviders = [\"provider.required\"]",
+            ),
+        )?;
         Ok(())
     })?;
     let finalized = finalize(&loaded)?;
@@ -620,12 +632,13 @@ owners = ["owner://team/providers"]
         Some(&request()?),
         None,
     )?;
-    let universe = derive_required_universe(&finalized, &selection, &context(&finalized)?, None)?;
+    let universe =
+        support::derive_fixture_universe(&finalized, &selection, &context(&finalized)?, None)?;
     assert!(universe.unresolved().is_empty());
     let provider = universe
         .coordinates()
         .iter()
-        .find(|key| matches!(key.subject, ScopeSubject::Provider(_)))
+        .find(|key| matches!(key.subject, ScopeSubject::CheckedProvider(_)))
         .cloned()
         .ok_or("provider coordinate missing")?;
     let mut facets: BTreeMap<_, _> = universe

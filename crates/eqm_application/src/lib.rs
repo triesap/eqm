@@ -45,7 +45,7 @@ pub use acquisition::{
     AcquisitionError, AcquisitionOutcome, AcquisitionReceipt, AcquisitionRequest, EvidenceVerifier,
     Executor, VerificationError, VerificationReport, VerificationRequest,
 };
-pub use authority::{AuthorityError, AuthorityProvider, AuthorityRequest};
+pub use authority::{AuthorityError, AuthorityProvider, AuthorityRequest, ProtectedAuthority};
 pub use clock::{ClockError, host_evaluation_time};
 pub use cohort::{CohortError, ResolvedCohort, match_cohort_subjects, resolve_cohort};
 pub use comparison::{
@@ -62,8 +62,8 @@ pub use provenance::{
 pub use selection::{
     ObligationPreparationError, PolicyReference, PolicySelectionRequest, PreparedObligations,
     ProfileSelection, ProtectedPreparationError, SelectionPreparationError, applicability_context,
-    prepare_obligations, prepare_obligations_from_request, prepare_protected_obligations,
-    resolve_selection_request,
+    prepare_obligations, prepare_obligations_from_request, prepare_obligations_with_scope_bindings,
+    prepare_protected_obligations, resolve_selection_request,
 };
 pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
 pub use source::{

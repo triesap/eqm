@@ -26,6 +26,7 @@ type ContextResult = ContextResultDto<Value, Value, Value, Value>;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let scenarios = parsed.global.scenarios.clone();
     let policy = parsed.global.policy.clone();
     let unit = parsed.command.operands[0].clone();
     let target = option_value(&parsed, "--target").map(ToOwned::to_owned);
@@ -48,7 +49,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         return Err("context unit did not resolve to a binding".into());
     }
     let (selection, derived) =
-        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles, &scenarios)?;
 
     let mut authority_candidates = Vec::new();
     if let Some(surface) = graph
@@ -172,7 +173,10 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         Some(session.workspace_digest()),
         invocation(offline)?,
         Some(result),
-        Vec::new(),
+        evaluation::scope_diagnostics(&derived)?
+            .iter()
+            .map(eqm_protocol::DiagnosticDto::from_domain)
+            .collect(),
     )?;
     Ok(CommandExecution {
         payload: OutputPayload {
@@ -190,12 +194,13 @@ fn authority_record(kind: &str, entity: Value) -> Value {
 }
 
 fn subject_matches(obligation: &eqm_engine::Obligation, target: Option<&str>) -> bool {
-    target.is_none_or(|target| match &obligation.key.subject {
-        eqm_engine::ScopeSubject::Target(value) => value.as_str() == target,
-        eqm_engine::ScopeSubject::TargetSet(values) => {
-            values.iter().any(|value| value.as_str() == target)
-        }
-        eqm_engine::ScopeSubject::Provider(_) => true,
+    target.is_none_or(|target| {
+        obligation
+            .key
+            .subject
+            .targets()
+            .iter()
+            .any(|value| value.as_str() == target)
     })
 }
 

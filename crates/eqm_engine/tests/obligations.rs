@@ -10,8 +10,7 @@ use eqm_engine::{
     ApplicabilityContext, AuthorityOrigin, CompletePolicyResolution, ConformanceError,
     EvaluationMode, FacetStatus, FragmentDigestMap, PolicyProfileRequest, PolicyRef,
     ProfileRequest, ScopeSubject, SelectedPolicyProfiles, TargetConformance, UnresolvedReason,
-    derive_obligations, derive_required_universe, evaluate_complete_target_conformance,
-    expand_fragments, resolve_graph, select_policy_profiles,
+    evaluate_complete_target_conformance, expand_fragments, resolve_graph, select_policy_profiles,
 };
 use eqm_manifest::canonicalize_fragment;
 use std::collections::BTreeMap;
@@ -100,7 +99,8 @@ fn signup_obligations_cover_each_target_and_end_to_end_without_duplicates()
             Some(SymbolicValueId::new("us")?),
         )]),
     )?;
-    let derived = derive_obligations(&finalized, &selection, &applicability, None)?;
+    let derived =
+        support::derive_fixture_obligations(&finalized, &selection, &applicability, None)?;
     assert_eq!(derived.obligations.len(), 5);
     assert!(derived.unmatched_warnings.is_empty());
     assert!(derived.unknown_applicability.is_empty());
@@ -116,7 +116,7 @@ fn signup_obligations_cover_each_target_and_end_to_end_without_duplicates()
         derived
             .obligations
             .keys()
-            .filter(|key| matches!(key.subject, ScopeSubject::TargetSet(_)))
+            .filter(|key| matches!(key.subject, ScopeSubject::Scenario(_)))
             .count(),
         1
     );
@@ -165,8 +165,8 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
         )]),
     )?;
 
-    let first = derive_required_universe(&finalized, &selection, &applicability, None)?;
-    let second = derive_required_universe(&finalized, &selection, &applicability, None)?;
+    let first = support::derive_fixture_universe(&finalized, &selection, &applicability, None)?;
+    let second = support::derive_fixture_universe(&finalized, &selection, &applicability, None)?;
     assert_eq!(first, second, "universe derivation must be deterministic");
     assert_eq!(first.coordinates().len(), 5);
     assert!(
@@ -179,7 +179,7 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
         first
             .coordinates()
             .iter()
-            .any(|key| matches!(key.subject, ScopeSubject::TargetSet(_)))
+            .any(|key| matches!(key.subject, ScopeSubject::Scenario(_)))
     );
     let expected_revision = Revision::new(1)?;
     assert!(
@@ -207,7 +207,7 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
         Some(&request),
         None,
     )?;
-    let empty = derive_required_universe(&minimal, &empty_selection, &applicability, None)?;
+    let empty = support::derive_fixture_universe(&minimal, &empty_selection, &applicability, None)?;
     assert!(empty.coordinates().is_empty());
     assert!(!first.is_subset_of(&empty));
     assert!(empty.is_subset_of(&first));
@@ -285,7 +285,7 @@ fn unknown_and_not_applicable_coordinates_remain_visible() -> Result<(), Box<dyn
     let requirement = FullRequirementId::new("account.create.signup.identifier#email_default")?;
 
     let (selection, unknown) = select_and_context(&finalized, None)?;
-    let universe = derive_required_universe(&finalized, &selection, &unknown, None)?;
+    let universe = support::derive_fixture_universe(&finalized, &selection, &unknown, None)?;
     assert!(universe.unresolved().iter().any(|coordinate| {
         coordinate.requirement == requirement
             && coordinate.reason == UnresolvedReason::UnknownApplicability
@@ -313,14 +313,14 @@ fn unknown_and_not_applicable_coordinates_remain_visible() -> Result<(), Box<dyn
     }
 
     let (selection, not_applicable) = select_and_context(&finalized, Some("us"))?;
-    let universe = derive_required_universe(&finalized, &selection, &not_applicable, None)?;
+    let universe = support::derive_fixture_universe(&finalized, &selection, &not_applicable, None)?;
     assert!(universe.unresolved().iter().any(|coordinate| {
         coordinate.requirement == requirement
             && coordinate.reason == UnresolvedReason::NotApplicable
     }));
 
     let (selection, applicable) = select_and_context(&finalized, Some("eu"))?;
-    let universe = derive_required_universe(&finalized, &selection, &applicable, None)?;
+    let universe = support::derive_fixture_universe(&finalized, &selection, &applicable, None)?;
     assert!(
         universe
             .unresolved()
@@ -387,7 +387,8 @@ fn facet_strength_does_not_leak_across_facets() -> Result<(), Box<dyn Error>> {
             Some(SymbolicValueId::new("us")?),
         )]),
     )?;
-    let derivation = derive_obligations(&finalized, &selection, &applicability, None)?;
+    let derivation =
+        support::derive_fixture_obligations(&finalized, &selection, &applicability, None)?;
     let requirement = FullRequirementId::new("account.create.signup.otp#six_decimal_digits")?;
     let strength = |facet: Facet| -> Result<TrustLevel, Box<dyn Error>> {
         derivation

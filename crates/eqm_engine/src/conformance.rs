@@ -179,11 +179,7 @@ fn classify_statuses(statuses: &[FacetStatus]) -> TargetConformance {
 }
 
 fn participates(subject: &ScopeSubject, target: &TargetId) -> bool {
-    match subject {
-        ScopeSubject::Target(value) => value == target,
-        ScopeSubject::Provider(_) => true,
-        ScopeSubject::TargetSet(values) => values.contains(target),
-    }
+    subject.participates(target)
 }
 
 /// Engine-evaluated facet statuses bound to their immutable derivation context.
@@ -305,6 +301,9 @@ pub fn evaluate_complete_target_conformance(
 }
 
 fn unresolved_blocks(unresolved: &UnresolvedCoordinate, target: &TargetId) -> bool {
+    if unresolved.reason == UnresolvedReason::MissingScopeAuthority {
+        return true;
+    }
     let affects = match &unresolved.subject {
         Some(subject) => participates(subject, target),
         None => true,
@@ -480,7 +479,7 @@ mod tests {
             evaluate_target_conformance(&web, &facets, false),
             Err(ConformanceError::IncompletePolicyResolution)
         );
-        assert!(participates(
+        assert!(!participates(
             &ScopeSubject::Provider(eqm_domain::ProviderId::new("identity.primary")?),
             &web
         ));

@@ -43,8 +43,12 @@ requirements and states which facets are required, the evidence scope,
 freshness, minimum count, and minimum trust. EQM expands this into exact
 obligation coordinates.
 
-Common scopes include one obligation per target and one end-to-end obligation
-across an exact target set. An obligation includes policy, unit, requirement,
+Common scopes include one obligation per target, a checked provider scope over
+its declared dependers, and an end-to-end obligation over an exact scenario.
+The scenario retains its ID/revision, distinct role-bearing occurrences and
+dependency edges, including repeated actors of the same target. Explicit
+requirement-to-scenario bindings select it; omission remains unresolved and never
+means all targets. An obligation includes policy, unit, requirement,
 scope subject, facet, selected profile values, and evidence constraints. It is
 therefore not safe to reuse evidence merely because two records have similar
 names.

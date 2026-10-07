@@ -41,6 +41,8 @@ pub struct GlobalOptions {
     pub config: Option<PathBuf>,
     /// Repeatable profile selections.
     pub profiles: Vec<String>,
+    /// Repeatable exact requirement-to-scenario selection claims.
+    pub scenarios: Box<[String]>,
     /// Optional exact policy reference, `ID` or `ID@REVISION`.
     pub policy: Option<String>,
     /// Selected output format.
@@ -168,6 +170,11 @@ const GLOBALS: &[OptionSpec] = &[
     },
     OptionSpec {
         name: "--profile",
+        takes_value: true,
+        repeatable: true,
+    },
+    OptionSpec {
+        name: "--scenario",
         takes_value: true,
         repeatable: true,
     },
@@ -760,6 +767,7 @@ fn build_globals(
     Ok(GlobalOptions {
         config: one(&values, "--config").map(PathBuf::from),
         profiles,
+        scenarios: many(&values, "--scenario").into_boxed_slice(),
         policy: one(&values, "--policy").map(str::to_owned),
         format,
         offline: values.contains_key("--offline"),
@@ -789,7 +797,7 @@ fn usage(message: impl Into<String>) -> UsageError {
 
 /// Returns deterministic top-level help.
 pub const fn help() -> &'static str {
-    "EquivalenceMatrix\n\nUsage: eqm [GLOBAL OPTIONS] <COMMAND> [ARGS] [OPTIONS]\n\nCommands:\n  init  new  fmt  validate  check  show  locate  context\n  matrix  obligations  diff  affected  discover  reconcile\n  verify  attest  release check  explain  doctor  lock update  mcp serve\n\nGlobal options:\n  --config <PATH>  --profile <ID[@REVISION][=VALUES]>  --policy <ID[@REVISION]>  --format <FORMAT>\n  --offline  --no-progress  --color <WHEN>  --baseline <IDENTITY>\n  --output <PATH>\n"
+    "EquivalenceMatrix\n\nUsage: eqm [GLOBAL OPTIONS] <COMMAND> [ARGS] [OPTIONS]\n\nCommands:\n  init  new  fmt  validate  check  show  locate  context\n  matrix  obligations  diff  affected  discover  reconcile\n  verify  attest  release check  explain  doctor  lock update  mcp serve\n\nGlobal options:\n  --config <PATH>  --profile <ID[@REVISION][=VALUES]>  --policy <ID[@REVISION]>  --format <FORMAT>\n  --offline  --no-progress  --color <WHEN>  --baseline <IDENTITY>\n  --output <PATH>  --scenario <FULL_REQUIREMENT=SCENARIO_ID@REVISION>\n"
 }
 
 #[cfg(test)]

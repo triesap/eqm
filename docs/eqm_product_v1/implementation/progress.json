@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S052-B/C",
+ "next_step": "S053",
  "implementation": "in_progress",
- "local_verification": "S052_A_allocated_accepted_standard816workspace_plus7endtoend_3owning_doctests_structure190;50_numbered_accepted;S052_B_C_pending;whole_MVP_incomplete",
+ "local_verification": "S052_allocated_accepted_standard839workspace_plus7endtoend_5owning_doctests;51_numbered_accepted;S053_next;whole_MVP_incomplete",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1566,18 +1566,23 @@
   },
   {
    "id": "S052",
-   "status": "in_progress",
+   "status": "complete",
    "commit_sha": null,
    "report": "implementation/reports/S052.md",
-   "verification": [],
+   "verification": [
+    "standard check exit0:839 workspace executions plus7 end-to-end",
+    "engine/application doctests exit0:5 controls",
+    "separate allocated source review PASS",
+    "package structure exit0:190 files;diff check exit0"
+   ],
    "baseline_exceptions": [],
-   "implementation_status": "S052_A_allocated_accepted_B_C_unstarted",
-   "supervisor_status": "incomplete",
+   "implementation_status": "implemented_verified_accepted_for_allocated_scope",
+   "supervisor_status": "accepted_for_allocated_scope",
    "implementation_checkpoints": [
     {
      "id": "S052-A",
      "status": "accepted_for_allocated_scope",
-     "commit_sha": null,
+     "commit_sha": "6597ac425fedc0e8662d3f979ac4b16badd105e4",
      "report": "implementation/reports/S052.md",
      "verification": [
       "standard check exit0:816 workspace executions plus7 end-to-end",
@@ -1588,7 +1593,7 @@
     },
     {
      "id": "S052-B/C",
-     "status": "unstarted",
+     "status": "accepted_for_allocated_scope",
      "commit_sha": null,
      "report": "implementation/reports/S052.md"
     }
@@ -3199,7 +3204,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P04",
- "active_step": "S052-B/C",
+ "active_step": "S053",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3233,10 +3238,10 @@
    "first_step": "S044",
    "last_step": "S058",
    "status": "in_progress",
-   "completed_steps": 7,
+   "completed_steps": 8,
    "total_steps": 15,
-   "accepted_steps": 7,
-   "retained_implemented_steps": 8,
+   "accepted_steps": 8,
+   "retained_implemented_steps": 9,
    "repairs_implemented": [
     "P04-R2",
     "P04-R3",
@@ -3245,7 +3250,7 @@
     "P04-R4B2",
     "P04-R4C"
    ],
-   "next_step": "S052-A"
+   "next_step": "S053"
   },
   {
    "id": "EQM-P05",
@@ -3550,15 +3555,15 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S052-B/C",
+ "next_checkpoint": "S053",
  "supervisor_review": {
-  "source_commit": "5c1a92d9bb34dd553fc1813e24a1676e399d15d1",
-  "candidate": "committed",
-  "report": "implementation/reports/P04-R4C.md",
-  "status": "allocated_safety_accepted_50_numbered_local_acceptances",
+  "source_commit": null,
+  "candidate": "S052_B_C_green_pending_commit",
+  "report": "implementation/reports/S052.md",
+  "status": "allocated_scope_accepted_51_numbered_local_acceptances",
   "amendment": "DEV-035",
-  "independent_checks": "separate aggregate source PASS;sourceclean/count/UnknownApplicability causal probes exit101 restored;standard810workspace+7endtoend;5doctests;structure189",
-  "next_checkpoint": "S052-A",
+  "independent_checks": "separate scope source PASS;outside-cohort pre-repair causal regression exit101;standard839workspace+7endtoend;5doctests",
+  "next_checkpoint": "S053",
   "release_candidate": false
  },
  "execution_target": "pfc all: P04-R4B1/P04-R4B2/P04-R4C then S052\u2013S211; original independent gates retained",

@@ -25,6 +25,7 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let scenarios = parsed.global.scenarios.clone();
     let policy = parsed.global.policy.clone();
     let units = option_values(&parsed, "--unit");
     let targets = option_values(&parsed, "--target");
@@ -67,7 +68,8 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         }
     }
 
-    let (_, obligations) = evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
+    let (_, obligations) =
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles, &scenarios)?;
     for obligation in obligations.obligations.values().filter(|obligation| {
         (units.is_empty() || units.contains(obligation.key.unit.as_str()))
             && (targets.is_empty() || subject_matches(&obligation.key.subject, &targets))
@@ -90,6 +92,24 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         )?);
         *counts.entry(FacetStatusDto::Missing).or_insert(0) += 1;
     }
+    for coordinate in &obligations.unresolved {
+        if matches!(
+            coordinate.reason,
+            eqm_engine::UnresolvedReason::UnknownApplicability
+                | eqm_engine::UnresolvedReason::UnknownParticipation
+                | eqm_engine::UnresolvedReason::MissingScopeAuthority
+        ) {
+            findings.insert(FindingDto {
+                diagnostic_code: "EQM-E0501".to_owned(),
+                obligation: Some(evaluation::unresolved_label(coordinate)),
+                status: FacetStatusDto::Unknown,
+                evidence: None,
+                waiver: None,
+            });
+            *counts.entry(FacetStatusDto::Unknown).or_insert(0) += 1;
+        }
+    }
+    diagnostics.extend(evaluation::scope_diagnostics(&obligations)?);
     let status = if findings.is_empty() {
         ResultStatusDto::Ok
     } else {
@@ -177,13 +197,10 @@ fn option_values(parsed: &ParsedCli, name: &str) -> BTreeSet<String> {
 }
 
 fn subject_matches(subject: &ScopeSubject, targets: &BTreeSet<String>) -> bool {
-    match subject {
-        ScopeSubject::Target(target) => targets.contains(target.as_str()),
-        ScopeSubject::TargetSet(values) => values
-            .iter()
-            .any(|target| targets.contains(target.as_str())),
-        ScopeSubject::Provider(_) => true,
-    }
+    subject
+        .targets()
+        .iter()
+        .any(|target| targets.contains(target.as_str()))
 }
 
 fn context(offline: bool) -> Result<InvocationContextDto<(), ()>, Box<dyn Error>> {
@@ -405,6 +422,73 @@ test_id = "sharedView"
                     == "structure:binding.android.shared:shared_view"),
             "a forbidden artifact symlink must fail structurally: {findings:?}"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn missing_end_to_end_scope_blocks_an_otherwise_empty_check() -> Result<(), Box<dyn Error>> {
+        let repository = crate::test_support::example_repository()?;
+        let root = repository.path();
+        for artifact in [
+            "apps/android/app/src/main/java/com/example/signup/SignupScreen.kt",
+            "apps/ios/Signup/Sources/SignupView.swift",
+        ] {
+            let path = root.join(artifact);
+            fs::create_dir_all(path.parent().ok_or("parent")?)?;
+            fs::write(path, "// synthetic structural presence control\n")?;
+        }
+        // All per-target requirements are explicitly N/A; the active scene is
+        // the only denominator contribution. No generated state or runner.
+        for name in ["identifier", "otp_six_digits"] {
+            let path = root.join(format!("eqm/contracts/participation.signup.{name}.toml"));
+            fs::write(
+                &path,
+                fs::read_to_string(&path)?.replace("always = true", "always = false"),
+            )?;
+        }
+        let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+        else {
+            return Err("parse".into());
+        };
+        let blocked = execute(parsed, root)?;
+        assert_ne!(blocked.exit_code, 0);
+        assert_eq!(
+            blocked.payload.json["result"]["obligation_counts"]["missing"],
+            serde_json::Value::Null
+        );
+        assert_eq!(
+            blocked.payload.json["result"]["obligation_counts"]["unknown"],
+            1
+        );
+        assert!(
+            blocked.payload.json["diagnostics"]
+                .as_array()
+                .ok_or("diagnostics")?
+                .iter()
+                .any(|diagnostic| diagnostic["code"] == "EQM-E0501")
+        );
+        assert!(!root.join(".eqm").exists());
+        // Same check ingress becomes N/A only when requirement applicability
+        // itself is explicitly false, rather than when scope is omitted.
+        let path = root.join("eqm/contracts/auth.signup.otp.toml");
+        fs::write(
+            &path,
+            fs::read_to_string(&path)?.replace(
+                "facets = [\"behavior\"]",
+                "facets = [\"behavior\"]\n[requirements.applicability]\nalways = false",
+            ),
+        )?;
+        let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+        else {
+            return Err("parse".into());
+        };
+        let not_applicable = execute(parsed, root)?;
+        assert_eq!(
+            not_applicable.exit_code, 0,
+            "{}",
+            not_applicable.payload.json
+        );
+        assert!(!root.join(".eqm").exists());
         Ok(())
     }
 }

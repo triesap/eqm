@@ -21,6 +21,7 @@ mod obligations;
 mod outcomes;
 mod release;
 mod resolve;
+mod scope;
 mod selection;
 mod structure;
 mod waivers;
@@ -71,7 +72,8 @@ pub use monotonicity::{
 pub use obligations::{
     Obligation, ObligationDerivation, ObligationError, ObligationKey, ObligationStrength,
     RequiredUniverse, ScopeSubject, UnresolvedCoordinate, UnresolvedReason, derive_obligations,
-    derive_required_universe,
+    derive_obligations_with_scope_bindings, derive_required_universe,
+    derive_required_universe_with_scope_bindings,
 };
 pub use outcomes::{EvidenceOutcome, aggregate_evidence_outcomes};
 pub use release::{
@@ -89,3 +91,5 @@ pub use structure::{
     StructureReport, evaluate_structure, evaluate_structure_with_roots,
 };
 pub use waivers::{WaivableStatus, WaiverEvaluation, WaiverInvalidReason, evaluate_waivers};
+
+pub use scope::{ProviderScope, ScenarioScope, ScopeBindingFailure, validate_scope_bindings};

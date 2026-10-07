@@ -1,9 +1,11 @@
 //! End-to-end loading and policy derivation for the three-target signup fixture.
 
+mod support;
+
 use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId};
 use eqm_engine::{
     ApplicabilityContext, AuthorityOrigin, EvaluationMode, FragmentDigestMap, PolicyProfileRequest,
-    PolicyRef, ProfileRequest, ScopeSubject, derive_obligations, expand_fragments, resolve_graph,
+    PolicyRef, ProfileRequest, ScopeSubject, expand_fragments, resolve_graph,
     select_policy_profiles,
 };
 use eqm_manifest::{canonicalize_fragment, load_workspace};
@@ -36,6 +38,7 @@ fn current_signup_fixture_resolves_and_derives_all_target_obligations() -> Resul
     let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/signup");
     let root = tempfile::tempdir()?;
     copy_tree(&source, root.path())?;
+    support::write_scenario(root.path(), &["android", "ios", "web"])?;
     let loaded = load_workspace(root.path(), None)?;
     assert_eq!(loaded.graph_input().bindings.len(), 6);
     assert_eq!(loaded.graph_input().targets.len(), 3);
@@ -77,7 +80,8 @@ fn current_signup_fixture_resolves_and_derives_all_target_obligations() -> Resul
             Some(SymbolicValueId::new("us")?),
         )]),
     )?;
-    let obligations = derive_obligations(&finalized, &selection, &applicability, None)?;
+    let obligations =
+        support::derive_fixture_obligations(&finalized, &selection, &applicability, None)?;
     assert_eq!(
         obligations
             .obligations
@@ -90,7 +94,7 @@ fn current_signup_fixture_resolves_and_derives_all_target_obligations() -> Resul
         obligations
             .obligations
             .keys()
-            .filter(|key| matches!(key.subject, ScopeSubject::TargetSet(_)))
+            .filter(|key| matches!(key.subject, ScopeSubject::Scenario(_)))
             .count(),
         1
     );

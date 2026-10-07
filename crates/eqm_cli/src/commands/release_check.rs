@@ -45,6 +45,7 @@ fn execute_with_authority(
 ) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let scenarios = parsed.global.scenarios.clone();
     let policy = parsed.global.policy.clone();
     let record_path = option(&parsed, "--release-record")
         .ok_or("release record required")?
@@ -60,7 +61,8 @@ fn execute_with_authority(
     {
         return Err("release target is outside the prepared workspace".into());
     }
-    let input = evaluation::selection_request(policy.as_deref(), &profiles)?;
+    let input =
+        evaluation::selection_request_with_scopes(policy.as_deref(), &profiles, &scenarios)?;
     let prepared = match eqm_application::prepare_protected_obligations(
         session.finalized(),
         eqm_engine::EvaluationMode::Release,
@@ -422,11 +424,7 @@ fn obligation_inputs<A: ReleaseTrustAuthority>(
 
 /// Returns whether `subject` participates in the exact `target` coordinate.
 fn subject_participates(subject: &ScopeSubject, target: &TargetId) -> bool {
-    match subject {
-        ScopeSubject::Target(value) => value == target,
-        ScopeSubject::Provider(_) => true,
-        ScopeSubject::TargetSet(values) => values.contains(target),
-    }
+    subject.participates(target)
 }
 
 fn aggregate_evidence_facts(
@@ -803,6 +801,7 @@ pub(crate) mod tests {
     // authority. Evidence signing alone (SyntheticSignedTrust) supplies no graph.
     struct SyntheticReleaseAuthority {
         graph: eqm_engine::FinalizedWorkspaceGraph,
+        scope_bindings: eqm_domain::RequirementScenarioBindings,
         record_verified: bool,
         runtime_verified: bool,
     }
@@ -813,8 +812,35 @@ pub(crate) mod tests {
         let request =
             SessionRequest::new(Default::default(), crate::cli::CommandName::ReleaseCheck);
         let session = prepare(&request, root)?;
+        // Explicit single-fixture authority input. This test-only mapping is
+        // neither a production default nor a selection inferred from evidence.
+        let full =
+            eqm_domain::FullRequirementId::new("account.create.signup.otp#valid_code_advances")?;
+        let end_to_end = session
+            .finalized()
+            .graph()
+            .surfaces()
+            .values()
+            .filter(|surface| surface.id().as_str() == full.owner())
+            .flat_map(|surface| surface.requirements().values())
+            .any(|requirement| {
+                requirement.id().as_str() == full.local()
+                    && requirement.scope() == eqm_domain::RequirementScope::EndToEnd
+            });
+        let entries = if end_to_end {
+            vec![(
+                full,
+                eqm_domain::ScenarioRef::new(
+                    eqm_domain::ScenarioId::new("scenario.release_fixture")?,
+                    eqm_domain::Revision::new(1)?,
+                ),
+            )]
+        } else {
+            Vec::new()
+        };
         Ok(SyntheticReleaseAuthority {
             graph: session.finalized().clone(),
+            scope_bindings: eqm_domain::RequirementScenarioBindings::new(entries)?,
             record_verified: true,
             runtime_verified: true,
         })
@@ -824,11 +850,15 @@ pub(crate) mod tests {
         fn load_authority(
             &self,
             request: &eqm_application::AuthorityRequest,
-        ) -> Result<&eqm_engine::FinalizedWorkspaceGraph, eqm_application::AuthorityError> {
+        ) -> Result<eqm_application::ProtectedAuthority<'_>, eqm_application::AuthorityError>
+        {
             if request.mode != eqm_engine::EvaluationMode::Release {
                 return Err(eqm_application::AuthorityError::Invalid);
             }
-            Ok(&self.graph)
+            Ok(eqm_application::ProtectedAuthority::new(
+                &self.graph,
+                &self.scope_bindings,
+            ))
         }
     }
 
@@ -983,7 +1013,7 @@ pub(crate) mod tests {
     }
 
     /// RF79 real-ingress control: the authored full-scope signup fixture keeps its
-    /// end-to-end target-set obligation, so ordinary web target evidence can never
+    /// exact end-to-end scenario obligation, so ordinary web target evidence can never
     /// authorize the release and the coordinate stays visible and unresolved.
     #[test]
     fn full_scope_signup_rejects_incomplete_non_target_evidence() -> Result<(), Box<dyn Error>> {
@@ -992,8 +1022,8 @@ pub(crate) mod tests {
         assert!(
             non_target_keys(repository.path())?
                 .iter()
-                .any(|key| matches!(key.subject, ScopeSubject::TargetSet(_))),
-            "the original end-to-end target set must remain visible"
+                .any(|key| matches!(key.subject, ScopeSubject::Scenario(_))),
+            "the exact end-to-end scenario must remain visible"
         );
         Ok(())
     }
@@ -1001,7 +1031,7 @@ pub(crate) mod tests {
     /// RF79 real-ingress control: a single-member end-to-end target set still
     /// cannot be satisfied by ordinary target evidence.
     #[test]
-    fn single_member_target_set_rejects_ordinary_target_evidence() -> Result<(), Box<dyn Error>> {
+    fn single_member_scenario_rejects_ordinary_target_evidence() -> Result<(), Box<dyn Error>> {
         let repository =
             release_fixture_with("pass", false, "signed_ci", single_member_target_set)?;
         assert_non_authorizing(repository.path(), "pass")?;
@@ -1011,9 +1041,9 @@ pub(crate) mod tests {
                 .iter()
                 .any(|key| matches!(
                     &key.subject,
-                    ScopeSubject::TargetSet(values) if values.len() == 1 && values.contains(&web)
+                    ScopeSubject::Scenario(scope) if scope.selected_targets().len() == 1 && scope.selected_targets().contains(&web) && scope.participants().len() == 2
                 )),
-            "a single-member target set must remain visible and unresolved"
+            "a repeated-actor single-target scenario must remain independently required"
         );
         Ok(())
     }
@@ -1027,7 +1057,7 @@ pub(crate) mod tests {
         assert!(
             non_target_keys(repository.path())?
                 .iter()
-                .any(|key| matches!(key.subject, ScopeSubject::Provider(_))),
+                .any(|key| matches!(key.subject, ScopeSubject::CheckedProvider(_))),
             "the provider coordinate must remain visible and unresolved"
         );
         Ok(())
@@ -1440,6 +1470,7 @@ pub(crate) mod tests {
         let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/signup");
         let repository = tempfile::tempdir()?;
         copy_fixture(&source, repository.path())?;
+        write_release_scene(repository.path(), &["web", "ios", "android"])?;
         transform(repository.path())?;
         git(repository.path(), &["init", "-q"])?;
         git(
@@ -1474,7 +1505,7 @@ pub(crate) mod tests {
         let request = SessionRequest::new(parsed.global, parsed.command.name);
         let session = prepare(&request, repository.path())?;
         let (selection, obligations) =
-            evaluation::derive_with_policy(&session, None, &["audience.default".to_owned()])?;
+            evaluation::derive_with_policy(&session, None, &["audience.default".to_owned()], &[])?;
         let profile_values = attest::selected_profile_values(&selection)?;
         let profiles = serde_json::to_value(&profile_values)?;
         let commit = git_output(repository.path(), &["rev-parse", "HEAD"])?;
@@ -1650,6 +1681,25 @@ always = false
                 ),
             )?;
         }
+        write_release_scene(root, &["web"])?;
+        Ok(())
+    }
+
+    /// Authors the exact synthetic scenario, including a repeated role-bearing
+    /// occurrence. It does not select a scope or fabricate build assignments.
+    fn write_release_scene(root: &Path, targets: &[&str]) -> Result<(), Box<dyn Error>> {
+        let mut text = String::from(
+            "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json\"\nid = \"scenario.release_fixture\"\nrevision = 1\n",
+        );
+        for (index, target) in targets.iter().enumerate() {
+            text.push_str(&format!("\n[[participants]]\nid = \"actor_{index}\"\nrole = \"edge\"\n[participants.subject]\ntarget = \"{target}\"\n"));
+        }
+        let target = targets.first().ok_or("fixture actor absent")?;
+        text.push_str(&format!("\n[[participants]]\nid = \"repeat_actor\"\nrole = \"observer\"\n[participants.subject]\ntarget = \"{target}\"\n\n[[dependencies]]\nfrom = \"repeat_actor\"\nto = \"actor_0\"\n"));
+        fs::write(
+            root.join("eqm/contracts/scenario.release_fixture.toml"),
+            text,
+        )?;
         Ok(())
     }
 
@@ -1664,6 +1714,12 @@ id = "provider.required"
 configuration_digest = "sha256:071ca2227754705837aa3ef9748ed59e9f8a015fd765c42f391a4cbc271c6d5e"
 owners = ["owner://team/providers"]
 "#,
+        )?;
+        rewrite_contract(
+            root,
+            "eqm.toml",
+            "[targets.web]",
+            "[targets.web]\nproviders = [\"provider.required\"]",
         )?;
         rewrite_contract(
             root,
@@ -1711,12 +1767,23 @@ owners = ["owner://team/providers"]
         let request =
             SessionRequest::new(Default::default(), crate::cli::CommandName::ReleaseCheck);
         let session = prepare(&request, root)?;
-        let (_selection, obligations) =
-            evaluation::derive_with_policy(&session, None, &["audience.default".to_owned()])?;
+        let authority = synthetic_release_authority(root)?;
+        let input = evaluation::selection_request(
+            Some("consumer.critical_flow@1"),
+            &["audience.default@1=region:us".to_owned()],
+        )?;
+        let prepared = eqm_application::prepare_protected_obligations(
+            session.finalized(),
+            eqm_engine::EvaluationMode::Release,
+            &input,
+            Some(&authority),
+            None,
+        )?;
         let web = TargetId::new("web")?;
-        Ok(obligations
-            .obligations
-            .keys()
+        Ok(prepared
+            .universe()
+            .coordinates()
+            .iter()
             .filter(|key| {
                 subject_participates(&key.subject, &web)
                     && !matches!(key.subject, ScopeSubject::Target(_))

@@ -123,7 +123,7 @@ fn invalid_reasons(
         reasons.insert(WaiverInvalidReason::Policy);
     }
     let scope = waiver.scope();
-    if scope.target() != &evidence_subject(&obligation.subject) {
+    if evidence_subject(&obligation.subject).as_ref() != Some(scope.target()) {
         reasons.insert(WaiverInvalidReason::Subject);
     }
     if scope.unit() != &obligation.unit {
@@ -176,10 +176,11 @@ fn invalid_reasons(
     reasons
 }
 
-fn evidence_subject(subject: &ScopeSubject) -> EvidenceScopeSubject {
+fn evidence_subject(subject: &ScopeSubject) -> Option<EvidenceScopeSubject> {
     match subject {
-        ScopeSubject::Target(target) => EvidenceScopeSubject::Target(target.clone()),
-        ScopeSubject::Provider(provider) => EvidenceScopeSubject::Provider(provider.clone()),
-        ScopeSubject::TargetSet(targets) => EvidenceScopeSubject::TargetSet(targets.clone()),
+        ScopeSubject::Target(target) => Some(EvidenceScopeSubject::Target(target.clone())),
+        ScopeSubject::Provider(provider) => Some(EvidenceScopeSubject::Provider(provider.clone())),
+        ScopeSubject::TargetSet(targets) => Some(EvidenceScopeSubject::TargetSet(targets.clone())),
+        ScopeSubject::CheckedProvider(_) | ScopeSubject::Scenario(_) => None,
     }
 }

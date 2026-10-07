@@ -19,13 +19,15 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let scenarios = parsed.global.scenarios.clone();
     let policy = parsed.global.policy.clone();
     let unit = option_value(&parsed, "--unit").map(ToOwned::to_owned);
     let target = option_value(&parsed, "--target").map(ToOwned::to_owned);
     let statuses = option_values(&parsed, "--status");
     let request = SessionRequest::new(parsed.global, parsed.command.name);
     let session = prepare(&request, start)?;
-    let (_, derived) = evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
+    let (_, derived) =
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles, &scenarios)?;
     let include_missing = statuses.is_empty() || statuses.contains("missing");
     let obligations = if include_missing {
         derived
@@ -67,7 +69,10 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         Some(session.workspace_digest()),
         context(offline)?,
         Some(result),
-        Vec::new(),
+        evaluation::scope_diagnostics(&derived)?
+            .iter()
+            .map(eqm_protocol::DiagnosticDto::from_domain)
+            .collect(),
     )?;
     Ok(CommandExecution {
         payload: OutputPayload {
@@ -81,11 +86,10 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
 }
 
 fn subject_matches(subject: &ScopeSubject, target: &str) -> bool {
-    match subject {
-        ScopeSubject::Target(value) => value.as_str() == target,
-        ScopeSubject::TargetSet(values) => values.iter().any(|value| value.as_str() == target),
-        ScopeSubject::Provider(_) => true,
-    }
+    subject
+        .targets()
+        .iter()
+        .any(|value| value.as_str() == target)
 }
 
 fn option_value<'a>(parsed: &'a ParsedCli, name: &str) -> Option<&'a str> {

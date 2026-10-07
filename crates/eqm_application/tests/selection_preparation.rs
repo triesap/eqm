@@ -24,16 +24,20 @@ use std::path::Path;
 struct ProtectedGraph {
     graph: eqm_engine::FinalizedWorkspaceGraph,
     calls: Cell<usize>,
+    scope_bindings: eqm_domain::RequirementScenarioBindings,
 }
 
 impl AuthorityProvider for ProtectedGraph {
     fn load_authority(
         &self,
         request: &AuthorityRequest,
-    ) -> Result<&eqm_engine::FinalizedWorkspaceGraph, AuthorityError> {
+    ) -> Result<eqm_application::ProtectedAuthority<'_>, AuthorityError> {
         assert_eq!(request.mode, EvaluationMode::Release);
         self.calls.set(self.calls.get() + 1);
-        Ok(&self.graph)
+        Ok(eqm_application::ProtectedAuthority::new(
+            &self.graph,
+            &self.scope_bindings,
+        ))
     }
 }
 
@@ -78,6 +82,7 @@ fn protected_preparation_requires_a_real_capability_and_exact_context() -> Resul
     let provider = ProtectedGraph {
         graph: session.finalized().clone(),
         calls: Cell::new(0),
+        scope_bindings: eqm_domain::RequirementScenarioBindings::new(Vec::new())?,
     };
     assert!(matches!(
         prepare_protected_obligations(
@@ -136,6 +141,7 @@ fn protected_preparation_requires_a_real_capability_and_exact_context() -> Resul
     let foreign_provider = ProtectedGraph {
         graph: foreign_session.finalized().clone(),
         calls: Cell::new(0),
+        scope_bindings: eqm_domain::RequirementScenarioBindings::new(Vec::new())?,
     };
     assert!(matches!(
         prepare_protected_obligations(
@@ -161,6 +167,7 @@ fn protected_omissions_reject_before_loading_authority() -> Result<(), Box<dyn E
     let provider = ProtectedGraph {
         graph: session.finalized().clone(),
         calls: Cell::new(0),
+        scope_bindings: eqm_domain::RequirementScenarioBindings::new(Vec::new())?,
     };
     let policy = Some(PolicyReference::new(
         PolicyId::new("consumer.critical_flow")?,

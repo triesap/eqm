@@ -20,13 +20,15 @@ use std::path::Path;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let scenarios = parsed.global.scenarios.clone();
     let policy = parsed.global.policy.clone();
     let kind_name = parsed.command.operands[0].clone();
     let unit_filter = option_value(&parsed, "--unit").map(ToOwned::to_owned);
     let target_filter = option_value(&parsed, "--target").map(ToOwned::to_owned);
     let request = SessionRequest::new(parsed.global, parsed.command.name);
     let session = prepare(&request, start)?;
-    let (_, derived) = evaluation::derive_with_policy(&session, policy.as_deref(), &profiles)?;
+    let (_, derived) =
+        evaluation::derive_with_policy(&session, policy.as_deref(), &profiles, &scenarios)?;
     let kind = parse_kind(&kind_name)?;
 
     let units = derived
@@ -182,7 +184,10 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         Some(session.workspace_digest()),
         context(offline, session.evaluation_time())?,
         Some(result),
-        Vec::new(),
+        evaluation::scope_diagnostics(&derived)?
+            .iter()
+            .map(eqm_protocol::DiagnosticDto::from_domain)
+            .collect(),
     )?;
     Ok(CommandExecution {
         payload: OutputPayload {
@@ -207,11 +212,7 @@ fn parse_kind(value: &str) -> Result<MatrixKind, Box<dyn Error>> {
 }
 
 fn subject_targets(subject: &ScopeSubject) -> Vec<TargetId> {
-    match subject {
-        ScopeSubject::Target(value) => vec![value.clone()],
-        ScopeSubject::TargetSet(values) => values.iter().cloned().collect(),
-        ScopeSubject::Provider(_) => Vec::new(),
-    }
+    subject.targets().into_iter().collect()
 }
 
 fn axis_id(value: &MatrixAxisKey) -> String {

@@ -4,7 +4,8 @@
 
 Global options may appear before or after the command. Important options are
 `--config PATH`, repeatable `--profile ID[@REVISION][=DIM:VALUE,...]`, `--policy
-ID[@REVISION]`, `--format human|json|sarif|markdown`, `--offline`,
+ID[@REVISION]`, repeatable
+`--scenario FULL_REQUIREMENT=SCENARIO_ID@REVISION`, `--format human|json|sarif|markdown`, `--offline`,
 `--no-progress`, `--color auto|always|never`, `--baseline ID`, and `--output
 PATH`. `--output -` means stdout. Machine formats emit one deterministic
 document on stdout; progress and diagnostics belong on stderr.
@@ -18,6 +19,22 @@ Protected selections require exact policy and profile revisions and every
 profile dimension value. These arguments are unverified claims checked against
 independent protected authority, and never grant trust or fall back to
 development defaults.
+
+End-to-end requirements require an explicit exact scenario selection, for example
+`--scenario account.create.signup.otp#valid_code_advances=scenario.signup@1`.
+The referenced scenario must already exist in the same checked workspace.
+Duplicate entries, missing or wrong revisions, unknown requirements/scenarios,
+and mappings for a non-end-to-end requirement reject. Omission remains visible
+as unresolved scope; it never selects all targets or all scenarios. Repeated
+actors, roles and dependency edges remain part of the required scope.
+
+Protected authority supplies the scope map together with the graph. A supplied
+candidate map must equal that protected map; omission uses the protected map.
+CLI arguments cannot replace protected authority. Provider scopes use declared
+target assignments and dependency paths, rather than every selected target.
+Missing scope or unknown participation emits `EQM-E0501` and cannot pass a check.
+Existing target/provider-set waiver references do not authorize an exact
+scenario or checked provider scope.
 
 ## Authoring commands
 

@@ -20,6 +20,7 @@ use std::time::SystemTime;
 pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<dyn Error>> {
     let offline = parsed.global.offline;
     let profiles = parsed.global.profiles.clone();
+    let scenarios = parsed.global.scenarios.clone();
     let policy = parsed.global.policy.clone();
     let baseline_identity = parsed.global.baseline.clone().ok_or("baseline required")?;
     let explicit = option_values(&parsed, "--path");
@@ -34,7 +35,8 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     } else {
         explicit
     };
-    let (_, obligations) = evaluation::derive_with_policy(&current, policy.as_deref(), &profiles)?;
+    let (_, obligations) =
+        evaluation::derive_with_policy(&current, policy.as_deref(), &profiles, &scenarios)?;
     let indexes = indexes(&current, &obligations);
     let changed_files = paths
         .iter()
@@ -66,7 +68,10 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         Some(current.workspace_digest()),
         context(offline)?,
         Some(result),
-        Vec::new(),
+        evaluation::scope_diagnostics(&obligations)?
+            .iter()
+            .map(eqm_protocol::DiagnosticDto::from_domain)
+            .collect(),
     )?;
     Ok(CommandExecution {
         payload: OutputPayload {

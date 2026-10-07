@@ -11,13 +11,15 @@
 
 use crate::{AuthorityError, AuthorityProvider, AuthorityRequest};
 use eqm_domain::{
-    DimensionId, PolicyId, ProfileId, Revision, Sha256Digest, SymbolicValueId, WorkspaceGraph,
+    DimensionId, PolicyId, ProfileId, RequirementScenarioBindings, Revision, Sha256Digest,
+    SymbolicValueId, WorkspaceGraph,
 };
 use eqm_engine::{
     ApplicabilityContext, ApplicabilityError, AuthorityOrigin, EvaluationMode,
     FinalizedWorkspaceGraph, ObligationDerivation, ObligationError, PolicyProfileRequest,
     PolicyRef, ProfileRequest, RequiredUniverse, SelectedPolicyProfiles, SelectionError,
-    derive_obligations, derive_required_universe, select_policy_profiles,
+    derive_obligations_with_scope_bindings, derive_required_universe_with_scope_bindings,
+    select_policy_profiles, validate_scope_bindings,
 };
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -31,6 +33,8 @@ pub enum ProtectedPreparationError {
     Authority(AuthorityError),
     /// Candidate definitions differ from the independently supplied authority.
     CandidateMismatch,
+    /// Supplied candidate selection differs from the protected exact scope map.
+    CandidateScopeMismatch,
     /// Exact selection or obligation preparation failed.
     Preparation(ObligationPreparationError),
 }
@@ -43,6 +47,9 @@ impl Display for ProtectedPreparationError {
             }
             Self::Authority(error) => {
                 write!(formatter, "protected preparation authority failed: {error}")
+            }
+            Self::CandidateScopeMismatch => {
+                formatter.write_str("candidate scope bindings differ from protected authority")
             }
             Self::CandidateMismatch => {
                 formatter.write_str("candidate graph differs from protected authority")
@@ -57,7 +64,7 @@ impl Error for ProtectedPreparationError {
         match self {
             Self::Authority(error) => Some(error),
             Self::Preparation(error) => Some(error),
-            Self::DevelopmentMode | Self::CandidateMismatch => None,
+            Self::DevelopmentMode | Self::CandidateMismatch | Self::CandidateScopeMismatch => None,
         }
     }
 }
@@ -92,15 +99,28 @@ pub fn prepare_protected_obligations<'a>(
     select_policy_profiles(candidate.graph(), mode, Some(&resolved), None)
         .map_err(ObligationPreparationError::Selection)
         .map_err(ProtectedPreparationError::Preparation)?;
-    let protected = provider
+    if let Some(bindings) = input.scope_bindings() {
+        validate_scope_bindings(candidate, bindings)
+            .map_err(ObligationPreparationError::Obligations)
+            .map_err(ProtectedPreparationError::Preparation)?;
+    }
+    let authority = provider
         .ok_or(ProtectedPreparationError::Authority(
             AuthorityError::MissingProvider,
         ))?
         .load_authority(&AuthorityRequest::new(mode))
         .map_err(ProtectedPreparationError::Authority)?;
+    let protected = authority.graph();
     if candidate.graph() != protected.graph() {
         return Err(ProtectedPreparationError::CandidateMismatch);
     }
+    if input
+        .scope_bindings()
+        .is_some_and(|claims| claims != authority.scope_bindings())
+    {
+        return Err(ProtectedPreparationError::CandidateScopeMismatch);
+    }
+    let exact = exact.with_scope_bindings(authority.scope_bindings().clone());
     prepare_obligations_from_request(protected, mode, &exact, release_context)
         .map_err(ProtectedPreparationError::Preparation)
 }
@@ -244,6 +264,7 @@ pub struct PolicySelectionRequest {
     origin: AuthorityOrigin,
     policy: Option<PolicyReference>,
     profiles: Vec<ProfileSelection>,
+    scope_bindings: Option<RequirementScenarioBindings>,
 }
 
 impl PolicySelectionRequest {
@@ -258,6 +279,7 @@ impl PolicySelectionRequest {
             origin,
             policy,
             profiles,
+            scope_bindings: None,
         }
     }
 
@@ -268,6 +290,20 @@ impl PolicySelectionRequest {
         profiles: Vec<ProfileSelection>,
     ) -> Self {
         Self::new(AuthorityOrigin::CandidateLocal, policy, profiles)
+    }
+
+    /// Adds explicit non-authorizing scenario selection claims. Protected
+    /// preparation compares them with independently supplied scope authority.
+    #[must_use]
+    pub fn with_scope_bindings(mut self, bindings: RequirementScenarioBindings) -> Self {
+        self.scope_bindings = Some(bindings);
+        self
+    }
+
+    /// Returns supplied scope claims, preserving omission versus explicit empty.
+    #[must_use]
+    pub const fn scope_bindings(&self) -> Option<&RequirementScenarioBindings> {
+        self.scope_bindings.as_ref()
     }
 
     /// Returns the explicit authority origin.
@@ -627,7 +663,17 @@ pub fn prepare_obligations_from_request<'a>(
 ) -> Result<PreparedObligations<'a>, ObligationPreparationError> {
     let resolved = resolve_selection_request(finalized, mode, request)
         .map_err(ObligationPreparationError::SelectionPreparation)?;
-    prepare_obligations(finalized, mode, Some(&resolved), None, release_context)
+    let empty = RequirementScenarioBindings::new(Vec::new()).map_err(|_| {
+        ObligationPreparationError::Obligations(ObligationError::InvalidFinalizedGraph)
+    })?;
+    prepare_obligations_with_scope_bindings(
+        finalized,
+        mode,
+        Some(&resolved),
+        None,
+        release_context,
+        request.scope_bindings().unwrap_or(&empty),
+    )
 }
 
 /// Selection and obligation preparation failure retaining its causal error.
@@ -694,14 +740,49 @@ pub fn prepare_obligations<'a>(
     development_default: Option<&PolicyProfileRequest>,
     release_context: Option<Sha256Digest>,
 ) -> Result<PreparedObligations<'a>, ObligationPreparationError> {
+    let empty = RequirementScenarioBindings::new(Vec::new()).map_err(|_| {
+        ObligationPreparationError::Obligations(ObligationError::InvalidFinalizedGraph)
+    })?;
+    prepare_obligations_with_scope_bindings(
+        finalized,
+        mode,
+        explicit,
+        development_default,
+        release_context,
+        &empty,
+    )
+}
+
+/// Prepares exact checked scopes with explicit bindings from the calling use
+/// case's authority input. This pure operation grants no trust conclusion.
+pub fn prepare_obligations_with_scope_bindings<'a>(
+    finalized: &'a FinalizedWorkspaceGraph,
+    mode: EvaluationMode,
+    explicit: Option<&PolicyProfileRequest>,
+    development_default: Option<&PolicyProfileRequest>,
+    release_context: Option<Sha256Digest>,
+    scope_bindings: &RequirementScenarioBindings,
+) -> Result<PreparedObligations<'a>, ObligationPreparationError> {
     let graph = finalized.graph();
     let selection = select_policy_profiles(graph, mode, explicit, development_default)
         .map_err(ObligationPreparationError::Selection)?;
     let applicability = applicability_context(graph, &selection)?;
-    let derivation = derive_obligations(finalized, &selection, &applicability, release_context)
-        .map_err(ObligationPreparationError::Obligations)?;
-    let universe = derive_required_universe(finalized, &selection, &applicability, release_context)
-        .map_err(ObligationPreparationError::Obligations)?;
+    let derivation = derive_obligations_with_scope_bindings(
+        finalized,
+        &selection,
+        &applicability,
+        release_context,
+        scope_bindings,
+    )
+    .map_err(ObligationPreparationError::Obligations)?;
+    let universe = derive_required_universe_with_scope_bindings(
+        finalized,
+        &selection,
+        &applicability,
+        release_context,
+        scope_bindings,
+    )
+    .map_err(ObligationPreparationError::Obligations)?;
     Ok(PreparedObligations {
         selection,
         applicability,

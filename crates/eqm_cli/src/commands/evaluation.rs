@@ -2,17 +2,23 @@
 
 use crate::session::PreparedSession;
 use eqm_application::{
-    PolicyReference, PolicySelectionRequest, ProfileSelection, prepare_obligations,
-    resolve_selection_request,
+    PolicyReference, PolicySelectionRequest, ProfileSelection, prepare_obligations_from_request,
 };
-use eqm_domain::{DimensionId, PolicyId, ProfileId, Revision, SymbolicValueId};
+use eqm_domain::{
+    DimensionId, FullRequirementId, PolicyId, ProfileId, RequirementScenarioBindings, Revision,
+    ScenarioId, ScenarioRef, SymbolicValueId,
+};
 use eqm_engine::{
-    EvaluationMode, Obligation, ObligationDerivation, PolicyProfileRequest, ScopeSubject,
-    SelectedPolicyProfiles,
+    EvaluationMode, Obligation, ObligationDerivation, ScopeSubject, SelectedPolicyProfiles,
 };
 use eqm_protocol::{FacetStatusDto, ObligationDto, ProfileValueDto};
 use std::collections::BTreeSet;
 use std::error::Error;
+
+#[cfg(test)]
+use eqm_application::{prepare_obligations, resolve_selection_request};
+#[cfg(test)]
+use eqm_engine::PolicyProfileRequest;
 
 /// Parses CLI policy/profile arguments and resolves them through the shared
 /// application operation.
@@ -21,6 +27,7 @@ use std::error::Error;
 /// [`PolicySelectionRequest`]; exact revision resolution, ambiguity rejection
 /// and policy membership are owned by
 /// [`eqm_application::resolve_selection_request`] over the one immutable session.
+#[cfg(test)]
 pub fn development_request(
     session: &PreparedSession,
     policy: Option<&str>,
@@ -47,18 +54,46 @@ pub fn selection_request(
     Ok(PolicySelectionRequest::development(policy, profiles))
 }
 
-/// Selects development authority for an optional explicit policy reference.
+/// Parses repeatable exact scope claims without semantic graph lookup.
+pub fn selection_request_with_scopes(
+    policy: Option<&str>,
+    requested: &[String],
+    scenarios: &[String],
+) -> Result<PolicySelectionRequest, Box<dyn Error>> {
+    let input = selection_request(policy, requested)?;
+    if scenarios.is_empty() {
+        return Ok(input);
+    }
+    let entries = scenarios
+        .iter()
+        .map(|value| {
+            let (requirement, reference) = value
+                .split_once('=')
+                .ok_or("scenario selection requires FULL_REQUIREMENT=SCENARIO_ID@REVISION")?;
+            let (id, revision) = reference
+                .split_once('@')
+                .ok_or("scenario selection requires an exact revision")?;
+            Ok((
+                FullRequirementId::new(requirement)?,
+                ScenarioRef::new(ScenarioId::new(id)?, parse_revision(revision)?),
+            ))
+        })
+        .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+    Ok(input.with_scope_bindings(RequirementScenarioBindings::new(entries)?))
+}
+
+/// Prepares development authority through the shared exact request operation.
 pub fn derive_with_policy<'a>(
     session: &'a PreparedSession,
     policy: Option<&str>,
     requested: &[String],
+    scenarios: &[String],
 ) -> Result<(SelectedPolicyProfiles<'a>, ObligationDerivation), Box<dyn Error>> {
-    let request = development_request(session, policy, requested)?;
-    let prepared = prepare_obligations(
+    let input = selection_request_with_scopes(policy, requested, scenarios)?;
+    let prepared = prepare_obligations_from_request(
         session.finalized(),
         EvaluationMode::Development,
-        Some(&request),
-        None,
+        &input,
         None,
     )?;
     let (selection, _applicability, derivation, _universe) = prepared.into_parts();
@@ -105,21 +140,12 @@ fn parse_revision(value: &str) -> Result<Revision, Box<dyn Error>> {
 
 /// Converts one current obligation to its stable missing-evidence query shape.
 pub fn obligation_dto(obligation: &Obligation) -> Result<ObligationDto, Box<dyn Error>> {
-    let (scope, subject) = match &obligation.key.subject {
-        ScopeSubject::Target(value) => ("each_target", format!("target:{value}")),
-        ScopeSubject::Provider(value) => ("shared_provider", format!("provider:{value}")),
-        ScopeSubject::TargetSet(values) => (
-            "end_to_end",
-            format!(
-                "targets:{}",
-                values
-                    .iter()
-                    .map(ToString::to_string)
-                    .collect::<Vec<_>>()
-                    .join(",")
-            ),
-        ),
+    let scope = match &obligation.key.subject {
+        ScopeSubject::Target(_) => "each_target",
+        ScopeSubject::Provider(_) | ScopeSubject::CheckedProvider(_) => "shared_provider",
+        ScopeSubject::TargetSet(_) | ScopeSubject::Scenario(_) => "end_to_end",
     };
+    let subject = scope_label(&obligation.key.subject);
     let mut profile_values = Vec::new();
     for selected in obligation.key.profiles.values() {
         for (dimension, value) in selected.values() {
@@ -155,7 +181,74 @@ pub fn obligation_dto(obligation: &Obligation) -> Result<ObligationDto, Box<dyn 
 
 /// Returns the exact stable obligation coordinate.
 pub fn obligation_id(obligation: &Obligation) -> String {
-    let subject = match &obligation.key.subject {
+    let subject = scope_label(&obligation.key.subject);
+    format!(
+        "{}@{}:{}:{}:{}:{}",
+        obligation.key.policy,
+        obligation.key.policy_revision.get(),
+        obligation.key.unit,
+        obligation.key.requirement,
+        subject,
+        obligation.key.facet
+    )
+}
+
+/// Descriptive unresolved coordinate reference; it is not an obligation digest.
+pub fn unresolved_label(coordinate: &eqm_engine::UnresolvedCoordinate) -> String {
+    let subject = match &coordinate.subject {
+        None => "absent-scope-authority".to_owned(),
+        Some(ScopeSubject::Target(id)) => format!("target:{id}"),
+        Some(ScopeSubject::Provider(id)) => format!("provider:{id}"),
+        Some(ScopeSubject::TargetSet(_)) => "reference-target-set".to_owned(),
+        Some(ScopeSubject::CheckedProvider(scope)) => format!("provider:{}", scope.provider()),
+        Some(ScopeSubject::Scenario(scope)) => format!(
+            "scenario:{}@{}",
+            scope.scenario().id(),
+            scope.scenario().revision()
+        ),
+    };
+    format!(
+        "unresolved:{}:{}:{subject}",
+        coordinate.unit, coordinate.requirement
+    )
+}
+
+/// Keeps every non-authorizing unresolved coordinate visible to report adapters.
+/// No evidence, runner, clock or authority effect is performed here.
+pub fn scope_diagnostics(
+    derived: &ObligationDerivation,
+) -> Result<Vec<eqm_domain::Diagnostic>, Box<dyn Error>> {
+    derived
+        .unresolved
+        .iter()
+        .filter(|coordinate| {
+            matches!(
+                coordinate.reason,
+                eqm_engine::UnresolvedReason::UnknownApplicability
+                    | eqm_engine::UnresolvedReason::UnknownParticipation
+                    | eqm_engine::UnresolvedReason::MissingScopeAuthority
+            )
+        })
+        .map(|coordinate| {
+            Ok(eqm_domain::Diagnostic::new(
+                eqm_domain::DiagnosticCode::from_number(501).ok_or("diagnostic code")?,
+                eqm_domain::Severity::Error,
+                format!(
+                    "required scope `{}` is unresolved: {:?}",
+                    unresolved_label(coordinate),
+                    coordinate.reason
+                ),
+                None,
+                Vec::new(),
+                Some("Supply complete exact scope, participation and profile authority.".into()),
+            )?)
+        })
+        .collect()
+}
+
+/// Descriptive exact scope details; this label is not an authorizing digest.
+pub fn scope_label(subject: &ScopeSubject) -> String {
+    match subject {
         ScopeSubject::Target(value) => format!("target:{value}"),
         ScopeSubject::Provider(value) => format!("provider:{value}"),
         ScopeSubject::TargetSet(values) => format!(
@@ -166,16 +259,56 @@ pub fn obligation_id(obligation: &Obligation) -> String {
                 .collect::<Vec<_>>()
                 .join(",")
         ),
-    };
-    format!(
-        "{}@{}:{}:{}:{}:{}",
-        obligation.key.policy,
-        obligation.key.policy_revision.get(),
-        obligation.key.unit,
-        obligation.key.requirement,
-        subject,
-        obligation.key.facet
-    )
+        ScopeSubject::CheckedProvider(scope) => format!(
+            "provider:{};dependers:[{}];assignments:[{}];dependencies:[{}]",
+            scope.provider(),
+            scope
+                .dependers()
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(","),
+            scope
+                .assignments()
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(","),
+            scope
+                .dependencies()
+                .iter()
+                .map(|(from, to)| format!("{from}>{to}"))
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        ScopeSubject::Scenario(scope) => format!(
+            "scenario:{}@{};participants:[{}];dependencies:[{}]",
+            scope.scenario().id(),
+            scope.scenario().revision(),
+            scope
+                .participants()
+                .iter()
+                .map(|participant| {
+                    let actor = match participant.subject() {
+                        eqm_domain::ScenarioSubject::Target(id) => format!("target:{id}"),
+                        eqm_domain::ScenarioSubject::Provider(id) => format!("provider:{id}"),
+                    };
+                    format!(
+                        "{}/{}/{actor}",
+                        participant.occurrence(),
+                        participant.role()
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(","),
+            scope
+                .dependencies()
+                .iter()
+                .map(|edge| format!("{}>{}", edge.from(), edge.to()))
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+    }
 }
 
 #[cfg(test)]
@@ -190,6 +323,7 @@ mod tests {
         GlobalOptions {
             config: None,
             profiles: Vec::new(),
+            scenarios: Vec::new().into_boxed_slice(),
             policy: None,
             format: OutputFormat::Json,
             offline: true,
@@ -292,6 +426,51 @@ mod tests {
         assert!(
             profile_error.to_string().contains("not found"),
             "{profile_error}"
+        );
+        Ok(())
+    }
+    #[test]
+    fn scenario_transport_and_graph_validation_are_exact() -> Result<(), Box<dyn Error>> {
+        let repository = crate::test_support::example_repository()?;
+        std::fs::write(
+            repository.path().join("eqm/contracts/scenario.cli.toml"),
+            "schema = \"https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json\"\nid = \"scenario.cli\"\nrevision = 1\n[[participants]]\nid = \"actor\"\nrole = \"edge\"\n[participants.subject]\ntarget = \"android\"\n[[participants]]\nid = \"observer\"\nrole = \"observer\"\n[participants.subject]\ntarget = \"android\"\n[[dependencies]]\nfrom = \"observer\"\nto = \"actor\"\n",
+        )?;
+        let session = prepare(
+            &SessionRequest::at(
+                global(),
+                CommandName::Context,
+                "2026-01-02T03:04:05Z".parse()?,
+            ),
+            repository.path(),
+        )?;
+        let valid = "account.create.signup.otp#valid_code_advances=scenario.cli@1".to_owned();
+        let (_, positive) = derive_with_policy(&session, None, &[], std::slice::from_ref(&valid))?;
+        assert!(positive.obligations.keys().any(|key| matches!(&key.subject,
+            ScopeSubject::Scenario(scope) if scope.participants().len() == 2 && scope.dependencies().len() == 1)));
+        for invalid in [
+            "account.create.signup.otp#valid_code_advances=scenario.cli",
+            "account.create.signup.otp#valid_code_advances=scenario.cli@0",
+            "account.create.signup.otp#valid_code_advances=scenario.cli@2",
+            "account.create.signup.otp#valid_code_advances=scenario.missing@1",
+            "account.create.signup.otp#missing=scenario.cli@1",
+            "account.create.signup.identifier#email_default=scenario.cli@1",
+        ] {
+            assert!(
+                derive_with_policy(&session, None, &[], &[invalid.to_owned()]).is_err(),
+                "{invalid}"
+            );
+        }
+        for second in [
+            valid.clone(),
+            "account.create.signup.otp#valid_code_advances=scenario.cli@2".to_owned(),
+        ] {
+            assert!(selection_request_with_scopes(None, &[], &[valid.clone(), second]).is_err());
+        }
+        let (_, omitted) = derive_with_policy(&session, None, &[], &[])?;
+        assert!(
+            omitted.unresolved.iter().any(|coordinate| coordinate.reason
+                == eqm_engine::UnresolvedReason::MissingScopeAuthority)
         );
         Ok(())
     }
