@@ -21,10 +21,11 @@ See [aggregate repair disposition](reports/P04-R4C.md) and [scope report](report
 S053 subsequently passed its allocated gates (52 numbered local acceptances).
 S054 and S055 subsequently passed their allocated gates (54 numbered local
 acceptances). S056 subsequently passed its allocated gates (55 numbered local
-acceptances). S047 aggregation plus S057–S211 remain unfinished.
+acceptances). S057 subsequently passed its allocated gates (56 numbered local
+acceptances). S047 aggregation plus S058–S211 remain unfinished.
 See [independent review](reports/CODEX-b442b80.md).
 
-**Next order:** S057–S076, mandatory independent complete-universe
+**Next order:** S058–S076, mandatory independent complete-universe
 and reference-evaluator acceptance before S077, then S077–S211 subject to their
 existing dependencies and gates. RF84 is accepted for its allocated P04-R4C
 contribution. Retain DEV-033 representation/provenance decisions: exact checked
@@ -736,11 +737,42 @@ cryptographic implementation remains S116–S131; no whole RA21/R/AC closure fol
 Original S056 gates remain mandatory; domain/CLI tests join the declared owning lane
 because their consuming authority shortcuts change. No schema/dependency changes.
 
-For S057 strengthening, compare full visible denominator, including unresolved
-coordinates. Validate any authority transition before comparing semantic
-requirement/subject/profile/facet coverage; policy revision embedded in keys is
-not by itself proof of strengthening, and deleting cases via a raised level
-floor weakens scope. Preserve independent facet constraints.
+**DEV-035 S057 implementation allocation:** repair the selection-floor ordering
+at its domain source: lowering the floor includes more requirement levels;
+raising it may remove protected work and is not strengthening. Correct existing
+positive fixtures that endorsed the reversed direction. Requirement severity
+itself retains its existing increasing order. No authored requirement is lowered.
+
+Add a pure checked required-universe comparison over actual opaque derivations.
+Require exact immutable finalized graph authority, mode/origin, selected profiles
+and values, applicability, scenario map, release context and expected-selection
+map. Different graph replacements remain explicitly incomparable; their protected
+integration stays with the owning later steps. Policy revisions may differ only
+after a checked transition between exact definitions in that same graph: same
+policy ID, preserved profiles/targets, no weaker waiver/rule constraints and
+unchanged unsupported policy metadata. Do not strip revisions before that gate.
+Compare exact semantic requirement/unit/subject/profile/facet/release coordinates
+and per-facet trust/count/age. The selection floor is coverage, not a replacement
+for evidence strength. Retain every baseline visible unresolved coordinate and
+reason, except UnmatchedPolicy may become nonempty actual candidate-derived
+obligations at the same exact visible coordinate after the checked transition.
+Unknown, N/A and missing-scope reasons cannot be dropped or substituted.
+The legacy subset helper must reject incomparable context and include unresolved
+visibility and composed evidence strength rather than only key-set inclusion.
+
+Replace tautological seeded hashing/set tests with real resolution, expansion,
+selection and derivation over independently enumerated expected coordinates and
+constraints. Permute only semantically unordered inputs; keep journey sequences.
+Cover explicit unknown/false and empty scopes, advisory-versus-required unmatched
+work, protected candidate omissions/context substitutions, Recommended/Required
+floor deletion and legitimate advisory promotion, independent facet constraints,
+and inherited fragment/journey risk through final policy matching with literal
+risk tables and weaker-override rejection. No test-only production constructor,
+implicit authority, schema or dependency change. Separate allocated review and
+original S057 standard/engine owning gates remain mandatory; domain owning tests
+join because the ordering source changes. These contribute to RA04/RA05/RA07;
+whole regression and complete-evaluator acceptance remain open, with mandatory
+independent whole-universe/reference-evaluator review before S077.
 All other S054–S076 decisions from DEV-028 and original step/spec/RA contracts
 remain. No new supervisor stop between P04 and P05. Q05's unavailable real
 policy values do not block configurable semantics and local negative automation;

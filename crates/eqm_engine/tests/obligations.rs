@@ -210,7 +210,10 @@ fn required_universe_is_complete_and_deterministic() -> Result<(), Box<dyn Error
     let empty = support::derive_fixture_universe(&minimal, &empty_selection, &applicability, None)?;
     assert!(empty.coordinates().is_empty());
     assert!(!first.is_subset_of(&empty));
-    assert!(empty.is_subset_of(&first));
+    assert!(
+        !empty.is_subset_of(&first),
+        "foreign empty authority is incomparable"
+    );
     assert!(
         first.contains(
             first

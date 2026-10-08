@@ -76,7 +76,7 @@ fn input<'a>(
 #[test]
 fn equality_and_every_ordered_strengthening_axis_pass() -> Result<(), Box<dyn Error>> {
     let baseline_policy = policy(
-        RequirementLevel::Recommended,
+        RequirementLevel::Required,
         TrustLevel::TrustedCi,
         86_400_000,
         1,
@@ -84,7 +84,7 @@ fn equality_and_every_ordered_strengthening_axis_pass() -> Result<(), Box<dyn Er
         WaiverPolicy::new(true, Some(PositiveDays::new(30)?), None, vec![])?,
     )?;
     let candidate_policy = policy(
-        RequirementLevel::Required,
+        RequirementLevel::Recommended,
         TrustLevel::SignedCi,
         3_600_000,
         2,

@@ -74,32 +74,7 @@ pub fn enforce_monotonic_policy(
     candidate: &ProtectedPolicyInput<'_>,
     baseline: &ProtectedPolicyInput<'_>,
 ) -> Result<MonotonicChange, MonotonicityError> {
-    if candidate.policy.id() != baseline.policy.id() {
-        return Err(MonotonicityError::IncomparableAuthority);
-    }
-    if !candidate
-        .policy
-        .profiles()
-        .is_superset(baseline.policy.profiles())
-        || !candidate
-            .policy
-            .required_targets()
-            .is_superset(baseline.policy.required_targets())
-        || !candidate
-            .policy
-            .waivers()
-            .strengthens_or_equals(baseline.policy.waivers())
-    {
-        return Err(MonotonicityError::Weakening);
-    }
-    for baseline_rule in baseline.policy.rules() {
-        if !candidate.policy.rules().iter().any(|candidate_rule| {
-            candidate_rule.selector() == baseline_rule.selector()
-                && candidate_rule.strengthens_or_equals(baseline_rule)
-        }) {
-            return Err(MonotonicityError::Weakening);
-        }
-    }
+    check_policy_strengthening(candidate.policy, baseline.policy)?;
     for (id, baseline_requirement) in &baseline.requirements {
         let candidate_requirement = candidate
             .requirements
@@ -126,6 +101,40 @@ pub fn enforce_monotonic_policy(
     } else {
         Ok(MonotonicChange::Strengthened)
     }
+}
+
+/// Checks ordered policy axes before comparing coordinates across revisions.
+pub(crate) fn check_policy_strengthening(
+    candidate: &Policy,
+    baseline: &Policy,
+) -> Result<(), MonotonicityError> {
+    if candidate.id() != baseline.id()
+        || candidate.title() != baseline.title()
+        || candidate.owners() != baseline.owners()
+        || candidate.description() != baseline.description()
+        || candidate.extensions() != baseline.extensions()
+    {
+        return Err(MonotonicityError::IncomparableAuthority);
+    }
+    if !candidate.profiles().is_superset(baseline.profiles())
+        || !candidate
+            .required_targets()
+            .is_superset(baseline.required_targets())
+        || !candidate
+            .waivers()
+            .strengthens_or_equals(baseline.waivers())
+    {
+        return Err(MonotonicityError::Weakening);
+    }
+    for baseline_rule in baseline.rules() {
+        if !candidate.rules().iter().any(|candidate_rule| {
+            candidate_rule.selector() == baseline_rule.selector()
+                && candidate_rule.strengthens_or_equals(baseline_rule)
+        }) {
+            return Err(MonotonicityError::Weakening);
+        }
+    }
+    Ok(())
 }
 
 /// Protected-baseline comparison failure.

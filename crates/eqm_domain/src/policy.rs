@@ -292,11 +292,12 @@ impl PolicyRule {
         })
     }
 
-    /// Returns whether this rule is at least as strong on every ordered axis.
+    /// Returns whether this rule preserves coverage and strengthens evidence axes.
+    /// A lower selection floor includes more requirement levels.
     #[must_use]
     pub fn strengthens_or_equals(&self, baseline: &Self) -> bool {
         self.selector == baseline.selector
-            && self.minimum_level >= baseline.minimum_level
+            && self.minimum_level <= baseline.minimum_level
             && self.facets.is_superset(&baseline.facets)
             && self.minimum_trust >= baseline.minimum_trust
             && self.maximum_age <= baseline.maximum_age
@@ -769,7 +770,7 @@ mod tests {
         let selector = || PolicySelector::new(Some(vec![unit.clone()]), None, None, None, None);
         let baseline = PolicyRule::new(
             selector()?,
-            RequirementLevel::Recommended,
+            RequirementLevel::Required,
             vec![Facet::Behavior],
             TrustLevel::TrustedCi,
             DurationMillis::new(86_400_000)?,
@@ -777,7 +778,7 @@ mod tests {
         )?;
         let stronger = PolicyRule::new(
             selector()?,
-            RequirementLevel::Required,
+            RequirementLevel::Recommended,
             vec![Facet::Behavior, Facet::Accessibility],
             TrustLevel::SignedCi,
             DurationMillis::new(3_600_000)?,

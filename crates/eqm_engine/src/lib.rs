@@ -2,6 +2,10 @@
 
 #![forbid(unsafe_code)]
 
+// Reuse the integration fixture loader inside private corruption controls.
+#[cfg(test)]
+extern crate self as eqm_engine;
+
 mod affected;
 mod applicability;
 mod comparison;
@@ -73,7 +77,7 @@ pub use obligations::{
     Obligation, ObligationDerivation, ObligationError, ObligationKey, ObligationStrength,
     RequiredUniverse, ScopeSubject, UnresolvedCoordinate, UnresolvedReason, derive_obligations,
     derive_obligations_with_scope_bindings, derive_required_universe,
-    derive_required_universe_with_scope_bindings,
+    derive_required_universe_with_scope_bindings, enforce_required_universe_strengthening,
 };
 pub use outcomes::{EvidenceOutcome, aggregate_evidence_outcomes};
 pub use release::{

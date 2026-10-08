@@ -251,14 +251,87 @@ impl RequiredUniverse {
         self.coordinates.contains(coordinate)
     }
 
-    /// Returns whether `self` is a subset of `other`.
-    ///
-    /// A candidate universe that omits a coordinate in this protected set has
-    /// removed required work and cannot be treated as stronger.
+    /// Tests full visible coverage and evidence constraints under the same policy.
+    /// Incomparable authority/context is false, including a foreign empty graph.
+    /// Checked revision transitions use `enforce_required_universe_strengthening`.
     #[must_use]
     pub fn is_subset_of(&self, other: &Self) -> bool {
-        self.coordinates.is_subset(&other.coordinates)
+        self.policy() == other.policy()
+            && enforce_required_universe_strengthening(other, self).is_ok()
     }
+}
+
+/// Compares actual checked derivations, preserving the full visible denominator.
+/// Different immutable graphs or evaluation contexts are incomparable. Policy
+/// revision labels are normalized only after the exact policy transition passes.
+/// This comparison does not grant execution, evidence, or release authority.
+pub fn enforce_required_universe_strengthening(
+    candidate: &RequiredUniverse,
+    baseline: &RequiredUniverse,
+) -> Result<crate::MonotonicChange, crate::MonotonicityError> {
+    use crate::{MonotonicChange, MonotonicityError};
+    let c = &candidate.context;
+    let b = &baseline.context;
+    if c.graph != b.graph
+        || c.scope_bindings != b.scope_bindings
+        || c.profiles != b.profiles
+        || c.applicability != b.applicability
+        || c.mode != b.mode
+        || c.origin != b.origin
+        || c.release_context != b.release_context
+        || c.expected_selections != b.expected_selections
+    {
+        return Err(MonotonicityError::IncomparableAuthority);
+    }
+    crate::monotonicity::check_policy_strengthening(&c.policy, &b.policy)?;
+    for universe in [candidate, baseline] {
+        if universe.coordinates != universe.context.obligations.keys().cloned().collect()
+            || universe
+                .context
+                .obligations
+                .iter()
+                .any(|(key, value)| key != &value.key)
+        {
+            return Err(MonotonicityError::InvalidPreparedInput);
+        }
+    }
+    for (key, obligation) in &b.obligations {
+        let mut candidate_key = key.clone();
+        candidate_key.policy_revision = c.policy.revision();
+        let corresponding = c
+            .obligations
+            .get(&candidate_key)
+            .ok_or(MonotonicityError::Weakening)?;
+        // The level floor selects coverage; trust/count/age are independent
+        // per-facet evidence constraints, not replaced by that floor.
+        if corresponding.strength.minimum_trust < obligation.strength.minimum_trust
+            || corresponding.strength.minimum_count < obligation.strength.minimum_count
+            || corresponding.strength.maximum_age > obligation.strength.maximum_age
+        {
+            return Err(MonotonicityError::Weakening);
+        }
+    }
+    for coordinate in &baseline.unresolved {
+        if candidate.unresolved.contains(coordinate) {
+            continue;
+        }
+        let promoted = coordinate.reason == UnresolvedReason::UnmatchedPolicy
+            && c.obligations.keys().any(|key| {
+                key.unit == coordinate.unit
+                    && key.requirement == coordinate.requirement
+                    && coordinate.subject.as_ref() == Some(&key.subject)
+                    && key.profiles == coordinate.profiles
+                    && key.release_context == coordinate.release_context
+            });
+        if !promoted {
+            return Err(MonotonicityError::Weakening);
+        }
+    }
+    Ok(if candidate == baseline {
+        MonotonicChange::Unchanged
+    } else {
+        MonotonicChange::Strengthened
+    })
 }
 
 /// Derives obligations with no supplied scenario bindings. EndToEnd requirements
@@ -855,3 +928,7 @@ mod tests {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "obligations_tests.rs"]
+mod comparison_tests;
