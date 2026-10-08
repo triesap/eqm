@@ -80,10 +80,17 @@ audit remain visible; terminal success grants no trust or successful count credi
 Historical fixture, lint, documentation-boundary failures and interrupted gates
 remain recorded and are not counted as passes.
 
-There are 63 numbered local acceptances. S047 denominator safety and exact-scope
+S065 explicit manual-review interpretation passed 947 workspace executions plus
+seven end-to-end, 300 engine/application owning executions and separate allocated
+source review. Full required-source slot histories compose with AND before actual
+policy/spec minima; copies, retries and reviewer claims never multiply slots.
+All failure/conflict/missing reasons remain; matched unverified reviews stay
+Unknown for acceptance. Historical fixture failures remain recorded.
+
+There are 64 numbered local acceptances. S047 denominator safety and exact-scope
 contributions are retained; identity is accepted; residual aggregation remains S073.
-Remaining numbered work is S047 plus S065–S211 (148 unaccepted steps). Next is
-S065, followed by S066–S076 and mandatory independent complete-universe/reference
+Remaining numbered work is S047 plus S066–S211 (147 unaccepted steps). Next is
+S066, followed by S067–S076 and mandatory independent complete-universe/reference
 evaluator acceptance before S077; continue subsequent eligible work under the
 original gates.
 
@@ -92,4 +99,4 @@ issue closure follows from allocated checkpoints. Extended/Linux/live product,
 crypto, host, packaging/signing and operational readiness remain unverified.
 No current owner-only software blocker or human release-test milestone.
 No push, publication, deployment or signing is authorized.
-See [retry-history report](reports/S064.md), [count-constraint report](reports/S063.md), [logical observation report](reports/S062.md), [complete eligibility report](reports/S061.md), [normalization report](reports/S060.md), [checked conversion report](reports/S059.md), [complete query report](reports/S058.md), [real derivation report](reports/S057.md), [inventory supporting-facts report](reports/S056.md), [structural-observation report](reports/S055.md), [obligation-identity report](reports/S054.md), [expected-selection report](reports/S053.md) and [scope report](reports/S052.md) and [plan](COMMIT_SEQUENCE.md).
+See [manual-review report](reports/S065.md), [retry-history report](reports/S064.md), [count-constraint report](reports/S063.md), [logical observation report](reports/S062.md), [complete eligibility report](reports/S061.md), [normalization report](reports/S060.md), [checked conversion report](reports/S059.md), [complete query report](reports/S058.md), [real derivation report](reports/S057.md), [inventory supporting-facts report](reports/S056.md), [structural-observation report](reports/S055.md), [obligation-identity report](reports/S054.md), [expected-selection report](reports/S053.md) and [scope report](reports/S052.md) and [plan](COMMIT_SEQUENCE.md).

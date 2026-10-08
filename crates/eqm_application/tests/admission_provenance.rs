@@ -3557,6 +3557,18 @@ fn actual_all_kind_count_constraints_preserve_one_unit_and_independent_prerequis
             assert_eq!(report.capacity(), 1, "{kind}");
             assert_eq!(report.status(), conclusion, "{kind}");
             assert_eq!(report.observations().prerequisites(), &needs);
+            if kind != EvidenceKind::ManualReview {
+                assert!(matches!(
+                    eqm_application::assess_admitted_manual_reviews(
+                        &prepared,
+                        &expected,
+                        &[delivery]
+                    ),
+                    Err(eqm_application::AdmittedManualReviewError::Review(
+                        eqm_engine::ManualReviewError::Kind
+                    ))
+                ));
+            }
             let history = eqm_application::assess_admitted_campaign_retry_history(
                 &prepared,
                 &expected,
@@ -4235,5 +4247,555 @@ fn actual_selected_campaign_retry_history_preserves_case_conjunction_and_reasons
         ))
     ));
     assert_eq!(file_snapshot(repository.path())?, before);
+    Ok(())
+}
+
+#[test]
+fn actual_manual_reviews_preserve_outcomes_slots_and_unverified_authority()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, assess_admitted_manual_reviews};
+    use eqm_domain::{AttemptId, AttemptOutcome};
+    use eqm_engine::{
+        CompleteCoverageExpectation, EvidenceOutcome as State, ManualReviewReason as Reason,
+    };
+    for minimum in [1, 2] {
+        for independent in [false, true] {
+            let repository = kind_fixture(EvidenceKind::ManualReview)?;
+            let policy_path = repository
+                .path()
+                .join("eqm/policies/consumer.critical_flow.toml");
+            fs::write(
+                &policy_path,
+                fs::read_to_string(&policy_path)?
+                    .replace("minimum_count = 1", &format!("minimum_count = {minimum}")),
+            )?;
+            let session = session_for(repository.path())?;
+            let provenance = projections(&session)?;
+            let (template, context) = record_for_kind(&provenance, EvidenceKind::ManualReview)?;
+            let cases = vec![
+                LogicalCaseId::new("case.review_a")?,
+                LogicalCaseId::new("case.review_b")?,
+            ];
+            let (prepared, key, selection) = prepared_coordinates_with_selection(
+                &session,
+                "eu",
+                None,
+                cases.clone(),
+                vec![],
+                independent,
+            )?;
+            let identity = prepared.identities().get(&key).ok_or("identity")?.digest();
+            let spec = EvidenceSpecId::new("identifier_behavior")?;
+            let expected = vec![CompleteCoverageExpectation {
+                structural: coverage_context(&context, &spec),
+                coordinate: key.clone(),
+                identity,
+                selection: selection.clone(),
+                subjects: None,
+            }];
+            let receipt = SelectorText::new("receipt.explicit.review")?;
+            let before = file_snapshot(repository.path())?;
+            // Literal conjunction, retry, conflict and duplicate controls use actual strict bytes.
+            let rows = [
+                (
+                    vec![(0, "first", "passed"), (1, "first", "passed")],
+                    State::Satisfied,
+                    2,
+                ),
+                (
+                    vec![(0, "first", "failed"), (1, "first", "passed")],
+                    State::Failed,
+                    1,
+                ),
+                (
+                    vec![
+                        (0, "first", "failed"),
+                        (0, "retry", "passed"),
+                        (1, "first", "passed"),
+                    ],
+                    State::Unstable,
+                    1,
+                ),
+                (
+                    vec![
+                        (0, "first", "failed"),
+                        (0, "first", "passed"),
+                        (1, "first", "passed"),
+                    ],
+                    State::Unknown,
+                    1,
+                ),
+                (vec![(0, "first", "passed")], State::Missing, 1),
+                (vec![], State::Missing, 0),
+            ];
+            for (row, literal, passing) in rows {
+                let mut admissions = Vec::new();
+                for (case, attempt_name, outcome) in &row {
+                    let mut value = template.clone();
+                    value.payload = EvidencePayloadV2Dto::ManualReview {
+                        outcome: (*outcome).to_owned(),
+                        reviewer: format!("owner://role/{attempt_name}"),
+                        message: Some("Synthetic claim, not verified authority".to_owned()),
+                    };
+                    let checked = seal(value)?;
+                    let attempt = AttemptId::new(format!("attempt.{attempt_name}"))?;
+                    let selected = EvidenceLineage::from_parts(EvidenceLineageParts {
+                        plan: Some(selection.source().plan.clone()),
+                        campaign: Some(selection.source().campaign.clone()),
+                        run: Some(RunId::new(format!("run.{attempt_name}"))?),
+                        logical_case: Some(cases[*case].clone()),
+                        attempt: Some(attempt.clone()),
+                    })?;
+                    let execution = EvidenceExecution::new(
+                        selected.run().clone(),
+                        cases[*case].clone(),
+                        vec![attempt],
+                    )?;
+                    admissions.push(admit_evidence_bytes(
+                        checked.raw_bytes(),
+                        &selected,
+                        &execution,
+                        &context,
+                    )?);
+                }
+                let deliveries = admissions
+                    .iter()
+                    .map(|admitted| CompleteEvidenceDelivery {
+                        delivery: AdmittedEvidenceDelivery {
+                            admitted,
+                            evidence_spec_id: &spec,
+                            provenance: &receipt,
+                        },
+                        coordinate: Some(&key),
+                        identity: Some(identity),
+                        subjects: None,
+                    })
+                    .collect::<Vec<_>>();
+                let report = assess_admitted_manual_reviews(&prepared, &expected, &deliveries)?;
+                assert_eq!(report.outcome(), literal, "{row:?}");
+                assert_eq!(report.passing_slots().len(), passing, "{row:?}");
+                assert_eq!(
+                    report.history().constraints().effective_minimum().get(),
+                    minimum
+                );
+                assert_eq!(
+                    report.acceptance(),
+                    if row.is_empty() {
+                        State::Missing
+                    } else {
+                        State::Unknown
+                    }
+                );
+                assert_eq!(
+                    report
+                        .reasons()
+                        .contains(&Reason::IndependentVerificationRequired),
+                    !row.is_empty()
+                );
+                assert_eq!(
+                    report
+                        .reasons()
+                        .contains(&Reason::DistinctAuthorizedPrincipalsRequired),
+                    independent && !row.is_empty()
+                );
+                assert_eq!(
+                    report.reasons().contains(&Reason::InsufficientPassingSlots),
+                    passing < minimum as usize
+                );
+                let literal_terminal = row
+                    .iter()
+                    .map(|(_, _, outcome)| outcome.parse::<AttemptOutcome>())
+                    .collect::<Result<BTreeSet<_>, _>>()?;
+                let actual_terminal = report
+                    .reasons()
+                    .iter()
+                    .filter_map(|r| {
+                        if let Reason::Terminal(o) = r {
+                            Some(*o)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<BTreeSet<_>>();
+                assert_eq!(actual_terminal, literal_terminal);
+                let mut permuted = deliveries.clone();
+                permuted.reverse();
+                permuted.extend(deliveries.iter().copied());
+                assert_eq!(
+                    assess_admitted_manual_reviews(&prepared, &expected, &permuted)?,
+                    report
+                );
+                if row.len() == 1 {
+                    assert!(report.reasons().contains(&Reason::MissingSelectedCase(
+                        selection.source().clone(),
+                        cases[1].clone()
+                    )));
+                }
+                if literal == State::Unknown {
+                    assert!(report.reasons().contains(&Reason::ImmutableConflict));
+                }
+                assert_eq!(file_snapshot(repository.path())?, before);
+            }
+            // Unsupported wire outcomes reject, leaving the declared slot unresolved.
+            for outcome in [
+                "skipped",
+                "filtered",
+                "quarantined",
+                "cancelled",
+                "timed_out",
+                "error",
+            ] {
+                let mut invalid = template.clone();
+                let EvidencePayloadV2Dto::ManualReview { outcome: value, .. } =
+                    &mut invalid.payload
+                else {
+                    return Err("manual payload".into());
+                };
+                *value = outcome.to_owned();
+                assert!(
+                    CheckedEvidenceResultV2::from_bytes(&serde_json::to_vec(&invalid)?).is_err(),
+                    "{outcome}"
+                );
+                let unresolved = assess_admitted_manual_reviews(&prepared, &expected, &[])?;
+                assert_eq!(unresolved.outcome(), State::Missing);
+                assert_eq!(unresolved.passing_slots().len(), 0);
+                assert_eq!(unresolved.history().source_cases().len(), 2);
+            }
+            // Reviewer spelling cannot manufacture independent authority or extra slots.
+            let (single_prepared, single_key, single_selection) =
+                prepared_coordinates_with_selection(
+                    &session,
+                    "eu",
+                    None,
+                    vec![lineage()?.logical_case().clone()],
+                    vec![],
+                    independent,
+                )?;
+            let single_identity = single_prepared
+                .identities()
+                .get(&single_key)
+                .ok_or("single identity")?
+                .digest();
+            let single_expected = vec![CompleteCoverageExpectation {
+                structural: coverage_context(&context, &spec),
+                coordinate: single_key.clone(),
+                identity: single_identity,
+                selection: single_selection,
+                subjects: None,
+            }];
+            for reviewer in ["owner://team/reviewers", "owner://role/distinct_principal"] {
+                let mut value = template.clone();
+                let EvidencePayloadV2Dto::ManualReview {
+                    reviewer: claim, ..
+                } = &mut value.payload
+                else {
+                    return Err("manual payload".into());
+                };
+                *claim = reviewer.to_owned();
+                let checked = seal(value)?;
+                let admitted = admit_evidence_bytes(
+                    checked.raw_bytes(),
+                    &lineage()?,
+                    &execution()?,
+                    &context,
+                )?;
+                let delivery = CompleteEvidenceDelivery {
+                    delivery: AdmittedEvidenceDelivery {
+                        admitted: &admitted,
+                        evidence_spec_id: &spec,
+                        provenance: &receipt,
+                    },
+                    coordinate: Some(&single_key),
+                    identity: Some(single_identity),
+                    subjects: None,
+                };
+                let report = assess_admitted_manual_reviews(
+                    &single_prepared,
+                    &single_expected,
+                    &[delivery; 20],
+                )?;
+                assert_eq!(report.passing_slots().len(), 1);
+                assert_eq!(
+                    report.outcome(),
+                    if minimum == 1 {
+                        State::Satisfied
+                    } else {
+                        State::Missing
+                    }
+                );
+                assert_eq!(report.acceptance(), State::Unknown);
+                assert_eq!(
+                    report.slots().values().next().ok_or("slot")?.reviewers(),
+                    &BTreeSet::from([reviewer.parse()?])
+                );
+                assert_eq!(report.history().histories().len(), 1);
+                let mut foreign = single_expected.clone();
+                foreign[0].identity = identity;
+                assert!(matches!(
+                    assess_admitted_manual_reviews(&single_prepared, &foreign, &[delivery]),
+                    Err(eqm_application::AdmittedManualReviewError::Context(
+                        eqm_application::AdmittedCountConstraintError::FrozenContext
+                    ))
+                ));
+                assert!(
+                    assess_admitted_manual_reviews(&single_prepared, &[], &[delivery]).is_err()
+                );
+            }
+            assert_eq!(file_snapshot(repository.path())?, before);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn actual_manual_review_sources_require_complete_slots_without_principal_claim_credit()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, assess_admitted_manual_reviews};
+    use eqm_domain::{ExpectedSelectionManifest, SelectionCountUnit};
+    use eqm_engine::{
+        CompleteCoverageExpectation, EvidenceOutcome as State, ManualReviewReason as Reason,
+    };
+    for minimum in [1, 2] {
+        let repository = kind_fixture(EvidenceKind::ManualReview)?;
+        let policy = repository
+            .path()
+            .join("eqm/policies/consumer.critical_flow.toml");
+        fs::write(
+            &policy,
+            fs::read_to_string(&policy)?
+                .replace("minimum_count = 1", &format!("minimum_count = {minimum}")),
+        )?;
+        let path = repository
+            .path()
+            .join("eqm/bindings/android.auth_signup.toml");
+        let mut text = fs::read_to_string(&path)?;
+        text.push_str("\n[[evidence]]\nid = \"second_review\"\nkind = \"manual_review\"\nrequirements = [\"account.create.signup.identifier#email_default\"]\nfacets = [\"behavior\"]\n");
+        fs::write(&path, text)?;
+        let session = session_for(repository.path())?;
+        let original = projections(&session)?;
+        let (_, key, first_selection) = prepared_coordinates_with_selection(
+            &session,
+            "eu",
+            None,
+            vec![lineage()?.logical_case().clone()],
+            vec![],
+            true,
+        )?;
+        let first_spec = EvidenceSpecId::new("identifier_behavior")?;
+        let second_spec = EvidenceSpecId::new("second_review")?;
+        let binding = session
+            .finalized()
+            .graph()
+            .bindings()
+            .get(&BindingId::new("binding.android.auth_signup")?)
+            .ok_or("binding")?;
+        let mut second_provenance = original.clone();
+        second_provenance.evidence_spec_digest = canonicalize_evidence_spec_v2(
+            binding.evidence().get(&second_spec).ok_or("second spec")?,
+        )?
+        .digest();
+        let mut second_source = first_selection.source().clone();
+        second_source.specification = second_spec.clone();
+        second_source.specification_digest = second_provenance.evidence_spec_digest;
+        let second_selection = ExpectedSelectionManifest::new(
+            second_source,
+            EvidenceKind::ManualReview,
+            SelectionCountUnit::ReviewSlot,
+            vec![lineage()?.logical_case().clone()],
+            vec![],
+            true,
+        )?;
+        // Freeze both required sources before admitting either assertion.
+        let prepared = prepared_multi_source_identities(
+            &session,
+            &key,
+            None,
+            vec![first_selection.clone(), second_selection.clone()],
+        )?;
+        let identity = prepared.identities().get(&key).ok_or("identity")?.digest();
+        let (first_value, first_context) = record_for_kind(&original, EvidenceKind::ManualReview)?;
+        let (second_value, second_context) =
+            record_for_kind(&second_provenance, EvidenceKind::ManualReview)?;
+        let expected = vec![
+            CompleteCoverageExpectation {
+                structural: coverage_context(&first_context, &first_spec),
+                coordinate: key.clone(),
+                identity,
+                selection: first_selection.clone(),
+                subjects: None,
+            },
+            CompleteCoverageExpectation {
+                structural: coverage_context(&second_context, &second_spec),
+                coordinate: key.clone(),
+                identity,
+                selection: second_selection.clone(),
+                subjects: None,
+            },
+        ];
+        let first_checked = seal(first_value.clone())?;
+        let second_checked = seal(second_value)?;
+        let first = admit_evidence_bytes(
+            first_checked.raw_bytes(),
+            &lineage()?,
+            &execution()?,
+            &first_context,
+        )?;
+        let second_attempt = eqm_domain::AttemptId::new("attempt.second_review")?;
+        let second_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(lineage()?.plan().clone()),
+            campaign: Some(lineage()?.campaign().clone()),
+            run: Some(lineage()?.run().clone()),
+            logical_case: Some(lineage()?.logical_case().clone()),
+            attempt: Some(second_attempt.clone()),
+        })?;
+        let second = admit_evidence_bytes(
+            second_checked.raw_bytes(),
+            &second_lineage,
+            &EvidenceExecution::new(
+                second_lineage.run().clone(),
+                second_lineage.logical_case().clone(),
+                vec![second_attempt],
+            )?,
+            &second_context,
+        )?;
+        let receipt = SelectorText::new("receipt.manual.sources")?;
+        let first_delivery = CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted: &first,
+                evidence_spec_id: &first_spec,
+                provenance: &receipt,
+            },
+            coordinate: Some(&key),
+            identity: Some(identity),
+            subjects: None,
+        };
+        let second_delivery = CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted: &second,
+                evidence_spec_id: &second_spec,
+                provenance: &receipt,
+            },
+            ..first_delivery
+        };
+        let before = file_snapshot(repository.path())?;
+        let missing = assess_admitted_manual_reviews(&prepared, &expected, &[first_delivery; 10])?;
+        assert_eq!(missing.outcome(), State::Missing);
+        assert_eq!(missing.acceptance(), State::Unknown);
+        assert!(missing.passing_slots().is_empty());
+        assert!(missing.reasons().contains(&Reason::MissingSelectedCase(
+            second_selection.source().clone(),
+            lineage()?.logical_case().clone()
+        )));
+        let complete = assess_admitted_manual_reviews(
+            &prepared,
+            &expected,
+            &[first_delivery, second_delivery],
+        )?;
+        assert_eq!(
+            complete.passing_slots(),
+            &BTreeSet::from([lineage()?.logical_case().clone()])
+        );
+        assert_eq!(
+            complete.outcome(),
+            if minimum == 1 {
+                State::Satisfied
+            } else {
+                State::Missing
+            }
+        );
+        assert_eq!(complete.acceptance(), State::Unknown);
+        assert!(
+            complete
+                .reasons()
+                .contains(&Reason::DistinctAuthorizedPrincipalsRequired)
+        );
+        let mut reversed_expected = expected.clone();
+        reversed_expected.reverse();
+        assert_eq!(
+            assess_admitted_manual_reviews(
+                &prepared,
+                &reversed_expected,
+                &[
+                    second_delivery,
+                    first_delivery,
+                    second_delivery,
+                    first_delivery
+                ]
+            )?,
+            complete
+        );
+        // Rejected assertions remain raw audit and cannot poison the matched review outcome.
+        let mut failed_value = first_value;
+        let EvidencePayloadV2Dto::ManualReview { outcome, .. } = &mut failed_value.payload else {
+            return Err("manual payload".into());
+        };
+        *outcome = "failed".to_owned();
+        let failed_checked = seal(failed_value)?;
+        let failed = admit_evidence_bytes(
+            failed_checked.raw_bytes(),
+            &lineage()?,
+            &execution()?,
+            &first_context,
+        )?;
+        let failed_delivery = CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted: &failed,
+                evidence_spec_id: &first_spec,
+                provenance: &receipt,
+            },
+            ..first_delivery
+        };
+        let foreign_identity =
+            eqm_domain::ObligationDigest::hash_content(b"synthetic foreign review claim");
+        let rejected = CompleteEvidenceDelivery {
+            identity: Some(foreign_identity),
+            ..failed_delivery
+        };
+        let audited = assess_admitted_manual_reviews(
+            &prepared,
+            &expected,
+            &[first_delivery, second_delivery, rejected],
+        )?;
+        assert_eq!(audited.outcome(), complete.outcome());
+        assert_eq!(audited.passing_slots(), complete.passing_slots());
+        assert!(
+            !audited
+                .reasons()
+                .contains(&Reason::Terminal(eqm_domain::AttemptOutcome::Failed))
+        );
+        assert!(
+            !audited.history().constraints().observations().matching()[first_selection.source()]
+                .rejected()
+                .is_empty()
+        );
+        let conflicted = assess_admitted_manual_reviews(
+            &prepared,
+            &expected,
+            &[first_delivery, second_delivery, failed_delivery],
+        )?;
+        assert_eq!(conflicted.outcome(), State::Unknown);
+        assert!(conflicted.passing_slots().is_empty());
+        assert!(conflicted.reasons().contains(&Reason::ImmutableConflict));
+        assert!(matches!(
+            assess_admitted_manual_reviews(
+                &prepared,
+                &expected,
+                &vec![first_delivery; MAX_CANDIDATE_DELIVERIES + 1]
+            ),
+            Err(eqm_application::AdmittedManualReviewError::Context(
+                eqm_application::AdmittedCountConstraintError::Observations(
+                    eqm_engine::LogicalObservationError::Matching(
+                        eqm_engine::CompleteCoverageError::Normalization(
+                            eqm_engine::CandidateNormalizationError::LimitExceeded
+                        )
+                    )
+                )
+            ))
+        ));
+        assert!(
+            assess_admitted_manual_reviews(&prepared, &expected[..1], &[first_delivery]).is_err()
+        );
+        assert_eq!(file_snapshot(repository.path())?, before);
+    }
     Ok(())
 }

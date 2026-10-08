@@ -774,6 +774,39 @@ join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
 
+**DEV-035 S065 implementation allocation:** evaluate manual-review claims through
+an internally collected S064 history under the identical full frozen S063
+expectations. Application binds opaque S054 identities before actual S059 admission
+adaptation. Reject non-review frozen expectations explicitly; never interpret a
+foreign kind as successful review. Retain every exact subject/case/attempt, rejected
+assertion audit, global conflicts and all required source/case AND members.
+
+Interpret every review outcome explicitly. Same-case fail/pass retries are Unstable,
+separate required failed/passed slots are Failed, immutable contradictions are
+Unknown, missing required slots are Missing. Unsupported skipped, filtered,
+quarantined, timed-out, canceled or error manual-review wire outcomes reject under
+the unchanged passed/failed grammar and leave the required slot unresolved.
+Count distinct frozen review-slot IDs whose complete matched histories pass; copies,
+retry identities, reviewer aliases and multiple sources never multiply slots.
+Apply actual policy/specification minima after required-slot conjunction. Retain
+claimed reviewers for audit only; they prove neither authorization nor independence.
+
+Separate outcome/count interpretation from acceptance: every matched review retains
+an explicit independent verification requirement; when principal independence is
+required, authorized distinct principals are additionally unresolved. Missing
+independent verification yields Unknown acceptance even for passing review claims.
+Do not accept a caller-supplied trusted flag or invent an authority provider. S070
+owns independently verified fact integration and S072/S073 own complete consumers;
+this step's pure outcome/count report cannot construct authorizing facet status.
+Preserve all typed outcome/count/conflict/missing/verification reasons, bounded
+collection and no-effects admission. No schema, digest, dependency or legacy-helper
+reinterpretation. Use real prepared manual-review graphs and strict admitted bytes
+for literal outcomes, minima, AND, retries, conflicts, duplicates, permutations,
+reviewer-claim substitutions, invalid outcome rejection and context controls.
+Original engine owning/full standard plus application owning and separate allocated
+acceptance are required. RA02/RA03 remain contributions; continue S066 after the
+green commit and retain the mandatory independent whole gate before S077.
+
 **DEV-035 S064 implementation allocation:** retain all immutable matched attempts
 for each selected logical case in the exact frozen plan/campaign. Engine history
 construction validates and internally collects the same complete expectations and

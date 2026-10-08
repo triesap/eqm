@@ -1041,3 +1041,299 @@ pub fn assess_campaign_retry_history<'a>(
         reasons,
     })
 }
+
+/// Every manual-review interpretation or unresolved independent acceptance check.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum ManualReviewReason {
+    /// All contributing terminal claims are retained, even below summary precedence.
+    Terminal(AttemptOutcome),
+    /// Exact immutable history contradicts itself.
+    ImmutableConflict,
+    /// A required source/case has no eligible matching assertion.
+    MissingSelectedCase(
+        eqm_domain::ExpectedSelectionSource,
+        eqm_domain::LogicalCaseId,
+    ),
+    /// Passing distinct frozen slots are below the actual composed minimum.
+    InsufficientPassingSlots,
+    /// Every review assertion still requires independently established trust.
+    IndependentVerificationRequired,
+    /// Claimed reviewer identities do not prove authorized distinct principals.
+    DistinctAuthorizedPrincipalsRequired,
+    /// A kind incompatible with explicit review evaluation cannot be interpreted.
+    UnsupportedPayload,
+}
+
+/// Interpreted review claims for one full subject and frozen logical slot.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManualReviewSlot {
+    outcome: EvidenceOutcome,
+    reviewers: std::collections::BTreeSet<eqm_domain::OwnerRef>,
+    reasons: std::collections::BTreeSet<ManualReviewReason>,
+}
+impl ManualReviewSlot {
+    /// Outcome claims only; not independently verified successful evidence.
+    #[must_use]
+    pub const fn outcome(&self) -> EvidenceOutcome {
+        self.outcome
+    }
+    /// Exact claimed reviewers for audit, never authorized principal credit.
+    #[must_use]
+    pub const fn reviewers(&self) -> &std::collections::BTreeSet<eqm_domain::OwnerRef> {
+        &self.reviewers
+    }
+    /// Every contributing interpretation and independent prerequisite.
+    #[must_use]
+    pub const fn reasons(&self) -> &std::collections::BTreeSet<ManualReviewReason> {
+        &self.reasons
+    }
+}
+
+/// Internally collected explicit manual-review outcome/count interpretation.
+/// No constructor or caller trust flag can make this an authorizing facet status.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManualReviewReport<'a> {
+    history: CampaignRetryReport<'a>,
+    slots: std::collections::BTreeMap<CampaignRetryCase, ManualReviewSlot>,
+    passing_slots: std::collections::BTreeSet<eqm_domain::LogicalCaseId>,
+    outcome: EvidenceOutcome,
+    acceptance: EvidenceOutcome,
+    reasons: std::collections::BTreeSet<ManualReviewReason>,
+}
+impl<'a> ManualReviewReport<'a> {
+    /// Full exact internally collected assertions, raw audit and structural constraints.
+    #[must_use]
+    pub const fn history(&self) -> &CampaignRetryReport<'a> {
+        &self.history
+    }
+    /// Full subject/case histories interpreted explicitly.
+    #[must_use]
+    pub const fn slots(&self) -> &std::collections::BTreeMap<CampaignRetryCase, ManualReviewSlot> {
+        &self.slots
+    }
+    /// Distinct completely passing claimed slots, not independently eligible count credit.
+    #[must_use]
+    pub const fn passing_slots(&self) -> &std::collections::BTreeSet<eqm_domain::LogicalCaseId> {
+        &self.passing_slots
+    }
+    /// Required-slot conjunction and actual minimum applied to outcome claims.
+    #[must_use]
+    pub const fn outcome(&self) -> EvidenceOutcome {
+        self.outcome
+    }
+    /// Non-authorizing acceptance: matched unverified assertions remain Unknown.
+    #[must_use]
+    pub const fn acceptance(&self) -> EvidenceOutcome {
+        self.acceptance
+    }
+    /// All outcome, count, conflict, missing and independent acceptance reasons.
+    #[must_use]
+    pub const fn reasons(&self) -> &std::collections::BTreeSet<ManualReviewReason> {
+        &self.reasons
+    }
+}
+
+/// Invalid full frozen context/history or non-review expectation; no partial report.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ManualReviewError {
+    /// Existing internally collected history validation or resource bound failed.
+    History(CampaignRetryError),
+    /// Explicit review evaluation requires manual-review frozen expectations.
+    Kind,
+}
+impl std::fmt::Display for ManualReviewError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "manual review evaluation rejected: {self:?}")
+    }
+}
+impl std::error::Error for ManualReviewError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::History(error) => Some(error),
+            Self::Kind => None,
+        }
+    }
+}
+
+fn terminal_evidence_outcome(
+    outcomes: impl IntoIterator<Item = AttemptOutcome>,
+) -> EvidenceOutcome {
+    match eqm_domain::aggregate_terminal_attempts(outcomes) {
+        AttemptAggregate::Satisfied => EvidenceOutcome::Satisfied,
+        AttemptAggregate::Failed => EvidenceOutcome::Failed,
+        AttemptAggregate::Missing => EvidenceOutcome::Missing,
+        AttemptAggregate::Unstable => EvidenceOutcome::Unstable,
+        AttemptAggregate::Unknown => EvidenceOutcome::Unknown,
+    }
+}
+
+/// Interprets explicit review payloads under full frozen selections and actual minima.
+/// Claimed reviewers and claimed trust never establish independent verification or
+/// authorized distinct principals. Those missing checks remain explicit Unknown;
+/// later verified-fact integration cannot reuse a report from weaker expectations.
+pub fn assess_manual_reviews<'a>(
+    universe: &crate::RequiredUniverse,
+    expected: &[crate::CompleteCoverageExpectation],
+    candidates: &[crate::CompleteEvidenceCandidate<'a>],
+) -> Result<ManualReviewReport<'a>, ManualReviewError> {
+    use std::collections::{BTreeMap, BTreeSet};
+    let history = assess_campaign_retry_history(universe, expected, candidates)
+        .map_err(ManualReviewError::History)?;
+    if expected
+        .iter()
+        .any(|v| v.selection.kind() != eqm_domain::EvidenceKind::ManualReview)
+    {
+        return Err(ManualReviewError::Kind);
+    }
+    let independent = expected
+        .iter()
+        .any(|v| v.selection.independent_review_principals());
+    let mut slots = BTreeMap::new();
+    let mut by_case: BTreeMap<eqm_domain::LogicalCaseId, Vec<EvidenceOutcome>> = BTreeMap::new();
+    let mut reasons = BTreeSet::new();
+    for (case, group) in history.histories() {
+        let mut terminal = BTreeSet::new();
+        let mut reviewers = BTreeSet::new();
+        let mut slot_reasons =
+            BTreeSet::from([ManualReviewReason::IndependentVerificationRequired]);
+        if independent {
+            slot_reasons.insert(ManualReviewReason::DistinctAuthorizedPrincipalsRequired);
+        }
+        for result in group.attempts().values().flat_map(BTreeMap::values) {
+            match result.payload() {
+                EvidencePayload::ManualReview {
+                    outcome, reviewer, ..
+                } => {
+                    terminal.insert(*outcome);
+                    reviewers.insert(reviewer.clone());
+                    slot_reasons.insert(ManualReviewReason::Terminal(*outcome));
+                }
+                EvidencePayload::Test(_)
+                | EvidencePayload::Snapshot(_)
+                | EvidencePayload::StructuralCheck(_)
+                | EvidencePayload::StaticInventory { .. }
+                | EvidencePayload::RuntimeSnapshot { .. }
+                | EvidencePayload::ReleaseRecord { .. } => {
+                    slot_reasons.insert(ManualReviewReason::UnsupportedPayload);
+                }
+            }
+        }
+        if group
+            .reasons()
+            .contains(&CampaignRetryReason::ImmutableConflict)
+        {
+            slot_reasons.insert(ManualReviewReason::ImmutableConflict);
+        }
+        let outcome = if slot_reasons.contains(&ManualReviewReason::ImmutableConflict)
+            || slot_reasons.contains(&ManualReviewReason::UnsupportedPayload)
+        {
+            EvidenceOutcome::Unknown
+        } else {
+            terminal_evidence_outcome(terminal)
+        };
+        by_case
+            .entry(case.logical_case.clone())
+            .or_default()
+            .push(outcome);
+        reasons.extend(slot_reasons.iter().cloned());
+        slots.insert(
+            case.clone(),
+            ManualReviewSlot {
+                outcome,
+                reviewers,
+                reasons: slot_reasons,
+            },
+        );
+    }
+    for reason in history.reasons() {
+        match reason {
+            CampaignRetryReason::MissingSelectedCase(source, case) => {
+                reasons.insert(ManualReviewReason::MissingSelectedCase(
+                    source.clone(),
+                    case.clone(),
+                ));
+            }
+            CampaignRetryReason::ImmutableConflict => {
+                reasons.insert(ManualReviewReason::ImmutableConflict);
+            }
+            CampaignRetryReason::Terminal(_) | CampaignRetryReason::PendingKind(_) => {}
+        }
+    }
+    let incomplete_slots = history
+        .source_cases()
+        .iter()
+        .filter(|(_, groups)| groups.is_empty())
+        .map(|((_, case), _)| case.clone())
+        .collect::<BTreeSet<_>>();
+    let passing_slots = by_case
+        .into_iter()
+        .filter_map(|(case, outcomes)| {
+            (!incomplete_slots.contains(&case)
+                && outcomes.iter().all(|o| *o == EvidenceOutcome::Satisfied))
+            .then_some(case)
+        })
+        .collect::<BTreeSet<_>>();
+    if u64::try_from(passing_slots.len()).unwrap_or(u64::MAX)
+        < history.constraints().effective_minimum().get()
+    {
+        reasons.insert(ManualReviewReason::InsufficientPassingSlots);
+    }
+    let states = slots.values().map(|s| s.outcome).collect::<Vec<_>>();
+    let outcome = if states.contains(&EvidenceOutcome::Unknown)
+        || reasons.contains(&ManualReviewReason::ImmutableConflict)
+    {
+        EvidenceOutcome::Unknown
+    } else if states.contains(&EvidenceOutcome::Unstable) {
+        EvidenceOutcome::Unstable
+    } else if states.contains(&EvidenceOutcome::Failed) {
+        EvidenceOutcome::Failed
+    } else if states.contains(&EvidenceOutcome::Missing)
+        || states.is_empty()
+        || reasons.contains(&ManualReviewReason::InsufficientPassingSlots)
+        || reasons
+            .iter()
+            .any(|r| matches!(r, ManualReviewReason::MissingSelectedCase(..)))
+    {
+        EvidenceOutcome::Missing
+    } else {
+        EvidenceOutcome::Satisfied
+    };
+    let acceptance = if slots.is_empty() {
+        outcome
+    } else {
+        EvidenceOutcome::Unknown
+    };
+    Ok(ManualReviewReport {
+        history,
+        slots,
+        passing_slots,
+        outcome,
+        acceptance,
+        reasons,
+    })
+}
+
+#[cfg(test)]
+mod manual_review_interpretation_tests {
+    use super::*;
+    #[test]
+    fn every_review_outcome_has_explicit_non_catchall_interpretation() {
+        for (input, expected) in [
+            (AttemptOutcome::Passed, EvidenceOutcome::Satisfied),
+            (AttemptOutcome::Failed, EvidenceOutcome::Failed),
+            (AttemptOutcome::Skipped, EvidenceOutcome::Missing),
+            (AttemptOutcome::Filtered, EvidenceOutcome::Missing),
+            (AttemptOutcome::Quarantined, EvidenceOutcome::Missing),
+            (AttemptOutcome::TimedOut, EvidenceOutcome::Unknown),
+            (AttemptOutcome::Cancelled, EvidenceOutcome::Unknown),
+            (AttemptOutcome::Error, EvidenceOutcome::Unknown),
+        ] {
+            assert_eq!(terminal_evidence_outcome([input]), expected);
+        }
+        assert_eq!(terminal_evidence_outcome([]), EvidenceOutcome::Missing);
+        assert_eq!(
+            terminal_evidence_outcome([AttemptOutcome::Failed, AttemptOutcome::Passed]),
+            EvidenceOutcome::Unstable
+        );
+    }
+}

@@ -301,3 +301,29 @@ payload comparisons across all expectations and retained outcome traversal share
 a cumulative 1,000,000-work guard; duplicate/rejected input consumes work without
 observation credit. Excess work returns an error without a partial conclusion.
 No wire/schema/digest changes. Later owning steps integrate remaining prerequisites.
+
+## DEV-035 S065 explicit manual reviews
+
+The engine's opaque ManualReviewReport interprets actual matched review claims
+under complete frozen expectations internally collected through S064. Application
+binds actual opaque pre-result identities before the shared strict admitted adapter.
+All non-review frozen expectations reject explicitly. Raw/mapping/provenance audit,
+full subjects, attempt assertions, required-source membership and immutable conflicts
+remain available through the retained history.
+
+Same-slot failing/passing retries are Unstable; distinct required failed/passed
+slots compose as Failed. Immutable conflicts are Unknown, missing required slots
+Missing. Distinct logical slot IDs whose complete required-source histories pass
+form the claimed passing-slot set; copied deliveries, retries, reviewer names and
+multiple sources never multiply slots. Outcome interpretation applies actual
+policy/specification minima after required-slot conjunction. All reasons survive
+summary precedence. Unsupported nonterminal manual-review wire outcomes remain
+rejected under the unchanged passed/failed grammar and cannot fill a required slot.
+
+Outcome/count interpretation does not grant acceptance. Matched review assertions
+remain Unknown for acceptance without independent verification; required authorized
+distinct principals remain explicitly unresolved. Claimed reviewer identifiers are
+retained only for audit. No caller trust flag, report from weaker expectations,
+authorizing facet constructor, new wire or effectful verification is introduced.
+Independent fact integration and complete canonical consumers remain owning later
+steps; full collection and work bounds continue to reject without partial success.

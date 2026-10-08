@@ -97,8 +97,9 @@ pub use outcomes::{
     CampaignRetryReport, CampaignRetryState, EvidenceOutcome, LogicalCountConstraintError,
     LogicalCountConstraintReport, LogicalCountConstraintStatus, LogicalObservationError,
     LogicalObservationPrerequisite, LogicalObservationReport, LogicalObservationUnit,
+    ManualReviewError, ManualReviewReason, ManualReviewReport, ManualReviewSlot,
     aggregate_evidence_outcomes, assess_campaign_retry_history, assess_logical_count_constraints,
-    collect_logical_observations, validate_logical_count_context,
+    assess_manual_reviews, collect_logical_observations, validate_logical_count_context,
 };
 pub use release::{
     ReleaseCheck, ReleaseContext, ReleaseGateInput, ReleaseGateStatus, ReleaseSubject,

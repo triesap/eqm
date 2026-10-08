@@ -493,3 +493,41 @@ pub fn assess_admitted_campaign_retry_history<'a>(
     )
     .map_err(AdmittedCampaignRetryError::History)
 }
+
+/// Actual opaque admission or internally collected manual-review interpretation failed.
+#[derive(Debug)]
+pub enum AdmittedManualReviewError {
+    /// Full frozen expectations and opaque pre-result identity did not validate.
+    Context(AdmittedCountConstraintError),
+    /// Explicit internally collected review interpretation failed.
+    Review(eqm_engine::ManualReviewError),
+}
+impl Display for AdmittedManualReviewError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "admitted manual review rejected: {self:?}")
+    }
+}
+impl Error for AdmittedManualReviewError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Context(error) => Some(error),
+            Self::Review(error) => Some(error),
+        }
+    }
+}
+/// Interprets actual strict manual-review admissions without trust or effects.
+/// Claimed outcomes/counts and reviewers cannot construct authorizing conformance.
+pub fn assess_admitted_manual_reviews<'a>(
+    prepared: &crate::PreparedObligationIdentities,
+    expected: &[CompleteCoverageExpectation],
+    deliveries: &[CompleteEvidenceDelivery<'a>],
+) -> Result<eqm_engine::ManualReviewReport<'a>, AdmittedManualReviewError> {
+    validate_prepared_count_request(prepared, expected, deliveries.len())
+        .map_err(AdmittedManualReviewError::Context)?;
+    eqm_engine::assess_manual_reviews(
+        prepared.universe(),
+        expected,
+        &complete_candidates(deliveries),
+    )
+    .map_err(AdmittedManualReviewError::Review)
+}

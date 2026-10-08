@@ -60,10 +60,10 @@ pub use comparison::{
 };
 pub use evaluation::{
     AdmittedCampaignRetryError, AdmittedCountConstraintError, AdmittedEvidenceDelivery,
-    CompleteEvidenceDelivery, EvaluationRequest, EvidenceReadError, EvidenceReadRequest,
-    EvidenceReader, MAX_EVIDENCE_READ, assess_admitted_campaign_retry_history,
-    assess_admitted_count_constraints, collect_admitted_observations, match_admitted_evidence,
-    normalize_admitted_evidence,
+    AdmittedManualReviewError, CompleteEvidenceDelivery, EvaluationRequest, EvidenceReadError,
+    EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ, assess_admitted_campaign_retry_history,
+    assess_admitted_count_constraints, assess_admitted_manual_reviews,
+    collect_admitted_observations, match_admitted_evidence, normalize_admitted_evidence,
 };
 pub use evidence_conversion::{EvidenceConversionError, admit_evidence_bytes};
 pub use expected_selection::{
