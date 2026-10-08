@@ -12,15 +12,13 @@ use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-/// Validated inventory observation; error responses remain explicit unknown.
+/// Locally validated inventory claim, without currentness or verification authority.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InventoryObservation {
     /// Validated inventory, absent only for adapter error status.
     inventory: Option<InventoryDto>,
-    /// Effective completeness after status and authority checks.
+    /// Completeness claim permitted by status and the locked adapter definition.
     completeness: InventoryCompleteness,
-    /// Whether absence of an entry is authoritative.
-    can_prove_absence: bool,
 }
 
 impl InventoryObservation {
@@ -30,16 +28,16 @@ impl InventoryObservation {
         self.inventory.as_ref()
     }
 
-    /// Returns the validated effective completeness.
+    /// Returns the locally validated completeness claim.
     #[must_use]
     pub const fn completeness(&self) -> InventoryCompleteness {
         self.completeness
     }
 
-    /// Returns whether a missing entry is an authoritative false observation.
+    /// Raw completeness claims never establish authoritative absence.
     #[must_use]
     pub const fn can_prove_absence(&self) -> bool {
-        self.can_prove_absence
+        false
     }
 }
 
@@ -64,19 +62,43 @@ pub fn validate_inventory_response(
         return Ok(InventoryObservation {
             inventory: None,
             completeness: InventoryCompleteness::Unknown,
-            can_prove_absence: false,
         });
     };
     if matches!(response.status, AdapterStatusDto::Error) {
         return Err(InventoryValidationError::StatusMismatch);
     }
-    validate_inventory(definition, request, &response.status, &inventory)?;
+    validate_inventory(definition, &request.target, &response.status, &inventory)?;
+    if inventory.subject != request.subject {
+        return Err(InventoryValidationError::AuthorityMismatch);
+    }
     let completeness = inventory
         .completeness
         .parse::<InventoryCompleteness>()
         .map_err(|_| InventoryValidationError::Completeness)?;
     Ok(InventoryObservation {
-        can_prove_absence: completeness == InventoryCompleteness::Complete,
+        inventory: Some(inventory),
+        completeness,
+    })
+}
+
+/// Checks an imported claim against its locked adapter and target without
+/// manufacturing an independently expected subject or verification conclusion.
+pub fn validate_inventory_claim(
+    definition: &AdapterDefinition,
+    target: &TargetId,
+    inventory: InventoryDto,
+) -> Result<InventoryObservation, InventoryValidationError> {
+    let completeness = inventory
+        .completeness
+        .parse::<InventoryCompleteness>()
+        .map_err(|_| InventoryValidationError::Completeness)?;
+    let status = if completeness == InventoryCompleteness::Complete {
+        AdapterStatusDto::Ok
+    } else {
+        AdapterStatusDto::Partial
+    };
+    validate_inventory(definition, target.as_str(), &status, &inventory)?;
+    Ok(InventoryObservation {
         inventory: Some(inventory),
         completeness,
     })
@@ -84,7 +106,7 @@ pub fn validate_inventory_response(
 
 fn validate_inventory(
     definition: &AdapterDefinition,
-    request: &AdapterRequestDto,
+    target: &str,
     status: &AdapterStatusDto,
     inventory: &InventoryDto,
 ) -> Result<(), InventoryValidationError> {
@@ -93,8 +115,7 @@ fn validate_inventory(
     }
     if inventory.adapter != definition.id().as_str()
         || inventory.adapter_digest != definition.digest().to_string()
-        || inventory.subject != request.subject
-        || inventory.target != request.target
+        || inventory.target != target
     {
         return Err(InventoryValidationError::AuthorityMismatch);
     }
@@ -407,8 +428,7 @@ mod tests {
     }
 
     #[test]
-    fn complete_partial_and_unknown_observations_preserve_absence_semantics()
-    -> Result<(), Box<dyn Error>> {
+    fn locally_validated_completeness_never_establishes_absence() -> Result<(), Box<dyn Error>> {
         for completeness in [
             InventoryCompleteness::Complete,
             InventoryCompleteness::Partial,
@@ -421,10 +441,7 @@ mod tests {
                 response(&definition, completeness, Vec::new())?,
             )?;
             assert_eq!(observation.completeness(), completeness);
-            assert_eq!(
-                observation.can_prove_absence(),
-                completeness == InventoryCompleteness::Complete
-            );
+            assert!(!observation.can_prove_absence());
         }
         let definition = definition(InventoryCompleteness::Complete)?;
         let error = AdapterResponseDto {

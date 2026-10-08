@@ -37,6 +37,7 @@ pub mod cohort;
 pub mod comparison;
 pub mod evaluation;
 pub mod expected_selection;
+pub mod inventory;
 pub mod obligation_identity;
 pub mod provenance;
 pub mod selection;
@@ -61,6 +62,11 @@ pub use evaluation::{
 pub use expected_selection::{
     ExpectedSelectionPreparationError, ExpectedSelectionProvider, PreparedExpectedSelections,
     prepare_expected_selections,
+};
+pub use inventory::{
+    InventoryExpectation, InventoryFactReason, InventoryPolicy, InventoryVerificationError,
+    InventoryVerificationRequest, InventoryVerifier, PreparedInventoryFacts,
+    prepare_inventory_facts, reconcile_prepared_inventory_exposure,
 };
 pub use obligation_identity::{
     ObligationIdentityError, PreparedObligationIdentities, prepare_obligation_identities,

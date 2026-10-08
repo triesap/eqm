@@ -26,7 +26,10 @@ pub use execution::{
     CancellationToken, ExecutionOutcome, ExecutionReport, LocalExecutionContext,
     LocalExecutionError, execute_local_process,
 };
-pub use inventory::{InventoryObservation, InventoryValidationError, validate_inventory_response};
+pub use inventory::{
+    InventoryObservation, InventoryValidationError, validate_inventory_claim,
+    validate_inventory_response,
+};
 pub use normalized::{NormalizedTestResult, TestResultReadError, read_test_result};
 pub use persistence::{EvidenceWriteError, EvidenceWriteOutcome, persist_evidence_result};
 pub use reconciliation::{InventoryExposureInput, reconcile_inventory_exposure};

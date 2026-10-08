@@ -1,4 +1,4 @@
-//! Pure bridge from validated adapter observations to exposure evaluation.
+//! Non-authorizing display bridge from locally validated inventory claims.
 
 use crate::InventoryObservation;
 use eqm_domain::SelectorText;
@@ -22,27 +22,17 @@ pub struct InventoryExposureInput {
     pub conformant: ConformanceFact,
 }
 
-/// Reconciles one exact inventory entry coordinate without inferring between facts.
+/// Raw claims remain Unknown; independently verified facts are application-owned.
 #[must_use]
 pub fn reconcile_inventory_exposure(
     input: InventoryExposureInput,
-    observation: &InventoryObservation,
-    kind: &SelectorText,
-    key: &SelectorText,
+    _observation: &InventoryObservation,
+    _kind: &SelectorText,
+    _key: &SelectorText,
 ) -> ExposureReconciliation {
-    let present = observation.inventory().is_some_and(|inventory| {
-        inventory
-            .entries
-            .iter()
-            .any(|entry| entry.kind == kind.as_str() && entry.key == key.as_str())
-    });
-    let discovered = if present {
-        ObservedExposure::True
-    } else if observation.can_prove_absence() {
-        ObservedExposure::False
-    } else {
-        ObservedExposure::Unknown
-    };
+    // Local validation cannot establish independently verified current product
+    // facts. The application owns checked positive reconciliation.
+    let discovered = ObservedExposure::Unknown;
     reconcile_exposure(ExposureFacts {
         expected: input.expected,
         declared: input.declared,
@@ -184,8 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn present_absent_and_unknown_inventory_states_reconcile_exactly() -> Result<(), Box<dyn Error>>
-    {
+    fn raw_present_and_complete_missing_claims_remain_unknown() -> Result<(), Box<dyn Error>> {
         let kind = SelectorText::new("route")?;
         let key = SelectorText::new("/signup")?;
         let present = reconcile_inventory_exposure(
@@ -194,17 +183,17 @@ mod tests {
             &kind,
             &key,
         );
-        assert_eq!(present.facts.discovered, ObservedExposure::True);
+        assert_eq!(present.facts.discovered, ObservedExposure::Unknown);
         assert_eq!(present.declared, eqm_engine::ExposureComparison::Match);
-        assert_eq!(present.discovered, eqm_engine::ExposureComparison::Match);
+        assert_eq!(present.discovered, eqm_engine::ExposureComparison::Unknown);
         let absent = reconcile_inventory_exposure(
             input(),
             &observation(InventoryCompleteness::Complete, false)?,
             &kind,
             &key,
         );
-        assert_eq!(absent.facts.discovered, ObservedExposure::False);
-        assert_eq!(absent.discovered, eqm_engine::ExposureComparison::Mismatch);
+        assert_eq!(absent.facts.discovered, ObservedExposure::Unknown);
+        assert_eq!(absent.discovered, eqm_engine::ExposureComparison::Unknown);
         for completeness in [
             InventoryCompleteness::Partial,
             InventoryCompleteness::Unknown,
@@ -234,7 +223,7 @@ mod tests {
             reconcile_inventory_exposure(input(), &observation, &route, &other)
                 .facts
                 .discovered,
-            ObservedExposure::False
+            ObservedExposure::Unknown
         );
         Ok(())
     }

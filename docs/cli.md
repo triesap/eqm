@@ -83,6 +83,12 @@ missing, wrongly typed or forbidden symlinked artifacts remain blocking findings
 | `release check --release-record PATH` | Evaluate one exact release subject |
 | `mcp serve [--allow-verify --audit-output PATH]` | Serve the bounded MCP surface over stdio |
 
+Reconciliation validates imported inventory claims against the exact adapter pin.
+Claims of completeness and document presence do not prove product facts or
+freshness. Without independent expected subject, explicit age/trust policy and
+current verification authority, discovered facts and inventory freshness remain
+Unknown. Complete verified current inventory is required to prove absence.
+
 Release checks require exact explicit policy and profile revisions and every
 profile dimension value, for example:
 

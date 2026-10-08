@@ -5,21 +5,17 @@ use crate::cli::ParsedCli;
 use crate::renderer::OutputPayload;
 use crate::session::{PreparedSession, SessionRequest, prepare};
 use chrono::{DateTime, SecondsFormat, Utc};
+use eqm_application::{prepare_inventory_facts, reconcile_prepared_inventory_exposure};
 use eqm_domain::{IntendedExposureState, RepoPath, SelectorText, TargetId, UtcInstant};
 use eqm_engine::{
     ConformanceFact, ExpectedExposure, ExposureComparison, ExposureReconciliation,
-    ObservedExposure, TruthValue, evaluate_applicability, reconcile_exposure,
+    ObservedExposure, TruthValue, evaluate_applicability,
 };
 use eqm_protocol::{
-    ADAPTER_REQUEST_SCHEMA, ADAPTER_RESPONSE_SCHEMA, AdapterLimitsDto, AdapterOperationDto,
-    AdapterRequestDto, AdapterResponseDto, AdapterStatusDto, CommandIdentity, EvaluationModeDto,
-    ExposureComparisonDto, ExposureFactDto, InventoryDto, InvocationContextDto, ReconcileResultDto,
-    ReportEnvelope,
+    CommandIdentity, EvaluationModeDto, ExposureComparisonDto, ExposureFactDto, InventoryDto,
+    InvocationContextDto, ReconcileResultDto, ReportEnvelope,
 };
-use eqm_runner::{
-    InventoryExposureInput, InventoryObservation, reconcile_inventory_exposure,
-    validate_inventory_response,
-};
+use eqm_runner::{InventoryExposureInput, InventoryObservation, validate_inventory_claim};
 use std::collections::BTreeSet;
 use std::error::Error;
 use std::fs;
@@ -56,6 +52,16 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         .as_deref()
         .map(|path| load_inventory(&session, path, &target_id))
         .transpose()?;
+    // Imported subject/completeness remain claims. No independent expected
+    // subject, configured time/trust policy or verifier is available here.
+    let prepared_inventory = prepare_inventory_facts(
+        observation.as_ref().map(|loaded| &loaded.observation),
+        observation.as_ref().map(|loaded| loaded.bytes.as_slice()),
+        None,
+        None,
+        session.evaluation_time(),
+        None,
+    );
     let mut facts = BTreeSet::new();
     let mut comparisons = BTreeSet::new();
     for binding in session
@@ -90,23 +96,12 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
                 released: ObservedExposure::Unknown,
                 conformant: ConformanceFact::Unknown,
             };
-            let reconciled = if let Some(observation) = observation.as_ref() {
-                reconcile_inventory_exposure(
-                    input,
-                    observation,
-                    &SelectorText::new(kind)?,
-                    &SelectorText::new(key)?,
-                )
-            } else {
-                reconcile_exposure(eqm_engine::ExposureFacts {
-                    expected,
-                    declared: input.declared,
-                    discovered: ObservedExposure::Unknown,
-                    enabled: input.enabled,
-                    released: input.released,
-                    conformant: input.conformant,
-                })
-            };
+            let reconciled = reconcile_prepared_inventory_exposure(
+                input,
+                &prepared_inventory,
+                &SelectorText::new(kind)?,
+                &SelectorText::new(key)?,
+            );
             append_records(
                 &mut facts,
                 &mut comparisons,
@@ -144,11 +139,16 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     })
 }
 
+struct LoadedInventory {
+    observation: InventoryObservation,
+    bytes: Vec<u8>,
+}
+
 fn load_inventory(
     session: &PreparedSession,
     path: &str,
     target: &TargetId,
-) -> Result<InventoryObservation, Box<dyn Error>> {
+) -> Result<LoadedInventory, Box<dyn Error>> {
     let relative = RepoPath::new(path)?;
     let candidate = session.repository_root().join(relative.as_str());
     let metadata = fs::symlink_metadata(&candidate)?;
@@ -177,43 +177,8 @@ fn load_inventory(
         return Err("inventory adapter did not resolve to one exact lock pin".into());
     }
     let definition = discover::definition(matches[0])?;
-    let limits = definition.limits();
-    let request = AdapterRequestDto {
-        schema: ADAPTER_REQUEST_SCHEMA.to_string(),
-        request_id: "reconcile-prepared-inventory".to_owned(),
-        adapter: definition.id().as_str().to_owned(),
-        adapter_digest: definition.digest().to_string(),
-        operation: AdapterOperationDto::Discover,
-        subject: inventory.subject.clone(),
-        target: target.as_str().to_owned(),
-        target_root: session.repository_root().to_string_lossy().into_owned(),
-        limits: AdapterLimitsDto {
-            timeout_ms: limits.timeout().get(),
-            max_input_bytes: limits.max_input_bytes().get(),
-            max_output_bytes: limits.max_output_bytes().get(),
-            max_entries: limits.max_entries().get(),
-            max_depth: limits.max_depth().get(),
-        },
-    };
-    let status = if inventory.completeness == "complete" {
-        AdapterStatusDto::Ok
-    } else {
-        AdapterStatusDto::Partial
-    };
-    validate_inventory_response(
-        &definition,
-        &request,
-        AdapterResponseDto {
-            schema: ADAPTER_RESPONSE_SCHEMA.to_string(),
-            request_id: request.request_id.clone(),
-            adapter: request.adapter.clone(),
-            adapter_digest: request.adapter_digest.clone(),
-            status,
-            inventory: Some(inventory),
-            diagnostics: Vec::new(),
-        },
-    )
-    .map_err(Into::into)
+    let observation = validate_inventory_claim(&definition, target, inventory)?;
+    Ok(LoadedInventory { observation, bytes })
 }
 
 fn append_records(
@@ -274,7 +239,7 @@ fn append_records(
             name: format!("{coordinate}:{name}"),
             value: value.to_owned(),
             source: source.to_owned(),
-            freshness: if source == "not_prepared" {
+            freshness: if source == "not_prepared" || name == "discovered" {
                 "unknown"
             } else {
                 "current"
@@ -447,7 +412,76 @@ mod tests {
 
         // The positive control genuinely succeeds at the locked-adapter ingress.
         let valid = load_inventory(&session, "inventory.valid.json", &target)?;
-        assert!(valid.inventory().is_some());
+        assert!(valid.observation.inventory().is_some());
+        assert!(!valid.observation.can_prove_absence());
+
+        // The actual consuming command must not infer current verified product
+        // facts from either a complete absent claim or a present exact route.
+        let exposure = session
+            .finalized()
+            .graph()
+            .bindings()
+            .values()
+            .filter(|binding| binding.target() == &target)
+            .flat_map(|binding| binding.exposures())
+            .next()
+            .ok_or("exposure")?;
+        let (kind, key) = exposure.route().map_or_else(
+            || ("surface", exposure.surface().as_str()),
+            |route| ("route", route.as_str()),
+        );
+        for present in [false, true] {
+            let mut claim = inventory.clone();
+            claim["entries"] = if present {
+                serde_json::json!([{
+                    "kind": kind, "key": key, "attributes": {}, "source": "src/home.ts"
+                }])
+            } else {
+                serde_json::json!([])
+            };
+            claim
+                .as_object_mut()
+                .ok_or("claim")?
+                .remove("inventory_digest");
+            claim["inventory_digest"] = serde_json::json!(
+                eqm_domain::Sha256Digest::hash_content(&serde_json_canonicalizer::to_vec(&claim)?)
+                    .to_string()
+            );
+            fs::write(
+                root.join("inventory.consume.json"),
+                serde_json::to_vec(&claim)?,
+            )?;
+            let crate::cli::ParseOutcome::Run(parsed) = crate::cli::parse([
+                "reconcile",
+                "--target",
+                "android",
+                "--inventory",
+                "inventory.consume.json",
+                "--format",
+                "json",
+                "--no-progress",
+            ])?
+            else {
+                return Err("parse".into());
+            };
+            let result = execute(parsed, root)?;
+            let facts = result.payload.json["result"]["facts"]
+                .as_array()
+                .ok_or("facts")?;
+            let discovered = facts
+                .iter()
+                .filter(|fact| {
+                    fact["name"]
+                        .as_str()
+                        .is_some_and(|name| name.ends_with(":discovered"))
+                })
+                .collect::<Vec<_>>();
+            assert!(!discovered.is_empty());
+            assert!(discovered.iter().all(|fact| fact["value"] == "unknown"
+                && fact["freshness"] == "unknown"
+                && fact["effective_trust"] == "untrusted_adapter_output"));
+            assert!(!root.join(".eqm").exists());
+        }
 
         // The mutant differs only by a second, differently-valued `enabled`
         // member, so it must fail as an ambiguous duplicate parse at the same

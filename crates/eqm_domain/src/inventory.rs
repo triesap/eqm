@@ -121,10 +121,11 @@ impl Inventory {
             inventory_digest,
         })
     }
-    /// Returns whether absence may be treated as false.
+    /// Raw inventory claims have no independent current verification authority.
+    /// Application preparation owns authoritative presence/absence conclusions.
     #[must_use]
     pub const fn can_prove_absence(&self) -> bool {
-        matches!(self.completeness, InventoryCompleteness::Complete)
+        false
     }
     /// Returns adapter ID.
     #[must_use]
@@ -554,11 +555,11 @@ mod tests {
     }
 
     #[test]
-    fn only_complete_inventory_proves_absence() -> Result<(), Box<dyn Error>> {
-        for (completeness, expected) in [
-            (InventoryCompleteness::Complete, true),
-            (InventoryCompleteness::Partial, false),
-            (InventoryCompleteness::Unknown, false),
+    fn completeness_claim_alone_never_proves_absence() -> Result<(), Box<dyn Error>> {
+        for completeness in [
+            InventoryCompleteness::Complete,
+            InventoryCompleteness::Partial,
+            InventoryCompleteness::Unknown,
         ] {
             let inventory = Inventory::new(
                 AdapterId::new("adapter.rust")?,
@@ -571,7 +572,7 @@ mod tests {
                 Vec::new(),
                 Sha256Digest::hash_content(b"inventory"),
             )?;
-            assert_eq!(inventory.can_prove_absence(), expected);
+            assert!(!inventory.can_prove_absence());
         }
         Ok(())
     }

@@ -20,10 +20,11 @@ numbered acceptances). S047 residual identity/aggregation remains S054/S073.
 See [aggregate repair disposition](reports/P04-R4C.md) and [scope report](reports/S052.md).
 S053 subsequently passed its allocated gates (52 numbered local acceptances).
 S054 and S055 subsequently passed their allocated gates (54 numbered local
-acceptances). S047 aggregation plus S056–S211 remain unfinished.
+acceptances). S056 subsequently passed its allocated gates (55 numbered local
+acceptances). S047 aggregation plus S057–S211 remain unfinished.
 See [independent review](reports/CODEX-b442b80.md).
 
-**Next order:** S056–S076, mandatory independent complete-universe
+**Next order:** S057–S076, mandatory independent complete-universe
 and reference-evaluator acceptance before S077, then S077–S211 subject to their
 existing dependencies and gates. RF84 is accepted for its allocated P04-R4C
 contribution. Retain DEV-033 representation/provenance decisions: exact checked
@@ -692,6 +693,48 @@ Review intentional report/golden changes without hiding structural Unknown or
 weakening existing missing-scope controls. Keep frozen schemas and dependencies
 unchanged. Original S055 owning commands remain mandatory. This is an allocated
 RA21 contribution; inventory/currentness/trust/exposure integration is not closed.
+
+**DEV-035 S056 implementation allocation:** raw domain/runner inventories are
+validated claims and cannot independently prove presence or absence. Extract a
+clearly named locked-adapter claim-validation operation for the CLI, without a
+self-echo expected-subject request. Preserve exact legacy wire validity and all
+syntax/digest/limit/ordering checks. Raw reconciliation remains Unknown.
+
+Application owns opaque PreparedInventoryFacts with no deserialization or public
+success constructor. Preparation takes immutable original inventory bytes and
+their validated claim, independently supplied exact subject/target/adapter identity,
+explicit evaluation instant, configured maximum age/future skew/minimum trust and
+exact trust-configuration digest, and an explicit read-only InventoryVerifier port.
+Bound raw bytes before parsing/copying; strict reparsing must equal the validated
+claim. Independently compare every subject/adapter/target axis and exact nanosecond
+age/skew before invoking the configured verifier once. Missing inputs, stale/future
+claims, content substitution or unavailable/rejected verification remain Unknown
+with retained reasons and provenance. Verifier success means independently checked
+signature, identity/issuer/producer/builder/execution eligibility, exact bytes and
+subject, time/revocation and configured trust; no public producer verified flag or
+deserialized receipt is accepted. There is no default verifier or hidden fetching,
+execution, clock capture or production test stand-in. A Result-only capability
+response grants no transferable receipt; facts remain bound to this evaluation.
+
+Authoritative legacy target inventory additionally requires independently expected
+build/artifact identity and target scope matching the target. Missing axes or lossy
+provider/target-set scope stay Unknown; this does not narrow legacy wire parsing or
+replace later exact v2 subject-manifest/cohort/profile/source-component integration.
+Verified current present entries may establish presence; only verified current
+Complete inventory establishes missing entries as absent. Partial/Unknown missing
+coordinates remain Unknown. The real application reconciliation consumes these
+private prepared facts, retaining snapshot time, raw identity and policy context.
+CLI has no independent subject/policy/verifier configured today, so loaded claims
+remain Unknown and cannot be labelled current or authorize absence.
+
+Require same-ingress checked positive presence/complete-absence controls and
+one-axis negatives for missing inputs, partial absence, stale/future boundaries
+(including one nanosecond), byte/subject/adapter substitutions and revoked/rejected
+verification. Keep synthetic verifier implementations cfg(test) only. Add actual
+CLI complete/present inventory controls preserving Unknown and no writes. Real
+cryptographic implementation remains S116–S131; no whole RA21/R/AC closure follows.
+Original S056 gates remain mandatory; domain/CLI tests join the declared owning lane
+because their consuming authority shortcuts change. No schema/dependency changes.
 
 For S057 strengthening, compare full visible denominator, including unresolved
 coordinates. Validate any authority transition before comparing semantic

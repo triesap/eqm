@@ -196,7 +196,7 @@ fn validate_export_fixture(
 }
 
 #[test]
-fn sveltekit_filesystem_inventory_is_sorted_confined_and_reconciles() -> Result<(), Box<dyn Error>>
+fn sveltekit_filesystem_claim_is_sorted_confined_and_non_authorizing() -> Result<(), Box<dyn Error>>
 {
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/discovery/web");
     let entries = discover_sveltekit_routes(&fixture)?;
@@ -259,13 +259,13 @@ fn sveltekit_filesystem_inventory_is_sorted_confined_and_reconciles() -> Result<
         &SelectorText::new("route")?,
         &SelectorText::new("/users/{id}")?,
     );
-    assert_eq!(result.facts.discovered, ObservedExposure::True);
-    assert_eq!(result.discovered, ExposureComparison::Match);
+    assert_eq!(result.facts.discovered, ObservedExposure::Unknown);
+    assert_eq!(result.discovered, ExposureComparison::Unknown);
     Ok(())
 }
 
 #[test]
-fn swiftui_build_export_is_current_complete_and_reconciles() -> Result<(), Box<dyn Error>> {
+fn swiftui_build_export_claim_is_complete_but_non_authorizing() -> Result<(), Box<dyn Error>> {
     let definition = native_definition(
         "adapter.swiftui_export",
         "https://example.com/adapters/swiftui-export",
@@ -291,13 +291,13 @@ fn swiftui_build_export_is_current_complete_and_reconciles() -> Result<(), Box<d
         &SelectorText::new("navigation")?,
         &SelectorText::new("signup")?,
     );
-    assert_eq!(result.facts.discovered, ObservedExposure::True);
-    assert_eq!(result.discovered, ExposureComparison::Match);
+    assert_eq!(result.facts.discovered, ObservedExposure::Unknown);
+    assert_eq!(result.discovered, ExposureComparison::Unknown);
     Ok(())
 }
 
 #[test]
-fn compose_build_export_is_current_complete_and_reconciles() -> Result<(), Box<dyn Error>> {
+fn compose_build_export_claim_is_complete_but_non_authorizing() -> Result<(), Box<dyn Error>> {
     let definition = native_definition(
         "adapter.compose_export",
         "https://example.com/adapters/compose-export",
@@ -323,7 +323,7 @@ fn compose_build_export_is_current_complete_and_reconciles() -> Result<(), Box<d
         &SelectorText::new("navigation")?,
         &SelectorText::new("signup")?,
     );
-    assert_eq!(result.facts.discovered, ObservedExposure::True);
-    assert_eq!(result.discovered, ExposureComparison::Match);
+    assert_eq!(result.facts.discovered, ObservedExposure::Unknown);
+    assert_eq!(result.discovered, ExposureComparison::Unknown);
     Ok(())
 }
