@@ -774,6 +774,52 @@ join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
 
+**DEV-035 S064 implementation allocation:** retain all immutable matched attempts
+for each selected logical case in the exact frozen plan/campaign. Engine history
+construction validates and internally collects the same complete expectations and
+candidates through S063; no reusable externally supplied report or latest-result
+selector is accepted. Application binds opaque S054 identities before adapting
+actual S059 admissions. Preserve exact matched semantic assertions before S061
+conflict partition, including their full subject, five lineage identities and raw/
+mapping/provenance audit; rejected assertions sharing an attempt never enter the
+eligible history. Existing global cross-source immutable conflicts stay Unknown.
+
+Group retry outcomes by full execution subject and logical case within the selected
+campaign, across required sources without multiplying count units. Different
+required cases or subjects compose conjunctively: a fail-only group plus a passing
+group is Failed. Failing/passing immutable retries of the same full-subject case
+are Unstable. Contradictory same-attempt assertions, timeout, cancellation and
+execution errors are Unknown. Skips, filters, quarantine and absent required
+source/case members remain Missing. Preserve every contributing typed reason and
+all immutable histories irrespective of summary precedence. Duplicate transport,
+input ordering, newer passing times and unrelated campaign/subject claims never
+erase relevant history or poison the selected cohort.
+
+This step evaluates terminal retry history for executable payloads, with a pure
+domain terminal-outcome aggregator; it does not mint independent successful count
+credit, trust, facts or conformance. All non-executable kinds retain explicit
+pending kind evaluation and existing independent prerequisites, never automatic
+success. S065 manual review, S066 complete executable selection/count eligibility,
+S067 inventory/runtime facts, S068 campaign relations and S073 protected consumers
+remain their owning work.
+Retain S063 full structural capacity and AND/conflict audit separately from retry
+history. Charge every incoming executable payload across all expected sources
+before normalization (including rejected/duplicate transport), and retained
+attempt/outcome traversal cumulatively to the existing
+1,000,000 work bound, with explicit error and no partial conclusion; retain delivery
+and full frozen-context bounds.
+
+Use real prepared graph/policy/spec/frozen selection and actual admitted bytes for
+literal fail/pass retries, separate fail/pass cases, timeout/cancel/error, skipped/
+filtered/quarantined/missing cases, same-attempt contradiction, duplicates, reverse
+order, foreign campaign/component/subject/identity and cumulative bound controls.
+Keep precise full-subject and source/case histories, rejected audit and no-effects
+snapshots. No wire, schema, digest, dependency or legacy helper reinterpretation.
+Original domain/engine owning and full standard gates plus application owning and
+mandatory separate allocated acceptance are required. RA02/RA03 remain local
+contributions. Continue S065 after the green commit and retain the mandatory
+independent complete-universe/reference-evaluator gate before S077.
+
 **DEV-035 S063 implementation allocation:** apply the actual prepared coordinate's
 composed count minimum to the S062 distinct typed observation report. Obtain the
 minimum from the immutable RequiredUniverse and exact graph specifications, never

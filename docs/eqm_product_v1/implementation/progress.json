@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S064",
+ "next_step": "S065",
  "implementation": "in_progress",
- "local_verification": "S063_allocated_accepted_standard940workspace_plus7endtoend_original294owning;62_numbered_accepted;S064_next;whole_MVP_incomplete",
+ "local_verification": "S064_allocated_accepted_standard944workspace_plus7endtoend_original430owning;63_numbered_accepted;S065_next;whole_MVP_incomplete",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1827,7 +1827,7 @@
   {
    "id": "S063",
    "status": "complete",
-   "commit_sha": null,
+   "commit_sha": "3c5271d3c0aa276c72e18fbcb77dc0141fa4db2a",
    "report": "implementation/reports/S063.md",
    "verification": [
     "preflight baseline d9c2a19 publicclean; originalS063/DEV035/contracts/RA02/03 inspected; allocation recorded before code; implementation and verification pending",
@@ -1850,11 +1850,29 @@
   },
   {
    "id": "S064",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S064.md",
+   "verification": [
+    "baseline3c5271d publicclean;originalS064/DEV035/AGENTS/contracts/RA02/RA03 inspected;spec-first allocation beforecode;62accepted149unfinished;owning/standard/separateacceptance required",
+    "formatterR0/R1/R2/R3actualexit0;initialproductioncheckR0actualexit0",
+    "targetR0actualexit0 1/1 actualselectedretrytable initialsource; targetR1exit101 compileE0277 boundfixturemixedEvidenceSpecBuildError/EvidenceResultBuildError repairedBoxdynError no productionloosening; targetR2ACTIVE finalactualinternalretry/foreigncampaign/identity/bounds/allkind/multisource additions;sourcefreeze/review/owning/standard pending",
+    "targetR2actualexit0 46/2 app22 engine24 zero failedignored;sourcebeforeupfrontpayloadcomparisonbudget;selfreview added cumulativeincomingpayload*expectedsource guard before normalization plusretainedtraversal budget;formatterR4exit0;targetR3ACTIVE finalguard source;review/owning/standard pending",
+    "frozen359sourceR0 SHA8fa0f94c972bf0b1cd9962c84f220a567ce41b128ca14f423686d4ee88e11e6e;mandatoryseparateallocatedreviewACTIVE s064_acceptance;targetR3ACTIVE80930 finalupfrontpayload+retainedbudget;clippy/owning/standard/finalgatespending",
+    "targetR3actualexit0 finalfrozen359sourceR0 46/2 app22engine24 zero failedignored;mandatoryseparateallocatedsourcePASS conditionalremaininggates;clippyR0ACTIVE27135 originaldomainengineappowning/fullstandard/finalparity/structure pending",
+    "clippyR0actualexit101 singlefixtureclone_on_copy CanonicalInstant repaired noallow;fmtR5exit0;frozen359sourceR1 SHA0d94bf61c286d3d15165449f2e05db325698c32aade5d6d9a1c3859e76b73f31 supersedesR0 onefixturelinechanged;targetR4ACTIVE affectedactualhistorytest;clippyR1/owning/standard pending",
+    "repairedtargetR4actualexit0 1/1 affectedactualhistorytest;mandatoryindependentrepairedsourceR1PASS productionunchanged oneCopyfixtureline;all359R1hashes unchanged;clippyR1ACTIVE2038 originalowning/fullstandard next",
+    "ownerresumeafterinterruption:clippyR1session2038unavailable noexit/completionevidence NOTPASS;359R1hashesunchanged;runtimeDiagnosticsGreen;clippyR2 rerun withdurableexitreceipt;originalowning/standardpending",
+    "repairedclippyR2actualexit0 warningsdenied durableexit0;source359R1unchanged;originaldomainengineappowningR0ACTIVE5216 durableexitreceipt;fullstandardnext;62accepted149unfinished",
+    "originaldomainengineappowningR0 actualexit0 durableexit0 430/41 zero failedignored;359R1sourceunchanged;fullstandardR0ACTIVE54066 withdurableexitreceipt;mandatoryseparaterepairedsourcePASS finalacceptancepending",
+    "fullstandardR0actualexit1 durableexit1 development-only marker in two publicverificationrecords;documentationrepaired publicboundary Rustsourceunchanged;fullstandardR1 rerunrequired nofailurecountedaspass",
+    "fresh independent resumed allocated source review PASS conditional remaininggates; all359R1hashes match; owning430/41 durableexit0 ClippyR2durableexit0 diffPASS; fullstandardR1ACTIVE14863 finalacceptancepending",
+    "originaldomainengineappowningR0 actualexit0 durableexit0 430/41;fullstandardR1 actualexit0 durableexit0 944workspace/84+7endtoend/7 total951/91 zero failedignored;fmt/lockedcheck/clippy/docs/schema22v1+14v2/endtoend/diff passed;359sourceR1unchanged;freshindependent allocatedsourcePASS",
+    "finalstructure202files3019links original211/64RAC/21RAretained;finaldiffPASS;fresh mandatory independent allocatedPASS verificationconditionsfulfilled"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "implemented",
+   "supervisor_status": "accepted_for_allocated_scope"
   },
   {
    "id": "S065",
@@ -3365,7 +3383,7 @@
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
  "next_cycle": "EQM-P05",
- "active_step": "S064",
+ "active_step": "S065",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3418,11 +3436,11 @@
    "first_step": "S059",
    "last_step": "S076",
    "status": "in_progress",
-   "completed_steps": 5,
+   "completed_steps": 6,
    "total_steps": 18,
-   "accepted_steps": 5,
-   "retained_implemented_steps": 5,
-   "next_step": "S064"
+   "accepted_steps": 6,
+   "retained_implemented_steps": 6,
+   "next_step": "S065"
   },
   {
    "id": "EQM-P06",
@@ -3719,7 +3737,7 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S064",
+ "next_checkpoint": "S065",
  "supervisor_review": {
   "source_commit": "d9c2a19b5335531da14e647d4612cb91728d9284",
   "candidate": "green_S063_allocated_scope",

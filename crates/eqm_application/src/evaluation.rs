@@ -414,7 +414,26 @@ pub fn assess_admitted_count_constraints<'a>(
     expected: &[CompleteCoverageExpectation],
     deliveries: &[CompleteEvidenceDelivery<'a>],
 ) -> Result<eqm_engine::LogicalCountConstraintReport<'a>, AdmittedCountConstraintError> {
-    if deliveries.len() > MAX_CANDIDATE_DELIVERIES {
+    validate_prepared_count_request(prepared, expected, deliveries.len())?;
+    eqm_engine::assess_logical_count_constraints(
+        prepared.universe(),
+        expected,
+        &complete_candidates(deliveries),
+    )
+    .map_err(|error| match error {
+        eqm_engine::LogicalCountConstraintError::Observations(cause) => {
+            AdmittedCountConstraintError::Observations(cause)
+        }
+        other => AdmittedCountConstraintError::Constraints(other),
+    })
+}
+
+fn validate_prepared_count_request(
+    prepared: &crate::PreparedObligationIdentities,
+    expected: &[CompleteCoverageExpectation],
+    delivery_count: usize,
+) -> Result<(), AdmittedCountConstraintError> {
+    if delivery_count > MAX_CANDIDATE_DELIVERIES {
         return Err(AdmittedCountConstraintError::Observations(
             eqm_engine::LogicalObservationError::Matching(CompleteCoverageError::Normalization(
                 CandidateNormalizationError::LimitExceeded,
@@ -432,15 +451,45 @@ pub fn assess_admitted_count_constraints<'a>(
     if expected.iter().any(|value| value.identity != identity) {
         return Err(AdmittedCountConstraintError::FrozenContext);
     }
-    eqm_engine::assess_logical_count_constraints(
+    Ok(())
+}
+
+/// Actual admission retry preparation failed; no partial history is returned.
+#[derive(Debug)]
+pub enum AdmittedCampaignRetryError {
+    /// Exact actual pre-result identity/frozen count context did not validate.
+    Context(AdmittedCountConstraintError),
+    /// Complete internally collected retry history failed.
+    History(eqm_engine::CampaignRetryError),
+}
+impl Display for AdmittedCampaignRetryError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "admitted campaign retry history rejected: {self:?}")
+    }
+}
+impl Error for AdmittedCampaignRetryError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Context(error) => Some(error),
+            Self::History(error) => Some(error),
+        }
+    }
+}
+
+/// Retains exact selected immutable retry history from actual opaque admissions.
+/// Preparation and terminal interpretation confer no independent trust, successful
+/// count eligibility or conformance, and do not choose or supersede campaigns.
+pub fn assess_admitted_campaign_retry_history<'a>(
+    prepared: &crate::PreparedObligationIdentities,
+    expected: &[CompleteCoverageExpectation],
+    deliveries: &[CompleteEvidenceDelivery<'a>],
+) -> Result<eqm_engine::CampaignRetryReport<'a>, AdmittedCampaignRetryError> {
+    validate_prepared_count_request(prepared, expected, deliveries.len())
+        .map_err(AdmittedCampaignRetryError::Context)?;
+    eqm_engine::assess_campaign_retry_history(
         prepared.universe(),
         expected,
         &complete_candidates(deliveries),
     )
-    .map_err(|error| match error {
-        eqm_engine::LogicalCountConstraintError::Observations(cause) => {
-            AdmittedCountConstraintError::Observations(cause)
-        }
-        other => AdmittedCountConstraintError::Constraints(other),
-    })
+    .map_err(AdmittedCampaignRetryError::History)
 }

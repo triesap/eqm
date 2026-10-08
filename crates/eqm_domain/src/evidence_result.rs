@@ -392,6 +392,40 @@ pub enum AttemptAggregate {
     Unknown,
 }
 
+/// Aggregates complete terminal retry outcomes for one exact logical case.
+/// This does not establish selection completeness, count credit or trust.
+#[must_use]
+pub fn aggregate_terminal_attempts(
+    outcomes: impl IntoIterator<Item = AttemptOutcome>,
+) -> AttemptAggregate {
+    let outcomes: BTreeSet<_> = outcomes.into_iter().collect();
+    if outcomes.iter().any(|outcome| {
+        matches!(
+            outcome,
+            AttemptOutcome::TimedOut | AttemptOutcome::Cancelled | AttemptOutcome::Error
+        )
+    }) {
+        AttemptAggregate::Unknown
+    } else if outcomes.contains(&AttemptOutcome::Passed)
+        && outcomes.contains(&AttemptOutcome::Failed)
+    {
+        AttemptAggregate::Unstable
+    } else if outcomes.contains(&AttemptOutcome::Failed) {
+        AttemptAggregate::Failed
+    } else if outcomes.is_empty()
+        || outcomes.iter().any(|outcome| {
+            matches!(
+                outcome,
+                AttemptOutcome::Skipped | AttemptOutcome::Filtered | AttemptOutcome::Quarantined
+            )
+        })
+    {
+        AttemptAggregate::Missing
+    } else {
+        AttemptAggregate::Satisfied
+    }
+}
+
 /// A validated executable evidence payload.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ExecutionPayload {
@@ -1182,6 +1216,40 @@ impl ExpectedLineageAuthority {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn terminal_history_preserves_all_non_success_outcomes_and_precedence() {
+        use AttemptAggregate::{Failed, Missing, Satisfied, Unknown, Unstable};
+        use AttemptOutcome::{Cancelled, Error, Filtered, Passed, Quarantined, Skipped, TimedOut};
+        let rows = [
+            (vec![], Missing),
+            (vec![Passed, Passed], Satisfied),
+            (vec![AttemptOutcome::Failed], Failed),
+            (vec![AttemptOutcome::Failed, Passed], Unstable),
+            (vec![Passed, TimedOut], Unknown),
+            (vec![AttemptOutcome::Failed, Passed, Cancelled], Unknown),
+            (vec![Error, Passed], Unknown),
+            (vec![Skipped, Passed], Missing),
+            (vec![Filtered], Missing),
+            (vec![Quarantined, Passed], Missing),
+            (vec![AttemptOutcome::Failed, Skipped], Failed),
+            (vec![AttemptOutcome::Failed, Passed, Skipped], Unstable),
+        ];
+        for (mut outcomes, expected) in rows {
+            assert_eq!(
+                aggregate_terminal_attempts(outcomes.iter().copied()),
+                expected
+            );
+            outcomes.reverse();
+            assert_eq!(
+                aggregate_terminal_attempts(outcomes.iter().copied()),
+                expected
+            );
+            let duplicate = outcomes.clone();
+            outcomes.extend(duplicate);
+            assert_eq!(aggregate_terminal_attempts(outcomes), expected);
+        }
+    }
 
     #[test]
     fn identities_and_counts_fail_closed() -> Result<(), Box<dyn Error>> {

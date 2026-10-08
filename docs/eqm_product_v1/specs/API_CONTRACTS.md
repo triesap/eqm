@@ -278,3 +278,26 @@ naked status map is data, not authority. Canonicalization remains application/
 manifest owned, the engine pure, and frozen projection roots unchanged.
 S054 later extends complete wire identity; present false-success admission must
 be repaired in P04-R4. See governing DEV-033 and its independent review.
+
+## DEV-035 S064 selected campaign retry history
+
+Pure engine history validates complete frozen expectations and collects candidates
+internally through S063. Application binds actual opaque S054 identity before the
+shared S059 admitted-candidate adapter. No supplied earlier report, arbitrary
+campaign selector or timestamp can replace frozen context. Matched semantic
+assertions remain visible before conflict partition; rejected assertions sharing
+the immutable attempt remain audit and never eligible retry history.
+
+Full-subject/logical-case groups retain five-axis lineage and every semantic
+assertion across required sources. Same-case failing/passing retries are Unstable;
+separate required fail/pass groups compose as Failed. Conflicts and timeout/cancel/
+error are Unknown; skip/filter/quarantine/missing source/case is Missing. Preserve
+all reasons, raw/mapping/provenance audit, source/case membership and independent
+prerequisites. Passed means terminal executable history only, never independently
+eligible successful count credit, trust, facts, conformance or release authority.
+All non-executable kinds are explicitly pending their independent kind evaluation.
+Counts remain a separately retained S063 assessment. Complete incoming executable
+payload comparisons across all expectations and retained outcome traversal share
+a cumulative 1,000,000-work guard; duplicate/rejected input consumes work without
+observation credit. Excess work returns an error without a partial conclusion.
+No wire/schema/digest changes. Later owning steps integrate remaining prerequisites.

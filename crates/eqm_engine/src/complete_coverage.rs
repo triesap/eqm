@@ -102,6 +102,7 @@ impl Error for CompleteCoverageError {
 pub struct CompleteCoverageReport<'a> {
     status: CoverageStatus,
     eligible: BTreeSet<(SemanticEvidenceDigest, EvidenceLineage)>,
+    matched: BTreeMap<(EvidenceSubject, EvidenceLineage), BTreeSet<SemanticEvidenceDigest>>,
     rejected: BTreeMap<Sha256Digest, BTreeSet<CompleteCoverageMismatch>>,
     conflicts: BTreeSet<(EvidenceSubject, EvidenceLineage)>,
     normalized: NormalizedEvidenceSet<'a>,
@@ -116,6 +117,14 @@ impl<'a> CompleteCoverageReport<'a> {
     #[must_use]
     pub const fn eligible(&self) -> &BTreeSet<(SemanticEvidenceDigest, EvidenceLineage)> {
         &self.eligible
+    }
+    /// Every exact structurally matched assertion before conflict partition.
+    /// Contradictory assertions stay visible; membership grants no trust.
+    #[must_use]
+    pub const fn matched(
+        &self,
+    ) -> &BTreeMap<(EvidenceSubject, EvidenceLineage), BTreeSet<SemanticEvidenceDigest>> {
+        &self.matched
     }
     /// Returns all rejected axes, including unrelated candidates.
     #[must_use]
@@ -407,15 +416,11 @@ pub fn evaluate_complete_evidence_coverage<'a>(
     }
     let mut eligible = BTreeSet::new();
     let mut conflicts = BTreeSet::new();
-    for (key, identities) in matching {
+    for (key, identities) in &matching {
         if identities.len() > 1 {
-            conflicts.insert(key);
+            conflicts.insert(key.clone());
         } else {
-            eligible.extend(
-                identities
-                    .into_iter()
-                    .map(|identity| (identity, key.1.clone())),
-            );
+            eligible.extend(identities.iter().map(|identity| (*identity, key.1.clone())));
         }
     }
     let status = if !conflicts.is_empty() {
@@ -428,6 +433,7 @@ pub fn evaluate_complete_evidence_coverage<'a>(
     Ok(CompleteCoverageReport {
         status,
         eligible,
+        matched: matching,
         rejected,
         conflicts,
         normalized,

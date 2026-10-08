@@ -93,10 +93,12 @@ pub use obligations::{
     derive_required_universe_with_scope_bindings, enforce_required_universe_strengthening,
 };
 pub use outcomes::{
-    EvidenceOutcome, LogicalCountConstraintError, LogicalCountConstraintReport,
-    LogicalCountConstraintStatus, LogicalObservationError, LogicalObservationPrerequisite,
-    LogicalObservationReport, LogicalObservationUnit, aggregate_evidence_outcomes,
-    assess_logical_count_constraints, collect_logical_observations, validate_logical_count_context,
+    CampaignCaseRetryHistory, CampaignRetryCase, CampaignRetryError, CampaignRetryReason,
+    CampaignRetryReport, CampaignRetryState, EvidenceOutcome, LogicalCountConstraintError,
+    LogicalCountConstraintReport, LogicalCountConstraintStatus, LogicalObservationError,
+    LogicalObservationPrerequisite, LogicalObservationReport, LogicalObservationUnit,
+    aggregate_evidence_outcomes, assess_campaign_retry_history, assess_logical_count_constraints,
+    collect_logical_observations, validate_logical_count_context,
 };
 pub use release::{
     ReleaseCheck, ReleaseContext, ReleaseGateInput, ReleaseGateStatus, ReleaseSubject,

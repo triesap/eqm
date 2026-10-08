@@ -2008,6 +2008,17 @@ test_id = "secondExactSelector"
         eqm_engine::LogicalCountConstraintStatus::Missing
     );
     assert_eq!(counted_missing.capacity(), 1);
+    let missing_history = eqm_application::assess_admitted_campaign_retry_history(
+        &same_prepared,
+        &expected,
+        &[first_delivery],
+    )?;
+    assert_eq!(
+        missing_history.state(),
+        eqm_engine::CampaignRetryState::Missing
+    );
+    assert_eq!(missing_history.constraints(), &counted_missing);
+    assert_eq!(missing_history.source_cases().len(), 2);
 
     assert_eq!(
         missing.observed(),
@@ -2034,6 +2045,32 @@ test_id = "secondExactSelector"
     );
     assert_eq!(counted.capacity(), 1);
     assert_eq!(counted.observations(), &complete);
+    let history = eqm_application::assess_admitted_campaign_retry_history(
+        &same_prepared,
+        &expected,
+        &[first_delivery, second_delivery],
+    )?;
+    assert_eq!(history.state(), eqm_engine::CampaignRetryState::Passed);
+    assert_eq!(history.constraints(), &counted);
+    assert_eq!(history.histories().len(), 1);
+    assert_eq!(
+        history
+            .histories()
+            .values()
+            .next()
+            .ok_or("history")?
+            .attempts()
+            .len(),
+        2
+    );
+    assert_eq!(
+        eqm_application::assess_admitted_campaign_retry_history(
+            &same_prepared,
+            &expected.iter().rev().cloned().collect::<Vec<_>>(),
+            &[second_delivery, first_delivery, first_delivery]
+        )?,
+        history
+    );
 
     assert_eq!(
         complete.observed(),
@@ -2076,6 +2113,34 @@ test_id = "secondExactSelector"
     );
     assert_eq!(counted_conflict.capacity(), 0);
     assert_eq!(counted_conflict.observations(), &conflict);
+    let conflicted_history = eqm_application::assess_admitted_campaign_retry_history(
+        &same_prepared,
+        &expected,
+        &[first_delivery, conflict_delivery],
+    )?;
+    assert_eq!(
+        conflicted_history.state(),
+        eqm_engine::CampaignRetryState::Unknown
+    );
+    assert_eq!(conflicted_history.constraints(), &counted_conflict);
+    assert!(
+        conflicted_history
+            .reasons()
+            .contains(&eqm_engine::CampaignRetryReason::ImmutableConflict)
+    );
+    assert_eq!(
+        conflicted_history
+            .histories()
+            .values()
+            .next()
+            .ok_or("history")?
+            .attempts()
+            .values()
+            .next()
+            .ok_or("attempt")?
+            .len(),
+        2
+    );
 
     assert!(conflict.observed().is_empty());
     assert_eq!(conflict.conflicts().len(), 1);
@@ -3492,6 +3557,51 @@ fn actual_all_kind_count_constraints_preserve_one_unit_and_independent_prerequis
             assert_eq!(report.capacity(), 1, "{kind}");
             assert_eq!(report.status(), conclusion, "{kind}");
             assert_eq!(report.observations().prerequisites(), &needs);
+            let history = eqm_application::assess_admitted_campaign_retry_history(
+                &prepared,
+                &expected,
+                &[delivery; 10],
+            )?;
+            assert_eq!(history.constraints(), &report);
+            let history_state = match kind {
+                EvidenceKind::Test | EvidenceKind::Snapshot | EvidenceKind::StructuralCheck => {
+                    eqm_engine::CampaignRetryState::Passed
+                }
+                EvidenceKind::StaticInventory
+                | EvidenceKind::RuntimeSnapshot
+                | EvidenceKind::ManualReview
+                | EvidenceKind::ReleaseRecord => {
+                    eqm_engine::CampaignRetryState::PendingKindEvaluation
+                }
+            };
+            assert_eq!(history.state(), history_state);
+            assert_eq!(history.histories().len(), 1);
+            assert_eq!(
+                history
+                    .histories()
+                    .values()
+                    .next()
+                    .ok_or("history")?
+                    .attempts()
+                    .len(),
+                1
+            );
+            if history_state == eqm_engine::CampaignRetryState::PendingKindEvaluation {
+                assert!(
+                    history
+                        .reasons()
+                        .contains(&eqm_engine::CampaignRetryReason::PendingKind(kind))
+                );
+            }
+            assert_eq!(
+                eqm_application::assess_admitted_campaign_retry_history(
+                    &prepared,
+                    &expected,
+                    &[delivery]
+                )?,
+                history
+            );
+
             assert_eq!(report.observations().status(), CoverageStatus::Covered);
             assert_eq!(report.observations().count_unit(), selection.count_unit());
             assert_eq!(report.observations().units().len(), 1);
@@ -3786,5 +3896,344 @@ fn actual_count_constraints_reject_frozen_context_substitution_and_keep_conflict
         Err(Error::FrozenContext)
     ));
     assert_eq!(file_snapshot(repository.path())?, after_edit);
+    Ok(())
+}
+
+#[test]
+fn actual_selected_campaign_retry_history_preserves_case_conjunction_and_reasons()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, assess_admitted_campaign_retry_history};
+    use eqm_domain::{AttemptId, AttemptOutcome};
+    use eqm_engine::{
+        CampaignRetryReason as Reason, CampaignRetryState as State, CompleteCoverageExpectation,
+    };
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let context = context(&provenance, None)?;
+    let cases = vec![LogicalCaseId::new("case.a")?, LogicalCaseId::new("case.b")?];
+    let (prepared, key, selection) =
+        prepared_coordinates_with_selection(&session, "eu", None, cases.clone(), vec![], false)?;
+    let identity = prepared.identities().get(&key).ok_or("identity")?.digest();
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let expected = vec![CompleteCoverageExpectation {
+        structural: coverage_context(&context, &spec),
+        coordinate: key.clone(),
+        identity,
+        selection: selection.clone(),
+        subjects: None,
+    }];
+    let receipt = SelectorText::new("receipt.retry.history")?;
+    let before = file_snapshot(repository.path())?;
+    // Literal rows distinguish AND failures, retries, immutable contradictions,
+    // uncertainty, and non-executed selections. IDs name actual immutable attempts.
+    let rows = [
+        (
+            vec![(0, "first", "passed"), (1, "first", "passed")],
+            State::Passed,
+        ),
+        (
+            vec![(0, "first", "failed"), (1, "first", "passed")],
+            State::Failed,
+        ),
+        (
+            vec![
+                (0, "first", "failed"),
+                (0, "retry", "passed"),
+                (1, "first", "passed"),
+            ],
+            State::Unstable,
+        ),
+        (
+            vec![
+                (0, "first", "failed"),
+                (0, "retry", "passed"),
+                (0, "timeout", "timed_out"),
+                (1, "first", "passed"),
+            ],
+            State::Unknown,
+        ),
+        (
+            vec![(0, "first", "cancelled"), (1, "first", "passed")],
+            State::Unknown,
+        ),
+        (
+            vec![(0, "first", "error"), (1, "first", "passed")],
+            State::Unknown,
+        ),
+        (
+            vec![(0, "first", "skipped"), (1, "first", "passed")],
+            State::Missing,
+        ),
+        (
+            vec![(0, "first", "filtered"), (1, "first", "passed")],
+            State::Missing,
+        ),
+        (
+            vec![(0, "first", "quarantined"), (1, "first", "passed")],
+            State::Missing,
+        ),
+        (vec![(0, "first", "passed")], State::Missing),
+        (
+            vec![
+                (0, "first", "failed"),
+                (0, "first", "passed"),
+                (1, "first", "passed"),
+            ],
+            State::Unknown,
+        ),
+    ];
+    for (row, literal) in rows {
+        let mut admissions = Vec::new();
+        for (case, name, outcome) in &row {
+            let mut dto = record(&provenance, None)?;
+            let EvidencePayloadV2Dto::Test { execution: payload } = &mut dto.payload else {
+                return Err("test payload".into());
+            };
+            payload.attempts[0].outcome = (*outcome).to_owned();
+            payload.counts.passed = WireUint::new(u64::from(*outcome == "passed"));
+            payload.counts.failed = WireUint::new(u64::from(*outcome == "failed"));
+            payload.counts.skipped = WireUint::new(u64::from(*outcome == "skipped"));
+            payload.counts.filtered = WireUint::new(u64::from(*outcome == "filtered"));
+            payload.counts.quarantined = WireUint::new(u64::from(*outcome == "quarantined"));
+            payload.counts.selected = WireUint::new(u64::from(matches!(
+                *outcome,
+                "passed" | "failed" | "skipped" | "filtered" | "quarantined"
+            )));
+            let checked = seal(dto)?;
+            let attempt = AttemptId::new(format!("attempt.{name}"))?;
+            let selected = EvidenceLineage::from_parts(EvidenceLineageParts {
+                plan: Some(selection.source().plan.clone()),
+                campaign: Some(selection.source().campaign.clone()),
+                run: Some(RunId::new(format!("run.{name}"))?),
+                logical_case: Some(cases[*case].clone()),
+                attempt: Some(attempt.clone()),
+            })?;
+            let execution = EvidenceExecution::new(
+                selected.run().clone(),
+                cases[*case].clone(),
+                vec![attempt],
+            )?;
+            admissions.push(admit_evidence_bytes(
+                checked.raw_bytes(),
+                &selected,
+                &execution,
+                &context,
+            )?);
+        }
+        let deliveries = admissions
+            .iter()
+            .map(|admitted| CompleteEvidenceDelivery {
+                delivery: AdmittedEvidenceDelivery {
+                    admitted,
+                    evidence_spec_id: &spec,
+                    provenance: &receipt,
+                },
+                coordinate: Some(&key),
+                identity: Some(identity),
+                subjects: None,
+            })
+            .collect::<Vec<_>>();
+        let report = assess_admitted_campaign_retry_history(&prepared, &expected, &deliveries)?;
+        assert_eq!(report.state(), literal, "{row:?}");
+        assert_eq!(report.source_cases().len(), 2);
+        assert_eq!(report.histories().len(), if row.len() == 1 { 1 } else { 2 });
+        let actual_terminal = report
+            .reasons()
+            .iter()
+            .filter_map(|r| {
+                if let Reason::Terminal(outcome) = r {
+                    Some(*outcome)
+                } else {
+                    None
+                }
+            })
+            .collect::<BTreeSet<_>>();
+        let literal_terminal = row
+            .iter()
+            .map(|(_, _, value)| value.parse::<AttemptOutcome>())
+            .collect::<Result<BTreeSet<_>, _>>()?;
+        assert_eq!(actual_terminal, literal_terminal);
+        let retained = report
+            .histories()
+            .values()
+            .map(|h| {
+                h.attempts()
+                    .values()
+                    .map(std::collections::BTreeMap::len)
+                    .sum::<usize>()
+            })
+            .sum::<usize>();
+        assert_eq!(retained, row.len());
+        if row.len() == 1 {
+            assert!(report.reasons().contains(&Reason::MissingSelectedCase(
+                selection.source().clone(),
+                cases[1].clone()
+            )));
+        }
+        if row
+            .iter()
+            .filter(|(case, name, _)| *case == 0 && *name == "first")
+            .count()
+            == 2
+        {
+            assert!(report.reasons().contains(&Reason::ImmutableConflict));
+            assert_eq!(report.constraints().observations().conflicts().len(), 1);
+        }
+        assert!(
+            report
+                .constraints()
+                .observations()
+                .prerequisites()
+                .contains(&eqm_engine::LogicalObservationPrerequisite::IndependentTrust)
+        );
+        let mut permuted = deliveries.clone();
+        permuted.reverse();
+        permuted.extend(deliveries.iter().copied());
+        assert_eq!(
+            assess_admitted_campaign_retry_history(&prepared, &expected, &permuted)?,
+            report
+        );
+        assert_eq!(file_snapshot(repository.path())?, before);
+    }
+    // One actual admitted payload can itself retain ordered internal retries.
+    let mut dto = record(&provenance, None)?;
+    let EvidencePayloadV2Dto::Test { execution: payload } = &mut dto.payload else {
+        return Err("test payload".into());
+    };
+    payload.attempts[0].outcome = "failed".to_owned();
+    let mut second = payload.attempts[0].clone();
+    second.number = WireUint::new(2);
+    second.outcome = "passed".to_owned();
+    second.started_at = second.finished_at;
+    payload.attempts.push(second);
+    payload.counts.selected = WireUint::new(2);
+    payload.counts.passed = WireUint::new(1);
+    payload.counts.failed = WireUint::new(1);
+    let checked = seal(dto)?;
+    let selected = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(selection.source().plan.clone()),
+        campaign: Some(selection.source().campaign.clone()),
+        run: Some(RunId::new("run.internal_retries")?),
+        logical_case: Some(cases[0].clone()),
+        attempt: Some(AttemptId::new("attempt.internal_first")?),
+    })?;
+    let execution = EvidenceExecution::new(
+        selected.run().clone(),
+        cases[0].clone(),
+        vec![
+            selected.attempt().clone(),
+            AttemptId::new("attempt.internal_second")?,
+        ],
+    )?;
+    let internal = admit_evidence_bytes(checked.raw_bytes(), &selected, &execution, &context)?;
+    let delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &internal,
+            evidence_spec_id: &spec,
+            provenance: &receipt,
+        },
+        coordinate: Some(&key),
+        identity: Some(identity),
+        subjects: None,
+    };
+    let internal_history =
+        assess_admitted_campaign_retry_history(&prepared, &expected, &[delivery])?;
+    assert_eq!(internal_history.state(), State::Unstable);
+    assert_eq!(internal_history.constraints().capacity(), 1);
+    assert!(
+        internal_history
+            .reasons()
+            .contains(&Reason::MissingSelectedCase(
+                selection.source().clone(),
+                cases[1].clone()
+            ))
+    );
+    assert!(
+        internal_history
+            .reasons()
+            .contains(&Reason::Terminal(AttemptOutcome::Failed))
+    );
+    assert!(
+        internal_history
+            .reasons()
+            .contains(&Reason::Terminal(AttemptOutcome::Passed))
+    );
+    // A failed result admitted under an explicitly different campaign remains audit,
+    // and never adds eligible terminal history to this frozen selected campaign.
+    let mut foreign_context = context.clone();
+    foreign_context.expected_lineage = eqm_domain::ExpectedLineageAuthority::new(
+        selection.source().plan.clone(),
+        CampaignId::new("campaign.superseded")?,
+    );
+    let foreign_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(selection.source().plan.clone()),
+        campaign: Some(CampaignId::new("campaign.superseded")?),
+        run: Some(selected.run().clone()),
+        logical_case: Some(cases[0].clone()),
+        attempt: Some(selected.attempt().clone()),
+    })?;
+    let foreign = admit_evidence_bytes(
+        checked.raw_bytes(),
+        &foreign_lineage,
+        &execution,
+        &foreign_context,
+    )?;
+    let foreign_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &foreign,
+            evidence_spec_id: &spec,
+            provenance: &receipt,
+        },
+        ..delivery
+    };
+    let rejected =
+        assess_admitted_campaign_retry_history(&prepared, &expected, &[foreign_delivery])?;
+    assert_eq!(rejected.state(), State::Missing);
+    assert!(rejected.histories().is_empty());
+    assert!(
+        !rejected
+            .reasons()
+            .contains(&Reason::Terminal(AttemptOutcome::Failed))
+    );
+    assert_eq!(
+        rejected.constraints().observations().matching()[selection.source()].rejected()
+            [&foreign.result().id()],
+        BTreeSet::from([eqm_engine::CompleteCoverageMismatch::Campaign])
+    );
+    let foreign_identity =
+        eqm_domain::ObligationDigest::hash_content(b"foreign retry history pre-result claim");
+    assert!(matches!(
+        assess_admitted_campaign_retry_history(
+            &prepared,
+            &[CompleteCoverageExpectation {
+                identity: foreign_identity,
+                ..expected[0].clone()
+            }],
+            &[delivery]
+        ),
+        Err(eqm_application::AdmittedCampaignRetryError::Context(
+            eqm_application::AdmittedCountConstraintError::FrozenContext
+        ))
+    ));
+    assert!(matches!(
+        assess_admitted_campaign_retry_history(&prepared, &[], &[delivery]),
+        Err(eqm_application::AdmittedCampaignRetryError::Context(
+            eqm_application::AdmittedCountConstraintError::Constraints(
+                eqm_engine::LogicalCountConstraintError::EmptyExpectations
+            )
+        ))
+    ));
+    assert!(matches!(
+        assess_admitted_campaign_retry_history(
+            &prepared,
+            &expected,
+            &vec![delivery; eqm_engine::MAX_CANDIDATE_DELIVERIES + 1]
+        ),
+        Err(eqm_application::AdmittedCampaignRetryError::Context(
+            eqm_application::AdmittedCountConstraintError::Observations(_)
+        ))
+    ));
+    assert_eq!(file_snapshot(repository.path())?, before);
     Ok(())
 }

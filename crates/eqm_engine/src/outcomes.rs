@@ -698,3 +698,346 @@ pub fn validate_logical_count_context(
     }
     Ok(())
 }
+
+/// Terminal history interpretation only; Passed never means facet satisfaction.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum CampaignRetryState {
+    /// Every matched executable terminal attempt passed.
+    Passed,
+    /// A required case failed without a passing retry.
+    Failed,
+    /// Required cases or terminal selections were absent/non-executed.
+    Missing,
+    /// One exact subject/case contains failing and passing retries.
+    Unstable,
+    /// Execution uncertainty or an immutable conflict prevents a conclusion.
+    Unknown,
+    /// Non-executable kind evaluation remains an independent prerequisite.
+    PendingKindEvaluation,
+}
+
+/// Every contributing terminal or incomplete-history reason, regardless of precedence.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum CampaignRetryReason {
+    /// Actual matched terminal outcome, never independently verified trust.
+    Terminal(AttemptOutcome),
+    /// Contradictory semantic assertions for the same immutable attempt.
+    ImmutableConflict,
+    /// A selected source/case lacks an unconflicted observation.
+    MissingSelectedCase(
+        eqm_domain::ExpectedSelectionSource,
+        eqm_domain::LogicalCaseId,
+    ),
+    /// This kind's independent outcome/fact/reference evaluation remains pending.
+    PendingKind(eqm_domain::EvidenceKind),
+}
+
+/// Exact full-subject logical retry group within the validated selected campaign.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct CampaignRetryCase {
+    /// Full repository/source/build/artifact/configuration/scope subject.
+    pub subject: eqm_domain::EvidenceSubject,
+    /// Explicit selected logical case, never an attempt or transport identifier.
+    pub logical_case: eqm_domain::LogicalCaseId,
+}
+
+/// All matched assertions for one exact subject/case, including contradictions.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CampaignCaseRetryHistory<'a> {
+    attempts: std::collections::BTreeMap<
+        eqm_domain::EvidenceLineage,
+        std::collections::BTreeMap<
+            eqm_domain::SemanticEvidenceDigest,
+            &'a eqm_domain::EvidenceResult,
+        >,
+    >,
+    state: CampaignRetryState,
+    reasons: std::collections::BTreeSet<CampaignRetryReason>,
+}
+impl<'a> CampaignCaseRetryHistory<'a> {
+    /// Complete immutable attempt/semantic assertions; raw references are in the audit report.
+    #[must_use]
+    pub const fn attempts(
+        &self,
+    ) -> &std::collections::BTreeMap<
+        eqm_domain::EvidenceLineage,
+        std::collections::BTreeMap<
+            eqm_domain::SemanticEvidenceDigest,
+            &'a eqm_domain::EvidenceResult,
+        >,
+    > {
+        &self.attempts
+    }
+    /// Terminal history only, never independently eligible successful count credit.
+    #[must_use]
+    pub const fn state(&self) -> CampaignRetryState {
+        self.state
+    }
+    /// All terminal/conflict/pending reasons, without summary precedence erasure.
+    #[must_use]
+    pub const fn reasons(&self) -> &std::collections::BTreeSet<CampaignRetryReason> {
+        &self.reasons
+    }
+}
+
+/// Immutable internally collected retry history and complete structural count audit.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CampaignRetryReport<'a> {
+    constraints: LogicalCountConstraintReport<'a>,
+    histories: std::collections::BTreeMap<CampaignRetryCase, CampaignCaseRetryHistory<'a>>,
+    source_cases: std::collections::BTreeMap<
+        (
+            eqm_domain::ExpectedSelectionSource,
+            eqm_domain::LogicalCaseId,
+        ),
+        std::collections::BTreeSet<CampaignRetryCase>,
+    >,
+    state: CampaignRetryState,
+    reasons: std::collections::BTreeSet<CampaignRetryReason>,
+}
+impl<'a> CampaignRetryReport<'a> {
+    /// Full structural counts, missing AND members, conflicts and independent prerequisites.
+    #[must_use]
+    pub const fn constraints(&self) -> &LogicalCountConstraintReport<'a> {
+        &self.constraints
+    }
+    /// Every exact matched retry group; rejected assertions remain separately in audit.
+    #[must_use]
+    pub const fn histories(
+        &self,
+    ) -> &std::collections::BTreeMap<CampaignRetryCase, CampaignCaseRetryHistory<'a>> {
+        &self.histories
+    }
+    /// Every required source/case and its matched exact subjects; empty sets remain visible.
+    #[must_use]
+    pub const fn source_cases(
+        &self,
+    ) -> &std::collections::BTreeMap<
+        (
+            eqm_domain::ExpectedSelectionSource,
+            eqm_domain::LogicalCaseId,
+        ),
+        std::collections::BTreeSet<CampaignRetryCase>,
+    > {
+        &self.source_cases
+    }
+    /// Conjunctive terminal-history summary, not count eligibility or conformance.
+    #[must_use]
+    pub const fn state(&self) -> CampaignRetryState {
+        self.state
+    }
+    /// Every contributing history and required-selection reason.
+    #[must_use]
+    pub const fn reasons(&self) -> &std::collections::BTreeSet<CampaignRetryReason> {
+        &self.reasons
+    }
+}
+
+/// Invalid frozen count context or excessive history produces no partial report.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CampaignRetryError {
+    /// Same exact internally collected S063 context failed validation.
+    Constraints(LogicalCountConstraintError),
+    /// Complete retained history/outcome traversal exceeds its cumulative bound.
+    WorkLimitExceeded,
+}
+impl std::fmt::Display for CampaignRetryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "campaign retry history rejected: {self:?}")
+    }
+}
+impl std::error::Error for CampaignRetryError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Constraints(error) => Some(error),
+            Self::WorkLimitExceeded => None,
+        }
+    }
+}
+
+fn retry_summary(states: impl IntoIterator<Item = CampaignRetryState>) -> CampaignRetryState {
+    use CampaignRetryState::{Failed, Missing, Passed, PendingKindEvaluation, Unknown, Unstable};
+    let states: std::collections::BTreeSet<_> = states.into_iter().collect();
+    for state in [Unknown, Unstable, Failed, Missing, PendingKindEvaluation] {
+        if states.contains(&state) {
+            return state;
+        }
+    }
+    if states.is_empty() { Missing } else { Passed }
+}
+
+/// Preserves selected campaign retries under the same validated frozen expectations.
+/// The application also binds actual opaque pre-result identities. Trust, complete
+/// successful count eligibility, non-executable kind checks and protected consumption
+/// remain independent. No timestamp, supplied history or campaign fallback is accepted.
+pub fn assess_campaign_retry_history<'a>(
+    universe: &crate::RequiredUniverse,
+    expected: &[crate::CompleteCoverageExpectation],
+    candidates: &[crate::CompleteEvidenceCandidate<'a>],
+) -> Result<CampaignRetryReport<'a>, CampaignRetryError> {
+    use std::collections::{BTreeMap, BTreeSet};
+    if candidates.len() > crate::MAX_CANDIDATE_DELIVERIES {
+        return Err(CampaignRetryError::Constraints(
+            LogicalCountConstraintError::Observations(LogicalObservationError::Matching(
+                crate::CompleteCoverageError::Normalization(
+                    crate::CandidateNormalizationError::LimitExceeded,
+                ),
+            )),
+        ));
+    }
+    validate_logical_count_context(universe, expected).map_err(CampaignRetryError::Constraints)?;
+    // Charge complete incoming payload comparisons before normalization; even
+    // rejected/duplicate delivery can require full semantic record comparisons.
+    let mut work = 0usize;
+    for candidate in candidates {
+        let payload_work = match candidate.delivery.result.payload() {
+            EvidencePayload::Test(p)
+            | EvidencePayload::Snapshot(p)
+            | EvidencePayload::StructuralCheck(p) => p.attempts().len(),
+            EvidencePayload::StaticInventory { .. }
+            | EvidencePayload::RuntimeSnapshot { .. }
+            | EvidencePayload::ManualReview { .. }
+            | EvidencePayload::ReleaseRecord { .. } => 1,
+        };
+        work = work.saturating_add(
+            payload_work
+                .saturating_add(1)
+                .saturating_mul(expected.len()),
+        );
+        if work > crate::MAX_COMPLETE_COVERAGE_WORK {
+            return Err(CampaignRetryError::WorkLimitExceeded);
+        }
+    }
+    let constraints = assess_logical_count_constraints(universe, expected, candidates)
+        .map_err(CampaignRetryError::Constraints)?;
+    let mut histories: BTreeMap<CampaignRetryCase, CampaignCaseRetryHistory<'a>> = BTreeMap::new();
+    let mut source_cases = BTreeMap::new();
+    for value in expected {
+        let source = value.selection.source();
+        for case in value.selection.selected() {
+            source_cases.insert((source.clone(), case.clone()), BTreeSet::new());
+        }
+        let report = &constraints.observations.matching[source];
+        for (attempt, history) in report.normalized().attempts() {
+            let Some(identities) = report
+                .matched()
+                .get(&(attempt.subject().clone(), attempt.lineage().clone()))
+            else {
+                continue;
+            };
+            let key = CampaignRetryCase {
+                subject: attempt.subject().clone(),
+                logical_case: attempt.lineage().logical_case().clone(),
+            };
+            source_cases
+                .entry((source.clone(), key.logical_case.clone()))
+                .or_default()
+                .insert(key.clone());
+            let group = histories
+                .entry(key)
+                .or_insert_with(|| CampaignCaseRetryHistory {
+                    attempts: BTreeMap::new(),
+                    state: CampaignRetryState::Missing,
+                    reasons: BTreeSet::new(),
+                });
+            if constraints.observations.conflicts.contains(attempt) {
+                group.reasons.insert(CampaignRetryReason::ImmutableConflict);
+            }
+            for identity in identities {
+                let assertion = &history.assertions()[identity];
+                work = work.saturating_add(1);
+                let terminal_work = match assertion.result().payload() {
+                    EvidencePayload::Test(p)
+                    | EvidencePayload::Snapshot(p)
+                    | EvidencePayload::StructuralCheck(p) => p.attempts().len(),
+                    EvidencePayload::StaticInventory { .. }
+                    | EvidencePayload::RuntimeSnapshot { .. }
+                    | EvidencePayload::ManualReview { .. }
+                    | EvidencePayload::ReleaseRecord { .. } => 1,
+                };
+                work = work.saturating_add(terminal_work);
+                if work > crate::MAX_COMPLETE_COVERAGE_WORK {
+                    return Err(CampaignRetryError::WorkLimitExceeded);
+                }
+                group
+                    .attempts
+                    .entry(attempt.lineage().clone())
+                    .or_default()
+                    .insert(*identity, assertion.result());
+            }
+        }
+    }
+    for group in histories.values_mut() {
+        let mut terminal = Vec::new();
+        let mut pending = false;
+        for result in group.attempts.values().flat_map(BTreeMap::values) {
+            match result.payload() {
+                EvidencePayload::Test(p)
+                | EvidencePayload::Snapshot(p)
+                | EvidencePayload::StructuralCheck(p) => {
+                    for attempt in p.attempts() {
+                        terminal.push(attempt.outcome());
+                        group
+                            .reasons
+                            .insert(CampaignRetryReason::Terminal(attempt.outcome()));
+                    }
+                }
+                EvidencePayload::StaticInventory { .. }
+                | EvidencePayload::RuntimeSnapshot { .. }
+                | EvidencePayload::ManualReview { .. }
+                | EvidencePayload::ReleaseRecord { .. } => {
+                    pending = true;
+                    group
+                        .reasons
+                        .insert(CampaignRetryReason::PendingKind(result.kind()));
+                }
+            }
+        }
+        group.state = if group
+            .reasons
+            .contains(&CampaignRetryReason::ImmutableConflict)
+        {
+            CampaignRetryState::Unknown
+        } else if pending {
+            CampaignRetryState::PendingKindEvaluation
+        } else {
+            match eqm_domain::aggregate_terminal_attempts(terminal) {
+                AttemptAggregate::Satisfied => CampaignRetryState::Passed,
+                AttemptAggregate::Failed => CampaignRetryState::Failed,
+                AttemptAggregate::Missing => CampaignRetryState::Missing,
+                AttemptAggregate::Unstable => CampaignRetryState::Unstable,
+                AttemptAggregate::Unknown => CampaignRetryState::Unknown,
+            }
+        };
+    }
+    let mut reasons: BTreeSet<_> = histories
+        .values()
+        .flat_map(|h| h.reasons.iter().cloned())
+        .collect();
+    for (source, cases) in &constraints.observations.missing {
+        for case in cases {
+            reasons.insert(CampaignRetryReason::MissingSelectedCase(
+                source.clone(),
+                case.clone(),
+            ));
+        }
+    }
+    let mut states: Vec<_> = histories.values().map(|h| h.state).collect();
+    if reasons
+        .iter()
+        .any(|r| matches!(r, CampaignRetryReason::MissingSelectedCase(..)))
+    {
+        states.push(CampaignRetryState::Missing);
+    }
+    if !constraints.observations.conflicts.is_empty() {
+        states.push(CampaignRetryState::Unknown);
+    }
+    let state = retry_summary(states);
+    Ok(CampaignRetryReport {
+        constraints,
+        histories,
+        source_cases,
+        state,
+        reasons,
+    })
+}

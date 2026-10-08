@@ -97,6 +97,7 @@ pub use evidence_result::{
     EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject, EvidenceSubject,
     ExecutionPayload, ExpectedLineageAuthority, MAX_RAW_EVIDENCE_BYTES, ProducerRef,
     ProfileSelection, RawEvidenceObject, RepositoryIdentity, SourceCommit,
+    aggregate_terminal_attempts,
 };
 pub use expected_selection::{
     ExpectedSelectionError, ExpectedSelectionManifest, ExpectedSelectionSource,

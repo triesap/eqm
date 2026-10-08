@@ -2272,3 +2272,293 @@ fn frozen_count_work_includes_unselected_alternatives_across_all_sources()
     );
     Ok(())
 }
+
+#[test]
+fn checked_campaign_history_keeps_exact_matched_retries_and_rejected_audit()
+-> Result<(), Box<dyn Error>> {
+    use eqm_domain::{
+        AttemptId, AttemptOutcome, CampaignId, EvidenceLineage, EvidenceLineageParts,
+        ExpectedSelectionManifest, LogicalCaseId, RunId, SemanticEvidenceDigest,
+    };
+    use eqm_engine::{
+        CampaignRetryReason as Reason, CampaignRetryState as State, assess_campaign_retry_history,
+        bind_expected_selections,
+    };
+    for provider in [false, true] {
+        let (_root, fixture, universe) = checked_count_coverage_fixture(provider)?;
+        let expected = vec![fixture.expected.clone()];
+        let universe = bind_expected_selections(
+            universe,
+            BTreeMap::from([(
+                fixture.expected.coordinate.clone(),
+                vec![fixture.expected.selection.clone()],
+            )]),
+        )?;
+        let baseline = assess_campaign_retry_history(&universe, &expected, &[fixture.candidate()])?;
+        assert_eq!(baseline.state(), State::Passed);
+        let mut foreign = fixture.expected.clone();
+        foreign.structural.policy_digest =
+            eqm_domain::Sha256Digest::hash_content(b"rejected foreign policy");
+        let foreign_id = SemanticEvidenceDigest::hash_content(b"rejected failure assertion");
+        let rejected_result = coverage_assertion(&foreign, foreign_id, AttemptOutcome::Failed)?;
+        let mut rejected = fixture.candidate();
+        rejected.delivery.result = &rejected_result;
+        rejected.delivery.semantic_identity = foreign_id;
+        let mixed =
+            assess_campaign_retry_history(&universe, &expected, &[fixture.candidate(), rejected])?;
+        assert_eq!(mixed.state(), State::Passed);
+        assert!(
+            !mixed
+                .reasons()
+                .contains(&Reason::Terminal(AttemptOutcome::Failed))
+        );
+        let audit =
+            &mixed.constraints().observations().matching()[fixture.expected.selection.source()];
+        assert_eq!(
+            audit.matched().values().map(BTreeSet::len).sum::<usize>(),
+            1
+        );
+        assert_eq!(
+            audit
+                .normalized()
+                .attempts()
+                .values()
+                .next()
+                .ok_or("audit")?
+                .assertions()
+                .len(),
+            2
+        );
+        assert!(!audit.rejected().is_empty());
+        let failed_id = SemanticEvidenceDigest::hash_content(b"matched failure assertion");
+        let failed = coverage_assertion(&fixture.expected, failed_id, AttemptOutcome::Failed)?;
+        let mut failed_candidate = fixture.candidate();
+        failed_candidate.delivery.result = &failed;
+        failed_candidate.delivery.semantic_identity = failed_id;
+        let conflict = assess_campaign_retry_history(
+            &universe,
+            &expected,
+            &[fixture.candidate(), failed_candidate],
+        )?;
+        assert_eq!(conflict.state(), State::Unknown);
+        assert!(conflict.reasons().contains(&Reason::ImmutableConflict));
+        assert!(
+            conflict
+                .reasons()
+                .contains(&Reason::Terminal(AttemptOutcome::Failed))
+        );
+        assert!(
+            conflict
+                .reasons()
+                .contains(&Reason::Terminal(AttemptOutcome::Passed))
+        );
+        let retry = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(fixture.lineage.plan().clone()),
+            campaign: Some(fixture.lineage.campaign().clone()),
+            run: Some(RunId::new("fixture.retry_run")?),
+            logical_case: Some(fixture.lineage.logical_case().clone()),
+            attempt: Some(AttemptId::new("fixture.retry_attempt")?),
+        })?;
+        failed_candidate.delivery.lineage = &retry;
+        let unstable = assess_campaign_retry_history(
+            &universe,
+            &expected,
+            &[failed_candidate, fixture.candidate()],
+        )?;
+        assert_eq!(unstable.state(), State::Unstable);
+        assert_eq!(
+            unstable
+                .histories()
+                .values()
+                .next()
+                .ok_or("history")?
+                .attempts()
+                .len(),
+            2
+        );
+        assert_eq!(
+            assess_campaign_retry_history(
+                &universe,
+                &expected,
+                &[fixture.candidate(), failed_candidate, fixture.candidate()]
+            )?,
+            unstable
+        );
+        let foreign_campaign = EvidenceLineage::from_parts(EvidenceLineageParts {
+            campaign: Some(CampaignId::new("fixture.superseded")?),
+            plan: Some(retry.plan().clone()),
+            run: Some(retry.run().clone()),
+            logical_case: Some(retry.logical_case().clone()),
+            attempt: Some(retry.attempt().clone()),
+        })?;
+        failed_candidate.delivery.lineage = &foreign_campaign;
+        let selected = assess_campaign_retry_history(
+            &universe,
+            &expected,
+            &[fixture.candidate(), failed_candidate],
+        )?;
+        assert_eq!(selected.state(), State::Passed);
+        assert!(
+            !selected
+                .reasons()
+                .contains(&Reason::Terminal(AttemptOutcome::Failed))
+        );
+        assert!(
+            !selected.constraints().observations().matching()[fixture.expected.selection.source()]
+                .rejected()
+                .is_empty()
+        );
+        let second_case = LogicalCaseId::new("fixture.required_second")?;
+        let mut full = fixture.expected.clone();
+        full.selection = ExpectedSelectionManifest::new(
+            full.selection.source().clone(),
+            full.selection.kind(),
+            full.selection.count_unit(),
+            vec![fixture.lineage.logical_case().clone(), second_case.clone()],
+            vec![],
+            false,
+        )?;
+        let full_universe = bind_expected_selections(
+            universe.clone(),
+            BTreeMap::from([(full.coordinate.clone(), vec![full.selection.clone()])]),
+        )?;
+        let second_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(retry.plan().clone()),
+            campaign: Some(retry.campaign().clone()),
+            run: Some(retry.run().clone()),
+            logical_case: Some(second_case.clone()),
+            attempt: Some(retry.attempt().clone()),
+        })?;
+        failed_candidate.delivery.lineage = &second_lineage;
+        let separate = assess_campaign_retry_history(
+            &full_universe,
+            &[full.clone()],
+            &[fixture.candidate(), failed_candidate],
+        )?;
+        assert_eq!(separate.state(), State::Failed);
+        assert_eq!(separate.histories().len(), 2);
+        let missing =
+            assess_campaign_retry_history(&full_universe, &[full.clone()], &[fixture.candidate()])?;
+        assert_eq!(missing.state(), State::Missing);
+        assert!(missing.reasons().contains(&Reason::MissingSelectedCase(
+            full.selection.source().clone(),
+            second_case
+        )));
+        assert!(matches!(
+            assess_campaign_retry_history(&full_universe, &expected, &[fixture.candidate()]),
+            Err(eqm_engine::CampaignRetryError::Constraints(
+                eqm_engine::LogicalCountConstraintError::FrozenSelection
+            ))
+        ));
+        assert_eq!(baseline.constraints().capacity(), 1);
+    }
+    Ok(())
+}
+
+#[test]
+fn checked_retry_history_work_is_cumulative_and_never_truncated() -> Result<(), Box<dyn Error>> {
+    use eqm_domain::*;
+    use eqm_engine::{
+        CampaignRetryError, CampaignRetryState, MAX_COMPLETE_COVERAGE_WORK,
+        assess_campaign_retry_history, bind_expected_selections,
+    };
+    let (_root, fixture, universe) = checked_count_coverage_fixture(false)?;
+    let expected = vec![fixture.expected.clone()];
+    let universe = bind_expected_selections(
+        universe,
+        BTreeMap::from([(
+            fixture.expected.coordinate.clone(),
+            vec![fixture.expected.selection.clone()],
+        )]),
+    )?;
+    let retry = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(fixture.lineage.plan().clone()),
+        campaign: Some(fixture.lineage.campaign().clone()),
+        run: Some(RunId::new("fixture.bounded_retry")?),
+        logical_case: Some(fixture.lineage.logical_case().clone()),
+        attempt: Some(AttemptId::new("fixture.bounded_attempt")?),
+    })?;
+    // Synthetic pure structural assertions test the engine traversal bound;
+    // actual-byte admission and prepared identities are tested in application.
+    for (length, allowed) in [
+        (MAX_COMPLETE_COVERAGE_WORK / 4 - 1, true),
+        (MAX_COMPLETE_COVERAGE_WORK / 4, false),
+    ] {
+        let mut results = Vec::new();
+        let mut ids = Vec::new();
+        for label in [b"bounded.first".as_slice(), b"bounded.second".as_slice()] {
+            let identity = SemanticEvidenceDigest::hash_content(label);
+            ids.push(identity);
+            let time: UtcInstant = "2026-01-02T03:00:00Z".parse()?;
+            let attempts = (1..=length)
+                .map(|number| -> Result<_, Box<dyn Error>> {
+                    Ok(EvidenceAttempt::new(
+                        PositiveCount::new(number as u64)?,
+                        AttemptOutcome::Passed,
+                        time,
+                        time,
+                        None,
+                    )?)
+                })
+                .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+            let execution = ExecutionPayload::new(
+                attempts,
+                EvidenceCounts::new(1, 1, 0, 0, 0, 0)?,
+                time,
+                time,
+            )?;
+            let base = &fixture.expected.structural;
+            results.push(EvidenceResult::new(
+                identity.as_digest(),
+                base.subject.clone(),
+                base.target.clone(),
+                base.unit.clone(),
+                vec![base.requirement.clone()],
+                vec![base.facet],
+                base.kind,
+                base.evidence_spec_digest,
+                base.contract_digest,
+                base.binding_digest,
+                base.policy_digest,
+                base.runner_digest,
+                base.adapter_digest,
+                base.runtime_facts_digest,
+                base.release_record_digest,
+                base.profiles.values().cloned().collect(),
+                "producer://local/fixture/bounded".parse()?,
+                TrustLevel::UntrustedLocal,
+                time,
+                EvidencePayload::Test(execution),
+                vec![],
+                identity.as_digest(),
+                Extensions::default(),
+            )?);
+        }
+        let mut first = fixture.candidate();
+        first.delivery.result = &results[0];
+        first.delivery.semantic_identity = ids[0];
+        let mut second = fixture.candidate();
+        second.delivery.result = &results[1];
+        second.delivery.semantic_identity = ids[1];
+        second.delivery.lineage = &retry;
+        let report = assess_campaign_retry_history(&universe, &expected, &[first, second]);
+        if allowed {
+            let report = report?;
+            assert_eq!(report.state(), CampaignRetryState::Passed);
+            assert_eq!(
+                report
+                    .histories()
+                    .values()
+                    .next()
+                    .ok_or("history")?
+                    .attempts()
+                    .len(),
+                2
+            );
+            assert_eq!(report.constraints().capacity(), 1);
+        } else {
+            assert_eq!(report, Err(CampaignRetryError::WorkLimitExceeded));
+        }
+    }
+    Ok(())
+}
