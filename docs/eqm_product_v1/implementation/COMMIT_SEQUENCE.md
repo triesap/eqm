@@ -773,6 +773,32 @@ original S057 standard/engine owning gates remain mandatory; domain owning tests
 join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
+**DEV-035 S059 implementation allocation:** reuse the existing protocol
+`admit_evidence` as the sole DTO-to-domain converter. Application adds the pure
+`admit_evidence_bytes` entry point: strict explicit v2 parsing of exact bounded
+bytes, then that converter with independently supplied EvidenceAdmissionContext,
+EvidenceLineage and EvidenceExecution. Return its opaque AdmittedEvidenceV2 and
+preserve exact originals and semantic identity; typed EvidenceConversionError
+distinguishes strict decoding from relationship admission with causal errors.
+No I/O, clock, reader, executor or verifier capability is accepted or invoked.
+Parsed claimed trust remains a claim. Existing v1 readers/domain carriers and
+direct protocol admission remain unchanged; no new wire/schema/dependency.
+
+Use real prepared manifest/component projections in application conversion
+controls for all seven currently supported payload kinds, with actual
+kind-compatible evidence definitions. Check direct protocol/application parity,
+alternate transport with identical semantic identity and original bytes,
+deterministic one-axis kind/subject/target/unit/requirement/facet/component/profile/
+runtime/release reference mismatches, invalid identity, exact lineage/retry time
+and arithmetic-valid count/outcome contradictions for all executable kinds.
+Strict malformed/unsupported-version/over-bound bytes fail before admission.
+Missing expected selection/campaign integration remains assigned to S061–S068;
+do not invent trust, storage, duplicate classification or final outcome semantics
+here. This is S059's RA02/RA13 contribution, not whole regression closure.
+Original protocol/domain/application owning, full standard and independent
+allocated acceptance gates remain; record actual failures and continue S060
+only after the local green checkpoint.
+
 **DEV-035 S058 implementation allocation:** project the existing opaque
 PreparedObligationIdentities and its complete expected-bound RequiredUniverse
 through one pure application query boundary. Accept the same finalized graph and

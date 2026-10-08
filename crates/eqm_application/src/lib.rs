@@ -36,6 +36,7 @@ pub mod clock;
 pub mod cohort;
 pub mod comparison;
 pub mod evaluation;
+pub mod evidence_conversion;
 pub mod expected_selection;
 pub mod inventory;
 pub mod obligation_identity;
@@ -60,6 +61,7 @@ pub use comparison::{
 pub use evaluation::{
     EvaluationRequest, EvidenceReadError, EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ,
 };
+pub use evidence_conversion::{EvidenceConversionError, admit_evidence_bytes};
 pub use expected_selection::{
     ExpectedSelectionPreparationError, ExpectedSelectionProvider, PreparedExpectedSelections,
     prepare_expected_selections,

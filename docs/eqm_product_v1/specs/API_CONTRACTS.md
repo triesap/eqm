@@ -18,6 +18,18 @@ This file specifies behavior and logical payload content. It deliberately does n
 
 Retain existing commands (`doctor`, `validate`, `show`, `locate`, `context`, `obligations`, `check`, `matrix`, `verify`, `affected`, `diff`, `reconcile`, release checking and `attest`) where their public grammar is appropriate. Read the actual parser/docs before changing command syntax. Wire the existing commands to these shared use cases. A new operation does not imply permission to invent a new public command family in advance.
 
+## Validated evidence conversion (S059)
+
+S059 exposes `eqm_application::admit_evidence_bytes` for exact bounded v2 bytes
+with explicit `EvidenceAdmissionContext`, `EvidenceLineage` and
+`EvidenceExecution`. It calls the strict v2 reader and the existing protocol
+`admit_evidence` converter, returning the opaque `AdmittedEvidenceV2` with
+unchanged originals. `EvidenceConversionError` retains distinct Decode and
+Admission causes. This pure conversion supplies no independent verification,
+store access, clock, execution or legacy fallback. Later ingress and frozen
+evaluation steps consume this same boundary with their own independently
+prepared expectations; the existing legacy domain read port is preserved.
+
 ## Decision and query content
 
 Every decision binds scope, required universe/completeness, authority and policy/profile revisions, exact participant subjects, selected campaigns, input references, evaluator identity, evaluation time, and relevant validity/trust context. Include obligation statuses, accepted/rejected evidence with reasons, expected missing cases, exposure comparisons, applied waivers and aggregate conclusions.

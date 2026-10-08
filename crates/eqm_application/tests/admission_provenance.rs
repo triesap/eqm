@@ -10,8 +10,8 @@
 //! projection.
 
 use eqm_application::{
-    PolicyProvenanceV2, SessionRequest, prepare, prepare_policy_provenance,
-    prepare_target_configuration,
+    EvidenceConversionError, PolicyProvenanceV2, SessionRequest, admit_evidence_bytes, prepare,
+    prepare_policy_provenance, prepare_target_configuration,
 };
 use eqm_domain::{
     AdapterDigest, BindingDigest, BindingId, CampaignId, ContractDigest, DimensionId,
@@ -336,8 +336,8 @@ fn production_projections_admit_sealed_evidence() -> Result<(), Box<dyn Error>> 
     let session = session_for(repository.path())?;
     let provenance = projections(&session)?;
     let checked = seal(record(&provenance, None)?)?;
-    let admitted: AdmittedEvidenceV2 = admit_evidence(
-        &checked,
+    let admitted: AdmittedEvidenceV2 = admit_evidence_bytes(
+        checked.raw_bytes(),
         &lineage()?,
         &execution()?,
         &context(&provenance, None)?,
@@ -499,5 +499,571 @@ fn semantic_identity_is_a_distinct_domain() -> Result<(), Box<dyn Error>> {
         ContractDigest::hash_content(bytes).to_string(),
         semantic.to_string()
     );
+    Ok(())
+}
+
+/// Loads an actual kind-compatible declaration before projecting its identities.
+fn kind_fixture(kind: EvidenceKind) -> Result<tempfile::TempDir, Box<dyn Error>> {
+    let repository = example()?;
+    let path = repository
+        .path()
+        .join("eqm/bindings/android.auth_signup.toml");
+    let original = fs::read_to_string(&path)?;
+    let prefix = original
+        .split_once("[[evidence]]")
+        .ok_or("evidence declaration")?
+        .0;
+    let runner = if matches!(
+        kind,
+        EvidenceKind::StructuralCheck | EvidenceKind::Test | EvidenceKind::Snapshot
+    ) {
+        "runner = \"runner.android\"\n"
+    } else {
+        ""
+    };
+    let selector = match kind {
+        EvidenceKind::Test => {
+            "[evidence.selector]\nkind = \"test\"\nframework = \"junit\"\ntest_id = \"signupIdentifierDefaultsToEmail\"\n"
+        }
+        EvidenceKind::Snapshot => {
+            "[evidence.selector]\nkind = \"snapshot\"\nsnapshot_id = \"signup.identifier\"\n"
+        }
+        EvidenceKind::StructuralCheck
+        | EvidenceKind::StaticInventory
+        | EvidenceKind::RuntimeSnapshot => {
+            "[evidence.selector]\nkind = \"inventory\"\nrecord_type = \"surface\"\nkey = \"signup.identifier\"\n"
+        }
+        EvidenceKind::ReleaseRecord => {
+            "[evidence.selector]\nkind = \"release\"\nchannel = \"development\"\n"
+        }
+        EvidenceKind::ManualReview => "",
+    };
+    fs::write(
+        path,
+        format!(
+            "{prefix}[[evidence]]\nid = \"identifier_behavior\"\nkind = \"{kind}\"\nrequirements = [\"account.create.signup.identifier#email_default\"]\nfacets = [\"behavior\"]\n{runner}\n{selector}"
+        ),
+    )?;
+    Ok(repository)
+}
+
+fn record_for_kind(
+    provenance: &Provenance,
+    kind: EvidenceKind,
+) -> Result<(EvidenceResultV2Dto, EvidenceAdmissionContext), Box<dyn Error>> {
+    let mut value = record(provenance, None)?;
+    let mut expected = context(provenance, None)?;
+    let EvidencePayloadV2Dto::Test { execution } = value.payload else {
+        return Err("execution fixture".into());
+    };
+    let counts = execution.counts.clone();
+    let reference = Sha256Digest::hash_content(b"synthetic referenced record");
+    value.kind = kind.to_string();
+    expected.kind = kind;
+    if !matches!(
+        kind,
+        EvidenceKind::StructuralCheck | EvidenceKind::Test | EvidenceKind::Snapshot
+    ) {
+        value.runner_digest = None;
+        expected.runner_digest = None;
+    }
+    value.payload = match kind {
+        EvidenceKind::StructuralCheck => EvidencePayloadV2Dto::StructuralCheck { execution },
+        EvidenceKind::Test => EvidencePayloadV2Dto::Test { execution },
+        EvidenceKind::Snapshot => EvidencePayloadV2Dto::Snapshot { execution },
+        EvidenceKind::StaticInventory => EvidencePayloadV2Dto::StaticInventory {
+            inventory_digest: reference.to_string(),
+            counts,
+        },
+        EvidenceKind::RuntimeSnapshot => {
+            value.runtime_facts_digest = Some(reference.to_string());
+            expected.runtime_facts_digest = Some(reference);
+            EvidencePayloadV2Dto::RuntimeSnapshot {
+                runtime_facts_digest: reference.to_string(),
+                counts,
+            }
+        }
+        EvidenceKind::ReleaseRecord => {
+            value.release_record_digest = Some(reference.to_string());
+            expected.release_record_digest = Some(reference);
+            EvidencePayloadV2Dto::ReleaseRecord {
+                release_record_digest: reference.to_string(),
+            }
+        }
+        EvidenceKind::ManualReview => EvidencePayloadV2Dto::ManualReview {
+            outcome: "passed".to_owned(),
+            reviewer: "owner://team/reviewers".to_owned(),
+            message: Some("Synthetic review assertion; no independent verification".to_owned()),
+        },
+    };
+    Ok((value, expected))
+}
+
+fn file_snapshot(root: &Path) -> Result<BTreeMap<std::path::PathBuf, Vec<u8>>, Box<dyn Error>> {
+    fn visit(
+        root: &Path,
+        path: &Path,
+        files: &mut BTreeMap<std::path::PathBuf, Vec<u8>>,
+    ) -> Result<(), Box<dyn Error>> {
+        for entry in fs::read_dir(path)? {
+            let entry = entry?;
+            if entry.file_type()?.is_dir() {
+                visit(root, &entry.path(), files)?;
+            } else {
+                files.insert(
+                    entry.path().strip_prefix(root)?.to_owned(),
+                    fs::read(entry.path())?,
+                );
+            }
+        }
+        Ok(())
+    }
+    let mut files = BTreeMap::new();
+    visit(root, root, &mut files)?;
+    Ok(files)
+}
+
+#[test]
+fn application_converts_all_seven_real_kind_projections_without_effects()
+-> Result<(), Box<dyn Error>> {
+    let kinds = [
+        EvidenceKind::StructuralCheck,
+        EvidenceKind::StaticInventory,
+        EvidenceKind::Test,
+        EvidenceKind::Snapshot,
+        EvidenceKind::ManualReview,
+        EvidenceKind::RuntimeSnapshot,
+        EvidenceKind::ReleaseRecord,
+    ];
+    assert_eq!(kinds.len(), 7);
+    for kind in kinds {
+        let repository = kind_fixture(kind)?;
+        let session = session_for(repository.path())?;
+        let provenance = projections(&session)?;
+        let spec = session
+            .finalized()
+            .graph()
+            .bindings()
+            .get(&BindingId::new("binding.android.auth_signup")?)
+            .ok_or("binding")?
+            .evidence()
+            .get(&EvidenceSpecId::new("identifier_behavior")?)
+            .ok_or("spec")?;
+        assert_eq!(spec.kind(), kind);
+        assert_eq!(
+            canonicalize_evidence_spec_v2(spec)?.digest(),
+            provenance.evidence_spec_digest
+        );
+        let (value, expected) = record_for_kind(&provenance, kind)?;
+        let checked = seal(value)?;
+        fs::create_dir_all(repository.path().join(".eqm/results"))?;
+        fs::write(
+            repository.path().join(".eqm/results/poison.json"),
+            b"malformed evidence must never be read",
+        )?;
+        let before = file_snapshot(repository.path())?;
+        let admitted =
+            admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &expected)?;
+        let direct = admit_evidence(&checked, &lineage()?, &execution()?, &expected)?;
+        assert_eq!(admitted, direct, "{kind}");
+        assert_eq!(admitted.result().kind(), kind);
+        assert_eq!(
+            admitted.result().claimed_trust(),
+            eqm_domain::TrustLevel::SignedCi
+        );
+        assert_eq!(admitted.raw_bytes(), checked.raw_bytes());
+        assert_eq!(admitted.lineage(), &lineage()?);
+        assert_eq!(admitted.execution(), &execution()?);
+        let pretty = serde_json::to_vec_pretty(checked.record())?;
+        assert_ne!(pretty, checked.raw_bytes());
+        let alternate = admit_evidence_bytes(&pretty, &lineage()?, &execution()?, &expected)?;
+        assert_eq!(alternate.semantic_identity(), admitted.semantic_identity());
+        assert_eq!(alternate.result(), admitted.result());
+        assert_eq!(alternate.raw_bytes(), pretty);
+        assert_eq!(file_snapshot(repository.path())?, before);
+    }
+    Ok(())
+}
+
+#[test]
+fn application_execution_count_outcome_and_chronology_contradictions_reject()
+-> Result<(), Box<dyn Error>> {
+    for kind in [
+        EvidenceKind::StructuralCheck,
+        EvidenceKind::Test,
+        EvidenceKind::Snapshot,
+    ] {
+        let repository = kind_fixture(kind)?;
+        let session = session_for(repository.path())?;
+        let provenance = projections(&session)?;
+        let (value, expected) = record_for_kind(&provenance, kind)?;
+        for outcome in [
+            "failed",
+            "skipped",
+            "filtered",
+            "quarantined",
+            "timed_out",
+            "cancelled",
+        ] {
+            let mut mutant = value.clone();
+            let execution = match &mut mutant.payload {
+                EvidencePayloadV2Dto::StructuralCheck { execution }
+                | EvidencePayloadV2Dto::Test { execution }
+                | EvidencePayloadV2Dto::Snapshot { execution } => execution,
+                _ => return Err("executable payload required".into()),
+            };
+            execution.attempts[0].outcome = outcome.to_owned();
+            let checked = seal(mutant)?;
+            assert_eq!(
+                admit_evidence_bytes(
+                    checked.raw_bytes(),
+                    &lineage()?,
+                    &self::execution()?,
+                    &expected
+                ),
+                Err(EvidenceConversionError::Admission(
+                    EvidenceAdmissionError::CountOutcomeContradiction
+                )),
+                "{kind} {outcome}"
+            );
+        }
+        let mut mutant = value.clone();
+        let execution_payload = match &mut mutant.payload {
+            EvidencePayloadV2Dto::StructuralCheck { execution }
+            | EvidencePayloadV2Dto::Test { execution }
+            | EvidencePayloadV2Dto::Snapshot { execution } => execution,
+            _ => return Err("executable payload required".into()),
+        };
+        // Both windows are inside the aggregate and have canonical nanoseconds,
+        // but retry two begins one nanosecond before the first finishes.
+        execution_payload.attempts[0].finished_at = instant("2026-01-02T03:04:05.000000002Z")?;
+        let mut retry = execution_payload.attempts[0].clone();
+        retry.number = WireUint::new(2);
+        retry.started_at = instant("2026-01-02T03:04:05.000000001Z")?;
+        execution_payload.attempts.push(retry);
+        let checked = seal(mutant)?;
+        assert_eq!(
+            admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &expected),
+            Err(EvidenceConversionError::Admission(
+                EvidenceAdmissionError::RetryChronology
+            ))
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn application_one_axis_relationships_use_the_same_checked_conversion() -> Result<(), Box<dyn Error>>
+{
+    let repository = kind_fixture(EvidenceKind::Test)?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let (value, expected) = record_for_kind(&provenance, EvidenceKind::Test)?;
+    let mut cases = Vec::new();
+    macro_rules! mutant {
+        ($name:literal, $error:expr, $change:expr) => {{
+            let mut next = value.clone();
+            $change(&mut next);
+            cases.push(($name, next, $error));
+        }};
+    }
+    mutant!(
+        "kind",
+        EvidenceAdmissionError::KindMismatch,
+        |v: &mut EvidenceResultV2Dto| v.kind = "snapshot".to_owned()
+    );
+    mutant!(
+        "repository",
+        EvidenceAdmissionError::SubjectMismatch,
+        |v: &mut EvidenceResultV2Dto| v.subject.repository =
+            "https://example.com/team/other".to_owned()
+    );
+    mutant!(
+        "repository identity",
+        EvidenceAdmissionError::SubjectMismatch,
+        |v: &mut EvidenceResultV2Dto| v.subject.repository_id_digest =
+            Sha256Digest::hash_content(b"other repository").to_string()
+    );
+    mutant!(
+        "commit",
+        EvidenceAdmissionError::SubjectMismatch,
+        |v: &mut EvidenceResultV2Dto| v.subject.source_commit = "b".repeat(40)
+    );
+    mutant!(
+        "build",
+        EvidenceAdmissionError::SubjectMismatch,
+        |v: &mut EvidenceResultV2Dto| v.subject.build_id = Some("build.other".to_owned())
+    );
+    mutant!(
+        "artifact",
+        EvidenceAdmissionError::SubjectMismatch,
+        |v: &mut EvidenceResultV2Dto| v.subject.artifact_digest =
+            Some(Sha256Digest::hash_content(b"other artifact").to_string())
+    );
+    mutant!(
+        "configuration",
+        EvidenceAdmissionError::SubjectMismatch,
+        |v: &mut EvidenceResultV2Dto| v.subject.target_configuration_digest =
+            TargetConfigurationDigest::hash_content(b"other configuration").to_string()
+    );
+    mutant!(
+        "scope",
+        EvidenceAdmissionError::SubjectMismatch,
+        |v: &mut EvidenceResultV2Dto| v.subject.scope = ScopeSubjectV2Dto::Target {
+            target: "ios".to_owned()
+        }
+    );
+    mutant!(
+        "target",
+        EvidenceAdmissionError::TargetMismatch,
+        |v: &mut EvidenceResultV2Dto| v.target = "ios".to_owned()
+    );
+    mutant!(
+        "unit",
+        EvidenceAdmissionError::UnitMismatch,
+        |v: &mut EvidenceResultV2Dto| v.unit = "other.unit".to_owned()
+    );
+    mutant!(
+        "specification",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.evidence_spec_digest =
+            EvidenceSpecificationDigest::hash_content(b"other specification").to_string()
+    );
+    mutant!(
+        "contract",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.contract_digest =
+            ContractDigest::hash_content(b"other contract").to_string()
+    );
+    mutant!(
+        "binding",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.binding_digest =
+            BindingDigest::hash_content(b"other binding").to_string()
+    );
+    mutant!(
+        "policy",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.policy_digest =
+            PolicySelectionDigest::hash_content(b"other policy").to_string()
+    );
+    mutant!(
+        "runner",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.runner_digest = None
+    );
+    mutant!(
+        "adapter",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.adapter_digest =
+            Some(AdapterDigest::hash_content(b"other adapter").to_string())
+    );
+    mutant!(
+        "runtime envelope",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.runtime_facts_digest =
+            Some(Sha256Digest::hash_content(b"unexpected runtime").to_string())
+    );
+    mutant!(
+        "release envelope",
+        EvidenceAdmissionError::DigestMismatch,
+        |v: &mut EvidenceResultV2Dto| v.release_record_digest =
+            Some(Sha256Digest::hash_content(b"unexpected release").to_string())
+    );
+    let mut facet = value.clone();
+    facet.facets = CanonicalSet::from_members(vec!["structure".to_owned()])?;
+    cases.push(("facet", facet, EvidenceAdmissionError::FacetMismatch));
+    let mut requirement = value.clone();
+    requirement.requirements =
+        CanonicalSet::from_members(vec!["account.create.signup.identifier#other".to_owned()])?;
+    cases.push((
+        "requirement",
+        requirement,
+        EvidenceAdmissionError::RequirementMismatch,
+    ));
+    let mut owner = value.clone();
+    owner.requirements = CanonicalSet::from_members(vec!["other.unit#email_default".to_owned()])?;
+    cases.push((
+        "requirement owner",
+        owner,
+        EvidenceAdmissionError::RequirementMismatch,
+    ));
+    for (label, mutate) in [("profile revision", true), ("profile value", false)] {
+        let mut profile = value.clone();
+        profile.profile_values = CanonicalSet::from_members(vec![ProfileValueV2Dto {
+            profile: "audience.default".to_owned(),
+            revision: WireUint::new(if mutate { 2 } else { 1 }),
+            dimension: "region".to_owned(),
+            value: if mutate { "eu" } else { "us" }.to_owned(),
+        }])?;
+        cases.push((label, profile, EvidenceAdmissionError::ProfileMismatch));
+    }
+    for (label, mutant, error) in cases {
+        // A fresh self-consistent semantic hash cannot repair an unrelated axis.
+        let checked = seal(mutant)?;
+        let application =
+            admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &expected);
+        assert_eq!(
+            application,
+            Err(EvidenceConversionError::Admission(error)),
+            "{label}"
+        );
+        assert_eq!(
+            application,
+            admit_evidence(&checked, &lineage()?, &execution()?, &expected)
+                .map_err(EvidenceConversionError::Admission),
+            "{label} parity"
+        );
+    }
+    let mut wrong_payload = value.clone();
+    let EvidencePayloadV2Dto::Test { execution: payload } = wrong_payload.payload else {
+        return Err("test payload required".into());
+    };
+    wrong_payload.payload = EvidencePayloadV2Dto::Snapshot { execution: payload };
+    let wrong_payload = seal(wrong_payload)?;
+    assert_eq!(
+        admit_evidence_bytes(
+            wrong_payload.raw_bytes(),
+            &lineage()?,
+            &execution()?,
+            &expected
+        ),
+        Err(EvidenceConversionError::Admission(
+            EvidenceAdmissionError::Domain(
+                eqm_domain::EvidenceResultBuildError::PayloadKindMismatch
+            )
+        ))
+    );
+    let checked = seal(value)?;
+    for (authority, error) in [
+        (
+            ExpectedLineageAuthority::new(
+                PlanId::new("plan.other")?,
+                CampaignId::new("campaign.signup")?,
+            ),
+            eqm_domain::EvidenceResultBuildError::PlanMismatch,
+        ),
+        (
+            ExpectedLineageAuthority::new(
+                PlanId::new("plan.release")?,
+                CampaignId::new("campaign.other")?,
+            ),
+            eqm_domain::EvidenceResultBuildError::CampaignMismatch,
+        ),
+    ] {
+        let mut context = expected.clone();
+        context.expected_lineage = authority;
+        assert_eq!(
+            admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &context),
+            Err(EvidenceConversionError::Admission(
+                EvidenceAdmissionError::Lineage(error)
+            ))
+        );
+    }
+    for (run, case, attempt, error) in [
+        (
+            "run.other",
+            "case.identifier",
+            "attempt.one",
+            eqm_domain::EvidenceResultBuildError::RunMismatch,
+        ),
+        (
+            "run.one",
+            "case.other",
+            "attempt.one",
+            eqm_domain::EvidenceResultBuildError::LogicalCaseMismatch,
+        ),
+        (
+            "run.one",
+            "case.identifier",
+            "attempt.other",
+            eqm_domain::EvidenceResultBuildError::AttemptNotDeclared,
+        ),
+    ] {
+        let declared = EvidenceExecution::new(
+            RunId::new(run)?,
+            LogicalCaseId::new(case)?,
+            vec![eqm_domain::AttemptId::new(attempt)?],
+        )?;
+        assert_eq!(
+            admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &declared, &expected),
+            Err(EvidenceConversionError::Admission(
+                EvidenceAdmissionError::Lineage(error)
+            ))
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn application_reference_identity_and_decode_errors_remain_distinct() -> Result<(), Box<dyn Error>>
+{
+    for (kind, error) in [
+        (
+            EvidenceKind::RuntimeSnapshot,
+            EvidenceAdmissionError::RuntimeReferenceMismatch,
+        ),
+        (
+            EvidenceKind::ReleaseRecord,
+            EvidenceAdmissionError::ReleaseReferenceMismatch,
+        ),
+    ] {
+        let repository = kind_fixture(kind)?;
+        let session = session_for(repository.path())?;
+        let provenance = projections(&session)?;
+        let (mut value, expected) = record_for_kind(&provenance, kind)?;
+        let other = Sha256Digest::hash_content(b"other referenced record").to_string();
+        match &mut value.payload {
+            EvidencePayloadV2Dto::RuntimeSnapshot {
+                runtime_facts_digest,
+                ..
+            } => *runtime_facts_digest = other,
+            EvidencePayloadV2Dto::ReleaseRecord {
+                release_record_digest,
+            } => *release_record_digest = other,
+            _ => return Err("referenced payload".into()),
+        }
+        let checked = seal(value)?;
+        assert_eq!(
+            admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &expected),
+            Err(EvidenceConversionError::Admission(error))
+        );
+    }
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let expected = context(&provenance, None)?;
+    let checked = seal(record(&provenance, None)?)?;
+    let mut identity = checked.record().clone();
+    identity.id = Sha256Digest::hash_content(b"unrelated but equal declared identity").to_string();
+    identity.result_digest = identity.id.clone();
+    let bytes = serde_json::to_vec(&identity)?;
+    assert_eq!(
+        admit_evidence_bytes(&bytes, &lineage()?, &execution()?, &expected),
+        Err(EvidenceConversionError::Admission(
+            EvidenceAdmissionError::IdentityMismatch
+        ))
+    );
+    let mut unsupported = checked.record().clone();
+    unsupported.schema = unsupported.schema.replace("/v2/", "/v1/");
+    let unsupported = serde_json::to_vec(&unsupported)?;
+    let too_large = vec![b' '; eqm_protocol::MAX_JSON_BYTES + 1];
+    for bytes in [
+        b"{".as_slice(),
+        unsupported.as_slice(),
+        too_large.as_slice(),
+    ] {
+        let Err(error @ EvidenceConversionError::Decode(_)) =
+            admit_evidence_bytes(bytes, &lineage()?, &execution()?, &expected)
+        else {
+            return Err("strict decoding must fail before admission".into());
+        };
+        let direct =
+            CheckedEvidenceResultV2::from_bytes(bytes).map_err(EvidenceConversionError::Decode);
+        assert_eq!(direct.err(), Some(error));
+        assert!(error.source().is_some());
+    }
+    let error = EvidenceConversionError::Admission(EvidenceAdmissionError::IdentityMismatch);
+    assert!(error.source().is_some());
     Ok(())
 }
