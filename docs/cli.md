@@ -69,6 +69,11 @@ path causes conservative expansion rather than a falsely narrow result.
 
 ## Observation and execution
 
+Structural checks distinguish file presence and ownership from semantic role
+evidence. An authored artifact role cannot confirm itself. Present files without
+independent role observations remain Unknown and block a successful check;
+missing, wrongly typed or forbidden symlinked artifacts remain blocking findings.
+
 | Command | Purpose |
 | --- | --- |
 | `discover --adapter ID --target ID` | Invoke one exact pinned inventory adapter |

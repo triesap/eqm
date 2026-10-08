@@ -3,7 +3,8 @@
 use eqm_domain::{ArtifactId, ArtifactRole, Binding, RepoPath, Target};
 use std::collections::{BTreeMap, BTreeSet};
 
-/// Injected path kind after race-safe repository inspection by an outer layer.
+/// Injected path kind after read-only repository inspection by an outer layer.
+/// This pure claim does not prove immutable acquisition or grant trust.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RepositoryEntryKind {
     /// Regular file.
@@ -12,6 +13,8 @@ pub enum RepositoryEntryKind {
     Directory,
     /// Read-only file symlink with an injected fully resolved path.
     Symlink,
+    /// Socket, device or another non-regular file kind.
+    Other,
 }
 
 /// One prepared repository observation.
@@ -21,8 +24,9 @@ pub struct RepositoryEntry {
     pub kind: RepositoryEntryKind,
     /// Fully resolved repository path for a symlink.
     pub resolved: Option<RepoPath>,
-    /// Semantically verified roles supplied by structural adapters.
-    pub roles: BTreeSet<ArtifactRole>,
+    /// Independently observed roles, unavailable when no role authority exists.
+    /// An observed empty set differs from unavailable observation.
+    pub roles: Option<BTreeSet<ArtifactRole>>,
 }
 
 /// Complete prepared repository path view.
@@ -41,6 +45,8 @@ pub enum StructureFindingKind {
     InvalidSymlink,
     /// Injected semantic roles did not include the declared role.
     RoleMismatch,
+    /// Independent role observation is unavailable.
+    RoleUnknown,
     /// Two repository paths collide under portable comparison.
     PortableCollision,
 }
@@ -121,7 +127,7 @@ pub fn evaluate_structure_with_roots(
             continue;
         };
         match entry.kind {
-            RepositoryEntryKind::Directory => {
+            RepositoryEntryKind::Directory | RepositoryEntryKind::Other => {
                 findings.insert(StructureFinding {
                     artifact: artifact.id().clone(),
                     kind: StructureFindingKind::PathTypeMismatch,
@@ -142,7 +148,16 @@ pub fn evaluate_structure_with_roots(
             }
             RepositoryEntryKind::File => {}
         }
-        if !entry.roles.contains(&artifact.role()) {
+        if entry.roles.is_none() {
+            findings.insert(StructureFinding {
+                artifact: artifact.id().clone(),
+                kind: StructureFindingKind::RoleUnknown,
+            });
+        } else if !entry
+            .roles
+            .as_ref()
+            .is_some_and(|roles| roles.contains(&artifact.role()))
+        {
             findings.insert(StructureFinding {
                 artifact: artifact.id().clone(),
                 kind: StructureFindingKind::RoleMismatch,

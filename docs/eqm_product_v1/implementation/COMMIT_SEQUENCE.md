@@ -19,10 +19,11 @@ acceptance (50 total). S052-A/B/C subsequently passed their allocated gates (51
 numbered acceptances). S047 residual identity/aggregation remains S054/S073.
 See [aggregate repair disposition](reports/P04-R4C.md) and [scope report](reports/S052.md).
 S053 subsequently passed its allocated gates (52 numbered local acceptances).
-S047 plus S054–S211 remain unfinished.
+S054 and S055 subsequently passed their allocated gates (54 numbered local
+acceptances). S047 aggregation plus S056–S211 remain unfinished.
 See [independent review](reports/CODEX-b442b80.md).
 
-**Next order:** S054–S076, mandatory independent complete-universe
+**Next order:** S056–S076, mandatory independent complete-universe
 and reference-evaluator acceptance before S077, then S077–S211 subject to their
 existing dependencies and gates. RF84 is accepted for its allocated P04-R4C
 contribution. Retain DEV-033 representation/provenance decisions: exact checked
@@ -662,6 +663,35 @@ Add independent literal JCS/domain hash controls, every identity-axis substituti
 permutation invariance and same-ingress production query reference/filter controls.
 Expand the owning S054 lane to domain/manifest/engine in addition to the original
 application/CLI/protocol tests; original commands and criteria remain mandatory.
+
+**DEV-035 S055 implementation allocation:** application prepares read-only
+structural observations and reports for the complete finalized session graph
+before transport filters, using each target's exact owned source-root closure.
+The pure engine distinguishes unavailable role observation from an independently
+observed empty/mismatching role set; unavailable authority is Unknown and cannot
+satisfy structure. A configured read-only role observer receives only independently
+inspected path/kind information, never a Binding or its declared role. Match the
+returned path exactly; absent, failed or foreign role observations remain Unknown.
+No filename/extension inference or default observer is permitted. The CLI has no
+configured role observer and must expose Unknown for present unverified artifacts.
+This port is independent observation, not imported verified flags or release trust;
+later evidence/trust admission retains its original requirements.
+
+Inspect every repository-relative path component without following symlink
+ancestors or forbidden leaf symlinks. Reject special non-file kinds, check canonical
+root containment and compare metadata before/after an observer call; detected
+changes or inspection errors are non-authorizing, never reported as absence.
+Only actual NotFound may produce a local physical missing-file finding. Do not
+claim pathname metadata checks prove race-safe immutable acquisition: no payload
+is opened/executed here, and stronger acquisition/storage confinement remains
+with its owning steps. Bound complete path preparation visibly without truncation.
+Keep source-component ownership positive/negative controls; add actual application
+and CLI causal controls for missing observer, independently matched/mismatched
+roles, foreign response, changed files, special files and symlink ancestors.
+Review intentional report/golden changes without hiding structural Unknown or
+weakening existing missing-scope controls. Keep frozen schemas and dependencies
+unchanged. Original S055 owning commands remain mandatory. This is an allocated
+RA21 contribution; inventory/currentness/trust/exposure integration is not closed.
 
 For S057 strengthening, compare full visible denominator, including unresolved
 coordinates. Validate any authority transition before comparing semantic

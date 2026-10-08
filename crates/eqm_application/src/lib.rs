@@ -42,6 +42,7 @@ pub mod provenance;
 pub mod selection;
 pub mod session;
 pub mod source;
+pub mod structure;
 
 pub use acquisition::{
     AcquisitionError, AcquisitionOutcome, AcquisitionReceipt, AcquisitionRequest, EvidenceVerifier,
@@ -78,6 +79,11 @@ pub use session::{PreparedSession, SessionError, SessionRequest, prepare};
 pub use source::{
     SourceProvenance, SourceProvenanceError, inspect_source_provenance,
     normalize_repository_identity, repository_identity,
+};
+pub use structure::{
+    MAX_STRUCTURAL_PATHS, PreparedStructuralObservations, RoleObservation, RoleObservationError,
+    RoleObservationRequest, StructuralRoleObserver, StructurePreparationError,
+    prepare_structural_observations,
 };
 
 /// A capability an application operation may require.

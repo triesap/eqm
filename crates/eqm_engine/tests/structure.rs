@@ -25,22 +25,35 @@ fn existence_role_collision_and_symlink_resolution_are_fail_closed() -> Result<(
         RepositoryEntry {
             kind: RepositoryEntryKind::File,
             resolved: None,
-            roles: BTreeSet::from([ArtifactRole::View]),
+            roles: Some(BTreeSet::from([ArtifactRole::View])),
         },
     )]);
     assert!(evaluate_structure(binding, target, &view, false).satisfied());
 
-    view.get_mut(&path).ok_or("entry missing")?.roles.clear();
+    view.get_mut(&path).ok_or("entry missing")?.roles = None;
+    let unavailable = evaluate_structure(binding, target, &view, false);
+    assert!(!unavailable.satisfied());
+    assert!(
+        unavailable
+            .findings
+            .iter()
+            .any(|finding| { finding.kind == StructureFindingKind::RoleUnknown })
+    );
+    assert!(
+        !unavailable
+            .findings
+            .iter()
+            .any(|finding| { finding.kind == StructureFindingKind::RoleMismatch })
+    );
+
+    view.get_mut(&path).ok_or("entry missing")?.roles = Some(BTreeSet::new());
     assert!(
         evaluate_structure(binding, target, &view, false)
             .findings
             .iter()
             .any(|finding| finding.kind == StructureFindingKind::RoleMismatch)
     );
-    view.get_mut(&path)
-        .ok_or("entry missing")?
-        .roles
-        .insert(ArtifactRole::View);
+    view.get_mut(&path).ok_or("entry missing")?.roles = Some(BTreeSet::from([ArtifactRole::View]));
     view.get_mut(&path).ok_or("entry missing")?.kind = RepositoryEntryKind::Symlink;
     view.get_mut(&path).ok_or("entry missing")?.resolved =
         Some(RepoPath::new("other/identifier.svelte")?);
@@ -55,7 +68,7 @@ fn existence_role_collision_and_symlink_resolution_are_fail_closed() -> Result<(
         RepositoryEntry {
             kind: RepositoryEntryKind::File,
             resolved: None,
-            roles: BTreeSet::from([ArtifactRole::View]),
+            roles: Some(BTreeSet::from([ArtifactRole::View])),
         },
     );
     assert!(
@@ -109,7 +122,7 @@ fn declared_source_component_root_admits_a_shared_artifact() -> Result<(), Box<d
         RepositoryEntry {
             kind: RepositoryEntryKind::File,
             resolved: None,
-            roles: BTreeSet::from([ArtifactRole::View]),
+            roles: Some(BTreeSet::from([ArtifactRole::View])),
         },
     )]);
 

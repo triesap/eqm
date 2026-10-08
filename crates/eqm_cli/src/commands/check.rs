@@ -6,18 +6,15 @@ use crate::cli::ParsedCli;
 use crate::renderer::OutputPayload;
 use crate::session::{SessionRequest, prepare};
 use chrono::{DateTime, SecondsFormat, Utc};
-use eqm_domain::{ArtifactRole, Diagnostic, DiagnosticCode, RepoPath, Severity, UtcInstant};
-use eqm_engine::{
-    RepositoryEntry, RepositoryEntryKind, RepositoryView, ScopeSubject, diagnostic_registry,
-    evaluate_structure_with_roots,
-};
+use eqm_application::prepare_structural_observations;
+use eqm_domain::{Diagnostic, DiagnosticCode, Severity, UtcInstant};
+use eqm_engine::{ScopeSubject, StructureFindingKind, diagnostic_registry};
 use eqm_protocol::{
     CheckResultDto, CommandIdentity, DiagnosticDto, EvaluationModeDto, FacetStatusDto, FindingDto,
     InvocationContextDto, ReportEnvelope, ResultStatusDto, SarifLogDto,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
-use std::fs;
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -36,35 +33,40 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     let mut diagnostics = Vec::new();
     let mut counts = BTreeMap::new();
 
+    let structure = prepare_structural_observations(&session, None)?;
     for binding in graph.bindings().values().filter(|binding| {
         (units.is_empty() || units.contains(binding.unit().as_str()))
             && (targets.is_empty() || targets.contains(binding.target().as_str()))
     }) {
-        // Structural checking uses the checked graph's exact target/component
-        // ownership closure, never an output-root-only view and never an
-        // arbitrary caller-supplied root list.
-        let roots = graph
-            .owned_roots(binding.target())
-            .ok_or("binding target")?;
-        let view = repository_view(session.repository_root(), binding)?;
-        for finding in evaluate_structure_with_roots(binding, &roots, &view, false).findings {
+        let report = structure
+            .reports()
+            .get(binding.id())
+            .ok_or("binding structure")?;
+        for finding in &report.findings {
+            let structural_status = if finding.kind == StructureFindingKind::RoleUnknown {
+                FacetStatusDto::Unknown
+            } else {
+                FacetStatusDto::Failed
+            };
             let coordinate = format!("structure:{}:{}", binding.id(), finding.artifact);
             findings.insert(FindingDto {
                 diagnostic_code: "EQM-E0200".to_owned(),
                 obligation: Some(coordinate.clone()),
-                status: FacetStatusDto::Failed,
+                status: structural_status,
                 evidence: None,
                 waiver: None,
             });
             diagnostics.push(Diagnostic::new(
                 DiagnosticCode::from_number(200).ok_or("diagnostic code")?,
                 Severity::Error,
-                format!("{coordinate} failed with {:?}", finding.kind),
+                format!("{coordinate} is {structural_status:?}: {:?}", finding.kind),
                 None,
                 Vec::new(),
-                Some("Correct the declared artifact structure.".into()),
+                Some(
+                    "Correct artifact structure and provide independent role observations.".into(),
+                ),
             )?);
-            *counts.entry(FacetStatusDto::Failed).or_insert(0) += 1;
+            *counts.entry(structural_status).or_insert(0) += 1;
         }
     }
 
@@ -148,43 +150,6 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
     })
 }
 
-fn repository_view(
-    root: &Path,
-    binding: &eqm_domain::Binding,
-) -> Result<RepositoryView, Box<dyn Error>> {
-    let mut view = RepositoryView::new();
-    for artifact in binding.artifacts().values().values() {
-        let absolute = root.join(artifact.path().as_str());
-        let Ok(metadata) = fs::symlink_metadata(&absolute) else {
-            continue;
-        };
-        let (kind, resolved) = if metadata.file_type().is_symlink() {
-            let resolved = fs::canonicalize(&absolute)
-                .ok()
-                .and_then(|path| {
-                    path.strip_prefix(root)
-                        .ok()
-                        .map(|value| value.to_path_buf())
-                })
-                .and_then(|path| RepoPath::new(path.to_string_lossy().replace('\\', "/")).ok());
-            (RepositoryEntryKind::Symlink, resolved)
-        } else if metadata.is_dir() {
-            (RepositoryEntryKind::Directory, None)
-        } else {
-            (RepositoryEntryKind::File, None)
-        };
-        view.insert(
-            artifact.path().clone(),
-            RepositoryEntry {
-                kind,
-                resolved,
-                roles: BTreeSet::<ArtifactRole>::from([artifact.role()]),
-            },
-        );
-    }
-    Ok(view)
-}
-
 fn option_values(parsed: &ParsedCli, name: &str) -> BTreeSet<String> {
     parsed
         .command
@@ -220,6 +185,7 @@ fn context(offline: bool) -> Result<InvocationContextDto<(), ()>, Box<dyn Error>
 mod tests {
     use super::*;
     use crate::cli::{ParseOutcome, parse};
+    use std::fs;
 
     #[test]
     fn check_is_nonexecuting_and_reports_stable_missing_obligations() -> Result<(), Box<dyn Error>>
@@ -345,7 +311,8 @@ test_id = "sharedView"
     }
 
     #[test]
-    fn structural_check_accepts_declared_shared_artifact() -> Result<(), Box<dyn Error>> {
+    fn structural_check_observes_shared_presence_without_echoing_roles()
+    -> Result<(), Box<dyn Error>> {
         let repository = shared_workspace("shared/ui/Shared.kt")?;
         let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
         else {
@@ -353,14 +320,21 @@ test_id = "sharedView"
         };
         let execution = execute(parsed, repository.path())?;
         let findings = structural_findings(&execution)?;
-        // A declared shared artifact is owned by the target's component closure,
-        // so it must not report OutsideTargetRoot/Missing.
+        // Owned presence is independently observed, but authored roles cannot
+        // satisfy role checks when no observer is configured.
+        assert!(findings.iter().any(|finding| finding["obligation"]
+            == "structure:binding.android.shared:shared_view"
+            && finding["status"] == "unknown"));
         assert!(
-            !findings
+            !execution.payload.json["diagnostics"]
+                .as_array()
+                .ok_or("diagnostics")?
                 .iter()
-                .any(|finding| finding["obligation"]
-                    == "structure:binding.android.shared:shared_view"),
-            "declared shared artifact must pass structural ownership: {findings:?}"
+                .any(
+                    |diagnostic| diagnostic["message"].as_str().is_some_and(|message| message
+                        .contains("structure:binding.android.shared:shared_view")
+                        && (message.contains("OutsideTargetRoot") || message.contains("Missing")))
+                )
         );
         Ok(())
     }
@@ -380,6 +354,59 @@ test_id = "sharedView"
                 && finding["status"] == "failed"),
             "missing declared shared artifact must fail structurally: {findings:?}"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn authored_service_role_cannot_make_present_file_structurally_satisfied()
+    -> Result<(), Box<dyn Error>> {
+        let repository = shared_workspace("shared/ui/Shared.kt")?;
+        let binding = repository.path().join("eqm/bindings/android.shared.toml");
+        fs::write(
+            &binding,
+            fs::read_to_string(&binding)?.replace("role = \"view\"", "role = \"service\""),
+        )?;
+        let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+        else {
+            return Err("parse".into());
+        };
+        let execution = execute(parsed, repository.path())?;
+        assert_eq!(execution.exit_code, 1);
+        assert!(structural_findings(&execution)?.iter().any(|finding| {
+            finding["obligation"] == "structure:binding.android.shared:shared_view"
+                && finding["status"] == "unknown"
+        }));
+        assert!(!repository.path().join(".eqm").exists());
+        Ok(())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn structural_check_rejects_a_symlinked_artifact_ancestor() -> Result<(), Box<dyn Error>> {
+        let repository = shared_workspace("shared/ui/alias/Service.kt")?;
+        let external = tempfile::tempdir()?;
+        fs::write(external.path().join("Service.kt"), b"external file")?;
+        std::os::unix::fs::symlink(external.path(), repository.path().join("shared/ui/alias"))?;
+        let ParseOutcome::Run(parsed) = parse(["check", "--format", "json", "--no-progress"])?
+        else {
+            return Err("parse".into());
+        };
+        let execution = execute(parsed, repository.path())?;
+        assert_eq!(execution.exit_code, 1);
+        assert!(
+            execution.payload.json["diagnostics"]
+                .as_array()
+                .ok_or("diagnostics")?
+                .iter()
+                .any(|diagnostic| diagnostic["message"]
+                    .as_str()
+                    .is_some_and(|message| message.contains("InvalidSymlink")))
+        );
+        assert_eq!(
+            fs::read(external.path().join("Service.kt"))?,
+            b"external file"
+        );
+        assert!(!repository.path().join(".eqm").exists());
         Ok(())
     }
 
@@ -458,7 +485,7 @@ test_id = "sharedView"
         );
         assert_eq!(
             blocked.payload.json["result"]["obligation_counts"]["unknown"],
-            1
+            3
         );
         assert!(
             blocked.payload.json["diagnostics"]
@@ -468,8 +495,8 @@ test_id = "sharedView"
                 .any(|diagnostic| diagnostic["code"] == "EQM-E0501")
         );
         assert!(!root.join(".eqm").exists());
-        // Same check ingress becomes N/A only when requirement applicability
-        // itself is explicitly false, rather than when scope is omitted.
+        // Same ingress removes the missing scenario only when applicability
+        // is explicitly false. Unobserved structural roles remain Unknown.
         let path = root.join("eqm/contracts/auth.signup.otp.toml");
         fs::write(
             &path,
@@ -483,10 +510,22 @@ test_id = "sharedView"
             return Err("parse".into());
         };
         let not_applicable = execute(parsed, root)?;
+        assert_eq!(not_applicable.exit_code, 1);
         assert_eq!(
-            not_applicable.exit_code, 0,
-            "{}",
-            not_applicable.payload.json
+            not_applicable.payload.json["result"]["obligation_counts"]["unknown"],
+            2
+        );
+        assert!(
+            !not_applicable.payload.json["diagnostics"]
+                .as_array()
+                .ok_or("diagnostics")?
+                .iter()
+                .any(|diagnostic| diagnostic["code"] == "EQM-E0501")
+        );
+        assert!(
+            structural_findings(&not_applicable)?
+                .iter()
+                .all(|finding| finding["status"] == "unknown")
         );
         assert!(!root.join(".eqm").exists());
         Ok(())
