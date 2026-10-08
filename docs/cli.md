@@ -96,6 +96,14 @@ without a signer remains explicitly unsigned.
 
 ## Output and exit behavior
 
+Obligation references in `obligations`, `context`, `check`, `affected` and `matrix`
+use `eqm:v2:obligation:sha256:<hex>`. They identify the complete pre-evidence
+coordinate: exact policy/profile definitions and values, graph and scope context,
+expected selections, strength, mode, origin and optional release context.
+Presentation filters preserve each surviving reference. A reference proves
+neither evidence satisfaction nor checked source/build or release authority.
+Unresolved scope labels remain descriptive diagnostics, not obligation digests.
+
 JSON commands use the committed protocol schemas under `schemas/v1/protocol/`.
 Consumers must preserve result categories instead of treating every nonzero
 exit identically. The stable high-level meanings are success, conformance or

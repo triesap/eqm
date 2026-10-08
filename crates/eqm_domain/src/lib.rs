@@ -50,6 +50,7 @@ mod expected_selection;
 mod graph;
 mod id;
 mod inventory;
+mod obligation_identity;
 mod path;
 mod policy;
 mod provider;
@@ -75,10 +76,10 @@ pub use digest::{
     AdapterDigest, AttemptDigest, AuthorityDigest, BindingDigest, CampaignDigest,
     ComparisonContextDigest, ContractDigest, DigestDomain, DigestParseError,
     EvaluationContextDigest, EvidenceSpecificationDigest, ExpectedSelectionManifestDigest,
-    ParticipationDigest, PlanDigest, PolicySelectionDigest, ProviderConfigurationDigest,
-    RawObjectDigest, RequirementScenarioBindingsDigest, RunnerDigest, ScenarioDigest,
-    SemanticEvidenceDigest, SemanticGraphV2Digest, Sha256Digest, SubjectManifestDigest,
-    TargetConfigurationDigest, TrustConfigurationDigest,
+    ObligationDigest, ParticipationDigest, PlanDigest, PolicySelectionDigest,
+    ProviderConfigurationDigest, RawObjectDigest, RequirementScenarioBindingsDigest, RunnerDigest,
+    ScenarioDigest, SemanticEvidenceDigest, SemanticGraphV2Digest, Sha256Digest,
+    SubjectManifestDigest, TargetConfigurationDigest, TrustConfigurationDigest,
 };
 pub use entity::{
     Applicability, ApplicabilityKind, ApplicabilityView, Artifact, ArtifactSelector, Artifacts,
@@ -115,6 +116,10 @@ pub use id::{
 pub use inventory::{
     AppVersion, BuildNumber, FactValue, Inventory, InventoryBuildError, InventoryEntry,
     ReconcileStatus, ReleaseRecord, RuntimeFact, RuntimeFactsSnapshot,
+};
+pub use obligation_identity::{
+    ExpectedSelectionIdentityV2, ObligationIdentityInputV2, ObligationModeV2, ObligationOriginV2,
+    ObligationScopeInputV2, ObligationStrengthInputV2, ProviderScopeInputV2, ScopeParticipationV2,
 };
 pub use path::{RepoPath, RepoPathError};
 pub use policy::{

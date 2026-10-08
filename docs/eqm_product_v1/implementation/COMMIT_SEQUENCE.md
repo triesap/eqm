@@ -615,6 +615,54 @@ controls and track remaining transport integration under its owning steps; no
 whole RA03/feature closure follows from synthetic scope/case fixtures. Extend the
 S053 owning lane to manifest/application and doctests for the actual operation.
 
+**DEV-035 S054 implementation allocation:** freeze a separate pre-evidence
+coordinate projection under `eqm:v2:obligation` and a distinct typed
+ObligationDigest. Domain input carriers are claims; only the application creates
+an opaque prepared identity map from one PreparedExpectedSelections universe and
+its matching immutable finalized graph. Do not combine unrelated visible-key
+maps, reselect policy/profiles, reload authority or capture time. Read-only engine
+views expose the exact policy/profiles, mode/origin, release context and composed
+obligations already bound into private context.
+
+The root contains unit, requirement, facet, policy_selection (the existing exact
+policy/profile definition and explicit Known/Unknown projection),
+semantic_graph_digest, contract_digest, scope_bindings_digest,
+participation_digests, subject, expected_selections, strength, mode and
+authority_origin. Optional release_context is omitted when absent and contains
+its exact digest when present; null is never an absence substitute. Bind every
+strength axis with the existing v2 numeric forms. Manifest digest collections and
+participation identities are canonical member-byte sets with duplicate rejection.
+Expected selections explicitly distinguish Missing from Present; the application
+cannot produce a present empty coordinate manifest. Pure projections do not
+confer expected-selection authority.
+
+Subjects have a closed target/provider/scenario tag. Targets bind the actual
+TargetConfigurationDigest. Checked providers retain actual configuration identity,
+all selected dependers (including explicit False), assignments, qualified directed
+dependency edges, target configurations and participation states. Checked scenarios
+retain the exact scenario reference/digest and every occurrence, role, tagged
+subject and directed edge, plus selected targets, full provider dependencies,
+configuration references and participation. Legacy Provider/TargetSet labels
+cannot produce a complete v2 identity; reject them without lossy fallback.
+
+This is a complete pre-evidence coordinate reference, not an independently checked
+candidate build/source subject or release authorization. Full candidate evaluation
+identity separately binds checked SubjectManifest inputs at S061/S132. Do not
+select graph cohorts implicitly, substitute graph/configuration hashes for a
+SubjectManifestDigest or claim whole R19 closure from this checkpoint. Evidence
+outcomes, current status, host time, observed files and presentation filters never
+enter the coordinate identity.
+
+Prepare the full identity map before filtering and use the explicit
+`eqm:v2:obligation:` reference prefix in all existing obligations/context/check/
+affected/matrix references. Preserve frozen v1 DTO shapes/schema bytes. Legacy
+Known-only profile presentation continues to reject unknown values truthfully;
+S058 owns explicit v2 complete/unresolved query DTOs, never drop or coerce Unknown.
+Add independent literal JCS/domain hash controls, every identity-axis substitution,
+permutation invariance and same-ingress production query reference/filter controls.
+Expand the owning S054 lane to domain/manifest/engine in addition to the original
+application/CLI/protocol tests; original commands and criteria remain mandatory.
+
 For S057 strengthening, compare full visible denominator, including unresolved
 coordinates. Validate any authority transition before comparing semantic
 requirement/subject/profile/facet coverage; policy revision embedded in keys is

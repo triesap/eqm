@@ -196,6 +196,36 @@ pub(crate) struct EvaluationContext {
 }
 
 impl RequiredUniverse {
+    /// Exact immutable policy definition bound before evidence selection.
+    #[must_use]
+    pub const fn policy(&self) -> &eqm_domain::Policy {
+        &self.context.policy
+    }
+    /// Complete exact selected profiles, preserving explicit unknown dimensions.
+    #[must_use]
+    pub const fn profiles(&self) -> &BTreeMap<ProfileId, SelectedProfile> {
+        &self.context.profiles
+    }
+    /// Mode already bound into private derivation context; not an origin proof.
+    #[must_use]
+    pub const fn mode(&self) -> crate::EvaluationMode {
+        self.context.mode
+    }
+    /// Origin already bound into private context; capability checks stay external.
+    #[must_use]
+    pub const fn authority_origin(&self) -> crate::AuthorityOrigin {
+        self.context.origin
+    }
+    /// Actual optional immutable release context captured before evidence.
+    #[must_use]
+    pub const fn release_context(&self) -> Option<Sha256Digest> {
+        self.context.release_context
+    }
+    /// Complete composed obligations, never a caller-replaced visible-key map.
+    #[must_use]
+    pub const fn obligations(&self) -> &BTreeMap<ObligationKey, Obligation> {
+        &self.context.obligations
+    }
     /// Returns the exact graph-validated map bound into this universe's context.
     #[must_use]
     pub const fn scope_bindings(&self) -> &RequirementScenarioBindings {

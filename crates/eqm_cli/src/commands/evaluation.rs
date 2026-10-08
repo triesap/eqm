@@ -2,7 +2,8 @@
 
 use crate::session::PreparedSession;
 use eqm_application::{
-    PolicyReference, PolicySelectionRequest, ProfileSelection, prepare_obligations_from_request,
+    PolicyReference, PolicySelectionRequest, PreparedObligationIdentities, ProfileSelection,
+    prepare_expected_selections, prepare_obligation_identities, prepare_obligations_from_request,
 };
 use eqm_domain::{
     DimensionId, FullRequirementId, PolicyId, ProfileId, RequirementScenarioBindings, Revision,
@@ -14,6 +15,7 @@ use eqm_engine::{
 use eqm_protocol::{FacetStatusDto, ObligationDto, ProfileValueDto};
 use std::collections::BTreeSet;
 use std::error::Error;
+use std::ops::Deref;
 
 #[cfg(test)]
 use eqm_application::{prepare_obligations, resolve_selection_request};
@@ -82,13 +84,25 @@ pub fn selection_request_with_scopes(
     Ok(input.with_scope_bindings(RequirementScenarioBindings::new(entries)?))
 }
 
+/// Immutable full derivation plus complete shared identity map, before filtering.
+pub struct PreparedQueryDerivation {
+    derivation: ObligationDerivation,
+    identities: PreparedObligationIdentities,
+}
+impl Deref for PreparedQueryDerivation {
+    type Target = ObligationDerivation;
+    fn deref(&self) -> &Self::Target {
+        &self.derivation
+    }
+}
+
 /// Prepares development authority through the shared exact request operation.
 pub fn derive_with_policy<'a>(
     session: &'a PreparedSession,
     policy: Option<&str>,
     requested: &[String],
     scenarios: &[String],
-) -> Result<(SelectedPolicyProfiles<'a>, ObligationDerivation), Box<dyn Error>> {
+) -> Result<(SelectedPolicyProfiles<'a>, PreparedQueryDerivation), Box<dyn Error>> {
     let input = selection_request_with_scopes(policy, requested, scenarios)?;
     let prepared = prepare_obligations_from_request(
         session.finalized(),
@@ -96,8 +110,16 @@ pub fn derive_with_policy<'a>(
         &input,
         None,
     )?;
+    let expected = prepare_expected_selections(session.finalized(), &prepared, None, None)?;
+    let identities = prepare_obligation_identities(session.finalized(), &expected)?;
     let (selection, _applicability, derivation, _universe) = prepared.into_parts();
-    Ok((selection, derivation))
+    Ok((
+        selection,
+        PreparedQueryDerivation {
+            derivation,
+            identities,
+        },
+    ))
 }
 
 fn parse_policy(value: &str) -> Result<PolicyReference, Box<dyn Error>> {
@@ -139,7 +161,10 @@ fn parse_revision(value: &str) -> Result<Revision, Box<dyn Error>> {
 }
 
 /// Converts one current obligation to its stable missing-evidence query shape.
-pub fn obligation_dto(obligation: &Obligation) -> Result<ObligationDto, Box<dyn Error>> {
+pub fn obligation_dto(
+    prepared: &PreparedQueryDerivation,
+    obligation: &Obligation,
+) -> Result<ObligationDto, Box<dyn Error>> {
     let scope = match &obligation.key.subject {
         ScopeSubject::Target(_) => "each_target",
         ScopeSubject::Provider(_) | ScopeSubject::CheckedProvider(_) => "shared_provider",
@@ -159,7 +184,7 @@ pub fn obligation_dto(obligation: &Obligation) -> Result<ObligationDto, Box<dyn 
         }
     }
     Ok(ObligationDto {
-        id: obligation_id(obligation),
+        id: obligation_id(prepared, obligation)?,
         policy: format!(
             "{}@{}",
             obligation.key.policy, obligation.key.policy_revision
@@ -179,18 +204,21 @@ pub fn obligation_dto(obligation: &Obligation) -> Result<ObligationDto, Box<dyn 
     })
 }
 
-/// Returns the exact stable obligation coordinate.
-pub fn obligation_id(obligation: &Obligation) -> String {
-    let subject = scope_label(&obligation.key.subject);
-    format!(
-        "{}@{}:{}:{}:{}:{}",
-        obligation.key.policy,
-        obligation.key.policy_revision.get(),
-        obligation.key.unit,
-        obligation.key.requirement,
-        subject,
-        obligation.key.facet
-    )
+/// Returns the complete versioned reference from this immutable prepared query.
+/// A foreign strength/coordinate or absent entry rejects, never a label fallback.
+pub fn obligation_id(
+    prepared: &PreparedQueryDerivation,
+    obligation: &Obligation,
+) -> Result<String, Box<dyn Error>> {
+    if prepared.derivation.obligations.get(&obligation.key) != Some(obligation) {
+        return Err("obligation does not belong to the prepared query".into());
+    }
+    Ok(prepared
+        .identities
+        .identities()
+        .get(&obligation.key)
+        .ok_or("prepared obligation identity is missing")?
+        .reference())
 }
 
 /// Descriptive unresolved coordinate reference; it is not an obligation digest.
@@ -332,6 +360,188 @@ mod tests {
             baseline: None,
             output: None,
         }
+    }
+
+    fn query(
+        root: &std::path::Path,
+        arguments: &[&str],
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
+        let crate::cli::ParseOutcome::Run(parsed) = crate::cli::parse(arguments.iter().copied())?
+        else {
+            return Err("query did not parse as a command".into());
+        };
+        Ok(crate::commands::execute(parsed, root)?.payload.json)
+    }
+
+    fn references(
+        value: &serde_json::Value,
+        field: &str,
+    ) -> Result<BTreeSet<String>, Box<dyn Error>> {
+        let values = value.as_array().ok_or("expected reference array")?;
+        values
+            .iter()
+            .map(|value| {
+                let value = if field.is_empty() {
+                    value
+                } else {
+                    &value[field]
+                };
+                Ok(value
+                    .as_str()
+                    .ok_or("expected reference string")?
+                    .to_owned())
+            })
+            .collect()
+    }
+
+    #[test]
+    fn actual_queries_share_complete_references_before_presentation_filters()
+    -> Result<(), Box<dyn Error>> {
+        let repository = crate::test_support::example_repository()?;
+        let instant: UtcInstant = "2026-01-02T03:04:05Z".parse()?;
+        let session = prepare(
+            &SessionRequest::at(global(), CommandName::Obligations, instant),
+            repository.path(),
+        )?;
+        let (_, prepared) = derive_with_policy(&session, None, &[], &[])?;
+        let all = query(repository.path(), &["obligations"])?;
+        let all_refs = references(&all["result"]["obligations"], "id")?;
+        assert!(!all_refs.is_empty());
+        let prepared_refs = prepared
+            .obligations
+            .values()
+            .map(|value| obligation_id(&prepared, value))
+            .collect::<Result<BTreeSet<_>, _>>()?;
+        assert_eq!(all_refs, prepared_refs);
+        assert!(
+            all_refs
+                .iter()
+                .all(|value| value.starts_with("eqm:v2:obligation:sha256:"))
+        );
+
+        let first = prepared
+            .obligations
+            .values()
+            .next()
+            .ok_or("positive coordinate absent")?;
+        let unit = first.key.unit.as_str();
+        let ScopeSubject::Target(target) = &first.key.subject else {
+            return Err("example must have a target coordinate".into());
+        };
+        let subset = prepared
+            .obligations
+            .values()
+            .filter(|value| {
+                value.key.unit.as_str() == unit && value.key.subject == first.key.subject
+            })
+            .map(|value| obligation_id(&prepared, value))
+            .collect::<Result<BTreeSet<_>, _>>()?;
+        assert!(!subset.is_empty());
+        assert!(subset.len() < all_refs.len());
+        let filtered = query(
+            repository.path(),
+            &["obligations", "--unit", unit, "--target", target.as_str()],
+        )?;
+        assert_eq!(
+            references(&filtered["result"]["obligations"], "id")?,
+            subset
+        );
+        let context = query(
+            repository.path(),
+            &[
+                "context",
+                unit,
+                "--target",
+                target.as_str(),
+                "--max-bytes",
+                "1000000",
+            ],
+        )?;
+        assert_eq!(references(&context["result"]["obligations"], "id")?, subset);
+
+        let check = query(repository.path(), &["check"])?;
+        let finding_refs = check["result"]["findings"]
+            .as_array()
+            .ok_or("findings")?
+            .iter()
+            .filter(|value| value["diagnostic_code"] == "EQM-E0500")
+            .map(|value| {
+                Ok(value["obligation"]
+                    .as_str()
+                    .ok_or("finding reference")?
+                    .to_owned())
+            })
+            .collect::<Result<BTreeSet<_>, Box<dyn Error>>>()?;
+        assert_eq!(finding_refs, all_refs);
+        for args in [
+            vec!["matrix", "conformance"],
+            vec![
+                "matrix",
+                "conformance",
+                "--unit",
+                unit,
+                "--target",
+                target.as_str(),
+            ],
+        ] {
+            let matrix = query(repository.path(), &args)?;
+            let refs = matrix["result"]["cells"]
+                .as_array()
+                .ok_or("matrix cells")?
+                .iter()
+                .map(|cell| references(&cell["obligations"], ""))
+                .collect::<Result<Vec<_>, _>>()?
+                .into_iter()
+                .flatten()
+                .collect::<BTreeSet<_>>();
+            assert_eq!(
+                refs,
+                if args.len() == 2 {
+                    all_refs.clone()
+                } else {
+                    subset.clone()
+                }
+            );
+        }
+
+        let binding = session
+            .finalized()
+            .graph()
+            .bindings()
+            .values()
+            .find(|binding| binding.unit().as_str() == unit && binding.target() == target)
+            .ok_or("example binding")?;
+        let artifact = binding
+            .artifacts()
+            .values()
+            .values()
+            .next()
+            .ok_or("example artifact")?;
+        let baseline = session.workspace_digest().to_string();
+        let affected = query(
+            repository.path(),
+            &[
+                "--baseline",
+                &baseline,
+                "affected",
+                "--path",
+                artifact.path().as_str(),
+            ],
+        )?;
+        let affected_refs = references(&affected["result"]["obligations"], "")?;
+        assert!(!affected_refs.is_empty());
+        assert!(affected_refs.is_subset(&all_refs));
+        assert!(affected_refs.contains(&obligation_id(&prepared, first)?));
+
+        // Neither hiding missing rows nor rejecting foreign strengths mutates the universe.
+        let hidden = query(repository.path(), &["obligations", "--status", "satisfied"])?;
+        assert!(references(&hidden["result"]["obligations"], "id")?.is_empty());
+        assert_eq!(prepared.obligations.len(), all_refs.len());
+        let mut foreign = first.clone();
+        foreign.strength.minimum_count =
+            eqm_domain::PositiveCount::new(first.strength.minimum_count.get() + 1)?;
+        assert!(obligation_id(&prepared, &foreign).is_err());
+        Ok(())
     }
 
     #[test]

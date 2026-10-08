@@ -226,3 +226,16 @@ existing v2 numeric/NFC/JCS forms apply. No final obligation identity occurs
 inside the manifest. S053 owns representation/independent literal proof; S054
 binds its distinct digest into full obligation identity. Frozen component roots
 and v1 bytes remain unchanged. These projection bytes are not a new wire DTO.
+
+## DEV-035 S054 obligation coordinate allocation
+
+The pre-evidence coordinate domain is `eqm:v2:obligation` with the approved zero
+delimiter and typed ObligationDigest. Its exact root, checked scope variants,
+Missing/Present expected manifest states, optional release context and existing
+numeric/set/NFC forms are allocated in the governing COMMIT_SEQUENCE.md. Public
+references use `eqm:v2:obligation:` followed by the typed digest text. They grant no
+trust or checked build/source identity; S061/S132 separately bind candidate subjects
+to evaluation inputs. Frozen component roots and v1 digest domains/bytes remain
+unchanged. V1 DTO shapes and generated schema bytes are preserved; the reference
+strings explicitly identify v2. No new wire DTO or implicit reader is introduced
+at S054.

@@ -23,6 +23,8 @@ pub enum DigestDomain {
     RequirementScenarioBindings,
     /// Frozen expected logical selection manifest (v2).
     ExpectedSelectionManifest,
+    /// Complete pre-evidence obligation coordinate (v2).
+    Obligation,
     /// Shared comparison-context identity (v2).
     ComparisonContext,
     /// Exact stored raw object bytes (v2).
@@ -72,6 +74,7 @@ impl DigestDomain {
             Self::SemanticGraph => b"eqm:v1:semantic-graph",
             Self::SemanticGraphV2 => b"eqm:v2:semantic-graph",
             Self::Scenario => b"eqm:v2:scenario",
+            Self::Obligation => b"eqm:v2:obligation",
             Self::ExpectedSelectionManifest => b"eqm:v2:expected-selection-manifest",
             Self::RequirementScenarioBindings => b"eqm:v2:requirement-scenario-bindings",
             Self::ComparisonContext => b"eqm:v2:comparison-context",
@@ -374,6 +377,16 @@ impl Display for DigestParseError {
 
 impl Error for DigestParseError {}
 
+define_identity_digest!(
+    /// Complete pre-evidence obligation coordinate, not release authorization.
+    /// ```compile_fail
+    /// let coordinate = eqm_domain::ObligationDigest::hash_content(b"coordinate");
+    /// let _: eqm_domain::EvaluationContextDigest = coordinate;
+    /// ```
+    ObligationDigest,
+    DigestDomain::Obligation
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -475,6 +488,7 @@ mod tests {
             DigestDomain::Scenario,
             DigestDomain::RequirementScenarioBindings,
             DigestDomain::ExpectedSelectionManifest,
+            DigestDomain::Obligation,
             DigestDomain::ComparisonContext,
         ];
         let mut labels = BTreeSet::new();

@@ -58,9 +58,14 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         obligations: affected
             .obligations
             .iter()
-            .filter_map(|key| obligations.obligations.get(key))
-            .map(evaluation::obligation_id)
-            .collect(),
+            .map(|key| {
+                let value = obligations
+                    .obligations
+                    .get(key)
+                    .ok_or("affected obligation")?;
+                evaluation::obligation_id(&obligations, value)
+            })
+            .collect::<Result<_, _>>()?,
         conservative: affected.conservative,
     };
     let envelope = ReportEnvelope::new(

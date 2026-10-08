@@ -74,7 +74,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         (units.is_empty() || units.contains(obligation.key.unit.as_str()))
             && (targets.is_empty() || subject_matches(&obligation.key.subject, &targets))
     }) {
-        let id = evaluation::obligation_id(obligation);
+        let id = evaluation::obligation_id(&obligations, obligation)?;
         findings.insert(FindingDto {
             diagnostic_code: "EQM-E0500".to_owned(),
             obligation: Some(id.clone()),

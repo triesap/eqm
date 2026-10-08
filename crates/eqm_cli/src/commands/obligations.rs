@@ -40,7 +40,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
                         .as_deref()
                         .is_none_or(|target| subject_matches(&value.key.subject, target))
             })
-            .map(evaluation::obligation_dto)
+            .map(|value| evaluation::obligation_dto(&derived, value))
             .collect::<Result<BTreeSet<_>, _>>()?
     } else {
         BTreeSet::new()

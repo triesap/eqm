@@ -162,11 +162,9 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
                         .obligations
                         .iter()
                         .map(|key| {
-                            derived
-                                .obligations
-                                .get(key)
-                                .map(evaluation::obligation_id)
-                                .ok_or("matrix obligation")
+                            let obligation =
+                                derived.obligations.get(key).ok_or("matrix obligation")?;
+                            evaluation::obligation_id(&derived, obligation)
                         })
                         .collect::<Result<_, _>>()?,
                     diagnostic_codes: cell
@@ -177,7 +175,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
                         .collect(),
                 })
             })
-            .collect::<Result<BTreeSet<_>, &'static str>>()?,
+            .collect::<Result<BTreeSet<_>, Box<dyn Error>>>()?,
     };
     let envelope = ReportEnvelope::new(
         CommandIdentity::Matrix,

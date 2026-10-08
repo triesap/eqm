@@ -114,7 +114,7 @@ pub fn execute(parsed: ParsedCli, start: &Path) -> Result<CommandExecution, Box<
         .filter(|value| {
             value.key.unit.as_str() == unit && subject_matches(value, target.as_deref())
         })
-        .map(evaluation::obligation_dto)
+        .map(|value| evaluation::obligation_dto(&derived, value))
         .collect::<Result<BTreeSet<_>, _>>()?;
     let findings = obligations
         .iter()
