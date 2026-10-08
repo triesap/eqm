@@ -42,10 +42,16 @@ seven end-to-end, 453 owning executions and separate allocated source review.
 All seven kind-compatible prepared projections share the strict protocol
 converter; raw bytes and typed rejection causes remain intact without trust or effects.
 
-There are 58 numbered local acceptances. S047 denominator safety and exact-scope
+S060 pure candidate normalization passed 921 workspace executions plus seven
+end-to-end, 275 owning executions and separate allocated source review.
+Identical transport is idempotent; full subject/lineage groups retain every raw,
+mapping and provenance reference. Relevant contradictions remain Unknown;
+structural matching grants no authentication or observation credit.
+
+There are 59 numbered local acceptances. S047 denominator safety and exact-scope
 contributions are retained; identity is accepted; residual aggregation remains S073.
-Remaining numbered work is S047 plus S060–S211 (153 unaccepted steps). Next is
-S060, followed by S061–S076 and mandatory independent complete-universe/reference
+Remaining numbered work is S047 plus S061–S211 (152 unaccepted steps). Next is
+S061, followed by S062–S076 and mandatory independent complete-universe/reference
 evaluator acceptance before S077; continue subsequent eligible work under the
 original gates.
 
@@ -54,4 +60,4 @@ issue closure follows from allocated checkpoints. Extended/Linux/live product,
 crypto, host, packaging/signing and operational readiness remain unverified.
 No current owner-only software blocker or human release-test milestone.
 No push, publication, deployment or signing is authorized.
-See [checked conversion report](reports/S059.md), [complete query report](reports/S058.md), [real derivation report](reports/S057.md), [inventory supporting-facts report](reports/S056.md), [structural-observation report](reports/S055.md), [obligation-identity report](reports/S054.md), [expected-selection report](reports/S053.md) and [scope report](reports/S052.md) and [plan](COMMIT_SEQUENCE.md).
+See [normalization report](reports/S060.md), [checked conversion report](reports/S059.md), [complete query report](reports/S058.md), [real derivation report](reports/S057.md), [inventory supporting-facts report](reports/S056.md), [structural-observation report](reports/S055.md), [obligation-identity report](reports/S054.md), [expected-selection report](reports/S053.md) and [scope report](reports/S052.md) and [plan](COMMIT_SEQUENCE.md).

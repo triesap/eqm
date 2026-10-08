@@ -80,7 +80,7 @@ impl FromStr for SourceCommit {
 }
 
 /// The exact evaluated scope subject.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum EvidenceScopeSubject {
     /// One target.
     Target(TargetId),
@@ -102,7 +102,7 @@ impl EvidenceScopeSubject {
 }
 
 /// Replay-bound repository and implementation subject.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct EvidenceSubject {
     repository: RepositoryIdentity,
     repository_id_digest: Sha256Digest,
@@ -1016,7 +1016,7 @@ pub struct EvidenceLineageParts {
 ///
 /// All five identities are required. Holding a lineage record confers no trust
 /// and is not derived from timestamps, file counts or directory ordering.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct EvidenceLineage {
     plan: PlanId,
     campaign: CampaignId,

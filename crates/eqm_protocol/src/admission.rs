@@ -24,9 +24,9 @@ use eqm_domain::{
     EvidencePayload, EvidenceResult, EvidenceResultBuildError, EvidenceScopeSubject,
     EvidenceSpecificationDigest, EvidenceSubject, ExecutionPayload, ExpectedLineageAuthority,
     Facet, FullRequirementId, OwnerRef, PolicySelectionDigest, PositiveCount, ProfileId,
-    ProfileSelection, ProviderId, RepositoryIdentity, Revision, RunnerDigest, SelectorText,
-    SemanticEvidenceDigest, Sha256Digest, SourceCommit, SymbolicValueId, TargetConfigurationDigest,
-    TargetId, TrustLevel, UnitId, UtcInstant,
+    ProfileSelection, ProviderId, RawObjectDigest, RepositoryIdentity, Revision, RunnerDigest,
+    SelectorText, SemanticEvidenceDigest, Sha256Digest, SourceCommit, SymbolicValueId,
+    TargetConfigurationDigest, TargetId, TrustLevel, UnitId, UtcInstant,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -159,6 +159,7 @@ pub struct AdmittedEvidenceV2 {
     lineage: EvidenceLineage,
     execution: EvidenceExecution,
     semantic_identity: SemanticEvidenceDigest,
+    raw_identity: RawObjectDigest,
     raw_bytes: Vec<u8>,
     evidence_spec_digest: EvidenceSpecificationDigest,
     contract_digest: ContractDigest,
@@ -192,6 +193,12 @@ impl AdmittedEvidenceV2 {
     #[must_use]
     pub const fn semantic_identity(&self) -> SemanticEvidenceDigest {
         self.semantic_identity
+    }
+
+    /// Returns the checked exact original-byte identity; it grants no trust.
+    #[must_use]
+    pub const fn raw_identity(&self) -> RawObjectDigest {
+        self.raw_identity
     }
 
     /// Returns the exact original bytes.
@@ -723,6 +730,7 @@ pub fn admit_evidence(
         lineage: lineage.clone(),
         execution: execution.clone(),
         semantic_identity: checked.semantic_identity(),
+        raw_identity: checked.raw_identity(),
         raw_bytes: checked.raw_bytes().to_vec(),
         evidence_spec_digest: context.evidence_spec_digest,
         contract_digest: context.contract_digest,

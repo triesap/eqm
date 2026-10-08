@@ -4,12 +4,54 @@
 //! fetches network content. Evaluation is pure over already-read evidence and
 //! an explicitly supplied evaluation instant.
 
-use eqm_domain::{EvidenceResult, UtcInstant};
+use eqm_domain::{EvidenceResult, EvidenceSpecId, SelectorText, UtcInstant};
+use eqm_engine::{
+    CandidateNormalizationError, EvidenceNormalizationCandidate, MAX_CANDIDATE_DELIVERIES,
+    NormalizedEvidenceSet, normalize_evidence_candidates,
+};
+use eqm_protocol::AdmittedEvidenceV2;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 /// The maximum number of evidence records one read may return.
 pub const MAX_EVIDENCE_READ: usize = 10_000;
+
+/// One actual checked admission and explicit mapping/provenance references.
+/// Structural admission and normalization confer no authentication or trust.
+#[derive(Clone, Copy, Debug)]
+pub struct AdmittedEvidenceDelivery<'a> {
+    /// Opaque result of the shared checked conversion boundary.
+    pub admitted: &'a AdmittedEvidenceV2,
+    /// Explicit local evidence mapping; not inferred from a filename.
+    pub evidence_spec_id: &'a EvidenceSpecId,
+    /// Explicit immutable delivery/provenance reference.
+    pub provenance: &'a SelectorText,
+}
+
+/// Normalizes admitted candidate data, retaining every raw and provenance reference.
+///
+/// This pure boundary invokes no reader, runner, verifier, clock or store. It
+/// mints no observation count or authentication. Complete-coordinate eligibility,
+/// authorized campaign selection and protected verification remain distinct.
+pub fn normalize_admitted_evidence<'a>(
+    deliveries: &[AdmittedEvidenceDelivery<'a>],
+) -> Result<NormalizedEvidenceSet<'a>, CandidateNormalizationError> {
+    if deliveries.len() > MAX_CANDIDATE_DELIVERIES {
+        return Err(CandidateNormalizationError::LimitExceeded);
+    }
+    let candidates = deliveries
+        .iter()
+        .map(|delivery| EvidenceNormalizationCandidate {
+            result: delivery.admitted.result(),
+            lineage: delivery.admitted.lineage(),
+            semantic_identity: delivery.admitted.semantic_identity(),
+            raw_identity: delivery.admitted.raw_identity(),
+            evidence_spec_id: delivery.evidence_spec_id,
+            provenance: delivery.provenance,
+        })
+        .collect::<Vec<_>>();
+    normalize_evidence_candidates(&candidates)
+}
 
 /// Explicit bounded request to read already-acquired evidence.
 ///

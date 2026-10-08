@@ -92,7 +92,7 @@ pub enum CoverageStatus {
     Covered,
     /// No result matched every coordinate.
     Missing,
-    /// Duplicate immutable result identities make coverage unknowable.
+    /// Conflicting relevant immutable assertions make coverage unknowable.
     Unknown,
 }
 
@@ -107,6 +107,8 @@ pub struct CoverageReport {
     pub rejected: BTreeMap<Sha256Digest, BTreeSet<CoverageMismatch>>,
     /// Repeated immutable result IDs.
     pub duplicate_result_ids: BTreeSet<Sha256Digest>,
+    /// Different compatible domain records claiming one immutable result ID.
+    pub conflicting_result_ids: BTreeSet<Sha256Digest>,
 }
 
 /// Maps immutable evidence results to an obligation by exact coordinates only.
@@ -119,6 +121,8 @@ pub fn evaluate_evidence_coverage(
     let mut duplicates = BTreeSet::new();
     let mut covered = BTreeSet::new();
     let mut rejected = BTreeMap::new();
+    let mut matching = BTreeMap::new();
+    let mut conflicts = BTreeSet::new();
     for candidate in candidates {
         let result = candidate.result;
         if !seen.insert(result.id()) {
@@ -126,6 +130,11 @@ pub fn evaluate_evidence_coverage(
         }
         let mismatches = mismatches(expected, candidate);
         if mismatches.is_empty() {
+            if let Some(previous) = matching.insert(result.id(), result)
+                && previous != result
+            {
+                conflicts.insert(result.id());
+            }
             covered.insert(result.id());
         } else {
             rejected
@@ -134,10 +143,10 @@ pub fn evaluate_evidence_coverage(
                 .extend(mismatches);
         }
     }
-    for duplicate in &duplicates {
-        covered.remove(duplicate);
+    for conflict in &conflicts {
+        covered.remove(conflict);
     }
-    let status = if duplicates.is_empty() {
+    let status = if conflicts.is_empty() {
         if covered.is_empty() {
             CoverageStatus::Missing
         } else {
@@ -151,10 +160,11 @@ pub fn evaluate_evidence_coverage(
         covered,
         rejected,
         duplicate_result_ids: duplicates,
+        conflicting_result_ids: conflicts,
     }
 }
 
-fn mismatches(
+pub(super) fn mismatches(
     expected: &CoverageExpectation,
     candidate: &EvidenceCandidate<'_>,
 ) -> BTreeSet<CoverageMismatch> {

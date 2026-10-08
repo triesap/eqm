@@ -773,6 +773,43 @@ original S057 standard/engine owning gates remain mandatory; domain owning tests
 join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
+
+**DEV-035 S060 implementation allocation:** repair pure coverage's duplicate-ID
+poisoning: repeated equal records remain one compatible assertion; only different
+matching records claiming one immutable result identity are Unknown. Rejected
+unrelated duplicates remain diagnostics and cannot poison compatible coverage.
+Preserve duplicate-ID diagnostics and add explicit conflicting-result diagnostics.
+
+Engine adds bounded pure normalization of admitted candidate data, keyed by the
+complete typed EvidenceSubject and all five explicit EvidenceLineage identities.
+An attempt retains every distinct SemanticEvidenceDigest, exact RawObjectDigest,
+local EvidenceSpecId and explicit SelectorText provenance reference. Identical
+delivery and alternate encodings share one assertion; different logical cases,
+runs, campaigns, plans or subjects remain independent. Contradictory assertions
+for one attempt remain visible; no last-writer-wins. Deterministic pure ordering
+uses additive Ord on existing subject/scope/lineage values, not wire canonicalization.
+Validate semantic/result identity agreement and reject conflicting domain data
+for one semantic identity. Bound input deliveries at the existing 10,000-record
+application read limit; overflow fails explicitly without truncation.
+
+Application consumes actual opaque AdmittedEvidenceV2 plus explicit mapping and
+provenance references, then calls this engine normalizer without I/O or trust.
+Protocol retains the already-computed raw identity alongside original bytes and
+exposes a typed accessor, with no wire/schema change. A normalized coverage view
+matches the existing structural expectation first; only multiple compatible
+assertions for one immutable attempt cause Unknown. Rejected assertions remain
+auditable. This is structural data, never authentication or conformance; S061
+still owns complete-coordinate/eligible-input integration and later trust/storage
+steps independently authenticate inputs and persist conflicts across restart.
+
+Use actual S059 checked application admission, prepared component projections,
+literal raw/provenance sets, identical/alternate transport, pass/fail same-attempt
+contradiction, independent cases within one run, every lineage/subject separation,
+permutation/idempotency, irrelevant rejection and inclusive bound controls.
+Preserve original engine/application owning, standard and independent acceptance
+gates. RA03/RA08/RA15 receive local normalization contributions only; no whole
+regression, storage or outcome closure. Continue S061 after the green commit.
+
 **DEV-035 S059 implementation allocation:** reuse the existing protocol
 `admit_evidence` as the sole DTO-to-domain converter. Application adds the pure
 `admit_evidence_bytes` entry point: strict explicit v2 parsing of exact bounded

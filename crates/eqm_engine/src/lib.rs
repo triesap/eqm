@@ -8,6 +8,7 @@ extern crate self as eqm_engine;
 
 mod affected;
 mod applicability;
+mod candidates;
 mod comparison;
 mod conformance;
 mod coverage;
@@ -34,6 +35,12 @@ pub use affected::{AffectedIndexes, AffectedSet, ChangedFile, analyze_affected_s
 pub use applicability::{
     ApplicabilityContext, ApplicabilityError, TruthValue, evaluate_applicability,
     evaluate_participation,
+};
+pub use candidates::{
+    CandidateNormalizationError, EvidenceDeliveryReference, EvidenceNormalizationCandidate,
+    ImmutableEvidenceAttempt, MAX_CANDIDATE_DELIVERIES, NormalizedCoverageReport,
+    NormalizedEvidenceAssertion, NormalizedEvidenceAttempt, NormalizedEvidenceSet,
+    evaluate_normalized_evidence_coverage, normalize_evidence_candidates,
 };
 pub use comparison::{
     ComparisonEligibility, ComparisonParticipant, evaluate_comparison_eligibility,

@@ -30,6 +30,19 @@ store access, clock, execution or legacy fallback. Later ingress and frozen
 evaluation steps consume this same boundary with their own independently
 prepared expectations; the existing legacy domain read port is preserved.
 
+## Candidate normalization (S060)
+
+S060 adds pure `normalize_admitted_evidence` over explicit
+`AdmittedEvidenceDelivery` references. Engine's `normalize_evidence_candidates`
+returns an opaque `NormalizedEvidenceSet` grouped by complete typed subject and
+lineage, retaining each semantic assertion's raw/mapping/provenance references.
+The inclusive input bound is 10,000 deliveries; exceeding it returns
+`CandidateNormalizationError::LimitExceeded` before allocation. Identity
+inconsistency is explicit rather than silently merged. Group/transport counts
+are not observation credit or independent verification. The normalized
+structural coverage API exposes only relevant conflicting attempts after
+matching; full-coordinate eligibility and authentication remain separate.
+
 ## Decision and query content
 
 Every decision binds scope, required universe/completeness, authority and policy/profile revisions, exact participant subjects, selected campaigns, input references, evaluator identity, evaluation time, and relevant validity/trust context. Include obligation statuses, accepted/rejected evidence with reasons, expected missing cases, exposure comparisons, applied waivers and aggregate conclusions.

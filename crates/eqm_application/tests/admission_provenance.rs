@@ -10,8 +10,9 @@
 //! projection.
 
 use eqm_application::{
-    EvidenceConversionError, PolicyProvenanceV2, SessionRequest, admit_evidence_bytes, prepare,
-    prepare_policy_provenance, prepare_target_configuration,
+    AdmittedEvidenceDelivery, EvidenceConversionError, PolicyProvenanceV2, SessionRequest,
+    admit_evidence_bytes, normalize_admitted_evidence, prepare, prepare_policy_provenance,
+    prepare_target_configuration,
 };
 use eqm_domain::{
     AdapterDigest, BindingDigest, BindingId, CampaignId, ContractDigest, DimensionId,
@@ -23,7 +24,9 @@ use eqm_domain::{
     TargetId, UnitId, UtcInstant,
 };
 use eqm_engine::{
-    AuthorityOrigin, EvaluationMode, PolicyProfileRequest, PolicyRef, ProfileRequest,
+    AuthorityOrigin, CandidateNormalizationError, CoverageExpectation, CoverageMismatch,
+    CoverageStatus, EvaluationMode, MAX_CANDIDATE_DELIVERIES, PolicyProfileRequest, PolicyRef,
+    ProfileRequest, evaluate_normalized_evidence_coverage,
 };
 use eqm_manifest::{canonicalize_binding_v2, canonicalize_evidence_spec_v2};
 use eqm_protocol::{
@@ -1065,5 +1068,369 @@ fn application_reference_identity_and_decode_errors_remain_distinct() -> Result<
     }
     let error = EvidenceConversionError::Admission(EvidenceAdmissionError::IdentityMismatch);
     assert!(error.source().is_some());
+    Ok(())
+}
+
+fn coverage_context(
+    context: &EvidenceAdmissionContext,
+    spec: &EvidenceSpecId,
+) -> CoverageExpectation {
+    CoverageExpectation {
+        evidence_spec_id: spec.clone(),
+        evidence_spec_digest: context.evidence_spec_digest.as_digest(),
+        requirement: context.requirement.clone(),
+        facet: Facet::Behavior,
+        subject: context.subject.scope().clone(),
+        target: context.target.clone(),
+        unit: context.unit.clone(),
+        kind: context.kind,
+        contract_digest: context.contract_digest.as_digest(),
+        binding_digest: context.binding_digest.as_digest(),
+        policy_digest: context.policy_digest.as_digest(),
+        runner_digest: context.runner_digest.map(RunnerDigest::as_digest),
+        adapter_digest: context.adapter_digest.map(AdapterDigest::as_digest),
+        profiles: context.profiles.clone(),
+        release_record_digest: context.release_record_digest,
+    }
+}
+
+#[test]
+fn real_admitted_delivery_normalization_is_idempotent_and_conflicts_are_relevant()
+-> Result<(), Box<dyn Error>> {
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let context = context(&provenance, None)?;
+    let value = record(&provenance, None)?;
+    let checked = seal(value.clone())?;
+    let passed = admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &context)?;
+    let pretty = serde_json::to_vec_pretty(checked.record())?;
+    let alternate = admit_evidence_bytes(&pretty, &lineage()?, &execution()?, &context)?;
+    assert_eq!(
+        passed.raw_identity(),
+        eqm_domain::RawObjectDigest::hash_content(checked.raw_bytes())
+    );
+    assert_eq!(
+        alternate.raw_identity(),
+        eqm_domain::RawObjectDigest::hash_content(&pretty)
+    );
+    assert_ne!(passed.raw_identity(), alternate.raw_identity());
+    assert_eq!(passed.semantic_identity(), alternate.semantic_identity());
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let receipt1 = SelectorText::new("receipt.one")?;
+    let receipt2 = SelectorText::new("receipt.two")?;
+    let receipt3 = SelectorText::new("receipt.three")?;
+    let receipts = [
+        AdmittedEvidenceDelivery {
+            admitted: &passed,
+            evidence_spec_id: &spec,
+            provenance: &receipt1,
+        },
+        AdmittedEvidenceDelivery {
+            admitted: &alternate,
+            evidence_spec_id: &spec,
+            provenance: &receipt2,
+        },
+        AdmittedEvidenceDelivery {
+            admitted: &passed,
+            evidence_spec_id: &spec,
+            provenance: &receipt3,
+        },
+    ];
+    fs::create_dir_all(repository.path().join(".eqm/results"))?;
+    fs::write(
+        repository.path().join(".eqm/results/poison.json"),
+        b"not evidence input",
+    )?;
+    let before = file_snapshot(repository.path())?;
+    let normalized = normalize_admitted_evidence(&receipts)?;
+    assert_eq!(normalized.attempts().len(), 1);
+    let (key, attempt) = normalized
+        .attempts()
+        .first_key_value()
+        .ok_or("attempt group")?;
+    assert_eq!(key.subject(), &context.subject);
+    assert_eq!(key.lineage(), &lineage()?);
+    assert!(!attempt.has_conflict());
+    assert_eq!(attempt.assertions().len(), 1);
+    let assertion = attempt
+        .assertions()
+        .get(&passed.semantic_identity())
+        .ok_or("semantic assertion")?;
+    assert_eq!(assertion.deliveries().len(), 3);
+    assert_eq!(
+        assertion
+            .deliveries()
+            .iter()
+            .map(|x| x.raw_identity())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from([passed.raw_identity(), alternate.raw_identity()])
+    );
+    assert_eq!(
+        assertion
+            .deliveries()
+            .iter()
+            .map(|x| x.provenance().clone())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from([receipt1.clone(), receipt2.clone(), receipt3.clone()])
+    );
+    let expected = coverage_context(&context, &spec);
+    let coverage = evaluate_normalized_evidence_coverage(&expected, &normalized);
+    assert_eq!(coverage.coverage.status, CoverageStatus::Covered);
+    assert_eq!(coverage.coverage.covered.len(), 1);
+    assert!(coverage.conflicting_attempts.is_empty());
+    for order in [
+        [0, 1, 2],
+        [0, 2, 1],
+        [1, 0, 2],
+        [1, 2, 0],
+        [2, 0, 1],
+        [2, 1, 0],
+    ] {
+        let repeated = [
+            receipts[order[0]],
+            receipts[order[1]],
+            receipts[order[2]],
+            receipts[order[0]],
+        ];
+        let permuted = normalize_admitted_evidence(&repeated)?;
+        assert_eq!(permuted, normalized);
+        assert_eq!(
+            evaluate_normalized_evidence_coverage(&expected, &permuted),
+            coverage
+        );
+    }
+    let mut failed = value;
+    let EvidencePayloadV2Dto::Test { execution: payload } = &mut failed.payload else {
+        return Err("test payload".into());
+    };
+    payload.attempts[0].outcome = "failed".to_owned();
+    payload.counts.passed = WireUint::new(0);
+    payload.counts.failed = WireUint::new(1);
+    let failed = seal(failed)?;
+    let failed = admit_evidence_bytes(failed.raw_bytes(), &lineage()?, &execution()?, &context)?;
+    let failed_receipt = SelectorText::new("receipt.failed")?;
+    let failed_delivery = AdmittedEvidenceDelivery {
+        admitted: &failed,
+        evidence_spec_id: &spec,
+        provenance: &failed_receipt,
+    };
+    let conflicts =
+        normalize_admitted_evidence(&[receipts[0], failed_delivery, receipts[1], failed_delivery])?;
+    let conflict_report = evaluate_normalized_evidence_coverage(&expected, &conflicts);
+    assert_eq!(conflicts.attempts().len(), 1);
+    assert!(
+        conflicts
+            .attempts()
+            .values()
+            .all(|x| x.has_conflict() && x.assertions().len() == 2)
+    );
+    assert_eq!(conflict_report.coverage.status, CoverageStatus::Unknown);
+    assert!(conflict_report.coverage.covered.is_empty());
+    assert_eq!(conflict_report.conflicting_attempts.len(), 1);
+    assert_eq!(
+        normalize_admitted_evidence(&[failed_delivery, receipts[1], receipts[0]])?,
+        conflicts
+    );
+    // A genuinely different prepared binding/specification is rejected before
+    // conflict relevance, while every delivery remains in the audit grouping.
+    assert_eq!(file_snapshot(repository.path())?, before);
+    let path = repository
+        .path()
+        .join("eqm/bindings/android.auth_signup.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path)?.replace("signupIdentifierDefaultsToEmail", "otherSelection"),
+    )?;
+    let other_session = session_for(repository.path())?;
+    let other_provenance = projections(&other_session)?;
+    assert_ne!(other_provenance.binding_digest, provenance.binding_digest);
+    assert_ne!(
+        other_provenance.evidence_spec_digest,
+        provenance.evidence_spec_digest
+    );
+    let other_checked = seal(record(&other_provenance, None)?)?;
+    let other = admit_evidence_bytes(
+        other_checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &self::context(&other_provenance, None)?,
+    )?;
+    let other_receipt = SelectorText::new("receipt.unrelated")?;
+    let other_delivery = AdmittedEvidenceDelivery {
+        admitted: &other,
+        evidence_spec_id: &spec,
+        provenance: &other_receipt,
+    };
+    let unrelated = normalize_admitted_evidence(&[other_delivery, receipts[0], other_delivery])?;
+    let unrelated_report = evaluate_normalized_evidence_coverage(&expected, &unrelated);
+    assert!(unrelated.attempts().values().all(|x| x.has_conflict()));
+    assert_eq!(unrelated_report.coverage.status, CoverageStatus::Covered);
+    assert_eq!(
+        unrelated_report.coverage.covered,
+        BTreeSet::from([passed.result().id()])
+    );
+    assert!(unrelated_report.conflicting_attempts.is_empty());
+    assert!(
+        unrelated_report.coverage.rejected[&other.result().id()]
+            .contains(&CoverageMismatch::BindingDigest)
+    );
+    assert!(
+        unrelated_report.coverage.rejected[&other.result().id()]
+            .contains(&CoverageMismatch::EvidenceSpecDigest)
+    );
+    // Check the no-effects assertion before the deliberate fixture edit, and
+    // again against the exact state after it. Neither normalization reads poison.
+    let mut expected_before = before;
+    expected_before.insert(
+        path.strip_prefix(repository.path())?.to_owned(),
+        fs::read(&path)?,
+    );
+    assert_eq!(file_snapshot(repository.path())?, expected_before);
+    let at_bound = vec![receipts[0]; MAX_CANDIDATE_DELIVERIES];
+    assert_eq!(normalize_admitted_evidence(&at_bound)?.attempts().len(), 1);
+    let over_bound = vec![receipts[0]; MAX_CANDIDATE_DELIVERIES + 1];
+    assert_eq!(
+        normalize_admitted_evidence(&over_bound),
+        Err(CandidateNormalizationError::LimitExceeded)
+    );
+    assert!(normalize_admitted_evidence(&[])?.attempts().is_empty());
+    Ok(())
+}
+
+#[test]
+fn admitted_normalization_keeps_each_lineage_axis_and_full_subject_independent()
+-> Result<(), Box<dyn Error>> {
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let context = context(&provenance, None)?;
+    let checked = seal(record(&provenance, None)?)?;
+    let base = admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &context)?;
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let base_receipt = SelectorText::new("receipt.base")?;
+    let changed_receipt = SelectorText::new("receipt.changed")?;
+    let base_delivery = AdmittedEvidenceDelivery {
+        admitted: &base,
+        evidence_spec_id: &spec,
+        provenance: &base_receipt,
+    };
+    let expected = coverage_context(&context, &spec);
+    for (plan, campaign, run, case, attempt) in [
+        (
+            "plan.other",
+            "campaign.signup",
+            "run.one",
+            "case.identifier",
+            "attempt.one",
+        ),
+        (
+            "plan.release",
+            "campaign.other",
+            "run.one",
+            "case.identifier",
+            "attempt.one",
+        ),
+        (
+            "plan.release",
+            "campaign.signup",
+            "run.other",
+            "case.identifier",
+            "attempt.one",
+        ),
+        (
+            "plan.release",
+            "campaign.signup",
+            "run.one",
+            "case.other",
+            "attempt.one",
+        ),
+        (
+            "plan.release",
+            "campaign.signup",
+            "run.one",
+            "case.identifier",
+            "attempt.other",
+        ),
+    ] {
+        let lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(PlanId::new(plan)?),
+            campaign: Some(CampaignId::new(campaign)?),
+            run: Some(RunId::new(run)?),
+            logical_case: Some(LogicalCaseId::new(case)?),
+            attempt: Some(eqm_domain::AttemptId::new(attempt)?),
+        })?;
+        let execution = EvidenceExecution::new(
+            RunId::new(run)?,
+            LogicalCaseId::new(case)?,
+            vec![eqm_domain::AttemptId::new(attempt)?],
+        )?;
+        let mut independent = context.clone();
+        independent.expected_lineage =
+            ExpectedLineageAuthority::new(PlanId::new(plan)?, CampaignId::new(campaign)?);
+        let other = admit_evidence_bytes(checked.raw_bytes(), &lineage, &execution, &independent)?;
+        let normalized = normalize_admitted_evidence(&[
+            base_delivery,
+            AdmittedEvidenceDelivery {
+                admitted: &other,
+                evidence_spec_id: &spec,
+                provenance: &changed_receipt,
+            },
+        ])?;
+        assert_eq!(
+            normalized.attempts().len(),
+            2,
+            "{plan}/{campaign}/{run}/{case}/{attempt}"
+        );
+        assert!(normalized.attempts().values().all(|x| !x.has_conflict()));
+        assert!(
+            normalized
+                .attempts()
+                .keys()
+                .any(|x| x.lineage() == &lineage)
+        );
+        let report = evaluate_normalized_evidence_coverage(&expected, &normalized);
+        assert_eq!(report.coverage.status, CoverageStatus::Covered);
+        assert!(report.conflicting_attempts.is_empty());
+    }
+    let mut changed = checked.record().clone();
+    let artifact = Sha256Digest::hash_content(b"different synthetic artifact");
+    changed.subject.artifact_digest = Some(artifact.to_string());
+    let mut independent = context.clone();
+    let subject = &context.subject;
+    independent.subject = EvidenceSubject::new(
+        subject.repository().clone(),
+        subject.repository_id_digest(),
+        subject.scope().clone(),
+        subject.source_commit().clone(),
+        subject.build_id().cloned(),
+        Some(artifact),
+        subject.target_configuration_digest(),
+    );
+    let changed = seal(changed)?;
+    let other = admit_evidence_bytes(
+        changed.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &independent,
+    )?;
+    let normalized = normalize_admitted_evidence(&[
+        base_delivery,
+        AdmittedEvidenceDelivery {
+            admitted: &other,
+            evidence_spec_id: &spec,
+            provenance: &changed_receipt,
+        },
+    ])?;
+    assert_eq!(normalized.attempts().len(), 2);
+    assert!(normalized.attempts().values().all(|x| !x.has_conflict()));
+    assert_eq!(
+        normalized
+            .attempts()
+            .keys()
+            .map(|x| x.subject().artifact_digest())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from([subject.artifact_digest(), Some(artifact)])
+    );
     Ok(())
 }
