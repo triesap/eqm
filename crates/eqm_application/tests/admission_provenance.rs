@@ -1161,6 +1161,37 @@ fn complete_coordinates_with_selection(
     ),
     Box<dyn Error>,
 > {
+    let (prepared, key, selection) = prepared_coordinates_with_selection(
+        session,
+        region,
+        release_context,
+        cases,
+        alternatives,
+        independent_principals,
+    )?;
+    let identity = prepared
+        .identities()
+        .get(&key)
+        .ok_or("complete reference missing")?
+        .digest();
+    Ok((key, identity, selection))
+}
+
+fn prepared_coordinates_with_selection(
+    session: &eqm_application::PreparedSession,
+    region: &str,
+    release_context: Option<Sha256Digest>,
+    cases: Vec<LogicalCaseId>,
+    alternatives: Vec<eqm_domain::FrozenSelectionAlternative>,
+    independent_principals: bool,
+) -> Result<
+    (
+        eqm_application::PreparedObligationIdentities,
+        eqm_engine::ObligationKey,
+        eqm_domain::ExpectedSelectionManifest,
+    ),
+    Box<dyn Error>,
+> {
     let request = eqm_application::PolicySelectionRequest::development(
         Some(eqm_application::PolicyReference::new(
             PolicyId::new("consumer.critical_flow")?,
@@ -1258,12 +1289,7 @@ fn complete_coordinates_with_selection(
     )?;
     let identities =
         eqm_application::prepare_obligation_identities(session.finalized(), &expected)?;
-    let identity = identities
-        .identities()
-        .get(&key)
-        .ok_or("complete reference missing")?
-        .digest();
-    Ok((key, identity, selected))
+    Ok((identities, key, selected))
 }
 
 #[test]
@@ -1478,7 +1504,7 @@ fn actual_frozen_alternative_is_not_selected_from_observed_passes() -> Result<()
         ],
         LogicalCaseId::new("option.a")?,
     )?;
-    let (key, identity, selection) = complete_coordinates_with_selection(
+    let (prepared, key, selection) = prepared_coordinates_with_selection(
         &session,
         "eu",
         None,
@@ -1486,6 +1512,7 @@ fn actual_frozen_alternative_is_not_selected_from_observed_passes() -> Result<()
         vec![alternative],
         false,
     )?;
+    let identity = prepared.identities().get(&key).ok_or("identity")?.digest();
     let expected = vec![CompleteCoverageExpectation {
         structural: coverage_context(&context, &spec),
         coordinate: key.clone(),
@@ -1565,16 +1592,35 @@ fn actual_frozen_alternative_is_not_selected_from_observed_passes() -> Result<()
         collect_admitted_observations(&expected, &[deliveries[0], deliveries[1], deliveries[2]])?,
         complete
     );
+    let count_missing = eqm_application::assess_admitted_count_constraints(
+        &prepared,
+        &expected,
+        &[deliveries[0], deliveries[2]],
+    )?;
+    assert_eq!(
+        count_missing.status(),
+        eqm_engine::LogicalCountConstraintStatus::Missing
+    );
+    assert_eq!(count_missing.capacity(), 1);
+    assert_eq!(count_missing.observations(), &missing);
+    let count =
+        eqm_application::assess_admitted_count_constraints(&prepared, &expected, &deliveries)?;
+    assert_eq!(
+        count.status(),
+        eqm_engine::LogicalCountConstraintStatus::CapacityMet
+    );
+    assert_eq!(count.capacity(), 2);
+    assert_eq!(count.observations(), &complete);
     assert_eq!(file_snapshot(repository.path())?, before);
     Ok(())
 }
 
-fn multi_source_identity(
+fn prepared_multi_source_identities(
     session: &eqm_application::PreparedSession,
     key: &eqm_engine::ObligationKey,
     release_context: Option<Sha256Digest>,
     manifests: Vec<eqm_domain::ExpectedSelectionManifest>,
-) -> Result<eqm_domain::ObligationDigest, Box<dyn Error>> {
+) -> Result<eqm_application::PreparedObligationIdentities, Box<dyn Error>> {
     let request = eqm_application::PolicySelectionRequest::development(
         Some(eqm_application::PolicyReference::new(
             PolicyId::new("consumer.critical_flow")?,
@@ -1601,13 +1647,10 @@ fn multi_source_identity(
         Some(BTreeMap::from([(key.clone(), manifests)])),
         None,
     )?;
-    let identities =
-        eqm_application::prepare_obligation_identities(session.finalized(), &selections)?;
-    Ok(identities
-        .identities()
-        .get(key)
-        .ok_or("complete multi-source identity")?
-        .digest())
+    Ok(eqm_application::prepare_obligation_identities(
+        session.finalized(),
+        &selections,
+    )?)
 }
 
 #[test]
@@ -1677,12 +1720,13 @@ channel = "development"
         vec![],
         false,
     )?;
-    let identity = multi_source_identity(
+    let prepared = prepared_multi_source_identities(
         &session,
         &key,
         first_context.release_record_digest,
         vec![first_selection.clone(), second_selection.clone()],
     )?;
+    let identity = prepared.identities().get(&key).ok_or("identity")?.digest();
     let expected = vec![
         CompleteCoverageExpectation {
             structural: coverage_context(&first_context, &first_spec),
@@ -1768,6 +1812,26 @@ channel = "development"
     );
     assert!(report.missing().values().all(BTreeSet::is_empty));
     assert!(report.conflicts().is_empty());
+    let count = eqm_application::assess_admitted_count_constraints(
+        &prepared,
+        &expected,
+        &[first_delivery, second_delivery, second_delivery],
+    )?;
+    assert_eq!(
+        count.status(),
+        eqm_engine::LogicalCountConstraintStatus::CapacityMet
+    );
+    assert_eq!(count.capacity(), 1);
+    assert_eq!(count.observations(), &report);
+    assert_eq!(
+        eqm_application::assess_admitted_count_constraints(
+            &prepared,
+            &expected,
+            &[first_delivery]
+        )?
+        .status(),
+        eqm_engine::LogicalCountConstraintStatus::Missing
+    );
     let missing = collect_admitted_observations(&expected, &[first_delivery])?;
     assert_eq!(missing.status(), CoverageStatus::Missing);
     assert_eq!(missing.units(), report.units());
@@ -1847,34 +1911,29 @@ test_id = "secondExactSelector"
         vec![],
         false,
     )?;
-    let request = eqm_application::PolicySelectionRequest::development(
-        Some(eqm_application::PolicyReference::new(
-            PolicyId::new("consumer.critical_flow")?,
-            Some(Revision::new(1)?),
-        )),
-        vec![eqm_application::ProfileSelection::new(
-            ProfileId::new("audience.default")?,
-            Some(Revision::new(1)?),
-            vec![(
-                DimensionId::new("region")?,
-                Some(SymbolicValueId::new("eu")?),
-            )],
-        )],
-    );
-    let prepared = eqm_application::prepare_obligations_from_request(
-        session.finalized(),
-        EvaluationMode::Development,
-        &request,
+    // Both complete frozen identities are prepared before result bytes.
+    let same_prepared = prepared_multi_source_identities(
+        &session,
+        &key,
         None,
+        vec![first_selection.clone(), second_same.clone()],
     )?;
-    let identity_for = |second: &ExpectedSelectionManifest| -> Result<eqm_domain::ObligationDigest, Box<dyn Error>> {
-        let selections = eqm_application::prepare_expected_selections(session.finalized(), &prepared, Some(BTreeMap::from([(key.clone(), vec![first_selection.clone(), second.clone()])])), None)?;
-        let identities = eqm_application::prepare_obligation_identities(session.finalized(), &selections)?;
-        Ok(identities.identities().get(&key).ok_or("complete multi-source identity")?.digest())
-    };
-    // Both complete identities are independently prepared before result bytes.
-    let same_identity = identity_for(&second_same)?;
-    let distinct_identity = identity_for(&second_distinct)?;
+    let distinct_prepared = prepared_multi_source_identities(
+        &session,
+        &key,
+        None,
+        vec![first_selection.clone(), second_distinct.clone()],
+    )?;
+    let same_identity = same_prepared
+        .identities()
+        .get(&key)
+        .ok_or("identity")?
+        .digest();
+    let distinct_identity = distinct_prepared
+        .identities()
+        .get(&key)
+        .ok_or("identity")?
+        .digest();
     assert_ne!(same_identity, distinct_identity);
     let first_expected = CompleteCoverageExpectation {
         structural: coverage_context(&first_context, &first_spec),
@@ -1939,6 +1998,17 @@ test_id = "secondExactSelector"
     let before = file_snapshot(repository.path())?;
     let missing = collect_admitted_observations(&expected, &[first_delivery, first_delivery])?;
     assert_eq!(missing.status(), CoverageStatus::Missing);
+    let counted_missing = eqm_application::assess_admitted_count_constraints(
+        &same_prepared,
+        &expected,
+        &[first_delivery],
+    )?;
+    assert_eq!(
+        counted_missing.status(),
+        eqm_engine::LogicalCountConstraintStatus::Missing
+    );
+    assert_eq!(counted_missing.capacity(), 1);
+
     assert_eq!(
         missing.observed(),
         &BTreeSet::from([lineage()?.logical_case().clone()])
@@ -1953,6 +2023,18 @@ test_id = "secondExactSelector"
         &[second_delivery, first_delivery, second_delivery],
     )?;
     assert_eq!(complete.status(), CoverageStatus::Covered);
+    let counted = eqm_application::assess_admitted_count_constraints(
+        &same_prepared,
+        &expected,
+        &[first_delivery, second_delivery],
+    )?;
+    assert_eq!(
+        counted.status(),
+        eqm_engine::LogicalCountConstraintStatus::CapacityMet
+    );
+    assert_eq!(counted.capacity(), 1);
+    assert_eq!(counted.observations(), &complete);
+
     assert_eq!(
         complete.observed(),
         &BTreeSet::from([lineage()?.logical_case().clone()])
@@ -1983,6 +2065,18 @@ test_id = "secondExactSelector"
     };
     let conflict = collect_admitted_observations(&expected, &[first_delivery, conflict_delivery])?;
     assert_eq!(conflict.status(), CoverageStatus::Unknown);
+    let counted_conflict = eqm_application::assess_admitted_count_constraints(
+        &same_prepared,
+        &expected,
+        &[first_delivery, conflict_delivery],
+    )?;
+    assert_eq!(
+        counted_conflict.status(),
+        eqm_engine::LogicalCountConstraintStatus::Unknown
+    );
+    assert_eq!(counted_conflict.capacity(), 0);
+    assert_eq!(counted_conflict.observations(), &conflict);
+
     assert!(conflict.observed().is_empty());
     assert_eq!(conflict.conflicts().len(), 1);
     let original_lineage = lineage()?;
@@ -3124,5 +3218,573 @@ fn admitted_normalization_keeps_each_lineage_axis_and_full_subject_independent()
     assert!(foreign_only.units().is_empty());
     assert!(foreign_only.observed().is_empty());
     assert_eq!(file_snapshot(repository.path())?, before);
+    Ok(())
+}
+
+#[test]
+fn actual_prepared_count_constraints_use_strongest_minimum_and_full_and_selection()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, assess_admitted_count_constraints};
+    use eqm_engine::{
+        CompleteCoverageExpectation, LogicalCountConstraintStatus as Status,
+        LogicalObservationPrerequisite, LogicalObservationUnit,
+    };
+    // Literal boundaries: policy, specification, selected labels, effective minimum, conclusion.
+    for (policy_minimum, specification_minimum, labels, effective, conclusion) in [
+        (2, 1, vec!["case.a"], 2, Status::Missing),
+        (2, 1, vec!["case.a", "case.b"], 2, Status::CapacityMet),
+        (
+            2,
+            1,
+            vec!["case.a", "case.b", "case.c"],
+            2,
+            Status::CapacityMet,
+        ),
+        (4, 1, vec!["case.a", "case.b", "case.c"], 4, Status::Missing),
+        (1, 3, vec!["case.a", "case.b"], 3, Status::Missing),
+        (
+            2,
+            3,
+            vec!["case.a", "case.b", "case.c"],
+            3,
+            Status::CapacityMet,
+        ),
+    ] {
+        let repository = example()?;
+        let policy_path = repository
+            .path()
+            .join("eqm/policies/consumer.critical_flow.toml");
+        let policy = fs::read_to_string(&policy_path)?.replace(
+            "minimum_count = 1",
+            &format!("minimum_count = {policy_minimum}"),
+        );
+        // A genuinely stronger unrelated facet cannot leak its count into behavior.
+        let policy = policy.replace("[waivers]", "[[rules]]\nminimum_level = \"required\"\nfacets = [\"accessibility\"]\nminimum_trust = \"trusted_ci\"\nmaximum_age = 86400000\nminimum_count = 99\n\n[rules.selector]\nrisk_classes = [\"high\", \"critical\"]\n\n[waivers]");
+        fs::write(&policy_path, policy)?;
+        let binding_path = repository
+            .path()
+            .join("eqm/bindings/android.auth_signup.toml");
+        fs::write(
+            &binding_path,
+            fs::read_to_string(&binding_path)?.replace(
+                "kind = \"test\"\nrequirements",
+                &format!("kind = \"test\"\nminimum_count = {specification_minimum}\nrequirements"),
+            ),
+        )?;
+        let session = session_for(repository.path())?;
+        let provenance = projections(&session)?;
+        let context = context(&provenance, None)?;
+        let cases = labels
+            .into_iter()
+            .map(LogicalCaseId::new)
+            .collect::<Result<Vec<_>, _>>()?;
+        let (prepared, key, selection) = prepared_coordinates_with_selection(
+            &session,
+            "eu",
+            None,
+            cases.clone(),
+            vec![],
+            false,
+        )?;
+        let identity = prepared
+            .identities()
+            .get(&key)
+            .ok_or("identity missing")?
+            .digest();
+        let spec = EvidenceSpecId::new("identifier_behavior")?;
+        let expected = vec![CompleteCoverageExpectation {
+            structural: coverage_context(&context, &spec),
+            coordinate: key.clone(),
+            identity,
+            selection: selection.clone(),
+            subjects: None,
+        }];
+        // Freeze graph, all selected labels and S054 identity before result bytes.
+        let checked = seal(record(&provenance, None)?)?;
+        let mut admissions = Vec::new();
+        for case in &cases {
+            let selected_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+                plan: Some(lineage()?.plan().clone()),
+                campaign: Some(lineage()?.campaign().clone()),
+                run: Some(lineage()?.run().clone()),
+                logical_case: Some(case.clone()),
+                attempt: Some(eqm_domain::AttemptId::new("attempt.count")?),
+            })?;
+            let execution = EvidenceExecution::new(
+                selected_lineage.run().clone(),
+                case.clone(),
+                vec![selected_lineage.attempt().clone()],
+            )?;
+            admissions.push(admit_evidence_bytes(
+                checked.raw_bytes(),
+                &selected_lineage,
+                &execution,
+                &context,
+            )?);
+        }
+        let receipt = SelectorText::new("receipt.count")?;
+        let deliveries = admissions
+            .iter()
+            .map(|admitted| CompleteEvidenceDelivery {
+                delivery: AdmittedEvidenceDelivery {
+                    admitted,
+                    evidence_spec_id: &spec,
+                    provenance: &receipt,
+                },
+                coordinate: Some(&key),
+                identity: Some(identity),
+                subjects: None,
+            })
+            .collect::<Vec<_>>();
+        let before = file_snapshot(repository.path())?;
+        let report = assess_admitted_count_constraints(&prepared, &expected, &deliveries)?;
+        assert_eq!(report.policy_minimum().get(), policy_minimum);
+        assert_eq!(
+            report.specification_minima()[selection.source()].get(),
+            specification_minimum
+        );
+        assert_eq!(report.effective_minimum().get(), effective);
+        assert_eq!(report.capacity(), cases.len());
+        assert_eq!(report.status(), conclusion);
+        assert_eq!(report.observations().status(), CoverageStatus::Covered);
+        assert_eq!(
+            report.observations().units(),
+            &cases
+                .iter()
+                .cloned()
+                .map(LogicalObservationUnit::TestCase)
+                .collect::<BTreeSet<_>>()
+        );
+        assert_eq!(
+            report.observations().prerequisites(),
+            &BTreeSet::from([
+                LogicalObservationPrerequisite::IndependentTrust,
+                LogicalObservationPrerequisite::ExecutionOutcomes,
+            ])
+        );
+        let mut reversed = deliveries.clone();
+        reversed.reverse();
+        reversed.extend(deliveries.iter().copied());
+        assert_eq!(
+            assess_admitted_count_constraints(&prepared, &expected, &reversed)?,
+            report
+        );
+        let copied =
+            assess_admitted_count_constraints(&prepared, &expected, &vec![deliveries[0]; 10])?;
+        assert_eq!(copied.capacity(), 1);
+        assert_eq!(copied.status(), Status::Missing);
+        if cases.len() == 3 && policy_minimum == 2 && specification_minimum == 1 {
+            let missing =
+                assess_admitted_count_constraints(&prepared, &expected, &deliveries[..2])?;
+            assert_eq!(missing.capacity(), 2);
+            assert_eq!(missing.status(), Status::Missing);
+            assert_eq!(
+                missing.observations().missing()[selection.source()],
+                BTreeSet::from([LogicalCaseId::new("case.c")?])
+            );
+        }
+        let empty = assess_admitted_count_constraints(&prepared, &expected, &[])?;
+        assert_eq!(empty.status(), Status::Missing);
+        assert_eq!(empty.capacity(), 0);
+        assert_eq!(file_snapshot(repository.path())?, before);
+    }
+    Ok(())
+}
+
+#[test]
+fn actual_all_kind_count_constraints_preserve_one_unit_and_independent_prerequisites()
+-> Result<(), Box<dyn Error>> {
+    use eqm_engine::{
+        CompleteCoverageExpectation, LogicalCountConstraintStatus as Status,
+        LogicalObservationPrerequisite as Need,
+    };
+    for (kind, needs) in [
+        (
+            EvidenceKind::Test,
+            BTreeSet::from([Need::IndependentTrust, Need::ExecutionOutcomes]),
+        ),
+        (
+            EvidenceKind::StructuralCheck,
+            BTreeSet::from([
+                Need::IndependentTrust,
+                Need::ExecutionOutcomes,
+                Need::StructuralFacts,
+            ]),
+        ),
+        (
+            EvidenceKind::StaticInventory,
+            BTreeSet::from([Need::IndependentTrust, Need::InventoryFacts]),
+        ),
+        (
+            EvidenceKind::Snapshot,
+            BTreeSet::from([Need::IndependentTrust, Need::ExecutionOutcomes]),
+        ),
+        (
+            EvidenceKind::RuntimeSnapshot,
+            BTreeSet::from([Need::IndependentTrust, Need::RuntimeFacts]),
+        ),
+        (
+            EvidenceKind::ManualReview,
+            BTreeSet::from([
+                Need::IndependentTrust,
+                Need::ReviewOutcomes,
+                Need::DistinctReviewPrincipals,
+            ]),
+        ),
+        (
+            EvidenceKind::ReleaseRecord,
+            BTreeSet::from([Need::IndependentTrust, Need::ReferencedRecord]),
+        ),
+    ] {
+        for (minimum, conclusion) in [(1, Status::CapacityMet), (2, Status::Missing)] {
+            let repository = kind_fixture(kind)?;
+            let policy_path = repository
+                .path()
+                .join("eqm/policies/consumer.critical_flow.toml");
+            fs::write(
+                &policy_path,
+                fs::read_to_string(&policy_path)?
+                    .replace("minimum_count = 1", &format!("minimum_count = {minimum}")),
+            )?;
+            let session = session_for(repository.path())?;
+            let provenance = projections(&session)?;
+            let (value, context) = record_for_kind(&provenance, kind)?;
+            let (prepared, key, selection) = prepared_coordinates_with_selection(
+                &session,
+                "eu",
+                context.release_record_digest,
+                vec![lineage()?.logical_case().clone()],
+                vec![],
+                kind == EvidenceKind::ManualReview,
+            )?;
+            let identity = prepared.identities().get(&key).ok_or("identity")?.digest();
+            let spec = EvidenceSpecId::new("identifier_behavior")?;
+            let expected = vec![CompleteCoverageExpectation {
+                structural: coverage_context(&context, &spec),
+                coordinate: key.clone(),
+                identity,
+                selection: selection.clone(),
+                subjects: None,
+            }];
+            let checked = seal(value)?;
+            let admitted =
+                admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &context)?;
+            let receipt = SelectorText::new("receipt.kind.count")?;
+            let delivery = eqm_application::CompleteEvidenceDelivery {
+                delivery: AdmittedEvidenceDelivery {
+                    admitted: &admitted,
+                    evidence_spec_id: &spec,
+                    provenance: &receipt,
+                },
+                coordinate: Some(&key),
+                identity: Some(identity),
+                subjects: None,
+            };
+            let before = file_snapshot(repository.path())?;
+            let report = eqm_application::assess_admitted_count_constraints(
+                &prepared,
+                &expected,
+                &[delivery; 10],
+            )?;
+            assert_eq!(report.policy_minimum().get(), minimum);
+            assert_eq!(report.effective_minimum().get(), minimum);
+            assert_eq!(report.specification_minima()[selection.source()].get(), 1);
+            assert_eq!(report.capacity(), 1, "{kind}");
+            assert_eq!(report.status(), conclusion, "{kind}");
+            assert_eq!(report.observations().prerequisites(), &needs);
+            assert_eq!(report.observations().status(), CoverageStatus::Covered);
+            assert_eq!(report.observations().count_unit(), selection.count_unit());
+            assert_eq!(report.observations().units().len(), 1);
+            if kind == EvidenceKind::ReleaseRecord {
+                assert_eq!(
+                    report.observations().units(),
+                    &BTreeSet::from([eqm_engine::LogicalObservationUnit::ReferencedRecord(
+                        Sha256Digest::hash_content(b"synthetic referenced record")
+                    )])
+                );
+            }
+            assert_eq!(
+                eqm_application::assess_admitted_count_constraints(
+                    &prepared,
+                    &expected,
+                    &[delivery]
+                )?,
+                report
+            );
+            assert_eq!(file_snapshot(repository.path())?, before);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn actual_count_constraints_reject_frozen_context_substitution_and_keep_conflicts()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{
+        AdmittedCountConstraintError as Error, CompleteEvidenceDelivery,
+        assess_admitted_count_constraints,
+    };
+    use eqm_domain::ExpectedSelectionManifest;
+    use eqm_engine::{
+        CompleteCoverageExpectation, CompleteCoverageMismatch,
+        LogicalCountConstraintError as Constraint, LogicalCountConstraintStatus as Status,
+    };
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let context = context(&provenance, None)?;
+    let cases = vec![LogicalCaseId::new("case.a")?, LogicalCaseId::new("case.b")?];
+    let (prepared, key, selection) =
+        prepared_coordinates_with_selection(&session, "eu", None, cases.clone(), vec![], false)?;
+    let identity = prepared.identities().get(&key).ok_or("identity")?.digest();
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let expected = vec![CompleteCoverageExpectation {
+        structural: coverage_context(&context, &spec),
+        coordinate: key.clone(),
+        identity,
+        selection: selection.clone(),
+        subjects: None,
+    }];
+    let checked = seal(record(&provenance, None)?)?;
+    let mut admissions = Vec::new();
+    for case in &cases {
+        let selected = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(lineage()?.plan().clone()),
+            campaign: Some(lineage()?.campaign().clone()),
+            run: Some(lineage()?.run().clone()),
+            logical_case: Some(case.clone()),
+            attempt: Some(eqm_domain::AttemptId::new("attempt.count")?),
+        })?;
+        let execution = EvidenceExecution::new(
+            selected.run().clone(),
+            case.clone(),
+            vec![selected.attempt().clone()],
+        )?;
+        admissions.push(admit_evidence_bytes(
+            checked.raw_bytes(),
+            &selected,
+            &execution,
+            &context,
+        )?);
+    }
+    let receipt = SelectorText::new("receipt.count.context")?;
+    let deliveries = admissions
+        .iter()
+        .map(|admitted| CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted,
+                evidence_spec_id: &spec,
+                provenance: &receipt,
+            },
+            coordinate: Some(&key),
+            identity: Some(identity),
+            subjects: None,
+        })
+        .collect::<Vec<_>>();
+    let before = file_snapshot(repository.path())?;
+    assert_eq!(
+        assess_admitted_count_constraints(&prepared, &expected, &deliveries)?.status(),
+        Status::CapacityMet
+    );
+    assert!(matches!(
+        assess_admitted_count_constraints(&prepared, &[], &deliveries),
+        Err(Error::Constraints(Constraint::EmptyExpectations))
+    ));
+    assert!(matches!(
+        assess_admitted_count_constraints(
+            &prepared,
+            &[expected[0].clone(), expected[0].clone()],
+            &deliveries
+        ),
+        Err(Error::Constraints(Constraint::FrozenSelection))
+    ));
+    assert!(matches!(
+        assess_admitted_count_constraints(
+            &prepared,
+            &vec![expected[0].clone(); eqm_engine::MAX_CANDIDATE_DELIVERIES + 1],
+            &deliveries
+        ),
+        Err(Error::Constraints(Constraint::Bound))
+    ));
+    let mut changed = expected.clone();
+    changed[0].identity =
+        eqm_domain::ObligationDigest::hash_content(b"foreign pre-result identity");
+    assert!(matches!(
+        assess_admitted_count_constraints(&prepared, &changed, &deliveries),
+        Err(Error::FrozenContext)
+    ));
+    for change_campaign in [false, true] {
+        let mut changed = expected.clone();
+        let mut source = selection.source().clone();
+        if change_campaign {
+            source.campaign = CampaignId::new("campaign.foreign")?;
+        }
+        changed[0].selection = ExpectedSelectionManifest::new(
+            source,
+            EvidenceKind::Test,
+            eqm_domain::SelectionCountUnit::LogicalTestCase,
+            if change_campaign {
+                cases.clone()
+            } else {
+                vec![cases[0].clone()]
+            },
+            vec![],
+            false,
+        )?;
+        assert!(matches!(
+            assess_admitted_count_constraints(&prepared, &changed, &deliveries),
+            Err(Error::Constraints(Constraint::FrozenSelection))
+        ));
+    }
+    let foreign_identity =
+        eqm_domain::ObligationDigest::hash_content(b"foreign candidate identity");
+    let rejected = CompleteEvidenceDelivery {
+        identity: Some(foreign_identity),
+        ..deliveries[0]
+    };
+    let missing = assess_admitted_count_constraints(&prepared, &expected, &[rejected])?;
+    assert_eq!(missing.status(), Status::Missing);
+    assert_eq!(missing.capacity(), 0);
+    assert_eq!(
+        missing.observations().matching()[selection.source()].rejected()
+            [&admissions[0].result().id()],
+        BTreeSet::from([CompleteCoverageMismatch::ObligationIdentity])
+    );
+    let mixed = assess_admitted_count_constraints(
+        &prepared,
+        &expected,
+        &[rejected, deliveries[1], deliveries[0]],
+    )?;
+    assert_eq!(mixed.status(), Status::CapacityMet);
+    assert_eq!(mixed.capacity(), 2);
+    assert!(mixed.observations().conflicts().is_empty());
+    let over = vec![deliveries[0]; eqm_engine::MAX_CANDIDATE_DELIVERIES + 1];
+    assert!(matches!(
+        assess_admitted_count_constraints(&prepared, &expected, &over),
+        Err(Error::Observations(
+            eqm_engine::LogicalObservationError::Matching(
+                eqm_engine::CompleteCoverageError::Normalization(
+                    eqm_engine::CandidateNormalizationError::LimitExceeded
+                )
+            )
+        ))
+    ));
+    let mut retries = Vec::new();
+    for attempt in 0..10 {
+        let selected = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(lineage()?.plan().clone()),
+            campaign: Some(lineage()?.campaign().clone()),
+            run: Some(RunId::new(format!("run.retry_{attempt}"))?),
+            logical_case: Some(cases[0].clone()),
+            attempt: Some(eqm_domain::AttemptId::new(format!(
+                "attempt.retry_{attempt}"
+            ))?),
+        })?;
+        let execution = EvidenceExecution::new(
+            selected.run().clone(),
+            cases[0].clone(),
+            vec![selected.attempt().clone()],
+        )?;
+        retries.push(admit_evidence_bytes(
+            checked.raw_bytes(),
+            &selected,
+            &execution,
+            &context,
+        )?);
+    }
+    let retry_deliveries = retries
+        .iter()
+        .map(|admitted| CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted,
+                evidence_spec_id: &spec,
+                provenance: &receipt,
+            },
+            ..deliveries[0]
+        })
+        .collect::<Vec<_>>();
+    let retried = assess_admitted_count_constraints(&prepared, &expected, &retry_deliveries)?;
+    assert_eq!(retried.status(), Status::Missing);
+    assert_eq!(retried.capacity(), 1);
+    assert_eq!(
+        retried.observations().missing()[selection.source()],
+        BTreeSet::from([cases[1].clone()])
+    );
+    assert_eq!(
+        retried.observations().matching()[selection.source()]
+            .normalized()
+            .attempts()
+            .len(),
+        10
+    );
+    let mut failed = checked.record().clone();
+    let EvidencePayloadV2Dto::Test { execution: payload } = &mut failed.payload else {
+        return Err("test payload".into());
+    };
+    payload.attempts[0].outcome = "failed".to_owned();
+    payload.counts.passed = WireUint::new(0);
+    payload.counts.failed = WireUint::new(1);
+    let failed = seal(failed)?;
+    let failed = admit_evidence_bytes(
+        failed.raw_bytes(),
+        admissions[0].lineage(),
+        &EvidenceExecution::new(
+            admissions[0].lineage().run().clone(),
+            cases[0].clone(),
+            vec![admissions[0].lineage().attempt().clone()],
+        )?,
+        &context,
+    )?;
+    let failed_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &failed,
+            evidence_spec_id: &spec,
+            provenance: &receipt,
+        },
+        ..deliveries[0]
+    };
+    let conflict = assess_admitted_count_constraints(
+        &prepared,
+        &expected,
+        &[deliveries[1], failed_delivery, deliveries[0]],
+    )?;
+    assert_eq!(conflict.status(), Status::Unknown);
+    assert_eq!(conflict.capacity(), 1);
+    assert_eq!(conflict.observations().conflicts().len(), 1);
+    assert_eq!(
+        conflict.observations().missing()[selection.source()],
+        BTreeSet::from([cases[0].clone()])
+    );
+    assert_eq!(
+        assess_admitted_count_constraints(
+            &prepared,
+            &expected,
+            &[deliveries[0], failed_delivery, deliveries[1]]
+        )?,
+        conflict
+    );
+    assert_eq!(file_snapshot(repository.path())?, before);
+    let (foreign_profile, _, _) =
+        prepared_coordinates_with_selection(&session, "us", None, cases.clone(), vec![], false)?;
+    assert!(matches!(
+        assess_admitted_count_constraints(&foreign_profile, &expected, &deliveries),
+        Err(Error::Constraints(Constraint::Coordinate))
+    ));
+    let policy_path = repository
+        .path()
+        .join("eqm/policies/consumer.critical_flow.toml");
+    fs::write(
+        &policy_path,
+        fs::read_to_string(&policy_path)?.replace("minimum_count = 1", "minimum_count = 2"),
+    )?;
+    let changed_session = session_for(repository.path())?;
+    let (changed_policy, _, _) =
+        prepared_coordinates_with_selection(&changed_session, "eu", None, cases, vec![], false)?;
+    let after_edit = file_snapshot(repository.path())?;
+    assert!(matches!(
+        assess_admitted_count_constraints(&changed_policy, &expected, &deliveries),
+        Err(Error::FrozenContext)
+    ));
+    assert_eq!(file_snapshot(repository.path())?, after_edit);
     Ok(())
 }

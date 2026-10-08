@@ -74,6 +74,24 @@ Display state and diagnostic reason are not interchangeable. A summary status ca
 
 A query view identifies the snapshot it belongs to. Cursors are bound to snapshot, filter and ordering; they cannot continue across different generations silently. Truncated views state truncation/omitted content without changing scope or authorization. Incremental notifications point to a new snapshot or bounded delta with clear generation identity. Do not claim an empty findings resource is complete when evaluation never ran.
 
+
+S063 count constraints use the actual prepared coordinate's composed policy minimum
+and exact source specification minima. Engine validates complete frozen manifests,
+including all alternative definitions, under a cumulative 1,000,000-work budget
+before indexed equality. The engine collects internally from those same validated expectations and accepts
+no separately supplied report. Application pins full frozen expectations and
+identity to opaque pre-result preparation before adapting admitted bytes; the 10,000-delivery
+and S062 complete matching work limits remain in force. Callers supply no minimum.
+The opaque report retains policy/specification/effective minima, distinct structural
+capacity, every observation/audit reference and remaining independent prerequisites.
+Missing AND members and relevant immutable conflicts cannot be hidden by capacity.
+Exact referenced-record capacity is at most one. `CapacityMet` grants no successful
+eligible outcome, independently verified fact/principal/record, trust, protected
+consumer status, conformance or release permission. Engine identity inputs remain
+claims; application pre-result binding also grants no independent evidence trust.
+Outcome/principal/campaign semantics and protected consumer integration remain
+S064–S068/S073 prerequisites.
+
 ## Error boundary (R45, R50)
 
 Use typed contextual errors internally. At public boundaries, provide stable error codes, command/operation identity, safe contextual details and source locations where available, without leaking secrets. Do not replace every loader error with a stage name. Requested JSON output remains a valid error envelope where parsing established the requested format; usage errors that occur before format selection must have a documented behavior and exit classification. MCP maps errors to protocol-appropriate responses without calculating different conformance.

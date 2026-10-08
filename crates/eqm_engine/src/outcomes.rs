@@ -465,3 +465,236 @@ pub fn collect_logical_observations<'a>(
         conflicts,
     })
 }
+
+/// Structural count capacity before independent outcome/trust verification.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LogicalCountConstraintStatus {
+    /// Complete observed structural units meet the actual composed minimum.
+    /// Independent prerequisites are still required; this is never Satisfied.
+    CapacityMet,
+    /// A required AND member or distinct unit needed by the minimum is missing.
+    Missing,
+    /// Relevant immutable conflicts prevent a count conclusion.
+    Unknown,
+}
+
+/// Count requests that do not belong to the actual frozen coordinate reject.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LogicalCountConstraintError {
+    /// No independently declared expectation was supplied.
+    EmptyExpectations,
+    /// Expectations exceed the declared bound.
+    Bound,
+    /// The exact derived coordinate is unavailable.
+    Coordinate,
+    /// The complete frozen selection was omitted, changed or duplicated.
+    FrozenSelection,
+    /// Collection against these exact validated expectations failed.
+    Observations(LogicalObservationError),
+}
+impl std::fmt::Display for LogicalCountConstraintError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "logical count constraint rejected: {self:?}")
+    }
+}
+impl std::error::Error for LogicalCountConstraintError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Observations(error) => Some(error),
+            _ => None,
+        }
+    }
+}
+
+/// Pure count assessment retaining every observation and verification prerequisite.
+/// No construction or status establishes independently eligible successful credit.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LogicalCountConstraintReport<'a> {
+    observations: LogicalObservationReport<'a>,
+    policy_minimum: PositiveCount,
+    specification_minima:
+        std::collections::BTreeMap<eqm_domain::ExpectedSelectionSource, PositiveCount>,
+    effective_minimum: PositiveCount,
+    capacity: usize,
+    status: LogicalCountConstraintStatus,
+}
+impl<'a> LogicalCountConstraintReport<'a> {
+    /// Complete structural observation and audit report, including prerequisites.
+    #[must_use]
+    pub const fn observations(&self) -> &LogicalObservationReport<'a> {
+        &self.observations
+    }
+    /// Minimum composed from rules matching this exact facet/coordinate.
+    #[must_use]
+    pub const fn policy_minimum(&self) -> PositiveCount {
+        self.policy_minimum
+    }
+    /// Actual source acquisition minima; non-countable kinds contribute one.
+    #[must_use]
+    pub const fn specification_minima(
+        &self,
+    ) -> &std::collections::BTreeMap<eqm_domain::ExpectedSelectionSource, PositiveCount> {
+        &self.specification_minima
+    }
+    /// Strongest relevant minimum, never a supplied weaker threshold.
+    #[must_use]
+    pub const fn effective_minimum(&self) -> PositiveCount {
+        self.effective_minimum
+    }
+    /// Distinct structural units, not independently eligible successful credit.
+    #[must_use]
+    pub const fn capacity(&self) -> usize {
+        self.capacity
+    }
+    /// Explicit capacity/Missing/Unknown conclusion, never a facet outcome.
+    #[must_use]
+    pub const fn status(&self) -> LogicalCountConstraintStatus {
+        self.status
+    }
+}
+
+/// Validates the complete frozen request, collects observations with those exact
+/// expectations, and applies the actual universe's composed minimum.
+/// A report from other structural/grouped expectations cannot be supplied.
+/// The application additionally binds claimed identity to the opaque S054 map.
+/// Outcomes, trust, principal/fact/reference checks and protected consumption
+/// remain required. No arbitrary threshold or acquisition total is accepted.
+pub fn assess_logical_count_constraints<'a>(
+    universe: &crate::RequiredUniverse,
+    expected: &[crate::CompleteCoverageExpectation],
+    candidates: &[crate::CompleteEvidenceCandidate<'a>],
+) -> Result<LogicalCountConstraintReport<'a>, LogicalCountConstraintError> {
+    use std::collections::BTreeMap;
+    if candidates.len() > crate::MAX_CANDIDATE_DELIVERIES {
+        return Err(LogicalCountConstraintError::Observations(
+            LogicalObservationError::Matching(crate::CompleteCoverageError::Normalization(
+                crate::CandidateNormalizationError::LimitExceeded,
+            )),
+        ));
+    }
+    validate_logical_count_context(universe, expected)?;
+    let observations = collect_logical_observations(expected, candidates)
+        .map_err(LogicalCountConstraintError::Observations)?;
+    let first = &expected[0];
+    let obligation = universe
+        .obligations()
+        .get(&first.coordinate)
+        .ok_or(LogicalCountConstraintError::Coordinate)?;
+    let frozen = universe
+        .expected_selections()
+        .and_then(|map| map.get(&first.coordinate))
+        .ok_or(LogicalCountConstraintError::FrozenSelection)?;
+    let policy_minimum = obligation.strength.minimum_count;
+    let mut effective_minimum = policy_minimum;
+    let mut specification_minima = BTreeMap::new();
+    for value in frozen {
+        let source = value.source();
+        let specification = universe
+            .context
+            .graph
+            .bindings()
+            .get(&source.binding)
+            .and_then(|binding| binding.evidence().get(&source.specification))
+            .ok_or(LogicalCountConstraintError::FrozenSelection)?;
+        let minimum = specification.minimum_count().unwrap_or(PositiveCount::ONE);
+        effective_minimum = effective_minimum.max(minimum);
+        specification_minima.insert(source.clone(), minimum);
+    }
+    let capacity = if observations.count_unit == eqm_domain::SelectionCountUnit::VerifiedRecord {
+        observations.units.len().min(1)
+    } else {
+        observations.units.len()
+    };
+    let status = match observations.status {
+        crate::CoverageStatus::Unknown => LogicalCountConstraintStatus::Unknown,
+        crate::CoverageStatus::Missing => LogicalCountConstraintStatus::Missing,
+        crate::CoverageStatus::Covered if (capacity as u64) < effective_minimum.get() => {
+            LogicalCountConstraintStatus::Missing
+        }
+        crate::CoverageStatus::Covered => LogicalCountConstraintStatus::CapacityMet,
+    };
+    Ok(LogicalCountConstraintReport {
+        observations,
+        policy_minimum,
+        specification_minima,
+        effective_minimum,
+        capacity,
+        status,
+    })
+}
+
+fn frozen_selection_work(value: &eqm_domain::ExpectedSelectionManifest) -> usize {
+    let mut work = value
+        .required()
+        .len()
+        .saturating_add(value.selected().len());
+    for group in value.alternatives().values() {
+        if work > crate::MAX_COMPLETE_COVERAGE_WORK {
+            break;
+        }
+        work = work.saturating_add(1);
+        for members in group.options().values() {
+            if work > crate::MAX_COMPLETE_COVERAGE_WORK {
+                break;
+            }
+            work = work.saturating_add(1).saturating_add(members.len());
+        }
+    }
+    work
+}
+
+/// Checks the complete frozen count request against actual private derivation.
+/// Work includes all alternative definitions before manifest equality/indexing;
+/// validation grants no observation, trust, outcome or protected authority.
+pub fn validate_logical_count_context(
+    universe: &crate::RequiredUniverse,
+    expected: &[crate::CompleteCoverageExpectation],
+) -> Result<(), LogicalCountConstraintError> {
+    use std::collections::{BTreeMap, BTreeSet};
+    let first = expected
+        .first()
+        .ok_or(LogicalCountConstraintError::EmptyExpectations)?;
+    if expected.len() > crate::MAX_CANDIDATE_DELIVERIES {
+        return Err(LogicalCountConstraintError::Bound);
+    }
+    if !universe.obligations().contains_key(&first.coordinate) {
+        return Err(LogicalCountConstraintError::Coordinate);
+    }
+    let frozen = universe
+        .expected_selections()
+        .and_then(|map| map.get(&first.coordinate))
+        .ok_or(LogicalCountConstraintError::FrozenSelection)?;
+    if frozen.is_empty() || frozen.len() != expected.len() {
+        return Err(LogicalCountConstraintError::FrozenSelection);
+    }
+    let mut work = 0usize;
+    for value in expected {
+        work = work
+            .saturating_add(crate::complete_coverage::complete_coverage_work(value, &[]))
+            .saturating_add(frozen_selection_work(&value.selection));
+        if work > crate::MAX_COMPLETE_COVERAGE_WORK {
+            return Err(LogicalCountConstraintError::Bound);
+        }
+    }
+    for value in frozen {
+        work = work.saturating_add(frozen_selection_work(value));
+        if work > crate::MAX_COMPLETE_COVERAGE_WORK {
+            return Err(LogicalCountConstraintError::Bound);
+        }
+    }
+    let frozen_index = frozen
+        .iter()
+        .map(|value| (value.source(), value))
+        .collect::<BTreeMap<_, _>>();
+    let mut sources = BTreeSet::new();
+    for value in expected {
+        if value.coordinate != first.coordinate
+            || value.identity != first.identity
+            || !sources.insert(value.selection.source())
+            || frozen_index.get(value.selection.source()).copied() != Some(&value.selection)
+        {
+            return Err(LogicalCountConstraintError::FrozenSelection);
+        }
+    }
+    Ok(())
+}

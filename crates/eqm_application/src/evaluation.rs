@@ -380,3 +380,67 @@ mod tests {
         Ok(())
     }
 }
+
+/// Failure to bind count evaluation to independently prepared frozen context.
+#[derive(Debug)]
+pub enum AdmittedCountConstraintError {
+    /// Full pre-result coordinate/identity/selection was substituted or omitted.
+    FrozenContext,
+    /// Actual admitted observation matching failed.
+    Observations(eqm_engine::LogicalObservationError),
+    /// Actual composed count constraints could not be applied.
+    Constraints(eqm_engine::LogicalCountConstraintError),
+}
+impl Display for AdmittedCountConstraintError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "admitted count constraints rejected: {self:?}")
+    }
+}
+impl Error for AdmittedCountConstraintError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::FrozenContext => None,
+            Self::Observations(error) => Some(error),
+            Self::Constraints(error) => Some(error),
+        }
+    }
+}
+
+/// Binds complete frozen expectations and pre-result identity before collection,
+/// then uses the actual prepared policy and source minima. Capacity met remains
+/// structural: no outcome, verification, trust or conformance is established.
+pub fn assess_admitted_count_constraints<'a>(
+    prepared: &crate::PreparedObligationIdentities,
+    expected: &[CompleteCoverageExpectation],
+    deliveries: &[CompleteEvidenceDelivery<'a>],
+) -> Result<eqm_engine::LogicalCountConstraintReport<'a>, AdmittedCountConstraintError> {
+    if deliveries.len() > MAX_CANDIDATE_DELIVERIES {
+        return Err(AdmittedCountConstraintError::Observations(
+            eqm_engine::LogicalObservationError::Matching(CompleteCoverageError::Normalization(
+                CandidateNormalizationError::LimitExceeded,
+            )),
+        ));
+    }
+    eqm_engine::validate_logical_count_context(prepared.universe(), expected)
+        .map_err(AdmittedCountConstraintError::Constraints)?;
+    let first = &expected[0];
+    let identity = prepared
+        .identities()
+        .get(&first.coordinate)
+        .ok_or(AdmittedCountConstraintError::FrozenContext)?
+        .digest();
+    if expected.iter().any(|value| value.identity != identity) {
+        return Err(AdmittedCountConstraintError::FrozenContext);
+    }
+    eqm_engine::assess_logical_count_constraints(
+        prepared.universe(),
+        expected,
+        &complete_candidates(deliveries),
+    )
+    .map_err(|error| match error {
+        eqm_engine::LogicalCountConstraintError::Observations(cause) => {
+            AdmittedCountConstraintError::Observations(cause)
+        }
+        other => AdmittedCountConstraintError::Constraints(other),
+    })
+}

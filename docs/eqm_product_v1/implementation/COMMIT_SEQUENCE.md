@@ -774,6 +774,46 @@ join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
 
+**DEV-035 S063 implementation allocation:** apply the actual prepared coordinate's
+composed count minimum to the S062 distinct typed observation report. Obtain the
+minimum from the immutable RequiredUniverse and exact graph specifications, never
+an arbitrary caller threshold, raw totals or runner acquisition success. Retain the
+policy minimum, exact source acquisition minima and strongest effective minimum
+for audit. Match the complete coordinate and all frozen source manifests; missing,
+extra, altered or duplicate expectations and foreign observation context reject.
+Application binds every expectation to the opaque S054 pre-result identities and
+full frozen selections before adapting actual S059 admissions through S062. The
+engine count operation collects internally from that same validated complete
+expectation slice; a separately supplied observation report cannot be reused.
+
+This step supplies a pure count constraint, not independent successful credit.
+Return explicit structural capacity met, Missing or Unknown and preserve the full
+S062 report with its missing AND pairs, conflicts, rejected history and independent
+prerequisites. Enough units never hides a missing required source/case or relevant
+immutable conflict. All seven count units remain explicit; exact referenced-record
+capacity is at most one. A met structural threshold never becomes Satisfied,
+verified trust, conformance, protected authority or release authorization. Required
+case outcomes and retry/principal/campaign eligibility remain S064–S068; S073 binds
+those results into the protected complete consumer. Existing claim-only helpers
+remain claims and cannot consume this assessment as verified authority.
+
+Use real prepared graph/policy/binding/specification/frozen selections and actual
+admitted bytes. Independently enumerate exact threshold boundaries, stronger policy
+versus lower specification acquisition minimum, stronger relevant specification,
+facet-rule isolation, copies/retries, missing AND members despite enough other
+units, immutable conflicts and all seven typed units including record aliases.
+Reject a substituted policy/profile/identity, omitted or altered frozen expectation
+and lower caller threshold; no caller threshold parameter is exposed. Retain pure
+bounds, permutations, exact literals and no-effects snapshots. Count-context
+validation also charges all selected/unselected alternative definitions and
+complete expectation contexts to a cumulative 1,000,000-work bound before indexed
+manifest equality; retain the S062 delivery/matching work limits separately. No wire, schema,
+digest or dependency change. Original engine owning and full standard gates remain
+mandatory; add application owning and separate allocated acceptance. RA02/RA03
+contributions remain local until outcomes and protected consumer integration.
+Continue S064 after the green commit, and preserve the mandatory independent whole
+complete-universe/reference-evaluator gate before S077.
+
 **DEV-035 S062 implementation allocation:** derive distinct structural logical
 observations from the S061 complete matcher, never caller-supplied count totals
 or standalone SelectionObservation claims. One bounded pure operation consumes

@@ -322,6 +322,13 @@ fn coverage_assertion(
 fn checked_coverage_fixture(
     provider: bool,
 ) -> Result<(tempfile::TempDir, CoverageFixture), Box<dyn Error>> {
+    let (root, fixture, _) = checked_count_coverage_fixture(provider)?;
+    Ok((root, fixture))
+}
+
+fn checked_count_coverage_fixture(
+    provider: bool,
+) -> Result<(tempfile::TempDir, CoverageFixture, RequiredUniverse), Box<dyn Error>> {
     let (root, loaded) = support::loaded_example_with(|root| {
         // The example intentionally has no OTP binding. Declare an explicit
         // synthetic mapping before ingestion; never reuse the identifier mapping
@@ -370,7 +377,7 @@ fn checked_coverage_fixture(
         })
         .ok_or("checked grouped behavior missing")?
         .clone();
-    Ok((root, coverage_fixture(&graph, key)?))
+    Ok((root, coverage_fixture(&graph, key)?, required))
 }
 
 #[test]
@@ -1984,5 +1991,284 @@ fn unknown_requirement_cannot_hide_outside_scene_or_unassigned_provider()
             TargetConformance::Nonconformant
         );
     }
+    Ok(())
+}
+
+#[test]
+fn checked_count_constraints_reject_foreign_requests_and_observation_context()
+-> Result<(), Box<dyn Error>> {
+    use eqm_engine::{
+        LogicalCountConstraintError as Error, LogicalCountConstraintStatus as Status,
+        assess_logical_count_constraints, bind_expected_selections, collect_logical_observations,
+        validate_logical_count_context,
+    };
+    for provider in [false, true] {
+        let (_root, fixture, required) = checked_count_coverage_fixture(provider)?;
+        let expected = vec![fixture.expected.clone()];
+        let required = bind_expected_selections(
+            required,
+            BTreeMap::from([(
+                fixture.expected.coordinate.clone(),
+                vec![fixture.expected.selection.clone()],
+            )]),
+        )?;
+        let observed = collect_logical_observations(&expected, &[fixture.candidate()])?;
+        let assessed =
+            assess_logical_count_constraints(&required, &expected, &[fixture.candidate()])?;
+        assert_eq!(assessed.policy_minimum().get(), 1);
+        assert_eq!(assessed.effective_minimum().get(), 1);
+        assert_eq!(assessed.capacity(), 1);
+        assert_eq!(assessed.status(), Status::CapacityMet);
+        assert_eq!(assessed.observations(), &observed);
+        // Engine fixtures are explicit structural data; application tests bind
+        // actual S054 identities and S059 bytes. Neither proves independent trust.
+        assert_eq!(
+            validate_logical_count_context(&required, &[]),
+            Err(Error::EmptyExpectations)
+        );
+        assert_eq!(
+            validate_logical_count_context(
+                &required,
+                &vec![fixture.expected.clone(); eqm_engine::MAX_CANDIDATE_DELIVERIES + 1]
+            ),
+            Err(Error::Bound)
+        );
+        assert_eq!(
+            validate_logical_count_context(
+                &required,
+                &[fixture.expected.clone(), fixture.expected.clone()]
+            ),
+            Err(Error::FrozenSelection)
+        );
+        let mut changed = fixture.expected.clone();
+        changed.coordinate.policy_revision = Revision::new(99)?;
+        assert_eq!(
+            validate_logical_count_context(&required, &[changed]),
+            Err(Error::Coordinate)
+        );
+        let mut changed = fixture.expected.clone();
+        changed.selection = eqm_domain::ExpectedSelectionManifest::new(
+            changed.selection.source().clone(),
+            eqm_domain::EvidenceKind::Test,
+            eqm_domain::SelectionCountUnit::LogicalTestCase,
+            vec![eqm_domain::LogicalCaseId::new("case.foreign")?],
+            vec![],
+            false,
+        )?;
+        assert_eq!(
+            validate_logical_count_context(&required, &[changed]),
+            Err(Error::FrozenSelection)
+        );
+        let missing = assess_logical_count_constraints(&required, &expected, &[])?;
+        assert_eq!(missing.status(), Status::Missing);
+        // The old reusable-report route is absent: collection always uses the
+        // complete validated frozen expectations inside the count operation.
+        let second = eqm_domain::LogicalCaseId::new("case.frozen_second")?;
+        let mut full = fixture.expected.clone();
+        full.selection = eqm_domain::ExpectedSelectionManifest::new(
+            full.selection.source().clone(),
+            eqm_domain::EvidenceKind::Test,
+            eqm_domain::SelectionCountUnit::LogicalTestCase,
+            vec![fixture.lineage.logical_case().clone(), second.clone()],
+            vec![],
+            false,
+        )?;
+        let complete_universe = bind_expected_selections(
+            required.clone(),
+            BTreeMap::from([(full.coordinate.clone(), vec![full.selection.clone()])]),
+        )?;
+        let weaker_report = collect_logical_observations(&expected, &[fixture.candidate()])?;
+        assert_eq!(weaker_report.status(), CoverageStatus::Covered);
+        let full_expected = vec![full];
+        let retained = assess_logical_count_constraints(
+            &complete_universe,
+            &full_expected,
+            &[fixture.candidate()],
+        )?;
+        assert_eq!(retained.status(), Status::Missing);
+        assert_eq!(retained.capacity(), 1);
+        assert_eq!(
+            retained.observations().missing()[fixture.expected.selection.source()],
+            BTreeSet::from([second])
+        );
+        assert_eq!(
+            assess_logical_count_constraints(&complete_universe, &expected, &[fixture.candidate()]),
+            Err(Error::FrozenSelection)
+        );
+        for axis in 0..2 {
+            let mut changed = fixture.expected.clone();
+            if axis == 0 {
+                changed.structural.policy_digest =
+                    eqm_domain::Sha256Digest::hash_content(b"foreign policy facts");
+            } else {
+                let base = &changed.structural.subject;
+                changed.structural.subject = eqm_domain::EvidenceSubject::new(
+                    base.repository().clone(),
+                    base.repository_id_digest(),
+                    base.scope().clone(),
+                    base.source_commit().clone(),
+                    base.build_id().cloned(),
+                    Some(eqm_domain::Sha256Digest::hash_content(b"foreign artifact")),
+                    base.target_configuration_digest(),
+                );
+            }
+            let identity = eqm_domain::SemanticEvidenceDigest::hash_content(if axis == 0 {
+                b"foreign policy assertion"
+            } else {
+                b"foreign subject assertion"
+            });
+            let result =
+                coverage_assertion(&changed, identity, eqm_domain::AttemptOutcome::Passed)?;
+            let mut candidate = fixture.candidate();
+            candidate.delivery.result = &result;
+            candidate.delivery.semantic_identity = identity;
+            let rejected = assess_logical_count_constraints(&required, &expected, &[candidate])?;
+            assert_eq!(rejected.status(), Status::Missing);
+            assert_eq!(rejected.capacity(), 0);
+            assert!(
+                !rejected.observations().matching()[fixture.expected.selection.source()]
+                    .rejected()
+                    .is_empty()
+            );
+        }
+        let mut candidate = fixture.candidate();
+        candidate.subjects = None;
+        let grouped = assess_logical_count_constraints(&required, &expected, &[candidate])?;
+        assert_eq!(grouped.status(), Status::Missing);
+        assert_eq!(grouped.capacity(), 0);
+        assert_eq!(
+            grouped.observations().matching()[fixture.expected.selection.source()].rejected()
+                [&fixture.result.id()],
+            BTreeSet::from([eqm_engine::CompleteCoverageMismatch::SubjectManifest])
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn frozen_count_work_includes_unselected_alternatives_across_all_sources()
+-> Result<(), Box<dyn Error>> {
+    use eqm_domain::{
+        EvidenceKind, EvidenceSpecId, ExpectedSelectionManifest, FrozenSelectionAlternative,
+        LogicalCaseId, SelectionCountUnit,
+    };
+    use eqm_engine::{
+        LogicalCountConstraintError as Error, bind_expected_selections,
+        validate_logical_count_context,
+    };
+    let (_root, loaded) = support::loaded_example_with(|root| {
+        let path = root.join("eqm/bindings/android.fixture_otp.toml");
+        let original = fs::read_to_string(root.join("eqm/bindings/android.auth_signup.toml"))?
+            .replace("binding.android.auth_signup", "binding.android.fixture_otp")
+            .replace(
+                "account.create.signup.identifier#email_default",
+                REQUIREMENT,
+            )
+            .replace(
+                "account.create.signup.identifier",
+                "account.create.signup.otp",
+            );
+        let evidence = original.split_once("[[evidence]]").ok_or("evidence")?.1;
+        let mut text = original.clone();
+        for index in 1..7 {
+            text.push_str("\n[[evidence]]");
+            text.push_str(
+                &evidence.replace("identifier_behavior", &format!("identifier_extra_{index}")),
+            );
+        }
+        fs::write(path, text)?;
+        Ok(())
+    })?;
+    let graph = finalize(&loaded)?;
+    let required = universe(&graph, &bindings(REQUIREMENT, SCENARIO, 1)?, Some("us"))?;
+    let key = required
+        .coordinates()
+        .iter()
+        .find(|key| {
+            key.requirement.as_str() == REQUIREMENT
+                && key.facet == eqm_domain::Facet::Behavior
+                && matches!(key.subject, ScopeSubject::Scenario(_))
+        })
+        .ok_or("scenario")?
+        .clone();
+    let fixture = coverage_fixture(&graph, key.clone())?;
+    let binding = graph
+        .graph()
+        .bindings()
+        .get(&fixture.expected.selection.source().binding)
+        .ok_or("binding")?;
+    let unselected = (0..79_999)
+        .map(|index| LogicalCaseId::new(format!("case.unselected_{index}")))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut expected = Vec::new();
+    for index in 0..7 {
+        let specification = if index == 0 {
+            EvidenceSpecId::new("identifier_behavior")?
+        } else {
+            EvidenceSpecId::new(format!("identifier_extra_{index}"))?
+        };
+        let definition = binding
+            .evidence()
+            .get(&specification)
+            .ok_or("actual definition")?;
+        let mut value = fixture.expected.clone();
+        value.structural.evidence_spec_id = specification.clone();
+        let digest = eqm_manifest::canonicalize_evidence_spec_v2(definition)?.digest();
+        value.structural.evidence_spec_digest = digest.as_digest();
+        let mut source = value.selection.source().clone();
+        source.specification = specification;
+        source.specification_digest = digest;
+        value.selection = ExpectedSelectionManifest::new(
+            source,
+            EvidenceKind::Test,
+            SelectionCountUnit::LogicalTestCase,
+            vec![],
+            vec![FrozenSelectionAlternative::new(
+                LogicalCaseId::new("group.count")?,
+                vec![
+                    (
+                        LogicalCaseId::new("option.selected")?,
+                        vec![fixture.lineage.logical_case().clone()],
+                    ),
+                    (LogicalCaseId::new("option.unselected")?, unselected.clone()),
+                ],
+                LogicalCaseId::new("option.selected")?,
+            )?],
+            false,
+        )?;
+        assert_eq!(value.selection.selected().len(), 1);
+        expected.push(value);
+    }
+    // Six complete 80,000-member manifests stay below the shared work budget;
+    // adding the seventh exceeds it despite only seven selected logical labels.
+    let frozen_six = bind_expected_selections(
+        required.clone(),
+        BTreeMap::from([(
+            key.clone(),
+            expected[..6]
+                .iter()
+                .map(|value| value.selection.clone())
+                .collect(),
+        )]),
+    )?;
+    assert_eq!(
+        validate_logical_count_context(&frozen_six, &expected[..6]),
+        Ok(())
+    );
+    drop(frozen_six);
+    let frozen_seven = bind_expected_selections(
+        required,
+        BTreeMap::from([(
+            key,
+            expected
+                .iter()
+                .map(|value| value.selection.clone())
+                .collect(),
+        )]),
+    )?;
+    assert_eq!(
+        validate_logical_count_context(&frozen_seven, &expected),
+        Err(Error::Bound)
+    );
     Ok(())
 }
