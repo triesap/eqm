@@ -116,6 +116,7 @@ fn write_v1(root: &Path) -> Result<(), Box<dyn Error>> {
 }
 
 fn write_v2(root: &Path) -> Result<(), Box<dyn Error>> {
+    write::<ObligationsReportV2Dto>(root, "result", &RESULT_SCHEMA_V2.to_string())?;
     write::<v2::EvidenceResultV2Dto>(
         root,
         "evidence-result",

@@ -7,6 +7,7 @@ mod admission;
 mod attestation;
 mod canonical;
 mod evidence;
+pub mod query_v2;
 mod records;
 mod report;
 mod results;
@@ -45,6 +46,7 @@ pub use evidence::{
     AttachmentDto, AttemptDto, CountsDto, EvidenceDtoError, EvidencePayloadDto, EvidenceResultDto,
     EvidenceSelectorDto, EvidenceSubjectDto, ExecutionPayloadDto, ScopeSubjectDto, TestResultDto,
 };
+pub use query_v2::*;
 pub use records::{ReleaseRecordDto, RuntimeFactDto, RuntimeFactsDto, RuntimeFactsDtoError};
 pub use report::{
     CommandIdentity, CommandResultDto, DiagnosticDto, EvaluationModeDto, InvocationContextDto,
@@ -61,7 +63,7 @@ pub use schema::{
     ADAPTER_REQUEST_SCHEMA, ADAPTER_REQUEST_SCHEMA_V2, ADAPTER_RESPONSE_SCHEMA,
     ADAPTER_RESPONSE_SCHEMA_V2, ATTESTATION_SCHEMA, COMPARISON_CONTEXT_SCHEMA_V2,
     DIAGNOSTIC_SCHEMA, EVIDENCE_RESULT_SCHEMA, EVIDENCE_RESULT_SCHEMA_V2, INVENTORY_SCHEMA,
-    INVENTORY_SCHEMA_V2, PROTOCOL_SCHEMAS, RELEASE_RECORD_SCHEMA, RESULT_SCHEMA,
+    INVENTORY_SCHEMA_V2, PROTOCOL_SCHEMAS, RELEASE_RECORD_SCHEMA, RESULT_SCHEMA, RESULT_SCHEMA_V2,
     RUNTIME_FACTS_SCHEMA, RUNTIME_FACTS_SCHEMA_V2, SEMANTIC_GRAPH_SCHEMA_V2,
     SUBJECT_MANIFEST_SCHEMA_V2, TEST_RESULT_SCHEMA, V2_PROTOCOL_SCHEMAS, protocol_schemas,
 };

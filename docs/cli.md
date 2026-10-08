@@ -58,11 +58,28 @@ write. Collision checks and writes are atomic.
 | `locate UNIT [--target ID]` | Locate bound source, artifacts, and evidence |
 | `context UNIT [--target ID] [--max-bytes N] [--max-depth N]` | Return bounded trust-labeled context |
 | `matrix KIND [--unit ID] [--target ID]` | Render a deterministic matrix view |
-| `obligations [--unit ID] [--target ID] [--status STATUS]` | List exact evidence obligations |
+| `obligations [--unit ID] [--target ID] [--status STATUS]` | Inspect complete pre-evidence scope |
 | `diff [--candidate ID]` | Compare exact baseline and candidate graphs |
 | `affected [--path PATH]` | Derive conservative change impact |
 | `explain EQM-CODE` | Explain a stable diagnostic and remediation |
 | `doctor` | Inspect configuration, pins, names, generated state, and toolchain |
+
+`obligations` supports human and JSON output. It lists required coordinates as
+`pending`, with every unresolved reason retained as `unknown` or justified
+`not_applicable`. It does not read evidence or infer satisfaction, missing evidence,
+waivers or release outcomes. `--status` accepts repeatable `pending`, `unknown` and
+`not_applicable`; evaluated-state values such as `missing` are unsupported and
+return `invalid_request` with exit 6.
+
+Unit/target/status filters affect displayed records only. The result includes the
+complete pre-filter `denominator.required` and `denominator.unresolved` counts,
+`returned_count` and `presentation_filtered`. Unresolved includes N/A records.
+A target filter keeps unknown/missing subject membership visible. Context records
+exact policy/profile revisions, tagged unknown dimensions, graph/scope digests,
+mode/origin, optional release context and the one captured evaluation instant.
+Required records retain their complete typed canonical coordinate and prepared
+reference, including exact provider/scenario dependencies and repeated actors.
+These records and digest references confer no verification or release authority.
 
 `--baseline` accepts exact authority, not a floating branch. An unmapped changed
 path causes conservative expansion rather than a falsely narrow result.
@@ -115,7 +132,15 @@ Presentation filters preserve each surviving reference. A reference proves
 neither evidence satisfaction nor checked source/build or release authority.
 Unresolved scope labels remain descriptive diagnostics, not obligation digests.
 
-JSON commands use the committed protocol schemas under `schemas/v1/protocol/`.
+JSON `obligations` uses `schemas/v2/protocol/result.schema.json`: a closed
+`outcome:success` envelope with context/result, or `outcome:error` with a stable
+code, bounded causal message and an available safe source path. Execution errors
+retain exit 6 and produce JSON on stdout. Error codes are `invalid_request`,
+`invalid_authority`, `unavailable_workspace`, `resource_limit` and
+`internal_failure`. The full serialized query is bounded at 16 MiB and 100,000
+visible records before filtering; a limit produces an error instead of truncation.
+Existing v1 schemas/readers retain their original shapes for their command
+families. Parsing/usage errors keep their existing exit-2 stderr behavior.
 Consumers must preserve result categories instead of treating every nonzero
 exit identically. The stable high-level meanings are success, conformance or
 validation failure, usage error, unavailable/invalid external execution, and

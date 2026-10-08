@@ -100,7 +100,7 @@ fn description_schema(_: &mut SchemaGenerator) -> Schema {
 /// A pattern-constrained string schema for one owning identifier grammar.
 macro_rules! pattern_text {
     ($name:ident, $pattern:expr) => {
-        struct $name;
+        pub(crate) struct $name;
 
         impl JsonSchema for $name {
             fn schema_name() -> Cow<'static, str> {
@@ -127,7 +127,7 @@ macro_rules! pattern_text {
 /// `maxLength` in code points equals the owning byte bound here.
 macro_rules! bounded_pattern_text {
     ($name:ident, $pattern:expr, $max:literal) => {
-        struct $name;
+        pub(crate) struct $name;
 
         impl JsonSchema for $name {
             fn schema_name() -> Cow<'static, str> {
@@ -205,7 +205,7 @@ pattern_text!(EvidenceSpecIdText, SEGMENT_ID_PATTERN);
 /// definition, not invented here.
 macro_rules! closed_vocabulary_text {
     ($name:ident, [$($wire:literal),+ $(,)?]) => {
-        struct $name;
+        pub(crate) struct $name;
 
         impl JsonSchema for $name {
             fn schema_name() -> Cow<'static, str> {
@@ -370,7 +370,7 @@ const REPO_PATH_PATTERN: &str = r#"^(?!.*(?:/[^/]*){128})(?!^(?i:CON|PRN|AUX|NUL
 /// This expresses only the lexical rules JSON Schema can faithfully prove. The
 /// owning `RepoPath` still enforces NFC, exact UTF-8 byte length and portable
 /// collision keys, and must accept every value this pattern admits.
-struct RepoPathText;
+pub(crate) struct RepoPathText;
 
 impl JsonSchema for RepoPathText {
     fn schema_name() -> Cow<'static, str> {
@@ -557,7 +557,7 @@ impl JsonSchema for WaiverProfiles {
 }
 
 /// A nonempty, duplicate-free canonical set of a constrained member form.
-struct NonEmptySet<T>(std::marker::PhantomData<T>);
+pub(crate) struct NonEmptySet<T>(std::marker::PhantomData<T>);
 
 impl<T: JsonSchema> JsonSchema for NonEmptySet<T> {
     fn schema_name() -> Cow<'static, str> {
@@ -1973,7 +1973,7 @@ impl ProfileDefinitionV2Dto {
     /// values, defaults, optional description and recursive extension bounds)
     /// are enforced by the shared domain validator. The rebuilt value is only a
     /// validation artifact and grants no trust.
-    fn to_domain_profile(&self) -> Result<Profile, ComparisonContextError> {
+    pub(crate) fn to_domain_profile(&self) -> Result<Profile, ComparisonContextError> {
         let id = ProfileId::new(self.id.as_str())
             .map_err(|_| ComparisonContextError::InvalidVocabulary)?;
         let revision = Revision::new(self.revision.get())
@@ -2045,7 +2045,7 @@ impl ProfileDefinitionV2Dto {
     }
 }
 
-fn domain_extensions(
+pub(crate) fn domain_extensions(
     values: &BTreeMap<String, ExtensionValueV2Dto>,
 ) -> Result<Extensions, ComparisonContextError> {
     let converted = values

@@ -40,6 +40,7 @@ pub mod expected_selection;
 pub mod inventory;
 pub mod obligation_identity;
 pub mod provenance;
+pub mod query;
 pub mod selection;
 pub mod session;
 pub mod source;
@@ -75,6 +76,7 @@ pub use provenance::{
     PolicyProvenanceError, PolicyProvenanceV2, TargetConfigurationError, prepare_policy_provenance,
     prepare_target_configuration,
 };
+pub use query::{PreparedObligationQuery, QueryPreparationError, prepare_obligation_query};
 pub use selection::{
     ObligationPreparationError, PolicyReference, PolicySelectionRequest, PreparedObligations,
     ProfileSelection, ProtectedPreparationError, SelectionPreparationError, applicability_context,

@@ -773,6 +773,75 @@ original S057 standard/engine owning gates remain mandatory; domain owning tests
 join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
+**DEV-035 S058 implementation allocation:** project the existing opaque
+PreparedObligationIdentities and its complete expected-bound RequiredUniverse
+through one pure application query boundary. Accept the same finalized graph and
+reject foreign graph context before projection; do not reconstruct membership
+from filters, evidence or adapter-supplied coordinates. Manifest may expose its
+existing pure exact scope projection for unresolved records without changing any
+frozen obligation identity bytes or digest domains.
+
+Freeze `ObligationsReportV2Dto` under the existing versioned Result SchemaKind:
+`schemas/v2/protocol/result.schema.json`. This new closed success/error family
+uses exact schema/tool/obligations-command markers and an `outcome` discriminator;
+never place it under the v1 envelope or change v1 bytes/readers. Success contains
+explicit `context` and `result`; error contains a bounded typed `error` with a
+stable closed code and safe causal message. Preserve established execution-error
+exit 6. Scope this JSON execution-error integration to obligations; other command
+families and pre-format parser/usage errors remain with their later owning steps.
+
+Context retains canonical semantic graph and scope-binding digests, exact policy
+ID/revision, selected profile IDs/revisions and tagged known/unknown dimensions,
+mode, authority origin, optional immutable release context, offline flag and the
+session's single captured evaluation time in canonical nanosecond UTC form.
+Required records carry `kind:required`, `state:pending`, the prepared v2 reference
+and a closed typed `coordinate` matching the complete existing canonical identity
+projection. All coordinate axes, per-facet constraints, expected selections and
+exact target/provider/scenario configuration/dependency/participation context
+stay visible, including repeated role-bearing actors. Decode and validate that
+projection explicitly; no opaque unrestricted semantic map or label fallback.
+Unresolved records carry `kind:unresolved`, their exact unit/requirement/profiles,
+optional exact subject/release context and explicit reason. Only actual
+NotApplicable has `state:not_applicable`; all other retained reasons have
+`state:unknown`. Missing scope remains absent rather than fabricated. Neither
+record form invents evidence satisfaction, IDs, waivers, verifier facts or a final
+release status. A coordinate reference remains an identity, never trust.
+
+Freeze typed presentation `filters` (optional unit/target and canonical status
+set), pre-filter `denominator.required` and `denominator.unresolved` counts,
+`returned_count`, `presentation_filtered` and canonical duplicate-free `records`.
+Unresolved count includes justified N/A; every unresolved reason stays in the
+pre-filter denominator. Status filter vocabulary is pending/unknown/not_applicable;
+unsupported evaluated-status values fail explicitly, with no v1 alias. A target
+filter retains missing/unknown-subject records whose membership cannot be
+excluded; known subjects use exact checked participation. Unit/status/target
+filters affect presentation only and never mutate the retained universe, identities
+or denominator. This pre-evidence view is not a persisted evaluated snapshot.
+
+Register the real v2 schema and generator atomically. Strict readers and writers
+reject wrong versions/markers, unknown fields, duplicates, malformed identifiers,
+noncanonical integer/time/absence/set forms, inconsistent reference/context/counts
+and unsupported semantic variants. Bound complete serialized envelopes at 16 MiB
+and visible records at 100,000; exceeded bounds produce a bounded non-authorizing
+error, never silent truncation. Reuse existing wire/domain validation and pinned
+workspace schema-validator tooling; no new production dependency or unsafe code.
+Document the v2 transition and exact filter/error behavior and update actual
+obligations goldens/consumers in the same checkpoint.
+
+Required controls use real graph/selection/scope/identity preparation, literal
+complete coordinates and every unresolved reason, unknown dimensions, exact
+provider and repeated-actor scenario context, foreign graph rejection and
+filtered/unfiltered denominator/reference invariance. Validate real parsed CLI
+success and execution-failure outputs against the generated schema, with strict
+negative/representational parity controls. Assert no evidence reads, runner or
+verifier invocation and no workspace writes. Preserve original S058 schema,
+protocol/application/CLI owning and full standard gates; run all applicable P04
+cycle lanes and changed doctests, record unavailable real product inputs without
+fabricating thresholds. Separate allocated source acceptance remains required.
+This is RA14's local contribution; no whole RA/R/AC closure or S047 aggregation
+closure follows. Continue S059 when green and retain the mandatory independent
+whole-universe/reference-evaluator acceptance before S077.
+
 All other S054–S076 decisions from DEV-028 and original step/spec/RA contracts
 remain. No new supervisor stop between P04 and P05. Q05's unavailable real
 policy values do not block configurable semantics and local negative automation;

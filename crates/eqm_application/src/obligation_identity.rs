@@ -110,7 +110,7 @@ fn provider<'a>(
             .collect(),
     })
 }
-fn subject<'a>(
+pub(crate) fn subject<'a>(
     graph: &'a eqm_domain::WorkspaceGraph,
     subject: &ScopeSubject,
     known: &BTreeMap<TargetId, TargetConfigurationDigest>,

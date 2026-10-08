@@ -28,5 +28,9 @@ serde_json.workspace = true
 serde_json_canonicalizer.workspace = true
 tempfile.workspace = true
 
+[dev-dependencies]
+# Existing pinned local-only Draft 2020-12 validator for actual query outputs.
+jsonschema.workspace = true
+
 [lints]
 workspace = true

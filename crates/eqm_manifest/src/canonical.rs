@@ -29,7 +29,10 @@ pub use graph_v2::{
     CanonicalGraphV2, CanonicalProviderConfigurationV2, canonicalize_graph_v2,
     canonicalize_provider_configuration_v2, graph_v2, semantic_graph_v2_schema_uri,
 };
-pub use obligation_v2::{CanonicalObligationV2, canonicalize_obligation_v2, obligation_v2};
+pub use obligation_v2::{
+    CanonicalObligationV2, canonicalize_obligation_scope_v2, canonicalize_obligation_v2,
+    obligation_v2,
+};
 pub use participation_v2::{
     CanonicalParticipationV2, canonicalize_participation_v2, participation_v2,
 };

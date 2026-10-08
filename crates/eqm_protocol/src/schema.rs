@@ -23,6 +23,9 @@ pub const ADAPTER_REQUEST_SCHEMA: SchemaUri = SchemaUri::new(SchemaKind::Adapter
 /// Adapter-response schema.
 pub const ADAPTER_RESPONSE_SCHEMA: SchemaUri = SchemaUri::new(SchemaKind::AdapterResponse);
 
+/// Explicit v2 complete obligation-query result envelope.
+pub const RESULT_SCHEMA_V2: SchemaUri = SchemaUri::versioned(SchemaKind::Result, SchemaVersion::V2);
+
 /// Explicit v2 evidence-result schema.
 pub const EVIDENCE_RESULT_SCHEMA_V2: SchemaUri =
     SchemaUri::versioned(SchemaKind::EvidenceResult, SchemaVersion::V2);
@@ -69,12 +72,13 @@ pub const PROTOCOL_SCHEMAS: [SchemaUri; 10] = [
 /// adds the explicit subject-manifest family; DEV-014 P03-R3 registers the
 /// typed semantic-graph and comparison-context families once their real member
 /// schemas replace the placeholders.
-pub const V2_PROTOCOL_SCHEMAS: [SchemaUri; 8] = [
+pub const V2_PROTOCOL_SCHEMAS: [SchemaUri; 9] = [
     ADAPTER_REQUEST_SCHEMA_V2,
     ADAPTER_RESPONSE_SCHEMA_V2,
     COMPARISON_CONTEXT_SCHEMA_V2,
     EVIDENCE_RESULT_SCHEMA_V2,
     INVENTORY_SCHEMA_V2,
+    RESULT_SCHEMA_V2,
     RUNTIME_FACTS_SCHEMA_V2,
     SEMANTIC_GRAPH_SCHEMA_V2,
     SUBJECT_MANIFEST_SCHEMA_V2,

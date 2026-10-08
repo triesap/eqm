@@ -518,6 +518,66 @@ to = "phone_one"
             ),
         )])?);
         let result = identities(&session, &input, None)?;
+        let query = complete_query_json(&session, &result)?;
+        let scenario_records = query["result"]["records"]
+            .as_array()
+            .ok_or("query records")?
+            .iter()
+            .filter(|r| r["coordinate"]["subject"]["kind"] == "scenario")
+            .collect::<Vec<_>>();
+        assert_eq!(scenario_records.len(), 1);
+        let subject = &scenario_records[0]["coordinate"]["subject"];
+        assert_eq!(subject["scenario"]["id"], "scenario.identity");
+        assert_eq!(subject["scenario"]["revision"], revision);
+        let mut actors = subject["scenario"]["participants"]
+            .as_array()
+            .ok_or("actors")?
+            .iter()
+            .map(|p| {
+                (
+                    p["id"].as_str().unwrap_or(""),
+                    p["role"].as_str().unwrap_or(""),
+                    p["subject"]["target"].as_str().unwrap_or(""),
+                )
+            })
+            .collect::<Vec<_>>();
+        actors.sort();
+        assert_eq!(
+            actors,
+            vec![
+                ("ios_actor", "edge", "ios"),
+                ("phone_one", "edge", "android"),
+                ("phone_two", "observer", "android")
+            ]
+        );
+        assert_eq!(
+            subject["scenario"]["dependencies"],
+            serde_json::json!([{"from":"phone_two","to":"phone_one"}])
+        );
+
+        // A fresh reference is only a hash claim; contradictory actor scope
+        // must still fail the owning reader after the reference is recomputed.
+        for field in ["selected_targets", "participation"] {
+            let mut malformed = scenario_records[0]["coordinate"].clone();
+            malformed["subject"][field][0]["target"] = serde_json::json!("foreign");
+            let typed: eqm_protocol::ObligationCoordinateV2Dto =
+                serde_json::from_value(malformed.clone())?;
+            let claimed_reference = format!(
+                "eqm:v2:obligation:{}",
+                ObligationDigest::hash_content(&eqm_protocol::canonical_member_bytes(&typed)?)
+            );
+            assert_invalid_scope_report(&query, &typed, claimed_reference)?;
+            assert!(
+                eqm_protocol::ObligationCoordinateV2Dto::from_json(&serde_json::to_vec(
+                    &malformed
+                )?)
+                .is_err()
+            );
+        }
+        let mut unselected = scenario_records[0]["coordinate"].clone();
+        unselected["subject"]["selected_targets"] = serde_json::json!([]);
+        // Unselected direct actors still retain their participation records.
+        eqm_protocol::ObligationCoordinateV2Dto::from_json(&serde_json::to_vec(&unselected)?)?;
         let values = result
             .identities()
             .iter()
@@ -617,6 +677,51 @@ owners = ["owner://team/providers"]
         Ok(())
     })?;
     let original = identities(&session, &request()?, None)?;
+    let query = complete_query_json(&session, &original)?;
+    let provider_records = query["result"]["records"]
+        .as_array()
+        .ok_or("query records")?
+        .iter()
+        .filter(|r| r["coordinate"]["subject"]["kind"] == "provider")
+        .collect::<Vec<_>>();
+    assert_eq!(provider_records.len(), 1);
+    let subject = &provider_records[0]["coordinate"]["subject"];
+    assert_eq!(subject["provider"], "provider.identity");
+    for (field, expected) in [
+        ("dependers", vec!["android", "ios"]),
+        ("assignments", vec!["ios"]),
+        (
+            "dependency_configurations",
+            vec!["android", "bridge", "ios"],
+        ),
+    ] {
+        let mut targets = subject[field]
+            .as_array()
+            .ok_or("target configs")?
+            .iter()
+            .map(|v| v["target"].as_str().unwrap_or(""))
+            .collect::<Vec<_>>();
+        targets.sort();
+        assert_eq!(targets, expected);
+    }
+    assert_eq!(
+        subject["dependencies"],
+        serde_json::json!([{"from":"android","to":"bridge"},{"from":"bridge","to":"ios"}])
+    );
+    let mut states = subject["participation"]
+        .as_array()
+        .ok_or("states")?
+        .iter()
+        .map(|v| {
+            (
+                v["target"].as_str().unwrap_or(""),
+                v["state"].as_str().unwrap_or(""),
+            )
+        })
+        .collect::<Vec<_>>();
+    states.sort();
+    assert_eq!(states, vec![("android", "false"), ("ios", "true")]);
+
     let providers = original
         .identities()
         .iter()
@@ -688,5 +793,135 @@ owners = ["owner://team/providers"]
             new["subject"]["dependencies"]
         );
     }
+    // Reuse this actual transitive provider fixture in an actual scenario.
+    fs::write(
+        root.path().join("eqm/contracts/scenario.provider.toml"),
+        r#"schema = "https://raw.githubusercontent.com/triesap/eqm/master/schemas/v2/manifest/scenario.schema.json"
+id = "scenario.provider"
+revision = 1
+[[participants]]
+id = "shared"
+role = "backend"
+[participants.subject]
+provider = "provider.identity"
+"#,
+    )?;
+    let path = root.path().join("eqm/contracts/auth.signup.otp.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path)?.replace(
+            "scope = \"shared_provider\"\nprovider = \"provider.identity\"",
+            "scope = \"end_to_end\"",
+        ),
+    )?;
+    let scenario_session = prepare(
+        &SessionRequest::new(None, "2026-01-02T03:04:05Z".parse()?),
+        root.path(),
+    )?;
+    let input = request()?.with_scope_bindings(RequirementScenarioBindings::new(vec![(
+        FullRequirementId::new("account.create.signup.otp#valid_code_advances")?,
+        ScenarioRef::new(ScenarioId::new("scenario.provider")?, Revision::new(1)?),
+    )])?);
+    let scenario_ids = identities(&scenario_session, &input, None)?;
+    let query = complete_query_json(&scenario_session, &scenario_ids)?;
+    let record = query["result"]["records"]
+        .as_array()
+        .ok_or("records")?
+        .iter()
+        .find(|r| {
+            r["subject"]["kind"] == "scenario" || r["coordinate"]["subject"]["kind"] == "scenario"
+        })
+        .ok_or("provider scenario")?;
+    let subject = if record["kind"] == "required" {
+        &record["coordinate"]["subject"]
+    } else {
+        &record["subject"]
+    };
+    assert_eq!(subject["providers"].as_array().ok_or("providers")?.len(), 1);
+    for change in ["foreign_provider", "configuration", "participation"] {
+        let mut malformed = subject.clone();
+        match change {
+            "foreign_provider" => {
+                malformed["providers"][0]["provider"] = serde_json::json!("provider.foreign")
+            }
+            "configuration" => {
+                malformed["selected_targets"][0]["configuration_digest"] =
+                    serde_json::json!(format!("sha256:{}", "0".repeat(64)))
+            }
+            _ => malformed["participation"][0]["state"] = serde_json::json!("true"),
+        }
+        assert!(
+            eqm_protocol::ObligationQuerySubjectV2::from_json(&serde_json::to_vec(&malformed)?)
+                .is_err(),
+            "{change}"
+        );
+    }
+    // Missing provider assignment is descriptive unresolved work, including
+    // empty dependency scope; a target display filter cannot hide it.
+    let path = root.path().join("eqm.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path)?.replace("providers = [\"provider.identity\"]", "providers = []"),
+    )?;
+    let missing_session = prepare(
+        &SessionRequest::new(None, "2026-01-02T03:04:05Z".parse()?),
+        root.path(),
+    )?;
+    let missing_ids = identities(&missing_session, &input, None)?;
+    let missing = eqm_application::prepare_obligation_query(
+        missing_session.finalized(),
+        &missing_ids,
+        "2026-01-02T03:04:05Z".parse()?,
+        false,
+    )?;
+    let filtered = missing.view(eqm_protocol::ObligationQueryFiltersV2 {
+        unit: None,
+        target: Some("foreign".into()),
+        statuses: eqm_protocol::CanonicalSet::empty(),
+    })?;
+    let filtered: serde_json::Value = serde_json::from_slice(&filtered.to_json()?)?;
+    assert!(filtered["result"]["records"].as_array().ok_or("records")?.iter().any(|r|
+        r["reason"] == "missing_scope_authority" && r["subject"]["kind"] == "scenario"));
+    Ok(())
+}
+
+fn complete_query_json(
+    session: &PreparedSession,
+    identities: &PreparedObligationIdentities,
+) -> Result<serde_json::Value, Box<dyn Error>> {
+    let query = eqm_application::prepare_obligation_query(
+        session.finalized(),
+        identities,
+        "2026-01-02T03:04:05Z".parse()?,
+        false,
+    )?;
+    let report = query.view(eqm_protocol::ObligationQueryFiltersV2 {
+        unit: None,
+        target: None,
+        statuses: eqm_protocol::CanonicalSet::empty(),
+    })?;
+    Ok(serde_json::from_slice(&report.to_json()?)?)
+}
+
+fn assert_invalid_scope_report(
+    original: &serde_json::Value,
+    coordinate: &eqm_protocol::ObligationCoordinateV2Dto,
+    reference: String,
+) -> Result<(), Box<dyn Error>> {
+    let mut report: eqm_protocol::ObligationsReportV2Dto =
+        serde_json::from_value(original.clone())?;
+    if let eqm_protocol::ObligationsReportV2Dto::Success { result, .. } = &mut report {
+        let mut records = result.records.iter().cloned().collect::<Vec<_>>();
+        let record = records.iter_mut().find(|r| matches!(r, eqm_protocol::ObligationViewV2Dto::Required { coordinate: c, .. } if matches!(c.subject, eqm_protocol::ObligationQuerySubjectV2::Scenario { .. }))).ok_or("required scenario")?;
+        *record = eqm_protocol::ObligationViewV2Dto::Required {
+            state: eqm_protocol::ObligationQueryState::Pending,
+            reference,
+            coordinate: Box::new(coordinate.clone()),
+        };
+        result.records = eqm_protocol::CanonicalSet::from_members(records)?;
+    }
+    assert!(
+        eqm_protocol::ObligationsReportV2Dto::from_json(&serde_json::to_vec(&report)?).is_err()
+    );
     Ok(())
 }

@@ -2273,9 +2273,11 @@ mod tests {
                 crate::COMPARISON_CONTEXT_SCHEMA_V2,
                 eqm_domain::SchemaKind::ComparisonContext,
             ),
+            (crate::RESULT_SCHEMA_V2, eqm_domain::SchemaKind::Result),
         ];
         assert_eq!(identities.len(), crate::V2_PROTOCOL_SCHEMAS.len());
         for (uri, kind) in identities {
+            assert!(crate::V2_PROTOCOL_SCHEMAS.contains(&uri));
             assert_eq!(uri.kind(), kind);
             assert_eq!(uri.version(), eqm_domain::SchemaVersion::V2);
             assert!(uri.to_string().contains("/schemas/v2/"));

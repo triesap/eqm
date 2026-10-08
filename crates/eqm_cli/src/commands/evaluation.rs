@@ -89,6 +89,12 @@ pub struct PreparedQueryDerivation {
     derivation: ObligationDerivation,
     identities: PreparedObligationIdentities,
 }
+impl PreparedQueryDerivation {
+    /// Borrows the complete checked pre-filter identity map retained by preparation.
+    pub const fn identities(&self) -> &PreparedObligationIdentities {
+        &self.identities
+    }
+}
 impl Deref for PreparedQueryDerivation {
     type Target = ObligationDerivation;
     fn deref(&self) -> &Self::Target {
@@ -394,6 +400,23 @@ mod tests {
             .collect()
     }
 
+    fn query_references(value: &serde_json::Value) -> Result<BTreeSet<String>, Box<dyn Error>> {
+        let report = eqm_protocol::ObligationsReportV2Dto::from_json(&serde_json::to_vec(value)?)?;
+        let eqm_protocol::ObligationsReportV2Dto::Success { result, .. } = report else {
+            return Err("expected successful scope query".into());
+        };
+        Ok(result
+            .records
+            .iter()
+            .filter_map(|record| match record {
+                eqm_protocol::ObligationViewV2Dto::Required { reference, .. } => {
+                    Some(reference.clone())
+                }
+                eqm_protocol::ObligationViewV2Dto::Unresolved { .. } => None,
+            })
+            .collect())
+    }
+
     #[test]
     fn actual_queries_share_complete_references_before_presentation_filters()
     -> Result<(), Box<dyn Error>> {
@@ -405,7 +428,15 @@ mod tests {
         )?;
         let (_, prepared) = derive_with_policy(&session, None, &[], &[])?;
         let all = query(repository.path(), &["obligations"])?;
-        let all_refs = references(&all["result"]["obligations"], "id")?;
+        let all_refs = query_references(&all)?;
+        assert_eq!(
+            all["result"]["denominator"]["required"],
+            prepared.obligations.len()
+        );
+        assert_eq!(
+            all["result"]["denominator"]["unresolved"],
+            prepared.unresolved.len()
+        );
         assert!(!all_refs.is_empty());
         let prepared_refs = prepared
             .obligations
@@ -442,9 +473,10 @@ mod tests {
             repository.path(),
             &["obligations", "--unit", unit, "--target", target.as_str()],
         )?;
+        assert_eq!(query_references(&filtered)?, subset);
         assert_eq!(
-            references(&filtered["result"]["obligations"], "id")?,
-            subset
+            filtered["result"]["denominator"],
+            all["result"]["denominator"]
         );
         let context = query(
             repository.path(),
@@ -533,9 +565,17 @@ mod tests {
         assert!(affected_refs.is_subset(&all_refs));
         assert!(affected_refs.contains(&obligation_id(&prepared, first)?));
 
-        // Neither hiding missing rows nor rejecting foreign strengths mutates the universe.
-        let hidden = query(repository.path(), &["obligations", "--status", "satisfied"])?;
-        assert!(references(&hidden["result"]["obligations"], "id")?.is_empty());
+        // Neither hiding pending rows nor rejecting foreign strengths mutates the universe.
+        let hidden = query(repository.path(), &["obligations", "--status", "unknown"])?;
+        assert!(query_references(&hidden)?.is_empty());
+        assert_eq!(
+            hidden["result"]["denominator"],
+            all["result"]["denominator"]
+        );
+        let unsupported = query(repository.path(), &["obligations", "--status", "satisfied"])?;
+        assert_eq!(unsupported["outcome"], "error");
+        assert_eq!(unsupported["error"]["code"], "invalid_request");
+        assert!(unsupported.get("result").is_none());
         assert_eq!(prepared.obligations.len(), all_refs.len());
         let mut foreign = first.clone();
         foreign.strength.minimum_count =

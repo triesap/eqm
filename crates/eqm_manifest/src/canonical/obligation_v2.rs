@@ -84,7 +84,10 @@ fn provider(value: &ProviderScopeInputV2<'_>) -> Result<Value, CanonicalizationE
         ("participation", participation(&value.participation)?),
     ]))
 }
-fn subject(value: &ObligationScopeInputV2<'_>) -> Result<Value, CanonicalizationError> {
+/// Projects exact checked-scope claims without creating a coordinate identity.
+pub fn obligation_scope_v2(
+    value: &ObligationScopeInputV2<'_>,
+) -> Result<Value, CanonicalizationError> {
     Ok(match value {
         ObligationScopeInputV2::Target(value) => object([
             ("kind", json!("target")),
@@ -164,7 +167,7 @@ pub fn obligation_v2(
                     .map(|digest| json!(digest.to_string())),
             )?,
         ),
-        ("subject", subject(&value.subject)?),
+        ("subject", obligation_scope_v2(&value.subject)?),
         ("expected_selections", expectations),
         (
             "strength",
@@ -198,4 +201,17 @@ pub fn canonicalize_obligation_v2(
     }
     let digest = ObligationDigest::hash_content(&bytes);
     Ok(CanonicalObligationV2 { bytes, digest })
+}
+
+/// Produces bounded canonical exact scope bytes for a descriptive query record.
+/// These bytes do not confer scope authority or a trusted subject identity.
+pub fn canonicalize_obligation_scope_v2(
+    value: &ObligationScopeInputV2<'_>,
+) -> Result<Vec<u8>, CanonicalizationError> {
+    let bytes = serde_json_canonicalizer::to_vec(&obligation_scope_v2(value)?)
+        .map_err(|_| CanonicalizationError::Serialization)?;
+    if bytes.len() > MAX_PROJECTION_BYTES {
+        return Err(CanonicalizationError::ProjectionTooLarge);
+    }
+    Ok(bytes)
 }

@@ -31,10 +31,16 @@ executions plus seven end-to-end, 255 owning executions and fresh separate
 allocated source review. The 512 real permutations preserve literal complete
 coordinates; unresolved work and independent facet constraints remain visible.
 
-There are 56 numbered local acceptances. S047 denominator safety and exact-scope
+S058 complete pre-evidence query passed 911 workspace executions plus seven
+end-to-end, 399 owning executions, twenty workspace doctests, the twelve-case
+security matrix and fresh separate allocated source review. Typed filters preserve
+the complete denominator; strict v2 output includes rendered-byte bounds and
+explicit execution errors. All v1 schemas and unrelated command goldens remain unchanged.
+
+There are 57 numbered local acceptances. S047 denominator safety and exact-scope
 contributions are retained; identity is accepted; residual aggregation remains S073.
-Remaining numbered work is S047 plus S058–S211 (155 unaccepted steps). Next is
-S058, followed by S059–S076 and mandatory independent complete-universe/reference
+Remaining numbered work is S047 plus S059–S211 (154 unaccepted steps). Next is
+S059, followed by S060–S076 and mandatory independent complete-universe/reference
 evaluator acceptance before S077; continue subsequent eligible work under the
 original gates.
 
@@ -42,5 +48,5 @@ All original 64 R/AC, 21 RA and Q01–Q15 remain unchanged. No whole acceptance 
 issue closure follows from allocated checkpoints. Extended/Linux/live product,
 crypto, host, packaging/signing and operational readiness remain unverified.
 No current owner-only software blocker or human release-test milestone.
-No push, publication, deployment, signing or parent gitlink staging is authorized.
-See [real derivation report](reports/S057.md), [inventory supporting-facts report](reports/S056.md), [structural-observation report](reports/S055.md), [obligation-identity report](reports/S054.md), [expected-selection report](reports/S053.md) and [scope report](reports/S052.md) and [plan](COMMIT_SEQUENCE.md).
+No push, publication, deployment or signing is authorized.
+See [complete query report](reports/S058.md), [real derivation report](reports/S057.md), [inventory supporting-facts report](reports/S056.md), [structural-observation report](reports/S055.md), [obligation-identity report](reports/S054.md), [expected-selection report](reports/S053.md) and [scope report](reports/S052.md) and [plan](COMMIT_SEQUENCE.md).

@@ -2,9 +2,9 @@
  "plan": "eqm_product_v1",
  "baseline_commit": "7c8293837c09c627489cdf244a2fbd97b60aa8ed",
  "preflight": "baseline_review_recorded_revalidate_before_S001",
- "next_step": "S058",
+ "next_step": "S059",
  "implementation": "in_progress",
- "local_verification": "S057_allocated_accepted_standard905workspace_plus7endtoend_255owning;56_numbered_accepted;S058_next;whole_MVP_incomplete",
+ "local_verification": "S058_allocated_accepted_standard911workspace_plus7endtoend_399owning_20doctests_12security;57_numbered_accepted;S059_next;whole_MVP_incomplete",
  "platform_verification": "not_run",
  "operational_authorization": "not_granted",
  "optional_native": "not_activated",
@@ -1681,7 +1681,7 @@
   {
    "id": "S057",
    "status": "complete",
-   "commit_sha": null,
+   "commit_sha": "18322e6df150246935dddadf919be61baeffbc37",
    "report": "implementation/reports/S057.md",
    "verification": [
     "cargo fmt --all exit0 candidate",
@@ -1704,11 +1704,44 @@
   },
   {
    "id": "S058",
-   "status": "pending",
+   "status": "complete",
    "commit_sha": null,
-   "report": null,
-   "verification": [],
-   "baseline_exceptions": []
+   "report": "implementation/reports/S058.md",
+   "verification": [
+    "cargo fmt --all R0/R2/R3/R4/R5 exit0;R1 router contention exit1 while own protocol check active",
+    "cargo check --all-targets --locked -p eqm_protocol R0 exit101 five type/schema errors corrected;R1 exit0",
+    "expanded production check R0 exit101 private provider member corrected;R1 exit101 ambiguous test import corrected",
+    "cargo check --all-targets -p eqm scoped dev-validator lock update;R0 exit101 path-schema visibility corrected;R1 exit0;lock only existing jsonschema dev edge",
+    "cargo xtask schemas generate R0 active;not acceptance",
+    "cargo xtask schemas generate R0 exit0;new v2 result schema only;existing v1 bytes preserved",
+    "cargo test --locked -p eqm_application --test obligation_query --test obligation_identity R0/R1/R2 exit0 each11tests/2summaries;R2 includes real scenario-provider and refreshed-reference negative controls",
+    "cargo test --locked -p eqm --test obligation_query_v2 R0/R1 exit0 each1test;R1 actual snapshots/poison evidence/executable runner sentinels",
+    "protocol inclusive byte ceiling R0 exit0 1test",
+    "golden regeneration R0 exit0 1test;only obligations of20commands changed",
+    "independent allocated source review FAIL filter/scenario/noeffects gaps;repaired with causal controls",
+    "independent fresh review FAIL renderer newline byte ceiling;repaired actual complete and filtered rendered size guards",
+    "cargo test --locked -p eqm commands::obligations::tests::valid_complete_envelope_reserves_actual_renderer_framing exit0 1test/2summaries;strict-reader accepted MAXframed and resource_limit rejects MAX+1",
+    "fresh independent framing acceptance PASS conditional mandatory gates;mechanical optional scope boxing under review",
+    "clippy preflight R0/R1 exit101 enum layout and nested condition;corrected without wire changes;R2 active",
+    "cargo fmt --all R6–R12 exit0",
+    "Clippy preflight R2 exit101 test-module item placement corrected;R3 exit0",
+    "fresh independent allocated source PASS reconfirmed after final mechanicalboxing/functionmove",
+    "expanded originalowning/P04 R0 exit101:80CLItests passed;1existing reference test stillread v1 layout;otherowners notrun;test updated throughstrictv2decoder preservingconsumer assertions",
+    "fresh independent reviewer reconfirmed allocated source PASS for test-only consumer repair;targeted gate pending",
+    "targetedreferenceconsumer R0 exit101 remaining legacy satisfied-status assertion;R1 exit0 1test/2summaries aftertruthful unknownfilter+denominator and explicitunsupportedstatus error checks",
+    "fresh independent review reconfirmed allocatedPASS forfinalreferenceconsumer assertions;expandedowning/P04R1 active",
+    "expandedowning/P04R1 exit101:721passed1failed/64summaries;allCLI/application/domain/engine/manifest binariespassed;soleprotocolv2family literalinventory8vsregistered9 failed;addedResultliteral+membershipassertion",
+    "fresh independent reviewer reconfirmed conditionalPASS aftertest-onlyinventoryupdate;targeted gate pending;original owning/fullworkspace standard mandatory",
+    "original owning cargo test --all-targets --locked -p eqm_protocol -p eqm_application -p eqm R2 exit0 399tests/27summaries/0failed0ignored;frozen356-source unchanged",
+    "workspaceP04 doctests active;securitymatrix andfullstandard pending",
+    "workspace doctests R0 exit0 20tests/11summaries/0failed0ignored;securitymatrix active;fullstandard pending",
+    "repository security matrix R0 exit0 all12cases;fullstandard active;356source unchanged",
+    "cargo xtask check R0 exit0 911workspace/84summaries plus7endtoend/7summaries;0failed0ignored;fmt/lockedcheck/clippy/docs/diff/schema22v1+14v2 PASS",
+    "final356source parity unchanged after standard;fresh allocated independent source PASS gateconditions fulfilled;no whole RA14/P04/S047/MVP closure"
+   ],
+   "baseline_exceptions": [],
+   "implementation_status": "implemented",
+   "supervisor_status": "accepted_for_allocated_scope"
   },
   {
    "id": "S059",
@@ -3266,8 +3299,8 @@
   "scope": "All 64 requirements and acceptance cases, F01-F20, RA01-RA21, the ordered 15-cycle sequence and DEV-001.",
   "limits": "Approval settles recommended direction; it does not supply undisclosed product repositories, business policies, operational identities or access. Optional embedding remains inactive; publication/deployment and live enforcement remain separately authorized."
  },
- "next_cycle": "EQM-P04",
- "active_step": "S058",
+ "next_cycle": "EQM-P05",
+ "active_step": "S059",
  "cycles": [
   {
    "id": "EQM-P01",
@@ -3301,10 +3334,10 @@
    "first_step": "S044",
    "last_step": "S058",
    "status": "in_progress",
-   "completed_steps": 13,
+   "completed_steps": 14,
    "total_steps": 15,
-   "accepted_steps": 13,
-   "retained_implemented_steps": 14,
+   "accepted_steps": 14,
+   "retained_implemented_steps": 15,
    "repairs_implemented": [
     "P04-R2",
     "P04-R3",
@@ -3313,7 +3346,7 @@
     "P04-R4B2",
     "P04-R4C"
    ],
-   "next_step": "S058"
+   "next_step": "S047_residual_at_S073"
   },
   {
    "id": "EQM-P05",
@@ -3618,18 +3651,18 @@
    "supervisor_status": "accepted_for_original_scope"
   }
  ],
- "next_checkpoint": "S058",
+ "next_checkpoint": "S059",
  "supervisor_review": {
-  "source_commit": "865f2cce3866b067538e124b55b7c22536541e49",
-  "candidate": "green_S057_allocated_scope",
-  "report": "implementation/reports/S057.md",
-  "status": "allocated_scope_accepted_56_numbered_local_acceptances",
+  "source_commit": "18322e6df150246935dddadf919be61baeffbc37",
+  "candidate": "green_S058_allocated_scope",
+  "report": "implementation/reports/S058.md",
+  "status": "allocated_scope_accepted_57_numbered_local_acceptances",
   "amendment": "DEV-035",
-  "independent_checks": "fresh separate final allocated source PASS;standard905workspace+7endtoend;255owning;structure195/diff PASS;350file fingerprint unchanged",
-  "next_checkpoint": "S058",
+  "independent_checks": "fresh separate final allocated source PASS;standard911workspace+7endtoend;399owning;20doctests;12security;356file fingerprint unchanged",
+  "next_checkpoint": "S059",
   "release_candidate": false
  },
- "execution_target": "pfc all: P04-R4B1/P04-R4B2/P04-R4C then S052\u2013S211; original independent gates retained",
+ "execution_target": "pfc all: P04-R4B1/P04-R4B2/P04-R4C then S052–S211; original independent gates retained",
  "supervisor_findings": [
   {
    "id": "RF01",
