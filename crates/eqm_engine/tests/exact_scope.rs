@@ -25,6 +25,839 @@ use std::path::Path;
 const REQUIREMENT: &str = "account.create.signup.otp#valid_code_advances";
 const SCENARIO: &str = "scenario.fixture_signup";
 
+// S061 pure grouped matching controls. Scope/configuration/binding/specification
+// come from the real checked graph. Synthetic assertion/context identities are
+// explicit engine input data, not wire canonicalization or verified provenance;
+// the application owning controls exercise actual bytes and S054 identities.
+struct CoverageFixture {
+    expected: eqm_engine::CompleteCoverageExpectation,
+    result: eqm_domain::EvidenceResult,
+    identity: eqm_domain::SemanticEvidenceDigest,
+    lineage: eqm_domain::EvidenceLineage,
+    provenance: eqm_domain::SelectorText,
+}
+
+impl CoverageFixture {
+    fn candidate(&self) -> eqm_engine::CompleteEvidenceCandidate<'_> {
+        eqm_engine::CompleteEvidenceCandidate {
+            delivery: eqm_engine::EvidenceNormalizationCandidate {
+                result: &self.result,
+                lineage: &self.lineage,
+                semantic_identity: self.identity,
+                raw_identity: eqm_domain::RawObjectDigest::hash_content(
+                    b"synthetic exact original",
+                ),
+                evidence_spec_id: &self.expected.structural.evidence_spec_id,
+                provenance: &self.provenance,
+            },
+            coordinate: Some(&self.expected.coordinate),
+            identity: Some(self.expected.identity),
+            subjects: self.expected.subjects.as_ref(),
+        }
+    }
+}
+
+fn coverage_fixture(
+    graph: &FinalizedWorkspaceGraph,
+    key: eqm_engine::ObligationKey,
+) -> Result<CoverageFixture, Box<dyn Error>> {
+    use eqm_domain::*;
+    let target = TargetId::new("android")?;
+    let binding = graph
+        .graph()
+        .bindings()
+        .values()
+        .find(|binding| binding.target() == &target && binding.unit() == &key.unit)
+        .ok_or("owning binding missing")?;
+    let specification = binding
+        .evidence()
+        .values()
+        .find(|spec| {
+            spec.kind() == EvidenceKind::Test
+                && spec.requirements().contains(&key.requirement)
+                && spec.facets().contains(&key.facet)
+        })
+        .ok_or("owning test specification missing")?;
+    let participants = match &key.subject {
+        ScopeSubject::Scenario(scope) => scope.participants().clone(),
+        ScopeSubject::CheckedProvider(scope) => {
+            let mut participants = BTreeSet::new();
+            for target in scope
+                .dependers()
+                .iter()
+                .filter(|target| key.subject.participates(target))
+            {
+                participants.insert(ScenarioParticipant::new(
+                    OccurrenceId::new(format!("fixture_{}", target.as_str()))?,
+                    RoleId::new("edge")?,
+                    ScenarioSubject::Target(target.clone()),
+                ));
+            }
+            participants.insert(ScenarioParticipant::new(
+                OccurrenceId::new("fixture_provider")?,
+                RoleId::new("service")?,
+                ScenarioSubject::Provider(scope.provider().clone()),
+            ));
+            participants
+        }
+        _ => return Err("checked grouped scope required".into()),
+    };
+    let repository: RepositoryIdentity = "https://example.com/fixture/group".parse()?;
+    let commit: SourceCommit = "a".repeat(40).parse()?;
+    let build = SelectorText::new("fixture-build")?;
+    let artifact = Sha256Digest::hash_content(b"synthetic built artifact");
+    let configuration = eqm_manifest::canonicalize_target_configuration_v2(
+        graph
+            .graph()
+            .targets()
+            .get(&target)
+            .ok_or("target missing")?,
+    )?
+    .digest();
+    let mut assignments = Vec::new();
+    for participant in &participants {
+        let (target_configuration, provider_configuration) = match participant.subject() {
+            ScenarioSubject::Target(target) => (
+                Some(
+                    eqm_manifest::canonicalize_target_configuration_v2(
+                        graph
+                            .graph()
+                            .targets()
+                            .get(target)
+                            .ok_or("participant target missing")?,
+                    )?
+                    .digest(),
+                ),
+                None,
+            ),
+            ScenarioSubject::Provider(provider) => (
+                None,
+                Some(
+                    eqm_manifest::canonicalize_provider_configuration_v2(
+                        graph
+                            .graph()
+                            .providers()
+                            .get(provider)
+                            .ok_or("participant provider missing")?,
+                    )?
+                    .digest(),
+                ),
+            ),
+        };
+        assignments.push(SubjectAssignment::new(
+            participant.occurrence().clone(),
+            repository.clone(),
+            commit.clone(),
+            Some(Sha256Digest::hash_content(b"synthetic source content")),
+            target_configuration,
+            provider_configuration,
+            Some(build.clone()),
+            Some(artifact),
+        )?);
+    }
+    let subjects = eqm_engine::CoverageSubjectManifest {
+        participants,
+        subjects: SubjectManifest::new(
+            SelectorText::new("fixture_subjects")?,
+            Revision::new(1)?,
+            assignments,
+        )?,
+    };
+    let scope = match &key.subject {
+        ScopeSubject::Scenario(scope) => {
+            EvidenceScopeSubject::TargetSet(scope.selected_targets().clone())
+        }
+        ScopeSubject::CheckedProvider(scope) => {
+            EvidenceScopeSubject::Provider(scope.provider().clone())
+        }
+        _ => return Err("checked group missing".into()),
+    };
+    let subject = EvidenceSubject::new(
+        repository,
+        Sha256Digest::hash_content(b"synthetic repository identity"),
+        scope,
+        commit,
+        Some(build),
+        Some(artifact),
+        configuration.as_digest(),
+    );
+    let lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(PlanId::new("fixture.plan")?),
+        campaign: Some(CampaignId::new("fixture.campaign")?),
+        run: Some(RunId::new("fixture.run")?),
+        logical_case: Some(LogicalCaseId::new("fixture.case")?),
+        attempt: Some(AttemptId::new("fixture.attempt")?),
+    })?;
+    let selection = ExpectedSelectionManifest::new(
+        ExpectedSelectionSource {
+            binding: binding.id().clone(),
+            binding_revision: binding.revision(),
+            binding_digest: eqm_manifest::canonicalize_binding_v2(binding)?.digest(),
+            specification: specification.id().clone(),
+            specification_digest: eqm_manifest::canonicalize_evidence_spec_v2(specification)?
+                .digest(),
+            plan: lineage.plan().clone(),
+            campaign: lineage.campaign().clone(),
+        },
+        EvidenceKind::Test,
+        SelectionCountUnit::LogicalTestCase,
+        vec![lineage.logical_case().clone()],
+        vec![],
+        false,
+    )?;
+    let profiles = key
+        .profiles
+        .iter()
+        .map(|(id, selected)| {
+            let values = selected
+                .values()
+                .iter()
+                .map(|(dimension, value)| {
+                    Ok((
+                        dimension.clone(),
+                        value.clone().ok_or("unknown fixture profile")?,
+                    ))
+                })
+                .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+            Ok((
+                id.clone(),
+                ProfileSelection::new(id.clone(), selected.revision(), values)?,
+            ))
+        })
+        .collect::<Result<BTreeMap<_, _>, Box<dyn Error>>>()?;
+    let structural = eqm_engine::CoverageExpectation {
+        evidence_spec_id: specification.id().clone(),
+        evidence_spec_digest: selection.source().specification_digest.as_digest(),
+        requirement: key.requirement.clone(),
+        facet: key.facet,
+        subject,
+        target,
+        unit: key.unit.clone(),
+        kind: EvidenceKind::Test,
+        contract_digest: eqm_manifest::canonicalize_contract_v2(graph.graph())?
+            .digest()
+            .as_digest(),
+        binding_digest: selection.source().binding_digest.as_digest(),
+        policy_digest: Sha256Digest::hash_content(b"synthetic selected policy"),
+        runner_digest: None,
+        adapter_digest: None,
+        runtime_facts_digest: None,
+        profiles,
+        release_record_digest: key.release_context,
+    };
+    let expected = eqm_engine::CompleteCoverageExpectation {
+        structural,
+        coordinate: key,
+        identity: ObligationDigest::hash_content(b"synthetic pure context identity"),
+        selection,
+        subjects: Some(subjects),
+    };
+    let identity = SemanticEvidenceDigest::hash_content(b"synthetic pure passed assertion");
+    let result = coverage_assertion(&expected, identity, AttemptOutcome::Passed)?;
+    Ok(CoverageFixture {
+        expected,
+        result,
+        identity,
+        lineage,
+        provenance: SelectorText::new("fixture.receipt")?,
+    })
+}
+
+fn coverage_assertion(
+    expected: &eqm_engine::CompleteCoverageExpectation,
+    identity: eqm_domain::SemanticEvidenceDigest,
+    outcome: eqm_domain::AttemptOutcome,
+) -> Result<eqm_domain::EvidenceResult, Box<dyn Error>> {
+    use eqm_domain::*;
+    let base = &expected.structural;
+    let start: UtcInstant = "2026-01-02T03:00:00Z".parse()?;
+    let finish: UtcInstant = "2026-01-02T03:00:01Z".parse()?;
+    let counts = EvidenceCounts::new(
+        1,
+        u64::from(outcome == AttemptOutcome::Passed),
+        u64::from(outcome == AttemptOutcome::Failed),
+        0,
+        0,
+        0,
+    )?;
+    let execution = ExecutionPayload::new(
+        vec![EvidenceAttempt::new(
+            PositiveCount::new(1)?,
+            outcome,
+            start,
+            finish,
+            None,
+        )?],
+        counts,
+        start,
+        finish,
+    )?;
+    Ok(EvidenceResult::new(
+        identity.as_digest(),
+        base.subject.clone(),
+        base.target.clone(),
+        base.unit.clone(),
+        vec![base.requirement.clone()],
+        vec![base.facet],
+        base.kind,
+        base.evidence_spec_digest,
+        base.contract_digest,
+        base.binding_digest,
+        base.policy_digest,
+        base.runner_digest,
+        base.adapter_digest,
+        base.runtime_facts_digest,
+        base.release_record_digest,
+        base.profiles.values().cloned().collect(),
+        "producer://local/fixture/grouped".parse()?,
+        TrustLevel::UntrustedLocal,
+        finish,
+        EvidencePayload::Test(execution),
+        vec![],
+        identity.as_digest(),
+        Extensions::default(),
+    )?)
+}
+
+fn checked_coverage_fixture(
+    provider: bool,
+) -> Result<(tempfile::TempDir, CoverageFixture), Box<dyn Error>> {
+    let (root, loaded) = support::loaded_example_with(|root| {
+        // The example intentionally has no OTP binding. Declare an explicit
+        // synthetic mapping before ingestion; never reuse the identifier mapping
+        // implicitly for a different requirement.
+        let binding = fs::read_to_string(root.join("eqm/bindings/android.auth_signup.toml"))?
+            .replace("binding.android.auth_signup", "binding.android.fixture_otp")
+            .replace(
+                "account.create.signup.identifier#email_default",
+                REQUIREMENT,
+            )
+            .replace(
+                "account.create.signup.identifier",
+                "account.create.signup.otp",
+            );
+        fs::write(root.join("eqm/bindings/android.fixture_otp.toml"), binding)?;
+        if provider {
+            provider_workspace(root, true, false)?;
+            let path = root.join("eqm/contracts/auth.signup.otp.toml");
+            fs::write(
+                &path,
+                fs::read_to_string(&path)?.replace(
+                    "scope = \"end_to_end\"",
+                    "scope = \"shared_provider\"\nprovider = \"provider.required\"",
+                ),
+            )?;
+        }
+        Ok(())
+    })?;
+    let graph = finalize(&loaded)?;
+    let map = if provider {
+        RequirementScenarioBindings::new(vec![])?
+    } else {
+        bindings(REQUIREMENT, SCENARIO, 1)?
+    };
+    let required = universe(&graph, &map, Some("us"))?;
+    let key = required
+        .coordinates()
+        .iter()
+        .find(|key| {
+            key.requirement.as_str() == REQUIREMENT
+                && key.facet == eqm_domain::Facet::Behavior
+                && matches!(
+                    &key.subject,
+                    ScopeSubject::Scenario(_) | ScopeSubject::CheckedProvider(_)
+                )
+        })
+        .ok_or("checked grouped behavior missing")?
+        .clone();
+    Ok((root, coverage_fixture(&graph, key)?))
+}
+
+#[test]
+fn complete_grouped_matching_preserves_roles_subjects_and_rejected_relevance()
+-> Result<(), Box<dyn Error>> {
+    use eqm_domain::{RoleId, ScenarioParticipant};
+    use eqm_engine::{
+        CompleteCoverageError, CompleteCoverageMismatch, evaluate_complete_evidence_coverage,
+    };
+    for provider in [false, true] {
+        let (_root, fixture) = checked_coverage_fixture(provider)?;
+        let candidate = fixture.candidate();
+        let accepted =
+            evaluate_complete_evidence_coverage(&fixture.expected, &[candidate, candidate])?;
+        assert_eq!(
+            accepted.status(),
+            CoverageStatus::Covered,
+            "provider={provider}"
+        );
+        assert_eq!(
+            accepted.eligible(),
+            &BTreeSet::from([(fixture.identity, fixture.lineage.clone())])
+        );
+        assert!(accepted.rejected().is_empty());
+        assert!(accepted.conflicts().is_empty());
+        let mut wrong_roles = fixture
+            .expected
+            .subjects
+            .clone()
+            .ok_or("group subjects absent")?;
+        let actor = wrong_roles
+            .participants
+            .iter()
+            .next()
+            .ok_or("participant absent")?
+            .clone();
+        wrong_roles.participants.remove(&actor);
+        wrong_roles.participants.insert(ScenarioParticipant::new(
+            actor.occurrence().clone(),
+            RoleId::new("substituted_role")?,
+            actor.subject().clone(),
+        ));
+        let mut missing_actor = fixture
+            .expected
+            .subjects
+            .clone()
+            .ok_or("group subjects absent")?;
+        missing_actor.participants.remove(&actor);
+        for claim in [
+            eqm_engine::CompleteEvidenceCandidate {
+                subjects: None,
+                ..candidate
+            },
+            eqm_engine::CompleteEvidenceCandidate {
+                subjects: Some(&wrong_roles),
+                ..candidate
+            },
+            eqm_engine::CompleteEvidenceCandidate {
+                subjects: Some(&missing_actor),
+                ..candidate
+            },
+        ] {
+            let rejected = evaluate_complete_evidence_coverage(&fixture.expected, &[claim, claim])?;
+            assert_eq!(rejected.status(), CoverageStatus::Missing);
+            assert!(rejected.eligible().is_empty());
+            assert!(rejected.conflicts().is_empty());
+            assert_eq!(
+                rejected.rejected()[&fixture.result.id()],
+                BTreeSet::from([CompleteCoverageMismatch::SubjectManifest])
+            );
+            let mixed =
+                evaluate_complete_evidence_coverage(&fixture.expected, &[candidate, claim, claim])?;
+            assert_eq!(mixed.status(), CoverageStatus::Covered);
+            assert_eq!(mixed.eligible(), accepted.eligible());
+            assert_eq!(
+                evaluate_complete_evidence_coverage(&fixture.expected, &[claim, candidate, claim])?,
+                mixed
+            );
+        }
+        let mut incomplete = fixture.expected.clone();
+        incomplete.subjects = None;
+        assert_eq!(
+            evaluate_complete_evidence_coverage(&incomplete, &[]),
+            Err(CompleteCoverageError::InvalidExpectation)
+        );
+        let mut inconsistent = fixture.expected.clone();
+        inconsistent.subjects = Some(missing_actor);
+        assert_eq!(
+            evaluate_complete_evidence_coverage(&inconsistent, &[]),
+            Err(CompleteCoverageError::InvalidExpectation)
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn complete_grouped_matching_rejects_each_subject_assignment_substitution()
+-> Result<(), Box<dyn Error>> {
+    use eqm_domain::*;
+    use eqm_engine::{
+        CompleteCoverageError, CompleteCoverageMismatch, evaluate_complete_evidence_coverage,
+    };
+    for provider in [false, true] {
+        let (_root, fixture) = checked_coverage_fixture(provider)?;
+        let original = fixture.expected.subjects.as_ref().ok_or("group manifest")?;
+        let base = fixture.candidate();
+        for axis in [
+            "repository",
+            "commit",
+            "content",
+            "configuration",
+            "configuration_kind",
+            "build",
+            "artifact",
+            "occurrence",
+            "missing_content",
+            "missing_build",
+            "missing_artifact",
+            "manifest_id",
+            "manifest_revision",
+        ] {
+            let mut assignments = original.subjects.assignments().to_vec();
+            let first = &assignments[0];
+            let (target_configuration, provider_configuration) = if axis == "configuration_kind" {
+                if first.target_configuration().is_some() {
+                    (
+                        None,
+                        Some(ProviderConfigurationDigest::hash_content(b"wrong kind")),
+                    )
+                } else {
+                    (
+                        Some(TargetConfigurationDigest::hash_content(b"wrong kind")),
+                        None,
+                    )
+                }
+            } else if axis == "configuration" {
+                if first.target_configuration().is_some() {
+                    (
+                        Some(TargetConfigurationDigest::hash_content(
+                            b"other configuration",
+                        )),
+                        None,
+                    )
+                } else {
+                    (
+                        None,
+                        Some(ProviderConfigurationDigest::hash_content(
+                            b"other configuration",
+                        )),
+                    )
+                }
+            } else {
+                (first.target_configuration(), first.provider_configuration())
+            };
+            assignments[0] = SubjectAssignment::new(
+                if axis == "occurrence" {
+                    OccurrenceId::new("foreign_actor")?
+                } else {
+                    first.occurrence().clone()
+                },
+                if axis == "repository" {
+                    "https://example.com/other".parse()?
+                } else {
+                    first.repository().clone()
+                },
+                if axis == "commit" {
+                    "b".repeat(40).parse()?
+                } else {
+                    first.source_commit().clone()
+                },
+                if axis == "missing_content" {
+                    None
+                } else if axis == "content" {
+                    Some(Sha256Digest::hash_content(b"other source"))
+                } else {
+                    first.source_content()
+                },
+                target_configuration,
+                provider_configuration,
+                if axis == "missing_build" {
+                    None
+                } else if axis == "build" {
+                    Some(SelectorText::new("other-build")?)
+                } else {
+                    first.build_id().cloned()
+                },
+                if axis == "missing_artifact" {
+                    None
+                } else if axis == "artifact" {
+                    Some(Sha256Digest::hash_content(b"other artifact"))
+                } else {
+                    first.artifact_digest()
+                },
+            )?;
+            let changed = eqm_engine::CoverageSubjectManifest {
+                participants: original.participants.clone(),
+                subjects: SubjectManifest::new(
+                    if axis == "manifest_id" {
+                        SelectorText::new("other_subjects")?
+                    } else {
+                        original.subjects.id().clone()
+                    },
+                    if axis == "manifest_revision" {
+                        Revision::new(2)?
+                    } else {
+                        original.subjects.revision()
+                    },
+                    assignments,
+                )?,
+            };
+            let rejected = eqm_engine::CompleteEvidenceCandidate {
+                subjects: Some(&changed),
+                ..base
+            };
+            let report = evaluate_complete_evidence_coverage(&fixture.expected, &[rejected])?;
+            assert_eq!(
+                report.status(),
+                CoverageStatus::Missing,
+                "{provider}/{axis}"
+            );
+            assert!(report.eligible().is_empty());
+            assert!(report.conflicts().is_empty());
+            assert_eq!(
+                report.rejected()[&fixture.result.id()],
+                BTreeSet::from([CompleteCoverageMismatch::SubjectManifest])
+            );
+            let mixed = evaluate_complete_evidence_coverage(
+                &fixture.expected,
+                &[rejected, base, rejected],
+            )?;
+            assert_eq!(mixed.status(), CoverageStatus::Covered);
+            assert_eq!(
+                mixed.eligible(),
+                &BTreeSet::from([(fixture.identity, fixture.lineage.clone())])
+            );
+            assert_eq!(
+                evaluate_complete_evidence_coverage(&fixture.expected, &[base, rejected])?,
+                mixed
+            );
+            if matches!(
+                axis,
+                "configuration_kind"
+                    | "occurrence"
+                    | "missing_content"
+                    | "missing_build"
+                    | "missing_artifact"
+            ) {
+                let mut invalid_expected = fixture.expected.clone();
+                invalid_expected.subjects = Some(changed);
+                assert_eq!(
+                    evaluate_complete_evidence_coverage(&invalid_expected, &[]),
+                    Err(CompleteCoverageError::InvalidExpectation),
+                    "{provider}/{axis}"
+                );
+            }
+        }
+        let mut inconsistent = fixture.expected.clone();
+        inconsistent.structural.subject = EvidenceSubject::new(
+            inconsistent.structural.subject.repository().clone(),
+            inconsistent.structural.subject.repository_id_digest(),
+            inconsistent.structural.subject.scope().clone(),
+            inconsistent.structural.subject.source_commit().clone(),
+            Some(SelectorText::new("unassociated-build")?),
+            inconsistent.structural.subject.artifact_digest(),
+            inconsistent
+                .structural
+                .subject
+                .target_configuration_digest(),
+        );
+        assert_eq!(
+            evaluate_complete_evidence_coverage(&inconsistent, &[]),
+            Err(CompleteCoverageError::InvalidExpectation)
+        );
+        let mut flattened = fixture.expected.clone();
+        flattened.coordinate.subject = match &flattened.coordinate.subject {
+            ScopeSubject::Scenario(scope) => {
+                ScopeSubject::TargetSet(scope.selected_targets().clone())
+            }
+            ScopeSubject::CheckedProvider(scope) => {
+                ScopeSubject::Provider(scope.provider().clone())
+            }
+            _ => return Err("checked group".into()),
+        };
+        assert_eq!(
+            evaluate_complete_evidence_coverage(&flattened, &[]),
+            Err(CompleteCoverageError::InvalidExpectation)
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn complete_matching_enforces_delivery_and_context_work_boundaries() -> Result<(), Box<dyn Error>> {
+    use eqm_domain::*;
+    use eqm_engine::{
+        CandidateNormalizationError, CompleteCoverageError, CompleteCoverageMismatch,
+        evaluate_complete_evidence_coverage,
+    };
+    let (_root, mut fixture) = checked_coverage_fixture(false)?;
+    fixture.expected.coordinate.subject = ScopeSubject::Target(TargetId::new("android")?);
+    fixture.expected.subjects = None;
+    let old = &fixture.expected.structural.subject;
+    fixture.expected.structural.subject = EvidenceSubject::new(
+        old.repository().clone(),
+        old.repository_id_digest(),
+        EvidenceScopeSubject::Target(TargetId::new("android")?),
+        old.source_commit().clone(),
+        old.build_id().cloned(),
+        old.artifact_digest(),
+        old.target_configuration_digest(),
+    );
+    fixture.result =
+        coverage_assertion(&fixture.expected, fixture.identity, AttemptOutcome::Passed)?;
+    let base = fixture.candidate();
+    assert_eq!(
+        evaluate_complete_evidence_coverage(&fixture.expected, &vec![base; 10_000])?.status(),
+        CoverageStatus::Covered
+    );
+    assert_eq!(
+        evaluate_complete_evidence_coverage(&fixture.expected, &vec![base; 10_001]),
+        Err(CompleteCoverageError::Normalization(
+            CandidateNormalizationError::LimitExceeded
+        ))
+    );
+    // Literal boundary witness: 9,982 selected cases, one profile dimension,
+    // one expected target and 64 foreign targets across 10,000 deliveries.
+    // This consumes exactly the declared 1,000,000 context-work slots.
+    let generated = (0..9981)
+        .map(|i| LogicalCaseId::new(format!("case.c{i}")))
+        .collect::<Result<Vec<_>, _>>()?;
+    let cases = std::iter::once(fixture.lineage.logical_case().clone())
+        .chain(generated)
+        .collect();
+    fixture.expected.selection = ExpectedSelectionManifest::new(
+        fixture.expected.selection.source().clone(),
+        EvidenceKind::Test,
+        SelectionCountUnit::LogicalTestCase,
+        cases,
+        vec![],
+        false,
+    )?;
+    let mut foreign = fixture.expected.coordinate.clone();
+    foreign.subject = ScopeSubject::TargetSet(
+        (0..64)
+            .map(|i| TargetId::new(format!("target_{i}")))
+            .collect::<Result<BTreeSet<_>, _>>()?,
+    );
+    let candidate = eqm_engine::CompleteEvidenceCandidate {
+        coordinate: Some(&foreign),
+        ..fixture.candidate()
+    };
+    let report = evaluate_complete_evidence_coverage(&fixture.expected, &vec![candidate; 10_000])?;
+    assert_eq!(report.status(), CoverageStatus::Missing);
+    assert!(report.eligible().is_empty());
+    assert_eq!(
+        report.rejected()[&fixture.result.id()],
+        BTreeSet::from([CompleteCoverageMismatch::Coordinate])
+    );
+    foreign.subject = ScopeSubject::TargetSet(
+        (0..65)
+            .map(|i| TargetId::new(format!("target_{i}")))
+            .collect::<Result<BTreeSet<_>, _>>()?,
+    );
+    let candidate = eqm_engine::CompleteEvidenceCandidate {
+        coordinate: Some(&foreign),
+        ..fixture.candidate()
+    };
+    assert_eq!(
+        evaluate_complete_evidence_coverage(&fixture.expected, &vec![candidate; 10_000]),
+        Err(CompleteCoverageError::WorkLimitExceeded)
+    );
+    Ok(())
+}
+
+#[test]
+fn complete_matching_checks_selection_before_immutable_conflicts() -> Result<(), Box<dyn Error>> {
+    use eqm_domain::*;
+    use eqm_engine::{
+        CompleteCoverageMismatch, CompleteEvidenceCandidate, evaluate_complete_evidence_coverage,
+    };
+    let (_root, fixture) = checked_coverage_fixture(false)?;
+    let base = fixture.candidate();
+    let failed_identity = SemanticEvidenceDigest::hash_content(b"synthetic pure failed assertion");
+    let failed_record =
+        coverage_assertion(&fixture.expected, failed_identity, AttemptOutcome::Failed)?;
+    let failed = CompleteEvidenceCandidate {
+        delivery: eqm_engine::EvidenceNormalizationCandidate {
+            result: &failed_record,
+            semantic_identity: failed_identity,
+            raw_identity: RawObjectDigest::hash_content(b"synthetic failed raw"),
+            ..base.delivery
+        },
+        ..base
+    };
+    let conflict = evaluate_complete_evidence_coverage(&fixture.expected, &[base, failed, base])?;
+    assert_eq!(conflict.status(), CoverageStatus::Unknown);
+    assert!(conflict.eligible().is_empty());
+    assert_eq!(
+        conflict.conflicts(),
+        &BTreeSet::from([(fixture.result.subject().clone(), fixture.lineage.clone())])
+    );
+    assert_eq!(
+        evaluate_complete_evidence_coverage(&fixture.expected, &[failed, base, failed])?,
+        conflict
+    );
+    for axis in [
+        CompleteCoverageMismatch::Plan,
+        CompleteCoverageMismatch::Campaign,
+        CompleteCoverageMismatch::LogicalCase,
+    ] {
+        let changed = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(if axis == CompleteCoverageMismatch::Plan {
+                PlanId::new("other.plan")?
+            } else {
+                fixture.lineage.plan().clone()
+            }),
+            campaign: Some(if axis == CompleteCoverageMismatch::Campaign {
+                CampaignId::new("other.campaign")?
+            } else {
+                fixture.lineage.campaign().clone()
+            }),
+            run: Some(fixture.lineage.run().clone()),
+            logical_case: Some(if axis == CompleteCoverageMismatch::LogicalCase {
+                LogicalCaseId::new("other.case")?
+            } else {
+                fixture.lineage.logical_case().clone()
+            }),
+            attempt: Some(fixture.lineage.attempt().clone()),
+        })?;
+        let rejected_failure = CompleteEvidenceCandidate {
+            delivery: eqm_engine::EvidenceNormalizationCandidate {
+                lineage: &changed,
+                ..failed.delivery
+            },
+            ..failed
+        };
+        let mixed = evaluate_complete_evidence_coverage(
+            &fixture.expected,
+            &[rejected_failure, base, rejected_failure],
+        )?;
+        assert_eq!(mixed.status(), CoverageStatus::Covered, "{axis:?}");
+        assert!(mixed.conflicts().is_empty());
+        assert_eq!(
+            mixed.eligible(),
+            &BTreeSet::from([(fixture.identity, fixture.lineage.clone())])
+        );
+        assert_eq!(
+            mixed.rejected()[&failed_record.id()],
+            BTreeSet::from([axis])
+        );
+        assert_eq!(
+            evaluate_complete_evidence_coverage(&fixture.expected, &[base, rejected_failure])?,
+            mixed
+        );
+    }
+    for (run, attempt) in [
+        (
+            RunId::new("independent.run")?,
+            fixture.lineage.attempt().clone(),
+        ),
+        (
+            fixture.lineage.run().clone(),
+            AttemptId::new("retry.attempt")?,
+        ),
+    ] {
+        let changed = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(fixture.lineage.plan().clone()),
+            campaign: Some(fixture.lineage.campaign().clone()),
+            run: Some(run),
+            logical_case: Some(fixture.lineage.logical_case().clone()),
+            attempt: Some(attempt),
+        })?;
+        let history = CompleteEvidenceCandidate {
+            delivery: eqm_engine::EvidenceNormalizationCandidate {
+                lineage: &changed,
+                ..failed.delivery
+            },
+            ..failed
+        };
+        let report = evaluate_complete_evidence_coverage(&fixture.expected, &[base, history])?;
+        assert_eq!(report.status(), CoverageStatus::Covered);
+        assert!(report.conflicts().is_empty());
+        assert_eq!(report.eligible().len(), 2); // Eligibility is not passing outcome or observation credit.
+    }
+    Ok(())
+}
+
 fn finalize(loaded: &LoadedWorkspace) -> Result<FinalizedWorkspaceGraph, Box<dyn Error>> {
     let graph = resolve_graph(loaded.graph_input().clone(), loaded.source_map())?;
     let digests: FragmentDigestMap = graph

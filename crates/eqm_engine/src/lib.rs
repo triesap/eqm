@@ -10,6 +10,7 @@ mod affected;
 mod applicability;
 mod candidates;
 mod comparison;
+mod complete_coverage;
 mod conformance;
 mod coverage;
 mod diagnostics;
@@ -44,6 +45,11 @@ pub use candidates::{
 };
 pub use comparison::{
     ComparisonEligibility, ComparisonParticipant, evaluate_comparison_eligibility,
+};
+pub use complete_coverage::{
+    CompleteCoverageError, CompleteCoverageExpectation, CompleteCoverageMismatch,
+    CompleteCoverageReport, CompleteEvidenceCandidate, CoverageSubjectManifest,
+    MAX_COMPLETE_COVERAGE_WORK, evaluate_complete_evidence_coverage,
 };
 pub use conformance::{
     CompletePolicyResolution, ConformanceError, EvaluatedFacets, FacetEvaluationInput, FacetStatus,

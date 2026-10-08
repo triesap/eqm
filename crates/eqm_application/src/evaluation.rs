@@ -6,8 +6,10 @@
 
 use eqm_domain::{EvidenceResult, EvidenceSpecId, SelectorText, UtcInstant};
 use eqm_engine::{
-    CandidateNormalizationError, EvidenceNormalizationCandidate, MAX_CANDIDATE_DELIVERIES,
-    NormalizedEvidenceSet, normalize_evidence_candidates,
+    CandidateNormalizationError, CompleteCoverageError, CompleteCoverageExpectation,
+    CompleteCoverageReport, CompleteEvidenceCandidate, CoverageSubjectManifest,
+    EvidenceNormalizationCandidate, MAX_CANDIDATE_DELIVERIES, NormalizedEvidenceSet, ObligationKey,
+    evaluate_complete_evidence_coverage, normalize_evidence_candidates,
 };
 use eqm_protocol::AdmittedEvidenceV2;
 use std::error::Error;
@@ -26,6 +28,50 @@ pub struct AdmittedEvidenceDelivery<'a> {
     pub evidence_spec_id: &'a EvidenceSpecId,
     /// Explicit immutable delivery/provenance reference.
     pub provenance: &'a SelectorText,
+}
+
+/// Actual checked admission with explicit complete context claims.
+/// Protected consumers independently bind these claims to their frozen authority.
+#[derive(Clone, Copy, Debug)]
+pub struct CompleteEvidenceDelivery<'a> {
+    /// Shared actual S059 admission and original mapping/provenance references.
+    pub delivery: AdmittedEvidenceDelivery<'a>,
+    /// Explicit candidate context; absent remains rejected.
+    pub coordinate: Option<&'a ObligationKey>,
+    /// Explicit claimed pre-result semantic identity, never independent trust.
+    pub identity: Option<eqm_domain::ObligationDigest>,
+    /// Explicit complete role-bearing subject claims for grouped scopes.
+    pub subjects: Option<&'a CoverageSubjectManifest>,
+}
+
+/// Matches actual opaque admissions against independent frozen expectations.
+/// Pure matching creates no verification, count, conformance or release authority.
+pub fn match_admitted_evidence<'a>(
+    expected: &CompleteCoverageExpectation,
+    deliveries: &[CompleteEvidenceDelivery<'a>],
+) -> Result<CompleteCoverageReport<'a>, CompleteCoverageError> {
+    if deliveries.len() > MAX_CANDIDATE_DELIVERIES {
+        return Err(CompleteCoverageError::Normalization(
+            CandidateNormalizationError::LimitExceeded,
+        ));
+    }
+    let candidates = deliveries
+        .iter()
+        .map(|claim| CompleteEvidenceCandidate {
+            delivery: EvidenceNormalizationCandidate {
+                result: claim.delivery.admitted.result(),
+                lineage: claim.delivery.admitted.lineage(),
+                semantic_identity: claim.delivery.admitted.semantic_identity(),
+                raw_identity: claim.delivery.admitted.raw_identity(),
+                evidence_spec_id: claim.delivery.evidence_spec_id,
+                provenance: claim.delivery.provenance,
+            },
+            coordinate: claim.coordinate,
+            identity: claim.identity,
+            subjects: claim.subjects,
+        })
+        .collect::<Vec<_>>();
+    evaluate_complete_evidence_coverage(expected, &candidates)
 }
 
 /// Normalizes admitted candidate data, retaining every raw and provenance reference.

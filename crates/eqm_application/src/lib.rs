@@ -59,8 +59,9 @@ pub use comparison::{
     shared_comparison_context,
 };
 pub use evaluation::{
-    AdmittedEvidenceDelivery, EvaluationRequest, EvidenceReadError, EvidenceReadRequest,
-    EvidenceReader, MAX_EVIDENCE_READ, normalize_admitted_evidence,
+    AdmittedEvidenceDelivery, CompleteEvidenceDelivery, EvaluationRequest, EvidenceReadError,
+    EvidenceReadRequest, EvidenceReader, MAX_EVIDENCE_READ, match_admitted_evidence,
+    normalize_admitted_evidence,
 };
 pub use evidence_conversion::{EvidenceConversionError, admit_evidence_bytes};
 pub use expected_selection::{

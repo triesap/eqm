@@ -45,6 +45,16 @@ matching; full-coordinate eligibility and authentication remain separate.
 
 ## Decision and query content
 
+S061 strengthens `CoverageExpectation` to include the full primary subject and
+runtime-facts reference. `evaluate_complete_evidence_coverage` and application
+`match_admitted_evidence` consume explicit complete obligation/identity, frozen
+selection and participant-subject claims. The private report exposes structural
+eligibility, rejected axes, relevant conflicts and all normalized references;
+its status and matching identifiers grant no verification or protected provenance.
+Missing context never falls back to expected values. Complete-context work is
+bounded at 1,000,000 slots with an explicit error, in addition to 10,000 deliveries.
+Protected frozen-input/status integration retains its independent owning gates.
+
 Every decision binds scope, required universe/completeness, authority and policy/profile revisions, exact participant subjects, selected campaigns, input references, evaluator identity, evaluation time, and relevant validity/trust context. Include obligation statuses, accepted/rejected evidence with reasons, expected missing cases, exposure comparisons, applied waivers and aggregate conclusions.
 
 Display state and diagnostic reason are not interchangeable. A summary status can select precedence while explanations preserve all causes. Show unknown, missing, stale, unstable, failed, conditional and not-applicable distinctly; never collapse them to a green boolean.

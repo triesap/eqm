@@ -137,6 +137,13 @@ fn resolve_session_runner(
 }
 
 fn projections(session: &eqm_application::PreparedSession) -> Result<Provenance, Box<dyn Error>> {
+    projections_for_selection(session, &selection()?)
+}
+
+fn projections_for_selection(
+    session: &eqm_application::PreparedSession,
+    selected: &PolicyProfileRequest,
+) -> Result<Provenance, Box<dyn Error>> {
     let graph = session.finalized().graph();
 
     let binding = graph
@@ -153,12 +160,8 @@ fn projections(session: &eqm_application::PreparedSession) -> Result<Provenance,
     let target = TargetId::new("android")?;
     let target_configuration_digest = prepare_target_configuration(session, &target)?.digest();
 
-    let provenance: PolicyProvenanceV2 = prepare_policy_provenance(
-        session,
-        EvaluationMode::Development,
-        Some(&selection()?),
-        None,
-    )?;
+    let provenance: PolicyProvenanceV2 =
+        prepare_policy_provenance(session, EvaluationMode::Development, Some(selected), None)?;
     let contract_digest = provenance.contract().digest();
     let policy_digest = provenance.policy_selection().digest();
 
@@ -1080,7 +1083,7 @@ fn coverage_context(
         evidence_spec_digest: context.evidence_spec_digest.as_digest(),
         requirement: context.requirement.clone(),
         facet: Facet::Behavior,
-        subject: context.subject.scope().clone(),
+        subject: context.subject.clone(),
         target: context.target.clone(),
         unit: context.unit.clone(),
         kind: context.kind,
@@ -1089,9 +1092,434 @@ fn coverage_context(
         policy_digest: context.policy_digest.as_digest(),
         runner_digest: context.runner_digest.map(RunnerDigest::as_digest),
         adapter_digest: context.adapter_digest.map(AdapterDigest::as_digest),
+        runtime_facts_digest: context.runtime_facts_digest,
         profiles: context.profiles.clone(),
         release_record_digest: context.release_record_digest,
     }
+}
+
+fn complete_coordinates(
+    session: &eqm_application::PreparedSession,
+    region: &str,
+) -> Result<
+    (
+        eqm_engine::ObligationKey,
+        eqm_domain::ObligationDigest,
+        eqm_domain::ExpectedSelectionManifest,
+    ),
+    Box<dyn Error>,
+> {
+    let request = eqm_application::PolicySelectionRequest::development(
+        Some(eqm_application::PolicyReference::new(
+            PolicyId::new("consumer.critical_flow")?,
+            Some(Revision::new(1)?),
+        )),
+        vec![eqm_application::ProfileSelection::new(
+            ProfileId::new("audience.default")?,
+            Some(Revision::new(1)?),
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new(region)?),
+            )],
+        )],
+    );
+    let prepared = eqm_application::prepare_obligations_from_request(
+        session.finalized(),
+        EvaluationMode::Development,
+        &request,
+        None,
+    )?;
+    let target = eqm_engine::ScopeSubject::Target(TargetId::new("android")?);
+    let key = prepared
+        .universe()
+        .coordinates()
+        .iter()
+        .find(|key| {
+            key.requirement.as_str() == "account.create.signup.identifier#email_default"
+                && key.facet == Facet::Behavior
+                && key.subject == target
+        })
+        .ok_or("independent target obligation missing")?
+        .clone();
+    let binding = session
+        .finalized()
+        .graph()
+        .bindings()
+        .get(&BindingId::new("binding.android.auth_signup")?)
+        .ok_or("binding missing")?;
+    let specification = binding
+        .evidence()
+        .get(&EvidenceSpecId::new("identifier_behavior")?)
+        .ok_or("specification missing")?;
+    let selected = eqm_domain::ExpectedSelectionManifest::new(
+        eqm_domain::ExpectedSelectionSource {
+            binding: binding.id().clone(),
+            binding_revision: binding.revision(),
+            binding_digest: canonicalize_binding_v2(binding)?.digest(),
+            specification: specification.id().clone(),
+            specification_digest: canonicalize_evidence_spec_v2(specification)?.digest(),
+            plan: lineage()?.plan().clone(),
+            campaign: lineage()?.campaign().clone(),
+        },
+        specification.kind(),
+        eqm_domain::SelectionCountUnit::LogicalTestCase,
+        vec![lineage()?.logical_case().clone()],
+        vec![],
+        false,
+    )?;
+    let expected = eqm_application::prepare_expected_selections(
+        session.finalized(),
+        &prepared,
+        Some(BTreeMap::from([(key.clone(), vec![selected.clone()])])),
+        None,
+    )?;
+    let identities =
+        eqm_application::prepare_obligation_identities(session.finalized(), &expected)?;
+    let identity = identities
+        .identities()
+        .get(&key)
+        .ok_or("complete reference missing")?
+        .digest();
+    Ok((key, identity, selected))
+}
+
+#[test]
+fn complete_matching_uses_real_pre_result_context_and_rejects_claim_substitution()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, match_admitted_evidence};
+    use eqm_engine::{CompleteCoverageExpectation, CompleteCoverageMismatch};
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let context = context(&provenance, None)?;
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let (key, identity, selection) = complete_coordinates(&session, "eu")?;
+    let expected = CompleteCoverageExpectation {
+        structural: coverage_context(&context, &spec),
+        coordinate: key.clone(),
+        identity,
+        selection,
+        subjects: None,
+    };
+    // Independent expectations exist before constructing or reading any result.
+    let value = seal(record(&provenance, None)?)?;
+    let admitted = admit_evidence_bytes(value.raw_bytes(), &lineage()?, &execution()?, &context)?;
+    let pretty = serde_json::to_vec_pretty(value.record())?;
+    let alternate = admit_evidence_bytes(&pretty, &lineage()?, &execution()?, &context)?;
+    let receipt = SelectorText::new("receipt.complete")?;
+    let other_receipt = SelectorText::new("receipt.alternate")?;
+    let delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &admitted,
+            evidence_spec_id: &spec,
+            provenance: &receipt,
+        },
+        coordinate: Some(&key),
+        identity: Some(identity),
+        subjects: None,
+    };
+    let other = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &alternate,
+            evidence_spec_id: &spec,
+            provenance: &other_receipt,
+        },
+        ..delivery
+    };
+    fs::create_dir_all(repository.path().join(".eqm/results"))?;
+    fs::write(
+        repository.path().join(".eqm/results/poison.json"),
+        b"untrusted poison",
+    )?;
+    let before = file_snapshot(repository.path())?;
+    let accepted = match_admitted_evidence(&expected, &[delivery, other, delivery])?;
+    assert_eq!(accepted.status(), CoverageStatus::Covered);
+    assert_eq!(
+        accepted.eligible(),
+        &BTreeSet::from([(admitted.semantic_identity(), lineage()?)])
+    );
+    assert!(accepted.rejected().is_empty());
+    assert!(accepted.conflicts().is_empty());
+    assert_eq!(accepted.normalized().attempts().len(), 1);
+    let assertion = accepted
+        .normalized()
+        .attempts()
+        .values()
+        .next()
+        .ok_or("attempt missing")?
+        .assertions()
+        .values()
+        .next()
+        .ok_or("assertion missing")?;
+    assert_eq!(
+        assertion
+            .deliveries()
+            .iter()
+            .map(|r| r.raw_identity())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from([admitted.raw_identity(), alternate.raw_identity()])
+    );
+    assert_eq!(
+        match_admitted_evidence(&expected, &[other, delivery, other])?,
+        accepted
+    );
+    let (foreign_key, foreign_identity, _) = complete_coordinates(&session, "us")?;
+    for (claim, axis) in [
+        (
+            CompleteEvidenceDelivery {
+                coordinate: None,
+                ..delivery
+            },
+            CompleteCoverageMismatch::Coordinate,
+        ),
+        (
+            CompleteEvidenceDelivery {
+                coordinate: Some(&foreign_key),
+                ..delivery
+            },
+            CompleteCoverageMismatch::Coordinate,
+        ),
+        (
+            CompleteEvidenceDelivery {
+                identity: None,
+                ..delivery
+            },
+            CompleteCoverageMismatch::ObligationIdentity,
+        ),
+        (
+            CompleteEvidenceDelivery {
+                identity: Some(foreign_identity),
+                ..delivery
+            },
+            CompleteCoverageMismatch::ObligationIdentity,
+        ),
+    ] {
+        let rejected = match_admitted_evidence(&expected, &[claim, claim])?;
+        assert_eq!(rejected.status(), CoverageStatus::Missing);
+        assert!(rejected.eligible().is_empty());
+        assert!(rejected.conflicts().is_empty());
+        assert_eq!(
+            rejected.rejected()[&admitted.result().id()],
+            BTreeSet::from([axis])
+        );
+        let mixed = match_admitted_evidence(&expected, &[claim, delivery, claim])?;
+        assert_eq!(mixed.status(), CoverageStatus::Covered);
+        assert_eq!(mixed.eligible(), accepted.eligible());
+        assert!(mixed.conflicts().is_empty());
+        assert_eq!(
+            match_admitted_evidence(&expected, &[delivery, claim, claim])?,
+            mixed
+        );
+    }
+    assert_eq!(
+        match_admitted_evidence(&expected, &[])?.status(),
+        CoverageStatus::Missing
+    );
+    assert_eq!(file_snapshot(repository.path())?, before);
+    Ok(())
+}
+
+#[test]
+fn complete_matching_rejects_fresh_admitted_build_runner_and_profile() -> Result<(), Box<dyn Error>>
+{
+    use eqm_application::{CompleteEvidenceDelivery, match_admitted_evidence};
+    use eqm_engine::{CompleteCoverageExpectation, CompleteCoverageMismatch};
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let original = projections(&session)?;
+    let expected_context = context(&original, None)?;
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let (key, identity, selection) = complete_coordinates(&session, "eu")?;
+    let expected = CompleteCoverageExpectation {
+        structural: coverage_context(&expected_context, &spec),
+        coordinate: key.clone(),
+        identity,
+        selection,
+        subjects: None,
+    };
+    let checked = seal(record(&original, None)?)?;
+    let admitted = admit_evidence_bytes(
+        checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &expected_context,
+    )?;
+    let receipt = SelectorText::new("receipt.original")?;
+    let fresh_receipt = SelectorText::new("receipt.fresh")?;
+    let base = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &admitted,
+            evidence_spec_id: &spec,
+            provenance: &receipt,
+        },
+        coordinate: Some(&key),
+        identity: Some(identity),
+        subjects: None,
+    };
+    let before = file_snapshot(repository.path())?;
+    // Explicit fresh build context, independently supplied to admission.
+    let mut build_context = expected_context.clone();
+    let subject = &expected_context.subject;
+    build_context.subject = EvidenceSubject::new(
+        subject.repository().clone(),
+        subject.repository_id_digest(),
+        subject.scope().clone(),
+        subject.source_commit().clone(),
+        Some(SelectorText::new("build.fresh")?),
+        subject.artifact_digest(),
+        subject.target_configuration_digest(),
+    );
+    let mut build_record = record(&original, None)?;
+    build_record.subject.build_id = Some("build.fresh".to_owned());
+    let build_checked = seal(build_record)?;
+    let build = admit_evidence_bytes(
+        build_checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &build_context,
+    )?;
+    // A real independently prepared selected profile produces its own policy
+    // identity and complete pre-result obligation, rather than relabeling a tag.
+    let us_request = PolicyProfileRequest::new(
+        AuthorityOrigin::CandidateLocal,
+        PolicyRef::new(PolicyId::new("consumer.critical_flow")?, Revision::new(1)?),
+        vec![ProfileRequest::new(
+            ProfileId::new("audience.default")?,
+            Revision::new(1)?,
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new("us")?),
+            )],
+        )?],
+    )?;
+    let us = projections_for_selection(&session, &us_request)?;
+    assert_ne!(us.policy_digest, original.policy_digest);
+    let (us_key, us_identity, _) = complete_coordinates(&session, "us")?;
+    let mut us_context = context(&us, None)?;
+    let profile_id = ProfileId::new("audience.default")?;
+    us_context.profiles = BTreeMap::from([(
+        profile_id.clone(),
+        ProfileSelection::new(
+            profile_id,
+            Revision::new(1)?,
+            vec![(DimensionId::new("region")?, SymbolicValueId::new("us")?)],
+        )?,
+    )]);
+    let mut us_record = record(&us, None)?;
+    us_record.profile_values = CanonicalSet::from_members(vec![ProfileValueV2Dto {
+        profile: "audience.default".to_owned(),
+        revision: WireUint::new(1),
+        dimension: "region".to_owned(),
+        value: "us".to_owned(),
+    }])?;
+    let us_checked = seal(us_record)?;
+    let profiled = admit_evidence_bytes(
+        us_checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &us_context,
+    )?;
+    for (fresh, coordinate, claim_identity, axes) in [
+        (
+            &build,
+            &key,
+            identity,
+            BTreeSet::from([CompleteCoverageMismatch::Structural(
+                CoverageMismatch::Build,
+            )]),
+        ),
+        (
+            &profiled,
+            &us_key,
+            us_identity,
+            BTreeSet::from([
+                CompleteCoverageMismatch::Coordinate,
+                CompleteCoverageMismatch::ObligationIdentity,
+                CompleteCoverageMismatch::Structural(CoverageMismatch::Profiles),
+                CompleteCoverageMismatch::Structural(CoverageMismatch::PolicyDigest),
+            ]),
+        ),
+    ] {
+        let delivery = CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted: fresh,
+                evidence_spec_id: &spec,
+                provenance: &fresh_receipt,
+            },
+            coordinate: Some(coordinate),
+            identity: Some(claim_identity),
+            subjects: None,
+        };
+        let rejected = match_admitted_evidence(&expected, &[delivery, delivery])?;
+        assert_eq!(rejected.status(), CoverageStatus::Missing);
+        assert!(rejected.eligible().is_empty());
+        assert_eq!(rejected.rejected()[&fresh.result().id()], axes);
+        let mixed = match_admitted_evidence(&expected, &[delivery, base, delivery])?;
+        assert_eq!(mixed.status(), CoverageStatus::Covered);
+        assert_eq!(
+            mixed.eligible(),
+            &BTreeSet::from([(admitted.semantic_identity(), lineage()?)])
+        );
+        assert!(mixed.conflicts().is_empty());
+        assert_eq!(
+            match_admitted_evidence(&expected, &[base, delivery])?,
+            mixed
+        );
+    }
+    assert_eq!(file_snapshot(repository.path())?, before);
+    // Mutate the actual runner definition, reload it, and resolve its acquisition
+    // identity through the production runner path against the fixture executable.
+    let path = repository.path().join("eqm/runners/runner.android.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path)?.replace("timeout_ms = 60000", "timeout_ms = 59000"),
+    )?;
+    let fresh_session = session_for(repository.path())?;
+    let runner_provenance = projections(&fresh_session)?;
+    assert_ne!(runner_provenance.runner_digest, original.runner_digest);
+    let runner_context = context(&runner_provenance, None)?;
+    let runner_checked = seal(record(&runner_provenance, None)?)?;
+    let runner = admit_evidence_bytes(
+        runner_checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &runner_context,
+    )?;
+    let delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &runner,
+            evidence_spec_id: &spec,
+            provenance: &fresh_receipt,
+        },
+        ..base
+    };
+    let rejected = match_admitted_evidence(&expected, &[delivery])?;
+    assert_eq!(rejected.status(), CoverageStatus::Missing);
+    assert!(rejected.eligible().is_empty());
+    assert_eq!(
+        rejected.rejected()[&runner.result().id()],
+        BTreeSet::from([CompleteCoverageMismatch::Structural(
+            CoverageMismatch::RunnerDigest
+        )])
+    );
+    let mixed = match_admitted_evidence(&expected, &[delivery, base, delivery])?;
+    assert_eq!(mixed.status(), CoverageStatus::Covered);
+    assert_eq!(
+        mixed.eligible(),
+        &BTreeSet::from([(admitted.semantic_identity(), lineage()?)])
+    );
+    assert!(mixed.conflicts().is_empty());
+    assert_eq!(
+        match_admitted_evidence(&expected, &[base, delivery])?,
+        mixed
+    );
+    let mut after = before;
+    after.insert(
+        path.strip_prefix(repository.path())?.to_owned(),
+        fs::read(path)?,
+    );
+    assert_eq!(file_snapshot(repository.path())?, after);
+    Ok(())
 }
 
 #[test]
@@ -1101,6 +1529,14 @@ fn real_admitted_delivery_normalization_is_idempotent_and_conflicts_are_relevant
     let session = session_for(repository.path())?;
     let provenance = projections(&session)?;
     let context = context(&provenance, None)?;
+    let (coordinate, identity, selection) = complete_coordinates(&session, "eu")?;
+    let complete_expected = eqm_engine::CompleteCoverageExpectation {
+        structural: coverage_context(&context, &EvidenceSpecId::new("identifier_behavior")?),
+        coordinate: coordinate.clone(),
+        identity,
+        selection,
+        subjects: None,
+    };
     let value = record(&provenance, None)?;
     let checked = seal(value.clone())?;
     let passed = admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &context)?;
@@ -1232,6 +1668,33 @@ fn real_admitted_delivery_normalization_is_idempotent_and_conflicts_are_relevant
         normalize_admitted_evidence(&[failed_delivery, receipts[1], receipts[0]])?,
         conflicts
     );
+    let complete_base = eqm_application::CompleteEvidenceDelivery {
+        delivery: receipts[0],
+        coordinate: Some(&coordinate),
+        identity: Some(identity),
+        subjects: None,
+    };
+    let complete_failed = eqm_application::CompleteEvidenceDelivery {
+        delivery: failed_delivery,
+        ..complete_base
+    };
+    let complete_conflict = eqm_application::match_admitted_evidence(
+        &complete_expected,
+        &[complete_base, complete_failed, complete_failed],
+    )?;
+    assert_eq!(complete_conflict.status(), CoverageStatus::Unknown);
+    assert!(complete_conflict.eligible().is_empty());
+    assert_eq!(
+        complete_conflict.conflicts(),
+        &BTreeSet::from([(passed.result().subject().clone(), lineage()?)])
+    );
+    assert_eq!(
+        eqm_application::match_admitted_evidence(
+            &complete_expected,
+            &[complete_failed, complete_base]
+        )?,
+        complete_conflict
+    );
     // A genuinely different prepared binding/specification is rejected before
     // conflict relevance, while every delivery remains in the audit grouping.
     assert_eq!(file_snapshot(repository.path())?, before);
@@ -1262,6 +1725,34 @@ fn real_admitted_delivery_normalization_is_idempotent_and_conflicts_are_relevant
         evidence_spec_id: &spec,
         provenance: &other_receipt,
     };
+    let complete_other = eqm_application::CompleteEvidenceDelivery {
+        delivery: other_delivery,
+        ..complete_base
+    };
+    let complete = eqm_application::match_admitted_evidence(
+        &complete_expected,
+        &[complete_other, complete_base, complete_other],
+    )?;
+    assert_eq!(complete.status(), CoverageStatus::Covered);
+    assert_eq!(
+        complete.eligible(),
+        &BTreeSet::from([(passed.semantic_identity(), lineage()?)])
+    );
+    assert!(complete.conflicts().is_empty());
+    assert_eq!(
+        complete.rejected()[&other.result().id()],
+        BTreeSet::from([
+            eqm_engine::CompleteCoverageMismatch::Structural(CoverageMismatch::BindingDigest),
+            eqm_engine::CompleteCoverageMismatch::Structural(CoverageMismatch::EvidenceSpecDigest),
+        ])
+    );
+    assert_eq!(
+        eqm_application::match_admitted_evidence(
+            &complete_expected,
+            &[complete_base, complete_other]
+        )?,
+        complete
+    );
     let unrelated = normalize_admitted_evidence(&[other_delivery, receipts[0], other_delivery])?;
     let unrelated_report = evaluate_normalized_evidence_coverage(&expected, &unrelated);
     assert!(unrelated.attempts().values().all(|x| x.has_conflict()));
@@ -1305,6 +1796,16 @@ fn admitted_normalization_keeps_each_lineage_axis_and_full_subject_independent()
     let session = session_for(repository.path())?;
     let provenance = projections(&session)?;
     let context = context(&provenance, None)?;
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let (key, identity, selection) = complete_coordinates(&session, "eu")?;
+    let complete_expected = eqm_engine::CompleteCoverageExpectation {
+        structural: coverage_context(&context, &spec),
+        coordinate: key.clone(),
+        identity,
+        selection,
+        subjects: None,
+    };
+    let before = file_snapshot(repository.path())?;
     let checked = seal(record(&provenance, None)?)?;
     let base = admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &context)?;
     let spec = EvidenceSpecId::new("identifier_behavior")?;
@@ -1389,6 +1890,66 @@ fn admitted_normalization_keeps_each_lineage_axis_and_full_subject_independent()
                 .keys()
                 .any(|x| x.lineage() == &lineage)
         );
+        let base_complete = eqm_application::CompleteEvidenceDelivery {
+            delivery: base_delivery,
+            coordinate: Some(&key),
+            identity: Some(identity),
+            subjects: None,
+        };
+        let other_complete = eqm_application::CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted: &other,
+                evidence_spec_id: &spec,
+                provenance: &changed_receipt,
+            },
+            ..base_complete
+        };
+        let complete = eqm_application::match_admitted_evidence(
+            &complete_expected,
+            &[other_complete, base_complete, other_complete],
+        )?;
+        assert_eq!(complete.status(), CoverageStatus::Covered);
+        assert!(complete.conflicts().is_empty());
+        let rejected_axis = if plan != "plan.release" {
+            Some(eqm_engine::CompleteCoverageMismatch::Plan)
+        } else if campaign != "campaign.signup" {
+            Some(eqm_engine::CompleteCoverageMismatch::Campaign)
+        } else if case != "case.identifier" {
+            Some(eqm_engine::CompleteCoverageMismatch::LogicalCase)
+        } else {
+            None
+        };
+        if let Some(axis) = rejected_axis {
+            assert_eq!(
+                complete.eligible(),
+                &BTreeSet::from([(base.semantic_identity(), self::lineage()?)])
+            );
+            assert_eq!(
+                complete.rejected()[&other.result().id()],
+                BTreeSet::from([axis])
+            );
+            assert_eq!(
+                eqm_application::match_admitted_evidence(&complete_expected, &[other_complete])?
+                    .status(),
+                CoverageStatus::Missing
+            );
+        } else {
+            assert_eq!(
+                complete.eligible(),
+                &BTreeSet::from([
+                    (base.semantic_identity(), self::lineage()?),
+                    (other.semantic_identity(), lineage.clone())
+                ])
+            );
+            assert!(complete.rejected().is_empty());
+        }
+        assert_eq!(
+            eqm_application::match_admitted_evidence(
+                &complete_expected,
+                &[base_complete, other_complete]
+            )?,
+            complete
+        );
         let report = evaluate_normalized_evidence_coverage(&expected, &normalized);
         assert_eq!(report.coverage.status, CoverageStatus::Covered);
         assert!(report.conflicting_attempts.is_empty());
@@ -1432,5 +1993,36 @@ fn admitted_normalization_keeps_each_lineage_axis_and_full_subject_independent()
             .collect::<BTreeSet<_>>(),
         BTreeSet::from([subject.artifact_digest(), Some(artifact)])
     );
+    let base_complete = eqm_application::CompleteEvidenceDelivery {
+        delivery: base_delivery,
+        coordinate: Some(&key),
+        identity: Some(identity),
+        subjects: None,
+    };
+    let other_complete = eqm_application::CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &other,
+            evidence_spec_id: &spec,
+            provenance: &changed_receipt,
+        },
+        ..base_complete
+    };
+    let complete = eqm_application::match_admitted_evidence(
+        &complete_expected,
+        &[other_complete, base_complete],
+    )?;
+    assert_eq!(complete.status(), CoverageStatus::Covered);
+    assert_eq!(
+        complete.eligible(),
+        &BTreeSet::from([(base.semantic_identity(), lineage()?)])
+    );
+    assert_eq!(
+        complete.rejected()[&other.result().id()],
+        BTreeSet::from([eqm_engine::CompleteCoverageMismatch::Structural(
+            CoverageMismatch::Artifact
+        )])
+    );
+    assert!(complete.conflicts().is_empty());
+    assert_eq!(file_snapshot(repository.path())?, before);
     Ok(())
 }

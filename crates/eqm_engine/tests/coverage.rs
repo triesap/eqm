@@ -96,7 +96,7 @@ fn expectation(result: &EvidenceResult) -> Result<CoverageExpectation, Box<dyn E
             .ok_or("requirement missing")?
             .clone(),
         facet: Facet::Behavior,
-        subject: result.subject().scope().clone(),
+        subject: result.subject().clone(),
         target: result.target().clone(),
         unit: result.unit().clone(),
         kind: result.kind(),
@@ -105,6 +105,7 @@ fn expectation(result: &EvidenceResult) -> Result<CoverageExpectation, Box<dyn E
         policy_digest: result.policy_digest(),
         runner_digest: result.runner_digest(),
         adapter_digest: result.adapter_digest(),
+        runtime_facts_digest: result.runtime_facts_digest(),
         profiles: result.profile_values().clone(),
         release_record_digest: result.release_record_digest(),
     })
@@ -156,6 +157,7 @@ fn every_exact_coordinate_is_checked() -> Result<(), Box<dyn Error>> {
     expected.unit = UnitId::new("account.create.signup.otp")?;
     expected.runner_digest = Some(digest(b"runner"));
     expected.adapter_digest = Some(digest(b"adapter"));
+    expected.runtime_facts_digest = Some(digest(b"runtime"));
     expected.release_record_digest = Some(digest(b"release"));
     expected.profiles = BTreeMap::new();
     let report = evaluate_evidence_coverage(&expected, &[candidate]);
@@ -168,11 +170,160 @@ fn every_exact_coordinate_is_checked() -> Result<(), Box<dyn Error>> {
         CoverageMismatch::Unit,
         CoverageMismatch::RunnerDigest,
         CoverageMismatch::AdapterDigest,
+        CoverageMismatch::RuntimeFacts,
         CoverageMismatch::Profiles,
         CoverageMismatch::ReleaseContext,
     ] {
         assert!(mismatches.contains(&expected));
     }
+    Ok(())
+}
+
+#[test]
+fn every_component_and_profile_axis_is_rejected_independently() -> Result<(), Box<dyn Error>> {
+    let result = result()?;
+    let expected = expectation(&result)?;
+    let spec = expected.evidence_spec_id.clone();
+    let candidate = EvidenceCandidate {
+        evidence_spec_id: &spec,
+        result: &result,
+    };
+    assert_eq!(
+        evaluate_evidence_coverage(&expected, &[candidate]).status,
+        CoverageStatus::Covered
+    );
+    for axis in [
+        CoverageMismatch::EvidenceSpecId,
+        CoverageMismatch::EvidenceSpecDigest,
+        CoverageMismatch::ContractDigest,
+        CoverageMismatch::BindingDigest,
+        CoverageMismatch::PolicyDigest,
+        CoverageMismatch::RunnerDigest,
+        CoverageMismatch::AdapterDigest,
+        CoverageMismatch::RuntimeFacts,
+        CoverageMismatch::Profiles,
+        CoverageMismatch::ReleaseContext,
+    ] {
+        let mut changed = expected.clone();
+        match axis {
+            CoverageMismatch::EvidenceSpecId => {
+                changed.evidence_spec_id = EvidenceSpecId::new("foreign_spec")?
+            }
+            CoverageMismatch::EvidenceSpecDigest => {
+                changed.evidence_spec_digest = digest(b"foreign spec")
+            }
+            CoverageMismatch::ContractDigest => {
+                changed.contract_digest = digest(b"foreign contract")
+            }
+            CoverageMismatch::BindingDigest => changed.binding_digest = digest(b"foreign binding"),
+            CoverageMismatch::PolicyDigest => changed.policy_digest = digest(b"foreign policy"),
+            CoverageMismatch::RunnerDigest => {
+                changed.runner_digest = Some(digest(b"foreign runner"))
+            }
+            CoverageMismatch::AdapterDigest => {
+                changed.adapter_digest = Some(digest(b"foreign adapter"))
+            }
+            CoverageMismatch::RuntimeFacts => {
+                changed.runtime_facts_digest = Some(digest(b"foreign runtime"))
+            }
+            CoverageMismatch::Profiles => {
+                let profile = ProfileId::new("audience.default")?;
+                changed.profiles = BTreeMap::from([(
+                    profile.clone(),
+                    ProfileSelection::new(
+                        profile,
+                        Revision::new(1)?,
+                        vec![(DimensionId::new("region")?, SymbolicValueId::new("eu")?)],
+                    )?,
+                )]);
+            }
+            CoverageMismatch::ReleaseContext => {
+                changed.release_record_digest = Some(digest(b"foreign release"))
+            }
+            _ => return Err("unexpected component axis".into()),
+        }
+        let report = evaluate_evidence_coverage(&changed, &[candidate, candidate]);
+        assert_eq!(report.status, CoverageStatus::Missing, "{axis:?}");
+        assert!(report.covered.is_empty());
+        assert!(report.conflicting_result_ids.is_empty());
+        assert_eq!(
+            report.rejected[&result.id()],
+            std::collections::BTreeSet::from([axis])
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn every_primary_subject_axis_is_rejected_independently() -> Result<(), Box<dyn Error>> {
+    let result = result()?;
+    let expected = expectation(&result)?;
+    let spec = expected.evidence_spec_id.clone();
+    let candidate = EvidenceCandidate {
+        evidence_spec_id: &spec,
+        result: &result,
+    };
+    let original = result.subject();
+    for axis in [
+        CoverageMismatch::Repository,
+        CoverageMismatch::RepositoryIdentity,
+        CoverageMismatch::Subject,
+        CoverageMismatch::SourceCommit,
+        CoverageMismatch::Build,
+        CoverageMismatch::Artifact,
+        CoverageMismatch::TargetConfiguration,
+    ] {
+        let mut changed = expected.clone();
+        changed.subject = EvidenceSubject::new(
+            if axis == CoverageMismatch::Repository {
+                "https://example.com/different".parse()?
+            } else {
+                original.repository().clone()
+            },
+            if axis == CoverageMismatch::RepositoryIdentity {
+                digest(b"other-repository")
+            } else {
+                original.repository_id_digest()
+            },
+            if axis == CoverageMismatch::Subject {
+                EvidenceScopeSubject::Target(TargetId::new("other")?)
+            } else {
+                original.scope().clone()
+            },
+            if axis == CoverageMismatch::SourceCommit {
+                "b".repeat(40).parse()?
+            } else {
+                original.source_commit().clone()
+            },
+            if axis == CoverageMismatch::Build {
+                Some(SelectorText::new("other-build")?)
+            } else {
+                original.build_id().cloned()
+            },
+            if axis == CoverageMismatch::Artifact {
+                Some(digest(b"other-artifact"))
+            } else {
+                original.artifact_digest()
+            },
+            if axis == CoverageMismatch::TargetConfiguration {
+                digest(b"other-configuration")
+            } else {
+                original.target_configuration_digest()
+            },
+        );
+        let rejected = evaluate_evidence_coverage(&changed, &[candidate, candidate]);
+        assert_eq!(rejected.status, CoverageStatus::Missing, "{axis:?}");
+        assert!(rejected.covered.is_empty());
+        assert_eq!(
+            rejected.rejected[&result.id()],
+            std::collections::BTreeSet::from([axis])
+        );
+        assert!(rejected.conflicting_result_ids.is_empty());
+    }
+    assert_eq!(
+        evaluate_evidence_coverage(&expected, &[candidate]).status,
+        CoverageStatus::Covered
+    );
     Ok(())
 }
 

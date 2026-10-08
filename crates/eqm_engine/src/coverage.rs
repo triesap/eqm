@@ -1,7 +1,7 @@
 //! Exact evidence coverage matching.
 
 use eqm_domain::{
-    EvidenceKind, EvidenceResult, EvidenceScopeSubject, EvidenceSpecId, Facet, FullRequirementId,
+    EvidenceKind, EvidenceResult, EvidenceSpecId, EvidenceSubject, Facet, FullRequirementId,
     ProfileId, ProfileSelection, Sha256Digest, TargetId, UnitId,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -17,8 +17,8 @@ pub struct CoverageExpectation {
     pub requirement: FullRequirementId,
     /// Exact obligation facet.
     pub facet: Facet,
-    /// Exact scope subject.
-    pub subject: EvidenceScopeSubject,
+    /// Exact repository/source/build/artifact/configuration and scope subject.
+    pub subject: EvidenceSubject,
     /// Exact target carried by the result envelope.
     pub target: TargetId,
     /// Exact unit.
@@ -35,6 +35,8 @@ pub struct CoverageExpectation {
     pub runner_digest: Option<Sha256Digest>,
     /// Exact adapter digest, including typed absence.
     pub adapter_digest: Option<Sha256Digest>,
+    /// Exact runtime-facts reference, including typed absence.
+    pub runtime_facts_digest: Option<Sha256Digest>,
     /// Exact profile values.
     pub profiles: BTreeMap<ProfileId, ProfileSelection>,
     /// Exact release context, including typed absence.
@@ -63,6 +65,18 @@ pub enum CoverageMismatch {
     Facet,
     /// Scope subject differed.
     Subject,
+    /// Repository location differed.
+    Repository,
+    /// Repository identity digest differed.
+    RepositoryIdentity,
+    /// Source commit differed.
+    SourceCommit,
+    /// Build identity or its typed absence differed.
+    Build,
+    /// Artifact identity or its typed absence differed.
+    Artifact,
+    /// Target configuration (including declared role) differed.
+    TargetConfiguration,
     /// Target differed.
     Target,
     /// Unit differed.
@@ -79,6 +93,8 @@ pub enum CoverageMismatch {
     RunnerDigest,
     /// Adapter digest differed.
     AdapterDigest,
+    /// Runtime-facts reference or typed absence differed.
+    RuntimeFacts,
     /// Profile selections differed.
     Profiles,
     /// Release context differed.
@@ -187,8 +203,33 @@ pub(super) fn mismatches(
             CoverageMismatch::Facet,
         ),
         (
-            result.subject().scope() == &expected.subject,
+            result.subject().scope() == expected.subject.scope(),
             CoverageMismatch::Subject,
+        ),
+        (
+            result.subject().repository() == expected.subject.repository(),
+            CoverageMismatch::Repository,
+        ),
+        (
+            result.subject().repository_id_digest() == expected.subject.repository_id_digest(),
+            CoverageMismatch::RepositoryIdentity,
+        ),
+        (
+            result.subject().source_commit() == expected.subject.source_commit(),
+            CoverageMismatch::SourceCommit,
+        ),
+        (
+            result.subject().build_id() == expected.subject.build_id(),
+            CoverageMismatch::Build,
+        ),
+        (
+            result.subject().artifact_digest() == expected.subject.artifact_digest(),
+            CoverageMismatch::Artifact,
+        ),
+        (
+            result.subject().target_configuration_digest()
+                == expected.subject.target_configuration_digest(),
+            CoverageMismatch::TargetConfiguration,
         ),
         (
             result.target() == &expected.target,
@@ -215,6 +256,10 @@ pub(super) fn mismatches(
         (
             result.adapter_digest() == expected.adapter_digest,
             CoverageMismatch::AdapterDigest,
+        ),
+        (
+            result.runtime_facts_digest() == expected.runtime_facts_digest,
+            CoverageMismatch::RuntimeFacts,
         ),
         (
             result.profile_values() == &expected.profiles,

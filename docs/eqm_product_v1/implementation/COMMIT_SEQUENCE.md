@@ -774,6 +774,40 @@ join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
 
+**DEV-035 S061 implementation allocation:** strengthen the existing structural
+expectation to match every EvidenceSubject field and exact runtime-facts reference,
+with distinct rejected-axis diagnostics. Add a complete pure matcher over explicit
+data: the structural expectation, exact ObligationKey and pre-result
+ObligationDigest, frozen ExpectedSelectionManifest, and (for checked grouped
+scopes) the complete SubjectManifest with its role-bearing participant mapping.
+Candidate coordinates/manifests remain claims; missing context is rejected, never
+filled from expected values. Legacy lossy provider/target-set scopes cannot prove
+complete eligibility. Grouped subjects require complete source/build/artifact and
+exact occurrence/configuration-kind association with the checked scope.
+
+Match exact plan/campaign and selected logical case before considering immutable
+attempt conflicts. Distinct run/attempt IDs remain history, not extra observation
+credit; S062 owns counting, S064–S068 outcomes and authorized campaign relations.
+Return complete deterministic accepted/rejected structural references and relevant
+conflicts, retaining S060 raw/mapping/provenance records. Preserve the inclusive
+10,000-delivery limit and add a 1,000,000-slot cumulative complete-context work
+budget, charged before matching or normalization allocation; overflow fails
+explicitly. Occurrence associations use indexed lookup rather than quadratic scans.
+No parsed context tag, digest, public struct or matching status grants independent
+verification, protected provenance, conformance or release authority. Application
+adapts actual opaque S059 admissions with explicit context claims through this one
+matcher; protected frozen-input/status integration remains in its original owning
+steps, including S073. No wire/schema/digest-domain/dependency change.
+
+Use independently prepared graph/component/obligation/selection expectations and
+actual admitted bytes for causal build/spec/profile/runner/context controls.
+Exercise every subject and lineage axis, role/occurrence/manifest substitutions,
+typed absence, missing context, unrelated rejected candidates, duplicate delivery,
+relevant conflicts, permutations and bounds. Retain the original engine owning
+and full standard gates; add application owning coverage for its adapter and
+separate independent allocated acceptance. RA03/RA08/RA13 receive local eligibility
+contributions only; no whole regression or MVP closure. Continue S062 when green.
+
 **DEV-035 S060 implementation allocation:** repair pure coverage's duplicate-ID
 poisoning: repeated equal records remain one compatible assertion; only different
 matching records claiming one immutable result identity are Unknown. Rejected
