@@ -729,6 +729,26 @@ fn complete_matching_enforces_delivery_and_context_work_boundaries() -> Result<(
         report.rejected()[&fixture.result.id()],
         BTreeSet::from([CompleteCoverageMismatch::Coordinate])
     );
+    let observations = eqm_engine::collect_logical_observations(
+        std::slice::from_ref(&fixture.expected),
+        &vec![candidate; 10_000],
+    )?;
+    assert_eq!(observations.status(), CoverageStatus::Missing);
+    assert!(observations.observed().is_empty());
+    assert_eq!(
+        observations.missing()[fixture.expected.selection.source()],
+        *fixture.expected.selection.selected()
+    );
+    assert_eq!(
+        eqm_engine::collect_logical_observations(
+            &[fixture.expected.clone(), fixture.expected.clone()],
+            &vec![candidate; 10_000]
+        ),
+        Err(eqm_engine::LogicalObservationError::Matching(
+            CompleteCoverageError::WorkLimitExceeded
+        ))
+    );
+
     foreign.subject = ScopeSubject::TargetSet(
         (0..65)
             .map(|i| TargetId::new(format!("target_{i}")))
@@ -741,6 +761,129 @@ fn complete_matching_enforces_delivery_and_context_work_boundaries() -> Result<(
     assert_eq!(
         evaluate_complete_evidence_coverage(&fixture.expected, &vec![candidate; 10_000]),
         Err(CompleteCoverageError::WorkLimitExceeded)
+    );
+    Ok(())
+}
+
+#[test]
+fn logical_observation_expectations_and_frozen_alternatives_are_checked()
+-> Result<(), Box<dyn Error>> {
+    use eqm_domain::*;
+    use eqm_engine::{LogicalObservationError, collect_logical_observations};
+    let (_root, fixture) = checked_coverage_fixture(false)?;
+    let base = fixture.candidate();
+    assert_eq!(
+        collect_logical_observations(&[], &[base]),
+        Err(LogicalObservationError::EmptyExpectations)
+    );
+    assert_eq!(
+        collect_logical_observations(
+            &[fixture.expected.clone(), fixture.expected.clone()],
+            &[base]
+        ),
+        Err(LogicalObservationError::DuplicateSource)
+    );
+    let mut foreign = fixture.expected.clone();
+    foreign.identity = ObligationDigest::hash_content(b"other context");
+    assert_eq!(
+        collect_logical_observations(&[fixture.expected.clone(), foreign], &[base]),
+        Err(LogicalObservationError::Context)
+    );
+    let mut foreign = fixture.expected.clone();
+    foreign.structural.policy_digest = Sha256Digest::hash_content(b"other policy");
+    assert_eq!(
+        collect_logical_observations(&[fixture.expected.clone(), foreign], &[]),
+        Err(LogicalObservationError::Context)
+    );
+    let mut mixed = fixture.expected.clone();
+    mixed.selection = ExpectedSelectionManifest::new(
+        mixed.selection.source().clone(),
+        EvidenceKind::StaticInventory,
+        SelectionCountUnit::InventoryFact,
+        vec![fixture.lineage.logical_case().clone()],
+        vec![],
+        false,
+    )?;
+    mixed.structural.kind = EvidenceKind::StaticInventory;
+    assert_eq!(
+        collect_logical_observations(&[fixture.expected.clone(), mixed], &[]),
+        Err(LogicalObservationError::CountUnit)
+    );
+    // Explicit pure input-data alternative; it does not establish protected
+    // authorization. The application preparation controls own that boundary.
+    let a = LogicalCaseId::new("case.choice_a")?;
+    let b = LogicalCaseId::new("case.choice_b")?;
+    let alternative = FrozenSelectionAlternative::new(
+        LogicalCaseId::new("group.choice")?,
+        vec![
+            (LogicalCaseId::new("option.a")?, vec![a.clone()]),
+            (LogicalCaseId::new("option.b")?, vec![b.clone()]),
+        ],
+        LogicalCaseId::new("option.a")?,
+    )?;
+    let mut expected = fixture.expected.clone();
+    expected.selection = ExpectedSelectionManifest::new(
+        expected.selection.source().clone(),
+        EvidenceKind::Test,
+        SelectionCountUnit::LogicalTestCase,
+        vec![fixture.lineage.logical_case().clone()],
+        vec![alternative],
+        false,
+    )?;
+    let a_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(fixture.lineage.plan().clone()),
+        campaign: Some(fixture.lineage.campaign().clone()),
+        run: Some(fixture.lineage.run().clone()),
+        logical_case: Some(a.clone()),
+        attempt: Some(fixture.lineage.attempt().clone()),
+    })?;
+    let b_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(fixture.lineage.plan().clone()),
+        campaign: Some(fixture.lineage.campaign().clone()),
+        run: Some(fixture.lineage.run().clone()),
+        logical_case: Some(b.clone()),
+        attempt: Some(fixture.lineage.attempt().clone()),
+    })?;
+    let a_candidate = eqm_engine::CompleteEvidenceCandidate {
+        delivery: eqm_engine::EvidenceNormalizationCandidate {
+            lineage: &a_lineage,
+            ..base.delivery
+        },
+        ..base
+    };
+    let b_candidate = eqm_engine::CompleteEvidenceCandidate {
+        delivery: eqm_engine::EvidenceNormalizationCandidate {
+            lineage: &b_lineage,
+            ..base.delivery
+        },
+        ..base
+    };
+    let incomplete = collect_logical_observations(
+        std::slice::from_ref(&expected),
+        &[base, b_candidate, b_candidate],
+    )?;
+    assert_eq!(incomplete.status(), CoverageStatus::Missing);
+    assert_eq!(
+        incomplete.observed(),
+        &BTreeSet::from([fixture.lineage.logical_case().clone()])
+    );
+    assert_eq!(
+        incomplete.missing()[expected.selection.source()],
+        BTreeSet::from([a.clone()])
+    );
+    let complete = collect_logical_observations(
+        std::slice::from_ref(&expected),
+        &[b_candidate, base, a_candidate, a_candidate],
+    )?;
+    assert_eq!(complete.status(), CoverageStatus::Covered);
+    assert_eq!(
+        complete.observed(),
+        &BTreeSet::from([fixture.lineage.logical_case().clone(), a])
+    );
+    assert!(complete.missing().values().all(BTreeSet::is_empty));
+    assert_eq!(
+        collect_logical_observations(&[expected], &[a_candidate, b_candidate, base])?,
+        complete
     );
     Ok(())
 }
@@ -768,6 +911,17 @@ fn complete_matching_checks_selection_before_immutable_conflicts() -> Result<(),
     let conflict = evaluate_complete_evidence_coverage(&fixture.expected, &[base, failed, base])?;
     assert_eq!(conflict.status(), CoverageStatus::Unknown);
     assert!(conflict.eligible().is_empty());
+    let observations = eqm_engine::collect_logical_observations(
+        std::slice::from_ref(&fixture.expected),
+        &[base, failed, base],
+    )?;
+    assert_eq!(observations.status(), CoverageStatus::Unknown);
+    assert!(observations.observed().is_empty());
+    assert_eq!(
+        observations.missing()[fixture.expected.selection.source()],
+        BTreeSet::from([fixture.lineage.logical_case().clone()])
+    );
+
     assert_eq!(
         conflict.conflicts(),
         &BTreeSet::from([(fixture.result.subject().clone(), fixture.lineage.clone())])

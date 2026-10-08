@@ -92,7 +92,11 @@ pub use obligations::{
     derive_obligations_with_scope_bindings, derive_required_universe,
     derive_required_universe_with_scope_bindings, enforce_required_universe_strengthening,
 };
-pub use outcomes::{EvidenceOutcome, aggregate_evidence_outcomes};
+pub use outcomes::{
+    EvidenceOutcome, LogicalObservationError, LogicalObservationPrerequisite,
+    LogicalObservationReport, LogicalObservationUnit, aggregate_evidence_outcomes,
+    collect_logical_observations,
+};
 pub use release::{
     ReleaseCheck, ReleaseContext, ReleaseGateInput, ReleaseGateStatus, ReleaseSubject,
     evaluate_release_gate,

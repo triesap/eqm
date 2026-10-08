@@ -774,6 +774,45 @@ join because the ordering source changes. These contribute to RA04/RA05/RA07;
 whole regression and complete-evaluator acceptance remain open, with mandatory
 independent whole-universe/reference-evaluator review before S077.
 
+**DEV-035 S062 implementation allocation:** derive distinct structural logical
+observations from the S061 complete matcher, never caller-supplied count totals
+or standalone SelectionObservation claims. One bounded pure operation consumes
+all pre-result expectations for an exact coordinate/identity and the complete
+normalized delivery input. Require compatible count units, selected plan/campaign,
+complete grouped subjects and unique exact binding/local-specification sources;
+inconsistent or empty expectations fail explicitly before partial output.
+
+Each expected source composes with AND. Retain missing selected source/case pairs,
+matched/rejected/conflicting assertions and every original delivery reference.
+Deduplicate logical case IDs at the shared coordinate across local specifications;
+repeated transports, split reports, run IDs and retry attempts add no logical
+units. Relevant immutable conflicts remain Unknown, even when other cases match.
+Unrelated rejected history remains auditable without creating units or poisoning
+compatible matching. Frozen alternatives come from the existing expected manifest,
+never observed outcomes. Count thresholds remain S063; required-case outcomes,
+retry semantics and campaign authorization remain S064–S068.
+
+Handle all seven declared count units explicitly and retain their independently
+required outcome/fact/principal/referenced-record checks. A structurally observed
+logical unit is not successful, independently verified credit, protected authority
+or conformance. In particular, inventory/runtime totals, claimed review principals
+and release references cannot mint independently checked facts or verification.
+The existing one-record selection bound stays intact. Protected frozen-input/status
+integration remains S073. Preserve the 10,000-delivery bound and cumulatively
+charge the existing 1,000,000 complete-context-work bound across all expectations
+before repeated matching or report allocation. No wire/schema/digest/dependency
+change. Application adapts actual opaque admissions through the shared operation.
+
+Use real independently prepared graph/binding/specification/frozen selections and
+actual admitted bytes: split selected cases, alternate raw encodings, ten retries,
+missing AND cases, irrelevant components/campaigns, selected alternatives,
+conflicting immutable attempts, duplicate case across local specifications and
+all seven count units with explicit remaining verification prerequisites.
+Literal expected sets and permutations are independent controls. Retain original
+domain/engine owning and full standard gates; add application owning and separate
+allocated acceptance. RA02/RA03 contributions remain local until their later
+outcome and protected consumer integration. Continue S063 after the green commit.
+
 **DEV-035 S061 implementation allocation:** strengthen the existing structural
 expectation to match every EvidenceSubject field and exact runtime-facts reference,
 with distinct rejected-axis diagnostics. Add a complete pure matcher over explicit

@@ -89,6 +89,7 @@ fn selection() -> Result<PolicyProfileRequest, Box<dyn Error>> {
 }
 
 /// The genuine typed projections consumed by the assertion and its context.
+#[derive(Clone)]
 struct Provenance {
     contract_digest: ContractDigest,
     binding_digest: BindingDigest,
@@ -1109,6 +1110,57 @@ fn complete_coordinates(
     ),
     Box<dyn Error>,
 > {
+    complete_coordinates_with_selection(
+        session,
+        region,
+        None,
+        vec![lineage()?.logical_case().clone()],
+        vec![],
+        false,
+    )
+}
+
+// Explicit test capability freezes alternatives before any evidence is read.
+struct ObservationSelectionAuthority<'a> {
+    graph: &'a eqm_engine::FinalizedWorkspaceGraph,
+    scopes: eqm_domain::RequirementScenarioBindings,
+    selections: eqm_engine::ExpectedSelectionMap,
+}
+impl eqm_application::AuthorityProvider for ObservationSelectionAuthority<'_> {
+    fn load_authority(
+        &self,
+        _: &eqm_application::AuthorityRequest,
+    ) -> Result<eqm_application::ProtectedAuthority<'_>, eqm_application::AuthorityError> {
+        Ok(eqm_application::ProtectedAuthority::new(
+            self.graph,
+            &self.scopes,
+        ))
+    }
+}
+impl eqm_application::ExpectedSelectionProvider for ObservationSelectionAuthority<'_> {
+    fn load_expected_selections(
+        &self,
+        _: &eqm_application::AuthorityRequest,
+    ) -> Result<eqm_engine::ExpectedSelectionMap, eqm_application::AuthorityError> {
+        Ok(self.selections.clone())
+    }
+}
+
+fn complete_coordinates_with_selection(
+    session: &eqm_application::PreparedSession,
+    region: &str,
+    release_context: Option<Sha256Digest>,
+    cases: Vec<LogicalCaseId>,
+    alternatives: Vec<eqm_domain::FrozenSelectionAlternative>,
+    independent_principals: bool,
+) -> Result<
+    (
+        eqm_engine::ObligationKey,
+        eqm_domain::ObligationDigest,
+        eqm_domain::ExpectedSelectionManifest,
+    ),
+    Box<dyn Error>,
+> {
     let request = eqm_application::PolicySelectionRequest::development(
         Some(eqm_application::PolicyReference::new(
             PolicyId::new("consumer.critical_flow")?,
@@ -1123,12 +1175,28 @@ fn complete_coordinates(
             )],
         )],
     );
-    let prepared = eqm_application::prepare_obligations_from_request(
-        session.finalized(),
-        EvaluationMode::Development,
-        &request,
-        None,
-    )?;
+    let protected = !alternatives.is_empty();
+    let authority = ObservationSelectionAuthority {
+        graph: session.finalized(),
+        scopes: eqm_domain::RequirementScenarioBindings::new(vec![])?,
+        selections: BTreeMap::new(),
+    };
+    let prepared = if protected {
+        eqm_application::prepare_protected_obligations(
+            session.finalized(),
+            EvaluationMode::Release,
+            &request,
+            Some(&authority),
+            release_context,
+        )?
+    } else {
+        eqm_application::prepare_obligations_from_request(
+            session.finalized(),
+            EvaluationMode::Development,
+            &request,
+            release_context,
+        )?
+    };
     let target = eqm_engine::ScopeSubject::Target(TargetId::new("android")?);
     let key = prepared
         .universe()
@@ -1162,16 +1230,31 @@ fn complete_coordinates(
             campaign: lineage()?.campaign().clone(),
         },
         specification.kind(),
-        eqm_domain::SelectionCountUnit::LogicalTestCase,
-        vec![lineage()?.logical_case().clone()],
-        vec![],
-        false,
+        match specification.kind() {
+            EvidenceKind::Test => eqm_domain::SelectionCountUnit::LogicalTestCase,
+            EvidenceKind::StructuralCheck => eqm_domain::SelectionCountUnit::StructuralFact,
+            EvidenceKind::StaticInventory => eqm_domain::SelectionCountUnit::InventoryFact,
+            EvidenceKind::Snapshot => eqm_domain::SelectionCountUnit::Snapshot,
+            EvidenceKind::RuntimeSnapshot => eqm_domain::SelectionCountUnit::RuntimeFact,
+            EvidenceKind::ManualReview => eqm_domain::SelectionCountUnit::ReviewSlot,
+            EvidenceKind::ReleaseRecord => eqm_domain::SelectionCountUnit::VerifiedRecord,
+        },
+        cases,
+        alternatives,
+        independent_principals,
     )?;
+    let claims = BTreeMap::from([(key.clone(), vec![selected.clone()])]);
+    let selection_authority = ObservationSelectionAuthority {
+        graph: session.finalized(),
+        scopes: eqm_domain::RequirementScenarioBindings::new(vec![])?,
+        selections: claims.clone(),
+    };
     let expected = eqm_application::prepare_expected_selections(
         session.finalized(),
         &prepared,
-        Some(BTreeMap::from([(key.clone(), vec![selected.clone()])])),
-        None,
+        Some(claims),
+        protected
+            .then_some(&selection_authority as &dyn eqm_application::ExpectedSelectionProvider),
     )?;
     let identities =
         eqm_application::prepare_obligation_identities(session.finalized(), &expected)?;
@@ -1181,6 +1264,971 @@ fn complete_coordinates(
         .ok_or("complete reference missing")?
         .digest();
     Ok((key, identity, selected))
+}
+
+#[test]
+fn actual_matched_split_reports_and_ten_retries_preserve_missing_selected_cases()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, collect_admitted_observations};
+    use eqm_engine::{CompleteCoverageExpectation, LogicalObservationPrerequisite};
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let context = context(&provenance, None)?;
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let a = lineage()?.logical_case().clone();
+    let b = LogicalCaseId::new("case.second")?;
+    let (key, identity, selected) = complete_coordinates_with_selection(
+        &session,
+        "eu",
+        None,
+        vec![a.clone(), b.clone()],
+        vec![],
+        false,
+    )?;
+    let expected = vec![CompleteCoverageExpectation {
+        structural: coverage_context(&context, &spec),
+        coordinate: key.clone(),
+        identity,
+        selection: selected.clone(),
+        subjects: None,
+    }];
+    let checked = seal(record(&provenance, None)?)?;
+    let receipt = SelectorText::new("receipt.selection")?;
+    let admitted = (0..10)
+        .map(|i| {
+            let attempt = eqm_domain::AttemptId::new(format!("attempt.retry_{i}"))?;
+            let lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+                plan: Some(lineage()?.plan().clone()),
+                campaign: Some(lineage()?.campaign().clone()),
+                run: Some(RunId::new("run.one")?),
+                logical_case: Some(a.clone()),
+                attempt: Some(attempt.clone()),
+            })?;
+            let execution =
+                EvidenceExecution::new(lineage.run().clone(), a.clone(), vec![attempt])?;
+            admit_evidence_bytes(checked.raw_bytes(), &lineage, &execution, &context)
+                .map_err(Box::<dyn Error>::from)
+        })
+        .collect::<Result<Vec<_>, Box<dyn Error>>>()?;
+    let deliveries = admitted
+        .iter()
+        .map(|value| CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted: value,
+                evidence_spec_id: &spec,
+                provenance: &receipt,
+            },
+            coordinate: Some(&key),
+            identity: Some(identity),
+            subjects: None,
+        })
+        .collect::<Vec<_>>();
+    fs::create_dir_all(repository.path().join(".eqm/results"))?;
+    fs::write(
+        repository.path().join(".eqm/results/poison.json"),
+        b"invalid poison",
+    )?;
+    let before = file_snapshot(repository.path())?;
+    let missing = collect_admitted_observations(&expected, &deliveries)?;
+    assert_eq!(missing.status(), CoverageStatus::Missing);
+    assert_eq!(missing.observed(), &BTreeSet::from([a.clone()]));
+    assert_eq!(
+        missing.units(),
+        &BTreeSet::from([eqm_engine::LogicalObservationUnit::TestCase(a.clone())])
+    );
+    assert_eq!(
+        missing.missing(),
+        &BTreeMap::from([(selected.source().clone(), BTreeSet::from([b.clone()]))])
+    );
+    assert_eq!(
+        missing.matching()[selected.source()]
+            .normalized()
+            .attempts()
+            .len(),
+        10
+    );
+    assert_eq!(
+        missing.prerequisites(),
+        &BTreeSet::from([
+            LogicalObservationPrerequisite::IndependentTrust,
+            LogicalObservationPrerequisite::ExecutionOutcomes
+        ])
+    );
+    let at_limit = collect_admitted_observations(&expected, &vec![deliveries[0]; 10_000])?;
+    assert_eq!(at_limit.status(), CoverageStatus::Missing);
+    assert_eq!(at_limit.observed(), missing.observed());
+    assert_eq!(at_limit.units(), missing.units());
+    assert_eq!(at_limit.missing(), missing.missing());
+    assert_eq!(
+        collect_admitted_observations(&expected, &vec![deliveries[0]; 10_001]),
+        Err(eqm_engine::LogicalObservationError::Matching(
+            eqm_engine::CompleteCoverageError::Normalization(
+                eqm_engine::CandidateNormalizationError::LimitExceeded
+            )
+        ))
+    );
+    let mut repeated = deliveries.clone();
+    repeated.extend(deliveries.iter().rev().copied());
+    assert_eq!(
+        collect_admitted_observations(&expected, &repeated)?,
+        missing
+    );
+    let pretty = serde_json::to_vec_pretty(checked.record())?;
+    let alternate = admit_evidence_bytes(
+        &pretty,
+        admitted[0].lineage(),
+        &EvidenceExecution::new(
+            admitted[0].lineage().run().clone(),
+            a.clone(),
+            vec![admitted[0].lineage().attempt().clone()],
+        )?,
+        &context,
+    )?;
+    repeated.push(CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &alternate,
+            evidence_spec_id: &spec,
+            provenance: &receipt,
+        },
+        ..deliveries[0]
+    });
+    let alternate_report = collect_admitted_observations(&expected, &repeated)?;
+    assert_eq!(alternate_report.observed(), missing.observed());
+    assert_eq!(alternate_report.missing(), missing.missing());
+    assert!(
+        alternate_report.matching()[selected.source()]
+            .normalized()
+            .attempts()
+            .values()
+            .any(|attempt| attempt
+                .assertions()
+                .values()
+                .any(|assertion| assertion.deliveries().len() == 2))
+    );
+    let second_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(lineage()?.plan().clone()),
+        campaign: Some(lineage()?.campaign().clone()),
+        run: Some(RunId::new("run.second")?),
+        logical_case: Some(b.clone()),
+        attempt: Some(eqm_domain::AttemptId::new("attempt.second")?),
+    })?;
+    let second = admit_evidence_bytes(
+        checked.raw_bytes(),
+        &second_lineage,
+        &EvidenceExecution::new(
+            second_lineage.run().clone(),
+            b.clone(),
+            vec![second_lineage.attempt().clone()],
+        )?,
+        &context,
+    )?;
+    repeated.push(CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &second,
+            evidence_spec_id: &spec,
+            provenance: &receipt,
+        },
+        ..deliveries[0]
+    });
+    let complete = collect_admitted_observations(&expected, &repeated)?;
+    assert_eq!(complete.status(), CoverageStatus::Covered);
+    assert_eq!(
+        complete.units(),
+        &BTreeSet::from([
+            eqm_engine::LogicalObservationUnit::TestCase(a.clone()),
+            eqm_engine::LogicalObservationUnit::TestCase(b.clone())
+        ])
+    );
+    assert_eq!(complete.observed(), &BTreeSet::from([a, b]));
+    assert!(complete.missing().values().all(BTreeSet::is_empty));
+    repeated.reverse();
+    assert_eq!(
+        collect_admitted_observations(&expected, &repeated)?,
+        complete
+    );
+    assert_eq!(
+        collect_admitted_observations(&expected, &[])?.status(),
+        CoverageStatus::Missing
+    );
+    assert_eq!(file_snapshot(repository.path())?, before);
+    Ok(())
+}
+
+#[test]
+fn actual_frozen_alternative_is_not_selected_from_observed_passes() -> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, collect_admitted_observations};
+    use eqm_domain::FrozenSelectionAlternative;
+    use eqm_engine::{
+        CompleteCoverageExpectation, CompleteCoverageMismatch, LogicalObservationUnit,
+    };
+    let repository = example()?;
+    let session = session_for(repository.path())?;
+    let provenance = projections(&session)?;
+    let context = context(&provenance, None)?;
+    let spec = EvidenceSpecId::new("identifier_behavior")?;
+    let required = lineage()?.logical_case().clone();
+    let chosen = LogicalCaseId::new("case.chosen")?;
+    let unselected = LogicalCaseId::new("case.unselected")?;
+    let alternative = FrozenSelectionAlternative::new(
+        LogicalCaseId::new("group.choice")?,
+        vec![
+            (LogicalCaseId::new("option.a")?, vec![chosen.clone()]),
+            (LogicalCaseId::new("option.b")?, vec![unselected.clone()]),
+        ],
+        LogicalCaseId::new("option.a")?,
+    )?;
+    let (key, identity, selection) = complete_coordinates_with_selection(
+        &session,
+        "eu",
+        None,
+        vec![required.clone()],
+        vec![alternative],
+        false,
+    )?;
+    let expected = vec![CompleteCoverageExpectation {
+        structural: coverage_context(&context, &spec),
+        coordinate: key.clone(),
+        identity,
+        selection: selection.clone(),
+        subjects: None,
+    }];
+    // The exact chosen option and full semantic identity exist before any result.
+    let checked = seal(record(&provenance, None)?)?;
+    let mut admissions = Vec::new();
+    for case in [&required, &chosen, &unselected] {
+        let lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+            plan: Some(lineage()?.plan().clone()),
+            campaign: Some(lineage()?.campaign().clone()),
+            run: Some(lineage()?.run().clone()),
+            logical_case: Some(case.clone()),
+            attempt: Some(eqm_domain::AttemptId::new("attempt.choice")?),
+        })?;
+        let execution = EvidenceExecution::new(
+            lineage.run().clone(),
+            case.clone(),
+            vec![lineage.attempt().clone()],
+        )?;
+        admissions.push(admit_evidence_bytes(
+            checked.raw_bytes(),
+            &lineage,
+            &execution,
+            &context,
+        )?);
+    }
+    let receipt = SelectorText::new("receipt.choice")?;
+    let deliveries = admissions
+        .iter()
+        .map(|admitted| CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted,
+                evidence_spec_id: &spec,
+                provenance: &receipt,
+            },
+            coordinate: Some(&key),
+            identity: Some(identity),
+            subjects: None,
+        })
+        .collect::<Vec<_>>();
+    let before = file_snapshot(repository.path())?;
+    let missing =
+        collect_admitted_observations(&expected, &[deliveries[2], deliveries[0], deliveries[2]])?;
+    assert_eq!(missing.status(), CoverageStatus::Missing);
+    assert_eq!(
+        missing.units(),
+        &BTreeSet::from([LogicalObservationUnit::TestCase(required.clone())])
+    );
+    assert_eq!(
+        missing.missing()[selection.source()],
+        BTreeSet::from([chosen.clone()])
+    );
+    assert_eq!(
+        missing.matching()[selection.source()].rejected()[&admissions[2].result().id()],
+        BTreeSet::from([CompleteCoverageMismatch::LogicalCase])
+    );
+    let complete = collect_admitted_observations(
+        &expected,
+        &[deliveries[2], deliveries[1], deliveries[0], deliveries[2]],
+    )?;
+    assert_eq!(complete.status(), CoverageStatus::Covered);
+    assert_eq!(
+        complete.units(),
+        &BTreeSet::from([
+            LogicalObservationUnit::TestCase(required),
+            LogicalObservationUnit::TestCase(chosen)
+        ])
+    );
+    assert!(!complete.observed().contains(&unselected));
+    assert!(complete.conflicts().is_empty());
+    assert!(complete.missing().values().all(BTreeSet::is_empty));
+    assert_eq!(
+        collect_admitted_observations(&expected, &[deliveries[0], deliveries[1], deliveries[2]])?,
+        complete
+    );
+    assert_eq!(file_snapshot(repository.path())?, before);
+    Ok(())
+}
+
+fn multi_source_identity(
+    session: &eqm_application::PreparedSession,
+    key: &eqm_engine::ObligationKey,
+    release_context: Option<Sha256Digest>,
+    manifests: Vec<eqm_domain::ExpectedSelectionManifest>,
+) -> Result<eqm_domain::ObligationDigest, Box<dyn Error>> {
+    let request = eqm_application::PolicySelectionRequest::development(
+        Some(eqm_application::PolicyReference::new(
+            PolicyId::new("consumer.critical_flow")?,
+            Some(Revision::new(1)?),
+        )),
+        vec![eqm_application::ProfileSelection::new(
+            ProfileId::new("audience.default")?,
+            Some(Revision::new(1)?),
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new("eu")?),
+            )],
+        )],
+    );
+    let prepared = eqm_application::prepare_obligations_from_request(
+        session.finalized(),
+        EvaluationMode::Development,
+        &request,
+        release_context,
+    )?;
+    let selections = eqm_application::prepare_expected_selections(
+        session.finalized(),
+        &prepared,
+        Some(BTreeMap::from([(key.clone(), manifests)])),
+        None,
+    )?;
+    let identities =
+        eqm_application::prepare_obligation_identities(session.finalized(), &selections)?;
+    Ok(identities
+        .identities()
+        .get(key)
+        .ok_or("complete multi-source identity")?
+        .digest())
+}
+
+#[test]
+fn actual_reference_aliases_preserve_two_required_labels_but_one_record_unit()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, collect_admitted_observations};
+    use eqm_domain::{ExpectedSelectionManifest, SelectionCountUnit};
+    use eqm_engine::{
+        CompleteCoverageExpectation, LogicalObservationPrerequisite, LogicalObservationUnit,
+    };
+    let repository = kind_fixture(EvidenceKind::ReleaseRecord)?;
+    let path = repository
+        .path()
+        .join("eqm/bindings/android.auth_signup.toml");
+    let mut text = fs::read_to_string(&path)?;
+    text.push_str(
+        r#"
+[[evidence]]
+id = "second_record"
+kind = "release_record"
+requirements = ["account.create.signup.identifier#email_default"]
+facets = ["behavior"]
+[evidence.selector]
+kind = "release"
+channel = "development"
+"#,
+    );
+    fs::write(&path, text)?;
+    let session = session_for(repository.path())?;
+    let original = projections(&session)?;
+    let (first_record, first_context) = record_for_kind(&original, EvidenceKind::ReleaseRecord)?;
+    let first_spec = EvidenceSpecId::new("identifier_behavior")?;
+    let second_spec = EvidenceSpecId::new("second_record")?;
+    let (key, _, first_selection) = complete_coordinates_with_selection(
+        &session,
+        "eu",
+        first_context.release_record_digest,
+        vec![lineage()?.logical_case().clone()],
+        vec![],
+        false,
+    )?;
+    let binding = session
+        .finalized()
+        .graph()
+        .bindings()
+        .get(&BindingId::new("binding.android.auth_signup")?)
+        .ok_or("binding")?;
+    let mut second_provenance = original.clone();
+    second_provenance.evidence_spec_digest = canonicalize_evidence_spec_v2(
+        binding
+            .evidence()
+            .get(&second_spec)
+            .ok_or("second specification")?,
+    )?
+    .digest();
+    let (second_record, second_context) =
+        record_for_kind(&second_provenance, EvidenceKind::ReleaseRecord)?;
+    let alias = LogicalCaseId::new("case.record_alias")?;
+    let mut source = first_selection.source().clone();
+    source.specification = second_spec.clone();
+    source.specification_digest = second_provenance.evidence_spec_digest;
+    let second_selection = ExpectedSelectionManifest::new(
+        source,
+        EvidenceKind::ReleaseRecord,
+        SelectionCountUnit::VerifiedRecord,
+        vec![alias.clone()],
+        vec![],
+        false,
+    )?;
+    let identity = multi_source_identity(
+        &session,
+        &key,
+        first_context.release_record_digest,
+        vec![first_selection.clone(), second_selection.clone()],
+    )?;
+    let expected = vec![
+        CompleteCoverageExpectation {
+            structural: coverage_context(&first_context, &first_spec),
+            coordinate: key.clone(),
+            identity,
+            selection: first_selection.clone(),
+            subjects: None,
+        },
+        CompleteCoverageExpectation {
+            structural: coverage_context(&second_context, &second_spec),
+            coordinate: key.clone(),
+            identity,
+            selection: second_selection,
+            subjects: None,
+        },
+    ];
+    let first_checked = seal(first_record)?;
+    let second_checked = seal(second_record)?;
+    let first = admit_evidence_bytes(
+        first_checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &first_context,
+    )?;
+    let alias_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(lineage()?.plan().clone()),
+        campaign: Some(lineage()?.campaign().clone()),
+        run: Some(lineage()?.run().clone()),
+        logical_case: Some(alias.clone()),
+        attempt: Some(eqm_domain::AttemptId::new("attempt.record_alias")?),
+    })?;
+    let second = admit_evidence_bytes(
+        second_checked.raw_bytes(),
+        &alias_lineage,
+        &EvidenceExecution::new(
+            alias_lineage.run().clone(),
+            alias.clone(),
+            vec![alias_lineage.attempt().clone()],
+        )?,
+        &second_context,
+    )?;
+    let receipt = SelectorText::new("receipt.record_alias")?;
+    let first_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &first,
+            evidence_spec_id: &first_spec,
+            provenance: &receipt,
+        },
+        coordinate: Some(&key),
+        identity: Some(identity),
+        subjects: None,
+    };
+    let second_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &second,
+            evidence_spec_id: &second_spec,
+            provenance: &receipt,
+        },
+        ..first_delivery
+    };
+    let before = file_snapshot(repository.path())?;
+    let report = collect_admitted_observations(
+        &expected,
+        &[first_delivery, second_delivery, second_delivery],
+    )?;
+    assert_eq!(report.status(), CoverageStatus::Covered);
+    assert_eq!(
+        report.observed(),
+        &BTreeSet::from([lineage()?.logical_case().clone(), alias])
+    );
+    assert_eq!(
+        report.units(),
+        &BTreeSet::from([LogicalObservationUnit::ReferencedRecord(
+            Sha256Digest::hash_content(b"synthetic referenced record")
+        )])
+    );
+    assert_eq!(
+        report.prerequisites(),
+        &BTreeSet::from([
+            LogicalObservationPrerequisite::IndependentTrust,
+            LogicalObservationPrerequisite::ReferencedRecord
+        ])
+    );
+    assert!(report.missing().values().all(BTreeSet::is_empty));
+    assert!(report.conflicts().is_empty());
+    let missing = collect_admitted_observations(&expected, &[first_delivery])?;
+    assert_eq!(missing.status(), CoverageStatus::Missing);
+    assert_eq!(missing.units(), report.units());
+    let mut reverse = expected.clone();
+    reverse.reverse();
+    assert_eq!(
+        collect_admitted_observations(&reverse, &[second_delivery, first_delivery])?,
+        report
+    );
+    assert_eq!(file_snapshot(repository.path())?, before);
+    Ok(())
+}
+
+#[test]
+fn actual_selected_sources_compose_with_and_and_cannot_hide_cross_source_conflicts()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, collect_admitted_observations};
+    use eqm_domain::{ExpectedSelectionManifest, SelectionCountUnit};
+    use eqm_engine::{CompleteCoverageExpectation, CompleteCoverageMismatch};
+    let repository = example()?;
+    let path = repository
+        .path()
+        .join("eqm/bindings/android.auth_signup.toml");
+    let mut text = fs::read_to_string(&path)?;
+    text.push_str(
+        r#"
+[[evidence]]
+id = "second_test"
+kind = "test"
+requirements = ["account.create.signup.identifier#email_default"]
+facets = ["behavior"]
+runner = "runner.android"
+[evidence.selector]
+kind = "test"
+framework = "junit"
+test_id = "secondExactSelector"
+"#,
+    );
+    fs::write(&path, text)?;
+    let session = session_for(repository.path())?;
+    let original = projections(&session)?;
+    let first_context = context(&original, None)?;
+    let first_spec = EvidenceSpecId::new("identifier_behavior")?;
+    let second_spec = EvidenceSpecId::new("second_test")?;
+    let (key, _, first_selection) = complete_coordinates(&session, "eu")?;
+    let binding = session
+        .finalized()
+        .graph()
+        .bindings()
+        .get(&BindingId::new("binding.android.auth_signup")?)
+        .ok_or("binding")?;
+    let second_definition = binding
+        .evidence()
+        .get(&second_spec)
+        .ok_or("second local specification")?;
+    let mut second_provenance = original.clone();
+    second_provenance.evidence_spec_digest =
+        canonicalize_evidence_spec_v2(second_definition)?.digest();
+    let second_context = context(&second_provenance, None)?;
+    let mut second_source = first_selection.source().clone();
+    second_source.specification = second_spec.clone();
+    second_source.specification_digest = second_provenance.evidence_spec_digest;
+    let second_case = LogicalCaseId::new("case.second")?;
+    let second_same = ExpectedSelectionManifest::new(
+        second_source.clone(),
+        EvidenceKind::Test,
+        SelectionCountUnit::LogicalTestCase,
+        vec![lineage()?.logical_case().clone()],
+        vec![],
+        false,
+    )?;
+    let second_distinct = ExpectedSelectionManifest::new(
+        second_source,
+        EvidenceKind::Test,
+        SelectionCountUnit::LogicalTestCase,
+        vec![second_case.clone()],
+        vec![],
+        false,
+    )?;
+    let request = eqm_application::PolicySelectionRequest::development(
+        Some(eqm_application::PolicyReference::new(
+            PolicyId::new("consumer.critical_flow")?,
+            Some(Revision::new(1)?),
+        )),
+        vec![eqm_application::ProfileSelection::new(
+            ProfileId::new("audience.default")?,
+            Some(Revision::new(1)?),
+            vec![(
+                DimensionId::new("region")?,
+                Some(SymbolicValueId::new("eu")?),
+            )],
+        )],
+    );
+    let prepared = eqm_application::prepare_obligations_from_request(
+        session.finalized(),
+        EvaluationMode::Development,
+        &request,
+        None,
+    )?;
+    let identity_for = |second: &ExpectedSelectionManifest| -> Result<eqm_domain::ObligationDigest, Box<dyn Error>> {
+        let selections = eqm_application::prepare_expected_selections(session.finalized(), &prepared, Some(BTreeMap::from([(key.clone(), vec![first_selection.clone(), second.clone()])])), None)?;
+        let identities = eqm_application::prepare_obligation_identities(session.finalized(), &selections)?;
+        Ok(identities.identities().get(&key).ok_or("complete multi-source identity")?.digest())
+    };
+    // Both complete identities are independently prepared before result bytes.
+    let same_identity = identity_for(&second_same)?;
+    let distinct_identity = identity_for(&second_distinct)?;
+    assert_ne!(same_identity, distinct_identity);
+    let first_expected = CompleteCoverageExpectation {
+        structural: coverage_context(&first_context, &first_spec),
+        coordinate: key.clone(),
+        identity: same_identity,
+        selection: first_selection.clone(),
+        subjects: None,
+    };
+    let second_expected = CompleteCoverageExpectation {
+        structural: coverage_context(&second_context, &second_spec),
+        coordinate: key.clone(),
+        identity: same_identity,
+        selection: second_same.clone(),
+        subjects: None,
+    };
+    let expected = vec![first_expected.clone(), second_expected.clone()];
+    let first_checked = seal(record(&original, None)?)?;
+    let second_checked = seal(record(&second_provenance, None)?)?;
+    let first = admit_evidence_bytes(
+        first_checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &first_context,
+    )?;
+    let other_attempt = eqm_domain::AttemptId::new("attempt.second_source")?;
+    let second_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(lineage()?.plan().clone()),
+        campaign: Some(lineage()?.campaign().clone()),
+        run: Some(lineage()?.run().clone()),
+        logical_case: Some(lineage()?.logical_case().clone()),
+        attempt: Some(other_attempt.clone()),
+    })?;
+    let second = admit_evidence_bytes(
+        second_checked.raw_bytes(),
+        &second_lineage,
+        &EvidenceExecution::new(
+            second_lineage.run().clone(),
+            second_lineage.logical_case().clone(),
+            vec![other_attempt.clone()],
+        )?,
+        &second_context,
+    )?;
+    let receipt = SelectorText::new("receipt.sources")?;
+    let first_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &first,
+            evidence_spec_id: &first_spec,
+            provenance: &receipt,
+        },
+        coordinate: Some(&key),
+        identity: Some(same_identity),
+        subjects: None,
+    };
+    let second_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &second,
+            evidence_spec_id: &second_spec,
+            provenance: &receipt,
+        },
+        ..first_delivery
+    };
+    let before = file_snapshot(repository.path())?;
+    let missing = collect_admitted_observations(&expected, &[first_delivery, first_delivery])?;
+    assert_eq!(missing.status(), CoverageStatus::Missing);
+    assert_eq!(
+        missing.observed(),
+        &BTreeSet::from([lineage()?.logical_case().clone()])
+    );
+    assert!(missing.missing()[first_selection.source()].is_empty());
+    assert_eq!(
+        missing.missing()[second_same.source()],
+        BTreeSet::from([lineage()?.logical_case().clone()])
+    );
+    let complete = collect_admitted_observations(
+        &expected,
+        &[second_delivery, first_delivery, second_delivery],
+    )?;
+    assert_eq!(complete.status(), CoverageStatus::Covered);
+    assert_eq!(
+        complete.observed(),
+        &BTreeSet::from([lineage()?.logical_case().clone()])
+    );
+    assert!(complete.missing().values().all(BTreeSet::is_empty));
+    assert!(complete.conflicts().is_empty());
+    let mut reversed = expected.clone();
+    reversed.reverse();
+    assert_eq!(
+        collect_admitted_observations(&reversed, &[first_delivery, second_delivery])?,
+        complete
+    );
+    // Assertions claiming one immutable attempt stay conflicting even though
+    // each matches a different required local specification on its own.
+    let conflicting = admit_evidence_bytes(
+        second_checked.raw_bytes(),
+        &lineage()?,
+        &execution()?,
+        &second_context,
+    )?;
+    let conflict_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &conflicting,
+            evidence_spec_id: &second_spec,
+            provenance: &receipt,
+        },
+        ..first_delivery
+    };
+    let conflict = collect_admitted_observations(&expected, &[first_delivery, conflict_delivery])?;
+    assert_eq!(conflict.status(), CoverageStatus::Unknown);
+    assert!(conflict.observed().is_empty());
+    assert_eq!(conflict.conflicts().len(), 1);
+    let original_lineage = lineage()?;
+    assert!(
+        conflict
+            .conflicts()
+            .iter()
+            .all(|attempt| attempt.subject() == first.result().subject()
+                && attempt.lineage() == &original_lineage)
+    );
+    assert!(
+        conflict
+            .matching()
+            .values()
+            .all(|report| report.status() == CoverageStatus::Covered
+                && report.conflicts().is_empty())
+    );
+    assert_eq!(
+        collect_admitted_observations(&reversed, &[conflict_delivery, first_delivery])?,
+        conflict
+    );
+    let foreign_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(second_lineage.plan().clone()),
+        campaign: Some(CampaignId::new("campaign.foreign")?),
+        run: Some(second_lineage.run().clone()),
+        logical_case: Some(second_lineage.logical_case().clone()),
+        attempt: Some(second_lineage.attempt().clone()),
+    })?;
+    let mut foreign_context = second_context.clone();
+    foreign_context.expected_lineage = ExpectedLineageAuthority::new(
+        foreign_lineage.plan().clone(),
+        foreign_lineage.campaign().clone(),
+    );
+    let foreign = admit_evidence_bytes(
+        second_checked.raw_bytes(),
+        &foreign_lineage,
+        &EvidenceExecution::new(
+            foreign_lineage.run().clone(),
+            foreign_lineage.logical_case().clone(),
+            vec![foreign_lineage.attempt().clone()],
+        )?,
+        &foreign_context,
+    )?;
+    let foreign_delivery = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &foreign,
+            evidence_spec_id: &second_spec,
+            provenance: &receipt,
+        },
+        ..first_delivery
+    };
+    let mixed = collect_admitted_observations(
+        &expected,
+        &[
+            foreign_delivery,
+            first_delivery,
+            second_delivery,
+            foreign_delivery,
+        ],
+    )?;
+    assert_eq!(mixed.status(), CoverageStatus::Covered);
+    assert_eq!(mixed.observed(), complete.observed());
+    assert!(mixed.conflicts().is_empty());
+    assert_eq!(
+        mixed.matching()[second_same.source()].rejected()[&foreign.result().id()],
+        BTreeSet::from([CompleteCoverageMismatch::Campaign])
+    );
+    // Distinct selected case identities contribute two units, with every source
+    // still required, even when underlying assertion bytes are repeated.
+    let distinct_lineage = EvidenceLineage::from_parts(EvidenceLineageParts {
+        plan: Some(second_lineage.plan().clone()),
+        campaign: Some(second_lineage.campaign().clone()),
+        run: Some(second_lineage.run().clone()),
+        logical_case: Some(second_case.clone()),
+        attempt: Some(other_attempt),
+    })?;
+    let distinct = admit_evidence_bytes(
+        second_checked.raw_bytes(),
+        &distinct_lineage,
+        &EvidenceExecution::new(
+            distinct_lineage.run().clone(),
+            second_case.clone(),
+            vec![distinct_lineage.attempt().clone()],
+        )?,
+        &second_context,
+    )?;
+    let mut distinct_expected = expected.clone();
+    for value in &mut distinct_expected {
+        value.identity = distinct_identity;
+    }
+    distinct_expected[1].selection = second_distinct;
+    let first_distinct = CompleteEvidenceDelivery {
+        identity: Some(distinct_identity),
+        ..first_delivery
+    };
+    let second_distinct = CompleteEvidenceDelivery {
+        delivery: AdmittedEvidenceDelivery {
+            admitted: &distinct,
+            evidence_spec_id: &second_spec,
+            provenance: &receipt,
+        },
+        ..first_distinct
+    };
+    let distinct_report =
+        collect_admitted_observations(&distinct_expected, &[second_distinct, first_distinct])?;
+    assert_eq!(distinct_report.status(), CoverageStatus::Covered);
+    assert_eq!(
+        distinct_report.observed(),
+        &BTreeSet::from([lineage()?.logical_case().clone(), second_case])
+    );
+    assert!(distinct_report.conflicts().is_empty());
+    assert_eq!(file_snapshot(repository.path())?, before);
+    Ok(())
+}
+
+#[test]
+fn actual_all_kind_observations_retain_independent_prerequisites_and_ignore_totals()
+-> Result<(), Box<dyn Error>> {
+    use eqm_application::{CompleteEvidenceDelivery, collect_admitted_observations};
+    use eqm_engine::{CompleteCoverageExpectation, LogicalObservationPrerequisite as Need};
+    for (kind, needs) in [
+        (
+            EvidenceKind::Test,
+            BTreeSet::from([Need::IndependentTrust, Need::ExecutionOutcomes]),
+        ),
+        (
+            EvidenceKind::StructuralCheck,
+            BTreeSet::from([
+                Need::IndependentTrust,
+                Need::ExecutionOutcomes,
+                Need::StructuralFacts,
+            ]),
+        ),
+        (
+            EvidenceKind::Snapshot,
+            BTreeSet::from([Need::IndependentTrust, Need::ExecutionOutcomes]),
+        ),
+        (
+            EvidenceKind::StaticInventory,
+            BTreeSet::from([Need::IndependentTrust, Need::InventoryFacts]),
+        ),
+        (
+            EvidenceKind::RuntimeSnapshot,
+            BTreeSet::from([Need::IndependentTrust, Need::RuntimeFacts]),
+        ),
+        (
+            EvidenceKind::ManualReview,
+            BTreeSet::from([
+                Need::IndependentTrust,
+                Need::ReviewOutcomes,
+                Need::DistinctReviewPrincipals,
+            ]),
+        ),
+        (
+            EvidenceKind::ReleaseRecord,
+            BTreeSet::from([Need::IndependentTrust, Need::ReferencedRecord]),
+        ),
+    ] {
+        let repository = kind_fixture(kind)?;
+        let session = session_for(repository.path())?;
+        let provenance = projections(&session)?;
+        let (mut value, context) = record_for_kind(&provenance, kind)?;
+        // Large arithmetically valid totals do not declare 100 logical identities.
+        match &mut value.payload {
+            EvidencePayloadV2Dto::Test { execution }
+            | EvidencePayloadV2Dto::StructuralCheck { execution }
+            | EvidencePayloadV2Dto::Snapshot { execution } => {
+                execution.counts.selected = WireUint::new(100);
+                execution.counts.passed = WireUint::new(100);
+            }
+            EvidencePayloadV2Dto::StaticInventory { counts, .. }
+            | EvidencePayloadV2Dto::RuntimeSnapshot { counts, .. } => {
+                counts.selected = WireUint::new(100);
+                counts.passed = WireUint::new(100);
+            }
+            EvidencePayloadV2Dto::ManualReview { .. }
+            | EvidencePayloadV2Dto::ReleaseRecord { .. } => {}
+        }
+        let spec = EvidenceSpecId::new("identifier_behavior")?;
+        let (key, identity, selection) = complete_coordinates_with_selection(
+            &session,
+            "eu",
+            context.release_record_digest,
+            vec![lineage()?.logical_case().clone()],
+            vec![],
+            kind == EvidenceKind::ManualReview,
+        )?;
+        let expected = vec![CompleteCoverageExpectation {
+            structural: coverage_context(&context, &spec),
+            coordinate: key.clone(),
+            identity,
+            selection: selection.clone(),
+            subjects: None,
+        }];
+        let checked = seal(value)?;
+        let admitted =
+            admit_evidence_bytes(checked.raw_bytes(), &lineage()?, &execution()?, &context)?;
+        let receipt = SelectorText::new("receipt.kind")?;
+        let delivery = CompleteEvidenceDelivery {
+            delivery: AdmittedEvidenceDelivery {
+                admitted: &admitted,
+                evidence_spec_id: &spec,
+                provenance: &receipt,
+            },
+            coordinate: Some(&key),
+            identity: Some(identity),
+            subjects: None,
+        };
+        let before = file_snapshot(repository.path())?;
+        let report = collect_admitted_observations(&expected, &[delivery, delivery])?;
+        assert_eq!(report.status(), CoverageStatus::Covered, "{kind}");
+        assert_eq!(report.count_unit(), selection.count_unit());
+        let case = lineage()?.logical_case().clone();
+        let unit = match kind {
+            EvidenceKind::Test => eqm_engine::LogicalObservationUnit::TestCase(case),
+            EvidenceKind::StructuralCheck => {
+                eqm_engine::LogicalObservationUnit::StructuralFact(case)
+            }
+            EvidenceKind::StaticInventory => {
+                eqm_engine::LogicalObservationUnit::InventoryFact(case)
+            }
+            EvidenceKind::Snapshot => eqm_engine::LogicalObservationUnit::Snapshot(case),
+            EvidenceKind::RuntimeSnapshot => eqm_engine::LogicalObservationUnit::RuntimeFact(case),
+            EvidenceKind::ManualReview => eqm_engine::LogicalObservationUnit::ReviewSlot(case),
+            EvidenceKind::ReleaseRecord => eqm_engine::LogicalObservationUnit::ReferencedRecord(
+                Sha256Digest::hash_content(b"synthetic referenced record"),
+            ),
+        };
+        assert_eq!(report.units(), &BTreeSet::from([unit]));
+
+        assert_eq!(
+            report.observed(),
+            &BTreeSet::from([lineage()?.logical_case().clone()])
+        );
+        assert_eq!(report.prerequisites(), &needs);
+        assert!(report.missing().values().all(BTreeSet::is_empty));
+        assert_eq!(
+            report.matching()[selection.source()]
+                .normalized()
+                .attempts()
+                .len(),
+            1
+        );
+        assert_eq!(file_snapshot(repository.path())?, before);
+    }
+    Ok(())
 }
 
 #[test]
@@ -1753,6 +2801,37 @@ fn real_admitted_delivery_normalization_is_idempotent_and_conflicts_are_relevant
         )?,
         complete
     );
+    let observations = eqm_application::collect_admitted_observations(
+        std::slice::from_ref(&complete_expected),
+        &[complete_other, complete_base, complete_other],
+    )?;
+    assert_eq!(observations.status(), CoverageStatus::Covered);
+    assert_eq!(
+        observations.observed(),
+        &BTreeSet::from([lineage()?.logical_case().clone()])
+    );
+    assert_eq!(
+        observations.units(),
+        &BTreeSet::from([eqm_engine::LogicalObservationUnit::TestCase(
+            lineage()?.logical_case().clone()
+        )])
+    );
+    assert!(observations.conflicts().is_empty());
+    assert_eq!(
+        observations.matching()[complete_expected.selection.source()],
+        complete
+    );
+    let foreign_only = eqm_application::collect_admitted_observations(
+        std::slice::from_ref(&complete_expected),
+        &[complete_other],
+    )?;
+    assert_eq!(foreign_only.status(), CoverageStatus::Missing);
+    assert!(foreign_only.observed().is_empty());
+    assert!(foreign_only.units().is_empty());
+    assert_eq!(
+        foreign_only.missing()[complete_expected.selection.source()],
+        BTreeSet::from([lineage()?.logical_case().clone()])
+    );
     let unrelated = normalize_admitted_evidence(&[other_delivery, receipts[0], other_delivery])?;
     let unrelated_report = evaluate_normalized_evidence_coverage(&expected, &unrelated);
     assert!(unrelated.attempts().values().all(|x| x.has_conflict()));
@@ -2023,6 +3102,27 @@ fn admitted_normalization_keeps_each_lineage_axis_and_full_subject_independent()
         )])
     );
     assert!(complete.conflicts().is_empty());
+    let observations = eqm_application::collect_admitted_observations(
+        std::slice::from_ref(&complete_expected),
+        &[other_complete, base_complete],
+    )?;
+    assert_eq!(observations.status(), CoverageStatus::Covered);
+    assert_eq!(
+        observations.observed(),
+        &BTreeSet::from([lineage()?.logical_case().clone()])
+    );
+    assert!(observations.conflicts().is_empty());
+    assert_eq!(
+        observations.matching()[complete_expected.selection.source()],
+        complete
+    );
+    let foreign_only = eqm_application::collect_admitted_observations(
+        std::slice::from_ref(&complete_expected),
+        &[other_complete],
+    )?;
+    assert_eq!(foreign_only.status(), CoverageStatus::Missing);
+    assert!(foreign_only.units().is_empty());
+    assert!(foreign_only.observed().is_empty());
     assert_eq!(file_snapshot(repository.path())?, before);
     Ok(())
 }

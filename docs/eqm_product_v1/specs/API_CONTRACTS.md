@@ -55,6 +55,19 @@ Missing context never falls back to expected values. Complete-context work is
 bounded at 1,000,000 slots with an explicit error, in addition to 10,000 deliveries.
 Protected frozen-input/status integration retains its independent owning gates.
 
+S062 `collect_logical_observations` and application
+`collect_admitted_observations` derive structural logical units from complete
+matching across every frozen source. Source/case AND members remain visible;
+transports and attempts do not add units. Relevant immutable contradictions
+remain Unknown across local specification boundaries. Typed record units use
+exact referenced digests, preserving one unit for aliases of one record.
+The private report retains selected case labels separately from typed units,
+missing members, all matching history and explicit independent prerequisites.
+Neither completeness nor unit cardinality establishes successful count credit,
+verified facts/principals/records or conformance. Threshold and outcome evaluation
+remain separate. The 1,000,000 work bound applies cumulatively before repeated
+matching, with the shared 10,000 delivery bound and explicit overflow errors.
+
 Every decision binds scope, required universe/completeness, authority and policy/profile revisions, exact participant subjects, selected campaigns, input references, evaluator identity, evaluation time, and relevant validity/trust context. Include obligation statuses, accepted/rejected evidence with reasons, expected missing cases, exposure comparisons, applied waivers and aggregate conclusions.
 
 Display state and diagnostic reason are not interchangeable. A summary status can select precedence while explanations preserve all causes. Show unknown, missing, stale, unstable, failed, conditional and not-applicable distinctly; never collapse them to a green boolean.

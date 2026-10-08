@@ -299,6 +299,25 @@ fn context_work(key: &ObligationKey, subjects: Option<&CoverageSubjectManifest>)
     work
 }
 
+pub(crate) fn complete_coverage_work(
+    expected: &CompleteCoverageExpectation,
+    candidates: &[CompleteEvidenceCandidate<'_>],
+) -> usize {
+    let expected_work = context_work(&expected.coordinate, expected.subjects.as_ref());
+    let mut work = expected_work.saturating_add(expected.selection.selected().len());
+    for candidate in candidates {
+        if work > MAX_COMPLETE_COVERAGE_WORK {
+            break;
+        }
+        work = work.saturating_add(expected_work).saturating_add(
+            candidate
+                .coordinate
+                .map_or(1, |key| context_work(key, candidate.subjects)),
+        );
+    }
+    work
+}
+
 /// Matches complete frozen coordinates before considering attempt conflicts.
 /// Input structures and matching identities remain claims; protected consumers
 /// separately validate graph provenance, signature/trust and the frozen input chain.
@@ -311,19 +330,7 @@ pub fn evaluate_complete_evidence_coverage<'a>(
             CandidateNormalizationError::LimitExceeded,
         ));
     }
-    let expected_work = context_work(&expected.coordinate, expected.subjects.as_ref());
-    let mut work = expected_work.saturating_add(expected.selection.selected().len());
-    for candidate in candidates {
-        work = work.saturating_add(expected_work).saturating_add(
-            candidate
-                .coordinate
-                .map_or(1, |key| context_work(key, candidate.subjects)),
-        );
-        if work > MAX_COMPLETE_COVERAGE_WORK {
-            return Err(CompleteCoverageError::WorkLimitExceeded);
-        }
-    }
-    if work > MAX_COMPLETE_COVERAGE_WORK {
+    if complete_coverage_work(expected, candidates) > MAX_COMPLETE_COVERAGE_WORK {
         return Err(CompleteCoverageError::WorkLimitExceeded);
     }
     if !expected_valid(expected) {

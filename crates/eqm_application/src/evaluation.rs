@@ -55,7 +55,13 @@ pub fn match_admitted_evidence<'a>(
             CandidateNormalizationError::LimitExceeded,
         ));
     }
-    let candidates = deliveries
+    evaluate_complete_evidence_coverage(expected, &complete_candidates(deliveries))
+}
+
+fn complete_candidates<'a>(
+    deliveries: &[CompleteEvidenceDelivery<'a>],
+) -> Vec<CompleteEvidenceCandidate<'a>> {
+    deliveries
         .iter()
         .map(|claim| CompleteEvidenceCandidate {
             delivery: EvidenceNormalizationCandidate {
@@ -70,8 +76,21 @@ pub fn match_admitted_evidence<'a>(
             identity: claim.identity,
             subjects: claim.subjects,
         })
-        .collect::<Vec<_>>();
-    evaluate_complete_evidence_coverage(expected, &candidates)
+        .collect()
+}
+
+/// Derives distinct structural selections from actual opaque admissions. Counts
+/// and prerequisite labels are never successful verification or conformance.
+pub fn collect_admitted_observations<'a>(
+    expected: &[CompleteCoverageExpectation],
+    deliveries: &[CompleteEvidenceDelivery<'a>],
+) -> Result<eqm_engine::LogicalObservationReport<'a>, eqm_engine::LogicalObservationError> {
+    if deliveries.len() > MAX_CANDIDATE_DELIVERIES {
+        return Err(eqm_engine::LogicalObservationError::Matching(
+            CompleteCoverageError::Normalization(CandidateNormalizationError::LimitExceeded),
+        ));
+    }
+    eqm_engine::collect_logical_observations(expected, &complete_candidates(deliveries))
 }
 
 /// Normalizes admitted candidate data, retaining every raw and provenance reference.
