@@ -167,7 +167,7 @@ impl FromStr for Sha256Digest {
         }
 
         let mut bytes = [0_u8; 32];
-        for (index, pair) in hex.as_bytes().chunks_exact(2).enumerate() {
+        for (index, pair) in hex.as_bytes().as_chunks::<2>().0.iter().enumerate() {
             let high = decode_hex(pair[0]).ok_or(DigestParseError::InvalidHex)?;
             let low = decode_hex(pair[1]).ok_or(DigestParseError::InvalidHex)?;
             bytes[index] = (high << 4) | low;

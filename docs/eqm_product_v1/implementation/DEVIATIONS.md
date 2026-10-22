@@ -236,3 +236,21 @@ change requires these dependent migrations; they form one coherent green slice,
 not two commits separated by an unsafe implicit fallback. Separate source review
 agrees with this dependency boundary. A stays separate and S052 overall criteria,
 aggregate gates and S053 predecessor remain unchanged.
+
+## Compiler maintenance — Rust 1.99.0
+
+**Date/authority:** 2026-10-22; the owner explicitly approved the compiler upgrade
+and repairs required by it. **Starting HEAD:**
+`19c1e91ea18d9df94ecd8195016f44b193243149`.
+
+Align the development toolchain and inherited MSRV to 1.99.0 and repair compiler
+or lint failures while preserving current semantics, exact dependency pins,
+fixtures and acceptance thresholds. This is compiler maintenance outside the
+product-step sequence: no S-step is activated, reordered or accepted, and the
+progress ledger and historical reports retain their existing meaning. DEV-035
+and its independent product acceptance gates continue to govern feature work.
+
+The required gate remains `cargo xtask check`, including locked compilation,
+tests, strict Clippy, schemas, documentation, end-to-end checks and whitespace.
+Record actual qualification results after execution; release qualification,
+signing, publication and live product acceptance are outside this maintenance.

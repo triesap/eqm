@@ -26,7 +26,7 @@ homepage = "https://github.com/triesap/eqm"
 documentation = "https://docs.rs/eqm"
 keywords = ["conformance", "equivalence", "mobile", "testing"]
 categories = ["command-line-utilities", "development-tools", "development-tools::testing"]
-rust-version = "1.97.1"
+rust-version = "1.99.0"
 
 [workspace.lints.rust]
 missing_docs = "warn"

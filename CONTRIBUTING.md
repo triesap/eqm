@@ -1,6 +1,7 @@
 # Contributing
 
 EquivalenceMatrix is a Rust 2024 workspace with current-only v1 contracts.
+Use Rust 1.99.0, the pinned development toolchain and minimum supported version.
 Install the toolchain pinned by `rust-toolchain.toml` and keep `Cargo.lock`
 committed. Normal Cargo target directories are ignored; generated EQM consumer
 state under `/.eqm/` must never be committed.
